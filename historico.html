@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#20a767">
+
+    <title>Histórico — Dr. Troco</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* HISTÓRICO — DR. TROCO */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding-bottom: 95px;
+            background: #f4f7f5;
+            color: #263640;
+            font-family: Arial, sans-serif;
+        }
+
+        button, input, select, textarea {
+            font: inherit;
+        }
+
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .historico-app {
+            width: 100%;
+            max-width: 760px;
+            margin: auto;
+            padding: 0 14px 25px;
+        }
+
+        .historico-cabecalho {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 20px 3px;
+        }
+
+        .historico-titulo {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 900;
+            color: #263640;
+        }
+
+        .historico-subtitulo {
+            margin: 5px 0 0;
+            color: #7b898f;
+            font-size: 12px;
+        }
+
+        .historico-icone {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: 15px;
+            background: #e5f7ed;
+            font-size: 24px;
+        }
+
+        .historico-periodo,
+        .historico-pagamentos {
+            margin-bottom: 16px;
+            padding: 15px;
+            border: 1px solid #e1e9e5;
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 5px 18px rgba(34,55,46,.045);
+        }
+
+        .historico-periodo label {
+            display: block;
+            margin-bottom: 7px;
+            color: #42534b;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .historico-periodo input,
+        .historico-periodo select,
+        .campo-modal input,
+        .campo-modal select,
+        .campo-modal textarea {
+            width: 100%;
+            min-width: 0;
+            min-height: 44px;
+            padding: 10px 12px;
+            border: 1px solid #dfe8e3;
+            border-radius: 11px;
+            outline: none;
+            background: #f8faf9;
+            color: #263640;
+            font-size: 14px;
+        }
+
+        .historico-periodo input:focus,
+        .historico-periodo select:focus,
+        .campo-modal input:focus,
+        .campo-modal select:focus,
+        .campo-modal textarea:focus {
+            border-color: #20a767;
+            box-shadow: 0 0 0 3px rgba(32,167,103,.10);
+        }
+
+        .historico-filtros {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .historico-resumo {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 17px;
+        }
+
+        .historico-card {
+            min-width: 0;
+            padding: 14px;
+            border: 1px solid #e1e9e5;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 4px 14px rgba(34,55,46,.035);
+        }
+
+        .historico-card.destaque {
+            grid-column: 1 / -1;
+            padding: 19px;
+            border: none;
+            background: linear-gradient(135deg, #173c2b, #176642);
+            color: #fff;
+        }
+
+        .historico-card-label {
+            display: block;
+            margin-bottom: 9px;
+            color: #7b898f;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .historico-card.destaque .historico-card-label {
+            color: rgba(255,255,255,.75);
+        }
+
+        .historico-card-valor {
+            display: block;
+            overflow-wrap: anywhere;
+            color: #263640;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .historico-card.destaque .historico-card-valor {
+            color: #fff;
+            font-size: 28px;
+        }
+
+        .historico-card.entrada .historico-card-valor {
+            color: #168b53;
+        }
+
+        .historico-card.saida .historico-card-valor {
+            color: #d94b4b;
+        }
+
+        .historico-card-legenda {
+            display: block;
+            margin-top: 5px;
+            color: #8a9691;
+            font-size: 10px;
+        }
+
+        .historico-card.destaque .historico-card-legenda {
+            color: rgba(255,255,255,.72);
+        }
+
+        .historico-secao-titulo {
+            margin: 0 0 13px;
+            color: #263640;
+            font-size: 15px;
+            font-weight: 900;
+        }
+
+        .historico-pagamento-linha {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #edf2ef;
+            font-size: 12px;
+        }
+
+        .historico-pagamento-linha:last-child {
+            border-bottom: 0;
+        }
+
+        .historico-pagamento-linha span {
+            color: #66756e;
+            font-weight: 700;
+        }
+
+        .historico-pagamento-linha strong {
+            color: #263640;
+            font-weight: 900;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+        .historico-acoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+            margin-bottom: 18px;
+        }
+
+        .historico-btn {
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 10px;
+            border: 1px solid #dfe8e3;
+            border-radius: 12px;
+            background: #fff;
+            color: #52635b;
+            font-size: 12px;
+            font-weight: 900;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .historico-btn:active {
+            transform: scale(.98);
+        }
+
+        .historico-btn.pdf,
+        .historico-btn.principal {
+            border-color: #168b53;
+            background: #20a767;
+            color: #fff;
+        }
+
+        .historico-btn.perigo {
+            border-color: #f3d6d6;
+            background: #fff5f5;
+            color: #c63f3f;
+        }
+
+        .historico-botoes-movimento {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-entrada,
+        .btn-saida {
+            min-height: 48px;
+            border: none;
+            border-radius: 13px;
+            font-size: 13px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .btn-entrada {
+            background: #e5f7ed;
+            color: #168b53;
+        }
+
+        .btn-saida {
+            background: #fff0f0;
+            color: #d94b4b;
+        }
+
+        .historico-lista-cabecalho {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 0 2px 12px;
+        }
+
+        .historico-lista-cabecalho h2 {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 900;
+            color: #263640;
+        }
+
+        .historico-contagem {
+            padding: 6px 9px;
+            border-radius: 20px;
+            background: #eaf8f1;
+            color: #168b53;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .historico-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .historico-vazio {
+            padding: 28px 16px;
+            border: 1px dashed #d5e2da;
+            border-radius: 16px;
+            background: #fff;
+            text-align: center;
+            color: #7b898f;
+        }
+
+        .historico-vazio .icone {
+            display: block;
+            margin-bottom: 9px;
+            font-size: 30px;
+        }
+
+        .historico-vazio strong {
+            display: block;
+            color: #42534b;
+            font-size: 13px;
+        }
+
+        .historico-vazio p {
+            margin: 6px 0 0;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        /* ITENS DO HISTÓRICO */
+
+        .item-historico {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            min-width: 0;
+            padding: 13px;
+            border: 1px solid #e3ebe6;
+            border-radius: 15px;
+            background: #fff;
+            box-shadow: 0 3px 10px rgba(34,55,46,.025);
+            cursor: pointer;
+        }
+
+        .icone-lancamento {
+            width: 43px;
+            height: 43px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: 13px;
+            background: #eaf8f1;
+            font-size: 20px;
+        }
+
+        .info-lancamento {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .titulo-lancamento {
+            display: block;
+            margin-bottom: 4px;
+            color: #263640;
+            font-size: 13px;
+            font-weight: 900;
+            overflow-wrap: anywhere;
+        }
+
+        .detalhes-lancamento {
+            display: block;
+            color: #829087;
+            font-size: 11px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .valor-lancamento {
+            flex-shrink: 0;
+            color: #168b53;
+            font-size: 13px;
+            font-weight: 900;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+        .lixeira-historico {
+            width: 34px;
+            height: 36px;
+            flex-shrink: 0;
+            border: none;
+            border-radius: 9px;
+            background: #fff0f0;
+            color: #d94b4b;
+            cursor: pointer;
+        }
+
+        /* MODAIS */
+
+        .modal-historico {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(18,31,24,.58);
+        }
+
+        .modal-historico.ativo {
+            display: flex;
+        }
+
+        .conteudo-modal {
+            width: 100%;
+            max-width: 430px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20px;
+            border-radius: 20px;
+            background: #fff;
+            box-shadow: 0 15px 50px rgba(0,0,0,.2);
+        }
+
+        .modal-cabecalho {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .modal-cabecalho h2 {
+            margin: 0;
+            color: #263640;
+            font-size: 19px;
+            font-weight: 900;
+        }
+
+        .modal-cabecalho p {
+            margin: 5px 0 0;
+            color: #829087;
+            font-size: 12px;
+        }
+
+        .btn-fechar-modal {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+            border: none;
+            border-radius: 10px;
+            background: #f0f4f1;
+            color: #52635b;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .campo-modal {
+            margin-bottom: 14px;
+        }
+
+        .campo-modal label {
+            display: block;
+            margin-bottom: 7px;
+            color: #42534b;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .campo-modal textarea {
+            min-height: 85px;
+            resize: vertical;
+        }
+
+        .modal-acoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+            margin-top: 18px;
+        }
+
+        .detalhes-valor-destaque {
+            margin: 12px 0 18px;
+            padding: 20px 12px;
+            border-radius: 15px;
+            background: #eaf8f1;
+            color: #168b53;
+            text-align: center;
+            font-size: 27px;
+            font-weight: 900;
+            overflow-wrap: anywhere;
+        }
+
+        .detalhes-linha {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 11px 0;
+            border-bottom: 1px solid #edf2ef;
+            font-size: 12px;
+        }
+
+        .detalhes-linha span {
+            color: #829087;
+        }
+
+        .detalhes-linha strong {
+            max-width: 65%;
+            color: #263640;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+        /* PDF */
+
+        #relatorioHistorico {
+            width: 100%;
+        }
+
+        #dataRelatorio {
+            display: none;
+        }
+
+        /* MENU INFERIOR CORRIGIDO */
+
+        body nav.menu-inferior {
+            position: fixed;
+            left: 50%;
+            right: auto;
+            bottom: 0;
+            transform: translateX(-50%);
+            z-index: 99999;
+
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            align-items: stretch;
+
+            width: 100%;
+            max-width: 760px;
+            min-height: 64px;
+            margin: 0;
+            padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
+
+            box-sizing: border-box;
+            border-top: 1px solid #e1e9e5;
+            background: rgba(255,255,255,.98);
+            box-shadow: 0 -4px 18px rgba(34,55,46,.05);
+        }
+
+        body nav.menu-inferior > a.menu-item {
+            display: flex;
+            flex: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+
+            width: 100%;
+            min-width: 0;
+            margin: 0;
+            padding: 5px 1px;
+
+            color: #819087;
+            font-size: 21px;
+            text-decoration: none;
+            text-align: center;
+
+            visibility: visible;
+            opacity: 1;
+        }
+
+        body nav.menu-inferior > a.menu-item > span,
+        body nav.menu-inferior > a.menu-item > small {
+            display: block;
+            visibility: visible;
+            opacity: 1;
+        }
+
+        body nav.menu-inferior > a.menu-item > small {
+            font-size: 10px;
+            line-height: 1.2;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        body nav.menu-inferior > a.menu-item.ativo {
+            border-radius: 14px;
+            background: #eaf8f1;
+            color: #20a767;
+        }
+
+        @media (max-width: 600px) {
+            .historico-app {
+                padding: 0 10px 22px;
+            }
+
+            .historico-cabecalho {
+                padding: 16px 3px;
+            }
+
+            .historico-titulo {
+                font-size: 22px;
+            }
+
+            .historico-card {
+                padding: 12px;
+                border-radius: 14px;
+            }
+
+            .historico-card-valor {
+                font-size: 18px;
+            }
+
+            .historico-card.destaque .historico-card-valor {
+                font-size: 25px;
+            }
+
+            .historico-periodo,
+            .historico-pagamentos {
+                padding: 12px;
+            }
+
+            .conteudo-modal {
+                padding: 17px;
+            }
+        }
+
+        @media (max-width: 350px) {
+            .historico-filtros {
+                grid-template-columns: 1fr;
+            }
+
+            .historico-acoes {
+                grid-template-columns: 1fr;
+            }
+
+            .historico-card-valor {
+                font-size: 16px;
+            }
+
+            .valor-lancamento {
+                font-size: 11px;
+            }
+
+            body nav.menu-inferior > a.menu-item > small {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<main class="historico-app">
+
+    <header class="historico-cabecalho">
+        <div>
+            <h1 class="historico-titulo">Histórico</h1>
+            <p class="historico-subtitulo">
+                Acompanhe suas vendas e movimentações
+            </p>
+        </div>
+        <div class="historico-icone" aria-hidden="true">📊</div>
+    </header>
+
+    <!-- FILTRO DIÁRIO -->
+    <section class="historico-periodo">
+        <label for="filtroData">Consultar data</label>
+        <input type="date" id="filtroData">
+
+        <button type="button"
+                class="historico-btn principal"
+                id="btnHoje"
+                style="width:100%;margin-top:10px">
+            📅 Ver hoje
+        </button>
+
+        <p style="margin:10px 0 0;color:#829087;font-size:11px;line-height:1.5">
+            Selecione uma data para consultar as vendas e movimentações daquele dia.
+        </p>
+    </section>
+
+    <!-- RESUMO -->
+    <section class="historico-resumo">
+
+        <article class="historico-card destaque">
+            <span class="historico-card-label">SALDO FINAL DO CAIXA</span>
+            <strong class="historico-card-valor" id="historicoSaldoFinal">
+                R$ 0,00
+            </strong>
+            <span class="historico-card-legenda">
+                Saldo físico de dinheiro
+            </span>
+        </article>
+
+        <article class="historico-card">
+            <span class="historico-card-label">💰 Saldo inicial</span>
+            <strong class="historico-card-valor" id="historicoSaldoInicial">
+                R$ 0,00
+            </strong>
+        </article>
+
+        <article class="historico-card">
+            <span class="historico-card-label">🧾 Total vendido</span>
+            <strong class="historico-card-valor" id="historicoTotal">
+                R$ 0,00
+            </strong>
+            <span class="historico-card-legenda" id="historicoQuantidade">
+                0 vendas
+            </span>
+        </article>
+
+        <article class="historico-card entrada">
+            <span class="historico-card-label">↗ Entradas</span>
+            <strong class="historico-card-valor" id="historicoEntradas">
+                R$ 0,00
+            </strong>
+        </article>
+
+        <article class="historico-card saida">
+            <span class="historico-card-label">↘ Saídas</span>
+            <strong class="historico-card-valor" id="historicoSaidas">
+                R$ 0,00
+            </strong>
+        </article>
+
+    </section>
+
+    <!-- FORMAS DE PAGAMENTO -->
+    <section class="historico-pagamentos">
+        <h2 class="historico-secao-titulo">Formas de pagamento</h2>
+
+        <div class="historico-pagamento-linha">
+            <span>💵 Dinheiro</span>
+            <strong id="historicoDinheiro">R$ 0,00</strong>
+        </div>
+
+        <div class="historico-pagamento-linha">
+            <span>📱 PIX</span>
+            <strong id="historicoPix">R$ 0,00</strong>
+        </div>
+
+        <div class="historico-pagamento-linha">
+            <span>💳 Débito</span>
+            <strong id="historicoDebito">R$ 0,00</strong>
+        </div>
+
+        <div class="historico-pagamento-linha">
+            <span>💳 Crédito</span>
+            <strong id="historicoCredito">R$ 0,00</strong>
+        </div>
+    </section>
+
+    <!-- NOVA ENTRADA / SAÍDA -->
+    <section class="historico-botoes-movimento">
+        <button type="button" class="btn-entrada" id="btnNovaEntrada">
+            ＋ Nova entrada
+        </button>
+
+        <button type="button" class="btn-saida" id="btnNovaSaida">
+            − Nova saída
+        </button>
+    </section>
+
+    <!-- EXPORTAÇÃO -->
+    <section class="historico-acoes">
+        <button type="button"
+                class="historico-btn"
+                id="btnHojeAlternativo"
+                onclick="document.getElementById('btnHoje').click()">
+            ↺ Ver hoje
+        </button>
+
+        <button type="button" class="historico-btn pdf" id="btnExportarPDF">
+            📄 Exportar PDF
+        </button>
+    </section>
+
+    <!-- RELATÓRIO -->
+    <section id="relatorioHistorico">
+        <p id="dataRelatorio"></p>
+
+        <div class="historico-lista-cabecalho">
+            <h2>Movimentações</h2>
+            <span class="historico-contagem" id="quantidadeLancamentos">
+                0 registros
+            </span>
+        </div>
+
+        <div id="listaHistorico" class="historico-lista">
+            <div class="historico-vazio">
+                <span class="icone">🧾</span>
+                <strong>Carregando histórico...</strong>
+                <p>As vendas e movimentações aparecerão aqui.</p>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- MODAL: ENTRADA OU SAÍDA -->
+<div class="modal-historico" id="modalMovimentacao">
+    <div class="conteudo-modal">
+
+        <header class="modal-cabecalho">
+            <div>
+                <h2 id="tituloModalMovimentacao">Nova movimentação</h2>
+                <p id="subtituloModalMovimentacao">
+                    Registre uma entrada ou saída do caixa.
+                </p>
+            </div>
+
+            <button type="button"
+                    class="btn-fechar-modal"
+                    id="btnFecharModalMovimentacao"
+                    aria-label="Fechar">
+                ×
+            </button>
+        </header>
+
+        <form id="formMovimentacao">
+            <div style="text-align:center;font-size:35px;margin-bottom:14px"
+                 id="iconeModalMovimentacao">💰</div>
+
+            <div class="campo-modal">
+                <label for="valorMovimentacao">Valor (R$)</label>
+                <input type="number"
+                       id="valorMovimentacao"
+                       min="0.01"
+                       step="0.01"
+                       inputmode="decimal"
+                       placeholder="0,00"
+                       required>
+            </div>
+
+            <div class="campo-modal">
+                <label for="formaPagamentoMovimentacao">
+                    Forma de pagamento
+                </label>
+                <select id="formaPagamentoMovimentacao" required>
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="pix">PIX</option>
+                    <option value="debito">Débito</option>
+                    <option value="credito">Crédito</option>
+                </select>
+            </div>
+
+            <div class="campo-modal">
+                <label for="descricaoMovimentacao">Descrição</label>
+                <textarea id="descricaoMovimentacao"
+                          placeholder="Ex.: troco, compra de mercadoria..."
+                          required></textarea>
+            </div>
+
+            <div class="modal-acoes">
+                <button type="button"
+                        class="historico-btn"
+                        id="btnCancelarMovimentacao">
+                    Cancelar
+                </button>
+
+                <button type="submit" class="historico-btn principal">
+                    Salvar
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- MODAL: DETALHES -->
+<div class="modal-historico" id="modalDetalhesMovimentacao">
+    <div class="conteudo-modal">
+
+        <header class="modal-cabecalho">
+            <div>
+                <h2>Detalhes do lançamento</h2>
+                <p>Confira as informações registradas.</p>
+            </div>
+
+            <button type="button"
+                    class="btn-fechar-modal"
+                    id="btnFecharDetalhes"
+                    aria-label="Fechar">
+                ×
+            </button>
+        </header>
+
+        <div style="text-align:center;font-size:35px" id="detalhesIcone">
+            🧾
+        </div>
+
+        <div id="detalhesTipo"
+             style="text-align:center;font-size:14px;font-weight:900;margin-top:8px">
+            Lançamento
+        </div>
+
+        <div class="detalhes-valor-destaque" id="detalhesValor">
+            R$ 0,00
+        </div>
+
+        <div class="detalhes-linha">
+            <span>Forma de pagamento</span>
+            <strong id="detalhesForma">—</strong>
+        </div>
+
+        <div class="detalhes-linha">
+            <span>Descrição</span>
+            <strong id="detalhesDescricao">—</strong>
+        </div>
+
+        <div class="detalhes-linha">
+            <span>Data e hora</span>
+            <strong id="detalhesDataHora">—</strong>
+        </div>
+
+        <div class="modal-acoes">
+            <button type="button"
+                    class="historico-btn"
+                    id="btnFecharDetalhesRodape"
+                    onclick="document.getElementById('btnFecharDetalhes').click()">
+                Fechar
+            </button>
+
+            <button type="button"
+                    class="historico-btn perigo"
+                    id="btnExcluirDetalhe">
+                🗑 Excluir
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- MENU INFERIOR: ORDEM CORRETA -->
+<nav class="menu-inferior" aria-label="Navegação principal">
+
+    <a href="index.html" class="menu-item">
+    <span>🧮</span>
+    <small>Calculadora</small>
+    </a>
+    <a href="fluxo.html" class="menu-item">
+    <span>📊</span>
+    <small>Fluxo</small>
+</a>
+
+<a href="historico.html"
+   class="menu-item ativo"
+   aria-current="page">
+    <span>📋</span>
+    <small>Histórico</small>
+</a>
+
+    <a href="estoque.html" class="menu-item">
+        <span>📦</span>
+        <small>Estoque</small>
+    </a>
+
+  <a href="fiado.html" class="menu-item">
+  <span>🧾</span>
+  <small>Fiado</small>
+  </a>
+</nav>
+
+<script src="historico.js"></script>
+
+</body>
+</html>

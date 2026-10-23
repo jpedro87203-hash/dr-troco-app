@@ -1,0 +1,1108 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. Troco - Calculadora</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Espaço para a barra de navegação inferior */
+        html {
+            min-height: 100%;
+            scroll-padding-bottom: 110px;
+        }
+
+        body {
+            padding-bottom: 110px !important;
+            box-sizing: border-box;
+        }
+
+        .pagina {
+            padding-bottom: 30px !important;
+            box-sizing: border-box;
+        }
+
+        /* Produtos */
+        .area-produtos-venda {
+            margin: 18px 0;
+            padding: 16px;
+            border-radius: 18px;
+            background: #f7f9fa;
+            border: 1px solid #e3e8eb;
+        }
+
+        .cabecalho-produtos-venda {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .cabecalho-produtos-venda h3 {
+            margin: 0;
+            color: #26343d;
+        }
+
+        .cabecalho-produtos-venda small {
+            color: #748089;
+        }
+
+        .btn-adicionar-produto {
+            border: 0;
+            border-radius: 13px;
+            padding: 12px 14px;
+            background: #20a66a;
+            color: #ffffff;
+            font-weight: 800;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .produtos-venda-vazio {
+            text-align: center;
+            padding: 20px 10px;
+            color: #69757d;
+        }
+
+        .produtos-venda-vazio strong {
+            display: block;
+            color: #34424a;
+            margin-top: 8px;
+        }
+
+        .produtos-venda-vazio p {
+            margin: 6px 0 0;
+            font-size: 13px;
+        }
+
+        .icone-carrinho {
+            font-size: 32px;
+        }
+
+        .lista-produtos-venda {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item-produto-venda {
+            display: grid;
+            grid-template-columns: 52px minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+            padding: 11px;
+            background: #ffffff;
+            border: 1px solid #e0e5e8;
+            border-radius: 15px;
+        }
+
+        .item-produto-imagem {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f0f3f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .item-produto-imagem img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .item-produto-info {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .item-produto-info strong {
+            color: #29363e;
+            overflow-wrap: anywhere;
+        }
+
+        .item-produto-info small {
+            color: #7a858b;
+            font-size: 11px;
+        }
+
+        .item-produto-info span {
+            color: #20a66a;
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        .item-produto-controles {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-quantidade {
+            width: 34px;
+            height: 34px;
+            border: 0;
+            border-radius: 10px;
+            background: #eaf8f1;
+            color: #15994e;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .item-produto-subtotal {
+            grid-column: 2 / 4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .item-produto-subtotal strong {
+            color: #26343d;
+        }
+
+        .btn-remover-produto {
+            border: 0;
+            background: #fff1f1;
+            color: #c93434;
+            border-radius: 9px;
+            width: 36px;
+            height: 34px;
+        }
+
+        /* Pagamento: quatro opções em duas colunas e Fiado em largura total */
+        .payment-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            width: 100%;
+            margin: 10px 0 16px;
+        }
+
+        .payment-buttons .btn-payment {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+
+        .payment-buttons .btn-payment:last-child {
+            grid-column: 1 / -1;
+        }
+
+        /* Dados da venda fiada */
+        .painel-fiado {
+            margin: 14px 0;
+            padding: 16px;
+            border: 1px solid #d8eee2;
+            border-radius: 16px;
+            background: #f0faf5;
+        }
+
+        .painel-fiado h3 {
+            margin: 0 0 14px;
+            color: #18794e;
+        }
+
+        .painel-fiado > div {
+            margin-bottom: 12px;
+        }
+
+        .painel-fiado label {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .painel-fiado input,
+        .painel-fiado select {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .aviso-fiado {
+            margin: 8px 0 0;
+            color: #42735a;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* Leitor e busca de produtos */
+        .area-leitura-venda {
+            margin: 12px 0;
+        }
+
+        .btn-leitor-venda {
+            width: 100%;
+            border: 0;
+            border-radius: 16px;
+            padding: 15px;
+            background: #20a66a;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .btn-leitor-venda .icone-camera {
+            font-size: 28px;
+        }
+
+        .btn-leitor-venda strong,
+        .btn-leitor-venda small {
+            display: block;
+        }
+
+        .btn-leitor-venda small {
+            margin-top: 3px;
+            opacity: .88;
+        }
+
+        .busca-produto-venda {
+            margin: 14px 0;
+        }
+
+        .lista-produtos-estoque-venda {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            max-height: 430px;
+            overflow-y: auto;
+        }
+
+        .produto-estoque-venda-item {
+            display: grid;
+            grid-template-columns: 50px minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 1px solid #e1e6e9;
+        }
+
+        .produto-estoque-venda-foto {
+            width: 50px;
+            height: 50px;
+            border-radius: 11px;
+            overflow: hidden;
+            background: #f1f3f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .produto-estoque-venda-foto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .produto-estoque-venda-info {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .produto-estoque-venda-info strong {
+            color: #29363e;
+            overflow-wrap: anywhere;
+        }
+
+        .produto-estoque-venda-info small,
+        .produto-estoque-venda-info span {
+            color: #78838a;
+            font-size: 11px;
+        }
+
+        .produto-estoque-venda-preco {
+            color: #20a66a !important;
+            font-size: 14px !important;
+        }
+
+        .produto-estoque-venda-acoes {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-produto-menos,
+        .btn-produto-mais {
+            width: 34px;
+            height: 34px;
+            border: 0;
+            border-radius: 9px;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .btn-produto-menos {
+            background: #fff0f0;
+            color: #c93434;
+        }
+
+        .btn-produto-mais {
+            background: #eaf8f1;
+            color: #15994e;
+        }
+
+        .btn-produto-menos:disabled {
+            opacity: .35;
+        }
+
+        .quantidade-produto-modal {
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .rodape-modal-produtos {
+            margin-top: 14px;
+        }
+
+        /* Modais */
+        .estoque-modal {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: rgba(0, 0, 0, .55) !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 16px !important;
+            box-sizing: border-box;
+            z-index: 99999 !important;
+        }
+
+        .estoque-modal.hidden {
+            display: none !important;
+        }
+
+        .estoque-modal.aberto {
+            display: flex !important;
+        }
+
+        .estoque-modal-conteudo {
+            position: relative !important;
+            z-index: 100000 !important;
+            width: min(100%, 540px);
+            max-height: 90vh;
+            overflow-y: auto;
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 18px;
+            box-sizing: border-box;
+        }
+
+        .modal-cabecalho {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .modal-cabecalho h2 {
+            margin: 0;
+            color: #26343d;
+        }
+
+        .modal-cabecalho p {
+            margin: 5px 0 0;
+            color: #748089;
+            font-size: 13px;
+        }
+
+        .btn-fechar-modal {
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            border: 0;
+            border-radius: 12px;
+            background: #f1f3f4;
+            color: #4b5961;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        .area-leitor-codigo-venda {
+            position: relative !important;
+            z-index: 100001 !important;
+            width: 100%;
+            height: 280px;
+            overflow: hidden;
+            border-radius: 18px;
+            background: #111820;
+        }
+
+        #videoLeitorVenda {
+            display: none;
+            width: 100% !important;
+            height: 280px !important;
+            object-fit: cover !important;
+            position: relative !important;
+            z-index: 2 !important;
+            background: #111820;
+        }
+
+        .moldura-leitor-venda {
+            position: absolute;
+            z-index: 3;
+            left: 12%;
+            right: 12%;
+            top: 34%;
+            height: 32%;
+            border: 3px solid #27e878;
+            border-radius: 14px;
+            box-shadow:
+                0 0 0 9999px rgba(0, 0, 0, .22),
+                0 0 18px rgba(39, 232, 120, .55);
+            pointer-events: none;
+            display: none;
+        }
+
+        .mensagem-leitor-venda {
+            position: absolute;
+            z-index: 4;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .status-leitor-venda {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 12px 0;
+            color: #53616a;
+            font-size: 13px;
+        }
+
+        .btn-fechar-leitor-venda {
+            width: 100%;
+        }
+
+        .acoes-venda,
+        .acoes-confirmacao {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .acoes-venda button,
+        .acoes-confirmacao button {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .resumo-confirmacao-linha {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #edf0f1;
+        }
+
+        .resumo-confirmacao-linha span {
+            color: #69757d;
+        }
+
+        .resumo-confirmacao-linha strong {
+            color: #27343d;
+            text-align: right;
+        }
+
+        .resumo-confirmacao-produtos {
+            margin-top: 14px;
+        }
+
+        .resumo-produto {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 9px 0;
+        }
+
+        .resumo-confirmacao-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 14px;
+            background: #eaf9f1;
+        }
+
+        .resumo-confirmacao-total strong {
+            color: #15994e;
+            font-size: 20px;
+        }
+
+        /* Navegação inferior fixa */
+        .menu-inferior {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            height: 78px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-around !important;
+            background: #ffffff !important;
+            border-top: 1px solid #e5e5e5 !important;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, .10) !important;
+            z-index: 99999 !important;
+            padding: 5px 8px !important;
+            box-sizing: border-box;
+        }
+
+        .menu-inferior .menu-item {
+            flex: 1 !important;
+            min-width: 0;
+            max-width: 120px !important;
+            height: 65px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 3px !important;
+            text-decoration: none !important;
+            color: #777777 !important;
+            border-radius: 14px !important;
+        }
+
+        .menu-inferior .menu-item span {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 38px !important;
+            height: 34px !important;
+            font-size: 23px !important;
+        }
+
+        .menu-inferior .menu-item small {
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            color: #777777 !important;
+        }
+
+        .menu-inferior .menu-item.ativo {
+            background: #eaf9f1 !important;
+            color: #18a957 !important;
+        }
+
+        .menu-inferior .menu-item.ativo span {
+            background: #d6f4e2 !important;
+            border-radius: 10px !important;
+        }
+
+        .menu-inferior .menu-item.ativo small {
+            color: #15994e !important;
+            font-weight: 800 !important;
+        }
+
+        @media (max-width: 430px) {
+            .cabecalho-produtos-venda {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .btn-adicionar-produto {
+                width: 100%;
+            }
+
+            .produto-estoque-venda-item {
+                grid-template-columns: 46px minmax(0, 1fr);
+            }
+
+            .produto-estoque-venda-acoes {
+                grid-column: 1 / 3;
+                justify-content: flex-end;
+            }
+
+            .item-produto-venda {
+                grid-template-columns: 48px minmax(0, 1fr);
+            }
+
+            .item-produto-controles {
+                grid-column: 2;
+                justify-content: flex-end;
+            }
+
+            .item-produto-subtotal {
+                grid-column: 1 / 3;
+            }
+
+            .menu-inferior .menu-item small {
+                font-size: 10px !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topo">
+    <h1>Dr. Troco</h1>
+    <p>Calculadora de Troco</p>
+</header>
+
+<main class="pagina">
+
+    <section id="calculadoraApp" class="card-calculadora">
+
+        <h2>🧮 Nova Venda</h2>
+
+        <!-- PRODUTOS -->
+        <section class="area-produtos-venda">
+
+            <div class="cabecalho-produtos-venda">
+                <div>
+                    <h3>🛒 Produtos</h3>
+                    <small id="quantidadeItensVenda">0 itens</small>
+                </div>
+
+                <button
+                    type="button"
+                    id="btnAdicionarProduto"
+                    class="btn-adicionar-produto"
+                >
+                    ＋ Adicionar produtos
+                </button>
+            </div>
+
+            <div id="produtosVendaVazio" class="produtos-venda-vazio">
+                <div class="icone-carrinho">🛒</div>
+                <strong>Nenhum produto adicionado</strong>
+                <p>
+                    Adicione produtos pelo código de barras
+                    ou pela busca.
+                </p>
+            </div>
+
+            <div
+                id="listaProdutosVenda"
+                class="lista-produtos-venda"
+            ></div>
+
+        </section>
+
+        <!-- VALOR AVULSO -->
+        <div class="valor-avulso">
+            <label for="valorConta">
+                Valor adicional / venda avulsa (R$)
+            </label>
+
+            <input
+                type="number"
+                id="valorConta"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+            >
+        </div>
+
+        <!-- PAGAMENTO -->
+        <label>Forma de Pagamento</label>
+
+        <div class="payment-buttons">
+
+            <button
+                type="button"
+                class="btn-payment active"
+                data-method="dinheiro"
+            >
+                💵 Dinheiro
+            </button>
+
+            <button
+                type="button"
+                class="btn-payment"
+                data-method="pix"
+            >
+                📱 Pix
+            </button>
+
+            <button
+                type="button"
+                class="btn-payment"
+                data-method="debito"
+            >
+                💳 Débito
+            </button>
+
+            <button
+                type="button"
+                class="btn-payment"
+                data-method="credito"
+            >
+                💳 Crédito
+            </button>
+
+            <button
+                type="button"
+                class="btn-payment"
+                data-method="fiado"
+            >
+                🧾 Fiado
+            </button>
+
+        </div>
+
+        <!-- DADOS DO FIADO -->
+        <div
+            id="groupFiado"
+            class="painel-fiado"
+            style="display: none;"
+        >
+
+            <h3>🧾 Venda fiada</h3>
+
+            <div>
+                <label for="nomeClienteFiado">Nome do cliente *</label>
+                <input
+                    type="text"
+                    id="nomeClienteFiado"
+                    placeholder="Digite o nome do cliente"
+                    maxlength="100"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div>
+                <label for="valorPagoInicialFiado">
+                    Valor pago na hora (R$)
+                </label>
+
+                <input
+                    type="number"
+                    id="valorPagoInicialFiado"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                    placeholder="0,00"
+                >
+            </div>
+
+            <div>
+                <label for="formaPagamentoInicialFiado">
+                    Forma de pagamento do valor recebido
+                </label>
+
+                <select id="formaPagamentoInicialFiado">
+                    <option value="dinheiro">💵 Dinheiro</option>
+                    <option value="pix">📱 Pix</option>
+                    <option value="debito">💳 Débito</option>
+                    <option value="credito">💳 Crédito</option>
+                </select>
+            </div>
+
+            <p class="aviso-fiado">
+                Sem juros. O saldo restante ficará registrado como dívida do cliente.
+            </p>
+
+        </div>
+
+        <!-- RECEBIDO -->
+        <div id="groupRecebido">
+            <label for="valorRecebido">Valor Recebido (R$)</label>
+
+            <input
+                type="number"
+                id="valorRecebido"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+            >
+        </div>
+
+        <!-- RESUMO -->
+        <div class="resumo-venda">
+
+            <div class="resumo-linha">
+                <span>Total a Cobrar:</span>
+                <strong id="totalCobrar">R$ 0,00</strong>
+            </div>
+
+            <div
+                id="rowSaldoDevedorFiado"
+                class="resumo-linha"
+                style="display: none;"
+            >
+                <span>Saldo devedor:</span>
+                <strong id="saldoDevedorVenda">R$ 0,00</strong>
+            </div>
+
+            <div id="rowTroco" class="resumo-linha">
+                <span>Troco:</span>
+                <strong id="valorTroco">R$ 0,00</strong>
+            </div>
+
+        </div>
+
+        <!-- TROCO -->
+        <h3 class="titulo-troco">Combinação de Troco</h3>
+
+        <div id="secaoCedulas">
+            <div id="listaCedulas">
+                <p class="empty-msg">
+                    Informe os valores para calcular o troco.
+                </p>
+            </div>
+        </div>
+
+        <!-- AÇÕES -->
+        <div class="acoes-venda">
+
+            <button
+                type="button"
+                id="btnLimparVenda"
+                class="btn-secundario"
+            >
+                Limpar
+            </button>
+
+            <button
+                type="button"
+                id="btnRegistrarVenda"
+                class="btn-principal"
+            >
+                Registrar Venda
+            </button>
+
+        </div>
+
+    </section>
+
+</main>
+
+<!-- MODAL DE PRODUTOS -->
+<div id="modalProdutosVenda" class="estoque-modal hidden">
+
+    <div class="estoque-modal-conteudo modal-produtos-venda-conteudo">
+
+        <div class="modal-cabecalho">
+            <div>
+                <h2>🛒 Adicionar produtos</h2>
+                <p>Leia o código ou escolha um produto.</p>
+            </div>
+
+            <button
+                type="button"
+                id="btnFecharProdutosVenda"
+                class="btn-fechar-modal"
+                aria-label="Fechar"
+            >
+                ×
+            </button>
+        </div>
+
+        <!-- ÁREA DO LEITOR -->
+        <div class="area-leitura-venda">
+            <button
+                type="button"
+                id="btnAbrirLeitorVenda"
+                class="btn-leitor-venda"
+            >
+                <span class="icone-camera">📷</span>
+
+                <span>
+                    <strong>Ler código de barras</strong>
+                    <small>Use a câmera para adicionar produtos</small>
+                </span>
+            </button>
+        </div>
+
+        <!-- BUSCA MANUAL -->
+        <div class="busca-produto-venda">
+            <label for="buscaProdutoVenda">🔎 Buscar produto</label>
+
+            <input
+                type="search"
+                id="buscaProdutoVenda"
+                placeholder="Nome ou código do produto"
+                autocomplete="off"
+            >
+        </div>
+
+        <div
+            id="listaProdutosEstoqueVenda"
+            class="lista-produtos-estoque-venda"
+        ></div>
+
+        <div class="rodape-modal-produtos">
+            <button
+                type="button"
+                id="btnConcluirProdutosVenda"
+                class="btn-principal"
+            >
+                Concluir
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- MODAL DO LEITOR DE CÓDIGO DE BARRAS -->
+<div id="modalLeitorVenda" class="estoque-modal hidden">
+
+    <div class="estoque-modal-conteudo modal-leitor-venda-conteudo">
+
+        <div class="modal-cabecalho">
+            <div>
+                <h2>📷 Ler código</h2>
+                <p>Aponte para o código de barras.</p>
+            </div>
+
+            <button
+                type="button"
+                id="btnFecharLeitorVenda"
+                class="btn-fechar-modal"
+                aria-label="Fechar leitor"
+            >
+                ×
+            </button>
+        </div>
+
+        <div
+            id="areaLeitorVenda"
+            class="area-leitor-codigo-venda"
+        >
+
+            <video
+                id="videoLeitorVenda"
+                autoplay
+                muted
+                playsinline
+            ></video>
+
+            <div
+                id="molduraLeitorVenda"
+                class="moldura-leitor-venda"
+            ></div>
+
+            <div
+                id="mensagemLeitorVenda"
+                class="mensagem-leitor-venda"
+            >
+                Iniciando câmera...
+            </div>
+
+        </div>
+
+        <div class="status-leitor-venda">
+            <span>🟢</span>
+            <span id="statusLeitorVenda">Pronto para ler</span>
+        </div>
+
+        <button
+            type="button"
+            id="btnFecharLeitorVenda2"
+            class="btn-secundario btn-fechar-leitor-venda"
+        >
+            Concluir leitura
+        </button>
+
+    </div>
+</div>
+
+<!-- MODAL DE CONFIRMAÇÃO -->
+<div id="modalConfirmarVenda" class="estoque-modal hidden">
+
+    <div class="estoque-modal-conteudo modal-confirmacao-venda">
+
+        <div class="modal-cabecalho">
+            <div>
+                <h2>🧾 Confirmar venda</h2>
+                <p>Confira os dados antes de registrar.</p>
+            </div>
+
+            <button
+                type="button"
+                id="btnFecharConfirmacao"
+                class="btn-fechar-modal"
+                aria-label="Fechar"
+            >
+                ×
+            </button>
+        </div>
+
+        <div id="resumoConfirmacaoVenda"></div>
+
+        <div class="acoes-confirmacao">
+
+            <button
+                type="button"
+                id="btnCancelarConfirmacao"
+                class="btn-secundario"
+            >
+                Cancelar
+            </button>
+
+            <button
+                type="button"
+                id="btnConfirmarVenda"
+                class="btn-principal"
+            >
+                Confirmar venda
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- MENU INFERIOR -->
+<nav class="menu-inferior">
+
+    <a href="index.html" class="menu-item ativo">
+        <span>🧮</span>
+        <small>Calculadora</small>
+    </a>
+
+    <a href="fluxo.html" class="menu-item">
+        <span>📊</span>
+        <small>Fluxo</small>
+    </a>
+
+    <a href="historico.html" class="menu-item">
+        <span>📋</span>
+        <small>Histórico</small>
+    </a>
+
+    <a href="estoque.html" class="menu-item">
+        <span>📦</span>
+        <small>Estoque</small>
+    </a>
+
+    <a href="fiado.html" class="menu-item">
+        <span>🧾</span>
+        <small>Fiado</small>
+    </a>
+
+</nav>
+
+<script src="fiado.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>

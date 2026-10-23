@@ -1,0 +1,2775 @@
+/* =========================================================
+   DR. TROCO — NOVA VENDA
+   ESTILO COMPLETO CORRIGIDO
+========================================================= */
+
+:root {
+    --verde: #20a767;
+    --verde-escuro: #168b53;
+    --verde-claro: #eaf8f1;
+    --verde-suave: #f3fbf7;
+
+    --texto: #263640;
+    --texto-2: #56656e;
+    --texto-3: #7b898f;
+
+    --fundo: #f3f7f5;
+    --branco: #ffffff;
+
+    --borda: #e1e9e5;
+    --vermelho: #d94b4b;
+
+    --sombra: 0 6px 22px rgba(34, 55, 46, .08);
+    --sombra-forte: 0 15px 40px rgba(25, 45, 37, .14);
+}
+
+/* =========================================================
+   RESET — CORRIGIDO
+========================================================= */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: linear-gradient(180deg, #f7faf8 0%, #eef5f1 100%);
+    color: var(--texto);
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 78px;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+img {
+    max-width: 100%;
+}
+
+/* =========================================================
+   CONTAINER PRINCIPAL
+========================================================= */
+
+.app-container {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 14px 25px;
+}
+
+/* =========================================================
+   CABEÇALHO
+========================================================= */
+
+.app-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 20px 4px 16px;
+}
+
+.header-logo {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #25ad6d, #168b53);
+    color: #fff;
+    font-size: 25px;
+    box-shadow: 0 7px 17px rgba(32, 167, 103, .20);
+}
+
+.app-header h1 {
+    margin: 0;
+    color: #263640;
+    font-size: 22px;
+    line-height: 1.1;
+    font-weight: 900;
+}
+
+.app-header p {
+    margin: 4px 0 0;
+    color: #7a888d;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* =========================================================
+   ÁREA PRINCIPAL
+========================================================= */
+
+.calculadora-app {
+    width: 100%;
+}
+
+.card.calculadora-card {
+    width: 100%;
+    padding: 17px;
+    border: 1px solid rgba(222, 232, 227, .9);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: var(--sombra-forte);
+}
+
+/* =========================================================
+   CABEÇALHO DA VENDA
+========================================================= */
+
+.cabecalho-calculadora {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 18px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #edf2ef;
+}
+
+.cabecalho-calculadora .texto-pequeno {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--verde);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.cabecalho-calculadora h2 {
+    margin: 0;
+    color: var(--texto);
+    font-size: 23px;
+    line-height: 1.15;
+    font-weight: 900;
+}
+
+.icone-venda {
+    width: 45px;
+    height: 45px;
+    flex: 0 0 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    background: var(--verde-claro);
+    font-size: 22px;
+}
+
+/* =========================================================
+   SEÇÕES
+========================================================= */
+
+.secao-venda,
+.secao-troco {
+    width: 100%;
+    margin-top: 17px;
+    padding: 15px;
+    border: 1px solid #e7eeea;
+    border-radius: 17px;
+    background: #fff;
+}
+
+.produtos-venda {
+    margin-top: 0;
+}
+
+.titulo-secao {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.titulo-secao > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.titulo-icone {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--verde-suave);
+    font-size: 17px;
+}
+
+.titulo-secao h3 {
+    margin: 0;
+    color: var(--texto);
+    font-size: 15px;
+    line-height: 1.2;
+    font-weight: 900;
+}
+
+.titulo-secao p {
+    margin: 3px 0 0;
+    color: var(--texto-3);
+    font-size: 10px;
+    line-height: 1.3;
+}
+
+/* =========================================================
+   BOTÃO ADICIONAR PRODUTO
+========================================================= */
+
+.btn-adicionar-produto {
+    width: 100%;
+    min-height: 68px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 13px;
+    border: 1px dashed #8bcdae;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #f2fcf7, #eaf8f1);
+    color: #227a55;
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
+}
+
+.btn-adicionar-produto:active {
+    transform: scale(.985);
+    border-color: var(--verde);
+}
+
+.btn-adicionar-produto .icone-plus {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    background: var(--verde);
+    color: #fff;
+    font-size: 25px;
+    font-weight: 900;
+    box-shadow: 0 5px 12px rgba(32, 167, 103, .18);
+}
+
+.btn-adicionar-produto strong {
+    display: block;
+    color: #227a55;
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 900;
+}
+
+.btn-adicionar-produto small {
+    display: block;
+    margin-top: 4px;
+    color: #71817a;
+    font-size: 10px;
+    line-height: 1.25;
+    font-weight: 600;
+}
+
+/* =========================================================
+   LISTA DE PRODUTOS DA VENDA
+========================================================= */
+
+.lista-produtos-venda {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Impede que fotos dos produtos já adicionados ocupem a tela inteira */
+.lista-produtos-venda img {
+    width: 72px !important;
+    height: 72px !important;
+    min-width: 72px !important;
+    min-height: 72px !important;
+    max-width: 72px !important;
+    max-height: 72px !important;
+    object-fit: cover !important;
+    display: block;
+    border-radius: 12px;
+    background: #f3f6f4;
+}
+
+.lista-produtos-venda .produto-foto {
+    width: 72px !important;
+    height: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #f3f6f4;
+    flex-shrink: 0;
+}
+
+.lista-produtos-venda .produto-foto img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: cover !important;
+}
+
+.lista-produtos-venda .produto-venda-item,
+.lista-produtos-venda .produto-item,
+.lista-produtos-venda > div {
+    min-width: 0;
+}
+
+/* =========================================================
+   ESTADO VAZIO
+========================================================= */
+
+.produtos-vazio {
+    width: 100%;
+    padding: 23px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: 1px dashed #dce7e1;
+    border-radius: 15px;
+    background: #fafcfb;
+}
+
+.produtos-vazio-icone {
+    margin-bottom: 7px;
+    font-size: 29px;
+}
+
+.produtos-vazio strong {
+    color: #53635d;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.produtos-vazio span {
+    margin-top: 4px;
+    color: #899590;
+    font-size: 10px;
+}
+
+/* =========================================================
+   VALOR AVULSO
+========================================================= */
+
+.valor-avulso {
+    background: #fbfdfc;
+}
+
+.campo-dinheiro {
+    width: 100%;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 13px;
+    border: 1px solid #dce6e1;
+    border-radius: 14px;
+    background: #f8faf9;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.campo-dinheiro:focus-within {
+    border-color: var(--verde);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(32, 167, 103, .09);
+}
+
+.simbolo-moeda {
+    color: #697873;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.campo-dinheiro input {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--texto);
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.campo-dinheiro input::placeholder {
+    color: #a3afaa;
+}
+
+/* =========================================================
+   RESUMO DA VENDA
+========================================================= */
+
+.resumo-venda-card {
+    width: 100%;
+    margin-top: 17px;
+    padding: 16px;
+    border-radius: 17px;
+    background: linear-gradient(135deg, #173c2b, #176642);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(24, 91, 61, .17);
+}
+
+.resumo-venda-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.resumo-venda-topo span {
+    color: rgba(255, 255, 255, .78);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.resumo-venda-topo strong {
+    color: #fff;
+    font-size: 23px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.resumo-venda-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 11px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, .13);
+}
+
+.resumo-venda-info > span {
+    color: rgba(255, 255, 255, .68);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.btn-limpar-venda {
+    min-height: 30px;
+    padding: 5px 9px;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* =========================================================
+   FORMAS DE PAGAMENTO
+========================================================= */
+
+.payment-options {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.btn-payment {
+    min-width: 0;
+    min-height: 65px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 7px 4px;
+    border: 1px solid #dfe8e3;
+    border-radius: 12px;
+    background: #fafcfb;
+    color: #64726c;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, transform .12s ease;
+}
+
+.btn-payment span {
+    font-size: 19px;
+}
+
+.btn-payment strong {
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.btn-payment.active {
+    border-color: #75c99d;
+    background: #eaf8f1;
+    color: #148751;
+    box-shadow: inset 0 0 0 1px rgba(32, 167, 103, .05);
+}
+
+.btn-payment:active {
+    transform: scale(.96);
+}
+
+/* =========================================================
+   VALOR RECEBIDO
+========================================================= */
+
+.secao-recebido {
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+.info-taxa {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-radius: 11px;
+    background: #fff8e7;
+    color: #8a6b20;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.info-taxa strong {
+    color: #9b7318;
+}
+
+/* =========================================================
+   TROCO
+========================================================= */
+
+.resultado-troco {
+    width: 100%;
+    margin-top: 14px;
+    padding: 15px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #effaf4, #e6f7ed);
+    border: 1px solid #cfeadb;
+}
+
+.resultado-troco-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.resultado-troco-topo span {
+    display: block;
+    color: #3e5d4d;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.resultado-troco-topo small {
+    display: block;
+    margin-top: 3px;
+    color: #789086;
+    font-size: 9px;
+}
+
+.resultado-troco-topo strong {
+    color: #15945b;
+    font-size: 22px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   COMBINAÇÕES DE TROCO
+========================================================= */
+
+.lista-combinacoes-troco {
+    width: 100%;
+}
+
+.troco-vazio {
+    padding: 22px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: 1px dashed #dce6e1;
+    border-radius: 14px;
+    background: #fafcfb;
+}
+
+.troco-vazio > div {
+    margin-bottom: 7px;
+    font-size: 28px;
+}
+
+.troco-vazio strong {
+    color: #53645d;
+    font-size: 12px;
+}
+
+.troco-vazio span {
+    margin-top: 4px;
+    color: #8b9692;
+    font-size: 10px;
+}
+
+/* =========================================================
+   BOTÕES PRINCIPAIS
+========================================================= */
+
+.btn-primary,
+.btn-registrar-venda {
+    width: 100%;
+    min-height: 56px;
+    margin-top: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #25aa6a, #168d54);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(32, 167, 103, .20);
+    touch-action: manipulation;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.btn-primary:active,
+.btn-registrar-venda:active {
+    transform: scale(.985);
+}
+
+.btn-cancelar-venda {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 8px;
+    border: 1px solid #eadede;
+    border-radius: 12px;
+    background: #fff7f7;
+    color: #a65353;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* =========================================================
+   MODAIS — BASE
+========================================================= */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    box-sizing: border-box;
+    background: rgba(12, 26, 35, .68);
+    z-index: 9999;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.modal-overlay.hidden {
+    display: none !important;
+}
+
+.modal-overlay.aberto {
+    display: flex !important;
+}
+
+.modal-box {
+    width: min(100%, 620px);
+    max-height: calc(100dvh - 16px);
+    box-sizing: border-box;
+    padding: 17px;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, .28);
+}
+
+/* =========================================================
+   CABEÇALHO DOS MODAIS
+========================================================= */
+
+.modal-cabecalho {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.modal-cabecalho > div {
+    min-width: 0;
+}
+
+.modal-cabecalho .texto-pequeno {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--verde);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .8px;
+}
+
+.modal-cabecalho h3 {
+    margin: 0;
+    color: var(--texto);
+    font-size: 20px;
+    line-height: 1.15;
+    font-weight: 900;
+}
+
+.btn-fechar-modal {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    flex: 0 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 11px;
+    background: #f1f5f3;
+    color: #56656d;
+    font-size: 25px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* =========================================================
+   MODAL ADICIONAR PRODUTO
+========================================================= */
+
+.modal-produtos-venda {
+    width: min(100%, 640px);
+    height: min(760px, calc(100dvh - 16px));
+    max-height: calc(100dvh - 16px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 16px;
+}
+
+/* =========================================================
+   BOTÃO LEITOR
+========================================================= */
+
+.modal-produtos-venda .btn-leitor-venda {
+    flex: 0 0 auto;
+    margin: 0 0 8px;
+    border-style: solid;
+    border-color: #cbe9d9;
+    background: linear-gradient(135deg, #eefaf4, #e4f7ed);
+}
+
+.modal-produtos-venda .btn-leitor-venda .icone-plus {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    flex-basis: 36px;
+    border-radius: 10px;
+    font-size: 17px;
+}
+
+/* =========================================================
+   BUSCA DO MODAL
+========================================================= */
+
+.campo-busca-produto {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 9px;
+    padding: 0 11px;
+    border: 1px solid #dfe7e3;
+    border-radius: 12px;
+    background: #f8faf9;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+}
+
+.campo-busca-produto:focus-within {
+    border-color: var(--verde);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(32, 167, 103, .08);
+}
+
+.campo-busca-produto > span {
+    flex: 0 0 auto;
+    font-size: 15px;
+}
+
+.campo-busca-produto input {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--texto);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.campo-busca-produto input::placeholder {
+    color: #8b9894;
+}
+
+/* =========================================================
+   GRID DOS PRODUTOS — 3 COLUNAS
+========================================================= */
+
+.lista-produtos-estoque-venda {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-content: start;
+    gap: 7px;
+    margin: 0;
+    padding: 2px 1px 9px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+}
+
+.lista-produtos-estoque-venda::-webkit-scrollbar {
+    width: 5px;
+}
+
+.lista-produtos-estoque-venda::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.lista-produtos-estoque-venda::-webkit-scrollbar-thumb {
+    background: #cbd8d2;
+    border-radius: 20px;
+}
+
+/* =========================================================
+   CARD DO PRODUTO DO MODAL
+========================================================= */
+
+.lista-produtos-estoque-venda .produto-card {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    display: block;
+    box-sizing: border-box;
+    border: 1px solid #e1e9e5;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(32, 48, 60, .055);
+}
+
+.lista-produtos-estoque-venda .produto-card-conteudo {
+    width: 100%;
+    min-width: 0;
+    min-height: 162px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   IMAGEM DOS CARDS
+========================================================= */
+
+.lista-produtos-estoque-venda .produto-foto,
+.lista-produtos-estoque-venda .produto-imagem,
+.lista-produtos-estoque-venda .produto-inicial {
+    width: 100%;
+    height: 55px;
+    min-height: 55px;
+    max-height: 55px;
+    flex: 0 0 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 9px;
+    background: #f2f7f5;
+}
+
+.lista-produtos-estoque-venda .produto-foto img,
+.lista-produtos-estoque-venda .produto-imagem img {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    object-fit: contain;
+    border-radius: 9px;
+}
+
+.lista-produtos-estoque-venda .produto-inicial {
+    color: var(--verde);
+    font-size: 23px;
+}
+
+/* =========================================================
+   INFORMAÇÕES DOS PRODUTOS
+========================================================= */
+
+.lista-produtos-estoque-venda .produto-info {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lista-produtos-estoque-venda .produto-nome,
+.lista-produtos-estoque-venda .produto-info h3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    min-height: 27px;
+    max-height: 27px;
+    margin: 0;
+    color: #30404b;
+    font-size: 10.5px;
+    line-height: 1.28;
+    font-weight: 800;
+}
+
+.lista-produtos-estoque-venda .produto-codigo {
+    display: none;
+}
+
+.lista-produtos-estoque-venda .produto-estoque {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #74827f;
+    font-size: 8.5px;
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.lista-produtos-estoque-venda .produto-preco,
+.lista-produtos-estoque-venda .produto-valor {
+    display: block;
+    margin-top: 1px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #15945b;
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 900;
+}
+
+/* =========================================================
+   QUANTIDADE
+========================================================= */
+
+.lista-produtos-estoque-venda .produto-lado {
+    width: 100%;
+    min-width: 0;
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3px;
+}
+
+.lista-produtos-estoque-venda .produto-quantidade {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #738088;
+    font-size: 8px;
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.lista-produtos-estoque-venda .produto-quantidade strong {
+    color: #30404b;
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.lista-produtos-estoque-venda .controle-quantidade {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.lista-produtos-estoque-venda .controle-quantidade button {
+    width: 27px;
+    height: 27px;
+    min-width: 27px;
+    min-height: 27px;
+    flex: 0 0 27px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: #e9f7ef;
+    color: #15945b;
+    font-size: 16px;
+    line-height: 1;
+    font-weight: 900;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.lista-produtos-estoque-venda .controle-quantidade button:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+}
+
+.lista-produtos-estoque-venda .controle-quantidade span {
+    min-width: 16px;
+    text-align: center;
+    color: #374651;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+/* =========================================================
+   ESTADO VAZIO DO MODAL
+========================================================= */
+
+.lista-produtos-estoque-venda .estado-produtos-venda,
+.lista-produtos-estoque-venda .produtos-venda-vazio {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    border: 1px dashed #d6e1db;
+    border-radius: 15px;
+    background: #f8faf9;
+    text-align: center;
+}
+
+.lista-produtos-estoque-venda .estado-produtos-venda > div,
+.lista-produtos-estoque-venda .icone-vazio {
+    margin-bottom: 7px;
+    font-size: 28px;
+}
+
+.lista-produtos-estoque-venda .estado-produtos-venda strong,
+.lista-produtos-estoque-venda .produtos-venda-vazio strong {
+    color: #42534b;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.lista-produtos-estoque-venda .produtos-venda-vazio p {
+    max-width: 270px;
+    margin: 5px 0 0;
+    color: #87938e;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+/* =========================================================
+   CONCLUIR ADIÇÃO DE PRODUTOS
+========================================================= */
+
+.modal-produtos-venda .modal-acoes-venda {
+    flex: 0 0 auto;
+    width: 100%;
+    margin: 0;
+    padding: 8px 0 0;
+    border-top: 1px solid #edf1ef;
+    background: #fff;
+    z-index: 5;
+}
+
+#btnConcluirProdutosVenda {
+    width: 100%;
+    min-height: 50px;
+    display: block;
+    padding: 12px;
+    border: 0;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #25aa6a, #168d54);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(32, 167, 103, .17);
+}
+
+/* =========================================================
+   MODAL LEITOR
+========================================================= */
+
+#modalLeitorVenda {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 10000 !important;
+}
+
+.modal-leitor-venda {
+    width: min(100%, 620px);
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+    padding: 17px;
+}
+
+.area-leitor-venda {
+    position: relative;
+    width: 100%;
+    height: min(62vh, 440px);
+    min-height: 280px;
+    overflow: hidden;
+    border-radius: 18px;
+    background: #101820;
+    isolation: isolate;
+}
+
+.video-leitor-venda {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    object-fit: cover !important;
+    background: #101820;
+    z-index: 1;
+}
+
+.moldura-leitor-venda {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(76%, 390px);
+    height: 150px;
+    transform: translate(-50%, -50%);
+    border: 3px solid #43e88b;
+    border-radius: 17px;
+    z-index: 5;
+    pointer-events: none;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, .30), 0 0 22px rgba(39, 216, 121, .55);
+}
+
+.linha-leitor-venda {
+    position: absolute;
+    left: 7px;
+    right: 7px;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: #50ee92;
+    box-shadow: 0 0 10px rgba(80, 238, 146, .9);
+}
+
+.mensagem-leitor-venda {
+    margin-top: 11px;
+    padding: 11px;
+    border-radius: 12px;
+    background: #f3f6f7;
+    color: #344653;
+    font-size: 12px;
+    text-align: center;
+}
+
+.status-leitor-venda {
+    min-height: 18px;
+    margin-top: 7px;
+    color: #72808a;
+    font-size: 10px;
+    text-align: center;
+}
+
+.modal-leitor-venda .modal-acoes-venda {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.btn-cancel {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid #dfe7e3;
+    border-radius: 13px;
+    background: #f6f8f7;
+    color: #586761;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* =========================================================
+   MODAL DE CONFIRMAÇÃO
+========================================================= */
+
+#modalConfirmarVenda .modal-box {
+    width: min(100%, 520px);
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+}
+
+.resumo-confirmacao-venda {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #e2eae5;
+    border-radius: 14px;
+    background: #f8faf9;
+    color: var(--texto);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#modalConfirmarVenda .modal-acoes-venda {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+#modalConfirmarVenda .btn-confirmar {
+    min-height: 48px;
+    border: 0;
+    border-radius: 13px;
+    background: var(--verde);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+/* =========================================================
+   CLASSE HIDDEN
+========================================================= */
+
+.hidden {
+    display: none !important;
+}
+
+/* =========================================================
+   CELULAR — RESPONSIVIDADE
+========================================================= */
+
+@media (max-width: 600px) {
+    body {
+        padding-bottom: 72px;
+    }
+
+    .app-container {
+        padding: 0 10px 20px;
+    }
+
+    .app-header {
+        padding: 14px 3px 12px;
+    }
+
+    .header-logo {
+        width: 43px;
+        height: 43px;
+        flex-basis: 43px;
+        border-radius: 13px;
+        font-size: 22px;
+    }
+
+    .app-header h1 {
+        font-size: 20px;
+    }
+
+    .app-header p {
+        font-size: 10px;
+    }
+
+    .card.calculadora-card {
+        padding: 12px;
+        border-radius: 19px;
+    }
+
+    .cabecalho-calculadora {
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+    }
+
+    .cabecalho-calculadora h2 {
+        font-size: 20px;
+    }
+
+    .icone-venda {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+    }
+
+    .secao-venda,
+    .secao-troco {
+        padding: 12px;
+        border-radius: 15px;
+    }
+
+    .titulo-secao h3 {
+        font-size: 14px;
+    }
+
+    .titulo-secao p {
+        font-size: 9px;
+    }
+
+    .titulo-icone {
+        width: 33px;
+        height: 33px;
+        flex-basis: 33px;
+        font-size: 15px;
+    }
+
+    .btn-adicionar-produto {
+        min-height: 62px;
+        padding: 9px 11px;
+        border-radius: 14px;
+    }
+
+    .btn-adicionar-produto .icone-plus {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        flex-basis: 40px;
+        border-radius: 11px;
+        font-size: 22px;
+    }
+
+    .btn-adicionar-produto strong {
+        font-size: 13px;
+    }
+
+    .btn-adicionar-produto small {
+        font-size: 9px;
+    }
+
+    .campo-dinheiro {
+        height: 51px;
+        border-radius: 13px;
+    }
+
+    .campo-dinheiro input {
+        font-size: 18px;
+    }
+
+    .resumo-venda-card {
+        padding: 13px;
+        border-radius: 15px;
+    }
+
+    .resumo-venda-topo strong {
+        font-size: 20px;
+    }
+
+    .payment-options {
+        gap: 5px;
+    }
+
+    .btn-payment {
+        min-height: 59px;
+        border-radius: 10px;
+    }
+
+    .btn-payment span {
+        font-size: 17px;
+    }
+
+    .btn-payment strong {
+        font-size: 8px;
+    }
+
+    .resultado-troco {
+        padding: 13px;
+        border-radius: 14px;
+    }
+
+    .resultado-troco-topo strong {
+        font-size: 19px;
+    }
+
+    .btn-primary,
+    .btn-registrar-venda {
+        min-height: 53px;
+        margin-top: 14px;
+        border-radius: 14px;
+    }
+
+    .btn-cancelar-venda {
+        min-height: 42px;
+    }
+
+    /* Modais */
+    .modal-overlay {
+        padding: 6px;
+    }
+
+    .modal-box {
+        border-radius: 20px;
+        padding: 13px;
+    }
+
+    .modal-produtos-venda {
+        width: 100%;
+        height: calc(100dvh - 12px);
+        max-height: calc(100dvh - 12px);
+        padding: 13px;
+        border-radius: 20px;
+    }
+
+    .modal-cabecalho h3 {
+        font-size: 18px;
+    }
+
+    .btn-fechar-modal {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        flex-basis: 38px;
+        border-radius: 10px;
+        font-size: 23px;
+    }
+
+    .modal-produtos-venda .btn-leitor-venda {
+        min-height: 52px;
+        padding: 8px 10px;
+    }
+
+    .modal-produtos-venda .btn-leitor-venda .icone-plus {
+        width: 33px;
+        height: 33px;
+        min-width: 33px;
+        flex-basis: 33px;
+    }
+
+    .campo-busca-produto {
+        min-height: 42px;
+        border-radius: 11px;
+    }
+
+    .campo-busca-produto input {
+        height: 40px;
+        font-size: 12px;
+    }
+
+    /* Mantém os produtos em 3 colunas no celular */
+    .lista-produtos-estoque-venda {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .lista-produtos-estoque-venda .produto-card-conteudo {
+        min-height: 155px;
+        padding: 5px;
+    }
+
+    .lista-produtos-estoque-venda .produto-foto,
+    .lista-produtos-estoque-venda .produto-imagem,
+    .lista-produtos-estoque-venda .produto-inicial {
+        height: 52px;
+        min-height: 52px;
+        max-height: 52px;
+        flex-basis: 52px;
+    }
+
+    .lista-produtos-estoque-venda .produto-nome,
+    .lista-produtos-estoque-venda .produto-info h3 {
+        min-height: 25px;
+        max-height: 25px;
+        font-size: 10px;
+    }
+
+    .lista-produtos-estoque-venda .produto-estoque {
+        font-size: 8px;
+    }
+
+    .lista-produtos-estoque-venda .produto-preco {
+        font-size: 11px;
+    }
+
+    .lista-produtos-estoque-venda .controle-quantidade button {
+        width: 25px;
+        height: 25px;
+        min-width: 25px;
+        min-height: 25px;
+        flex-basis: 25px;
+        font-size: 15px;
+    }
+
+    .lista-produtos-estoque-venda .controle-quantidade span {
+        min-width: 15px;
+        font-size: 10px;
+    }
+
+    .modal-produtos-venda .modal-acoes-venda {
+        padding-top: 7px;
+    }
+
+    #btnConcluirProdutosVenda {
+        min-height: 48px;
+        border-radius: 12px;
+        font-size: 13px;
+    }
+
+    /* Leitor */
+    .modal-leitor-venda {
+        padding: 13px;
+    }
+
+    .area-leitor-venda {
+        height: min(58vh, 390px);
+        min-height: 250px;
+        border-radius: 16px;
+    }
+
+    .moldura-leitor-venda {
+        width: 78%;
+        height: 120px;
+    }
+
+    #modalConfirmarVenda .modal-acoes-venda {
+        grid-template-columns: 1fr;
+    }
+
+    /* Fotos dos produtos já adicionados à venda */
+    .lista-produtos-venda img {
+        width: 64px !important;
+        height: 64px !important;
+        min-width: 64px !important;
+        min-height: 64px !important;
+        max-width: 64px !important;
+        max-height: 64px !important;
+    }
+
+    .lista-produtos-venda .produto-foto {
+        width: 64px !important;
+        height: 64px !important;
+        min-width: 64px !important;
+        max-width: 64px !important;
+    }
+}
+
+/* =========================================================
+   CELULARES MUITO PEQUENOS
+========================================================= */
+
+@media (max-width: 360px) {
+    .app-container {
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+
+    .card.calculadora-card {
+        padding: 9px;
+        border-radius: 17px;
+    }
+
+    .secao-venda,
+    .secao-troco {
+        padding: 10px;
+    }
+
+    .payment-options {
+        gap: 4px;
+    }
+
+    .btn-payment {
+        min-height: 55px;
+    }
+
+    .btn-payment strong {
+        font-size: 7px;
+    }
+
+    .modal-produtos-venda {
+        padding: 10px;
+        border-radius: 18px;
+    }
+
+    .lista-produtos-estoque-venda {
+        gap: 5px;
+    }
+
+    .lista-produtos-estoque-venda .produto-card-conteudo {
+        min-height: 148px;
+        padding: 4px;
+    }
+
+    .lista-produtos-estoque-venda .produto-foto,
+    .lista-produtos-estoque-venda .produto-imagem,
+    .lista-produtos-estoque-venda .produto-inicial {
+        height: 48px;
+        min-height: 48px;
+        max-height: 48px;
+        flex-basis: 48px;
+    }
+
+    .lista-produtos-estoque-venda .produto-nome,
+    .lista-produtos-estoque-venda .produto-info h3 {
+        font-size: 9px;
+        min-height: 23px;
+        max-height: 23px;
+    }
+
+    .lista-produtos-estoque-venda .produto-preco {
+        font-size: 10px;
+    }
+
+    .lista-produtos-estoque-venda .produto-estoque {
+        font-size: 7px;
+    }
+
+    .lista-produtos-estoque-venda .controle-quantidade {
+        gap: 1px;
+    }
+
+    .lista-produtos-estoque-venda .controle-quantidade button {
+        width: 23px;
+        height: 23px;
+        min-width: 23px;
+        min-height: 23px;
+        flex-basis: 23px;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .lista-produtos-estoque-venda .controle-quantidade span {
+        min-width: 13px;
+        font-size: 9px;
+    }
+
+    .area-leitor-venda {
+        min-height: 230px;
+    }
+}
+
+/* =========================================================
+   NAVEGAÇÃO INFERIOR — BLOCO ÚNICO CONSOLIDADO
+========================================================= */
+
+body nav.menu-inferior {
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: 0 !important;
+    transform: translateX(-50%) !important;
+
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: stretch;
+    justify-content: initial;
+
+    width: 100% !important;
+    max-width: 760px !important;
+    min-height: 64px;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
+
+    box-sizing: border-box !important;
+    border-top: 1px solid #dfe8e3;
+    background: rgba(255, 255, 255, .97);
+    box-shadow: 0 -5px 20px rgba(30, 50, 42, .08);
+    overflow: visible !important;
+    z-index: 99999 !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+body nav.menu-inferior > a.menu-item {
+    display: flex !important;
+    flex: none !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px;
+
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 4px 0 !important;
+
+    border-radius: 11px;
+    color: #7c8985;
+    font-size: 19px;
+    visibility: visible !important;
+    opacity: 1 !important;
+    text-decoration: none !important;
+    transition: background .12s ease, color .12s ease;
+}
+
+body nav.menu-inferior > a.menu-item > span,
+body nav.menu-inferior > a.menu-item > small {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+body nav.menu-inferior > a.menu-item > small {
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap !important;
+    color: inherit;
+    font-size: 10px !important;
+    font-weight: 800;
+}
+
+body nav.menu-inferior > a.menu-item.ativo {
+    color: var(--verde);
+    background: #eef9f4;
+}
+
+body nav.menu-inferior > a.menu-item:active {
+    transform: scale(.96);
+}
+
+/* =========================================================
+   REDUÇÃO DE MOVIMENTO
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}
+/* =========================================================
+   DR. TROCO — VISUAL DA TELA DE FIADO
+   ========================================================= */
+
+body:has(.fiado-resumo) {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+body:has(.fiado-resumo) .app-container {
+  width: 100%;
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  box-sizing: border-box;
+}
+
+/* CABEÇALHO */
+
+body:has(.fiado-resumo) .app-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+}
+
+body:has(.fiado-resumo) .app-logo {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 15px;
+  background: #dbeafe;
+  font-size: 27px;
+}
+
+body:has(.fiado-resumo) .app-header h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 25px;
+  line-height: 1.2;
+}
+
+body:has(.fiado-resumo) .app-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* NAVEGAÇÃO */
+
+body:has(.fiado-resumo) .fiado-nav {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 22px;
+  padding: 5px;
+  overflow-x: auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 13px;
+  scrollbar-width: thin;
+}
+
+body:has(.fiado-resumo) .fiado-nav a {
+  flex: 0 0 auto;
+  padding: 11px 13px;
+  color: #475569;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 9px;
+  transition: background 0.2s, color 0.2s;
+}
+
+body:has(.fiado-resumo) .fiado-nav a[href="fiado.html"],
+body:has(.fiado-resumo) .fiado-nav a:hover {
+  color: #ffffff;
+  background: #2563eb;
+}
+
+/* INDICADORES FINANCEIROS */
+
+body:has(.fiado-resumo) .fiado-resumo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+body:has(.fiado-resumo) .fiado-card {
+  min-width: 0;
+  padding: 17px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+}
+
+body:has(.fiado-resumo) .fiado-card span {
+  display: block;
+  margin-bottom: 10px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+body:has(.fiado-resumo) .fiado-card strong {
+  display: block;
+  color: #0f172a;
+  font-size: clamp(18px, 4.5vw, 25px);
+  overflow-wrap: anywhere;
+}
+
+/* DESTAQUE DOS VALORES */
+
+body:has(.fiado-resumo) #fiadoTotalDividas {
+  color: #d97706;
+}
+
+body:has(.fiado-resumo) #fiadoTotalRecebido {
+  color: #059669;
+}
+
+body:has(.fiado-resumo) #fiadoTotalAberto {
+  color: #dc2626;
+}
+
+/* SEÇÕES */
+
+body:has(.fiado-resumo) .fiado-secao {
+  min-width: 0;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+body:has(.fiado-resumo) .fiado-titulo {
+  margin-bottom: 20px;
+}
+
+body:has(.fiado-resumo) .fiado-titulo h2 {
+  margin: 0 0 7px;
+  color: #0f172a;
+  font-size: 21px;
+  line-height: 1.3;
+}
+
+body:has(.fiado-resumo) .fiado-titulo p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* FORMULÁRIOS */
+
+body:has(.fiado-resumo) .fiado-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+body:has(.fiado-resumo) .fiado-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+body:has(.fiado-resumo) .fiado-campo label {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+body:has(.fiado-resumo) .fiado-campo input,
+body:has(.fiado-resumo) .fiado-campo select,
+body:has(.fiado-resumo) .fiado-busca input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  color: #0f172a;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 11px;
+  font-family: inherit;
+  font-size: 16px;
+  outline: none;
+}
+
+body:has(.fiado-resumo) .fiado-campo input:focus,
+body:has(.fiado-resumo) .fiado-campo select:focus,
+body:has(.fiado-resumo) .fiado-busca input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* BOTÕES */
+
+body:has(.fiado-resumo) .fiado-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s;
+}
+
+body:has(.fiado-resumo) .fiado-btn:active {
+  transform: scale(0.98);
+}
+
+body:has(.fiado-resumo) .fiado-btn-principal {
+  color: #ffffff;
+  background: #2563eb;
+}
+
+body:has(.fiado-resumo) .fiado-btn-principal:hover {
+  background: #1d4ed8;
+}
+
+body:has(.fiado-resumo) .fiado-btn-secundario {
+  color: #334155;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+body:has(.fiado-resumo) .fiado-btn-fechar {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  padding: 0;
+  color: #475569;
+  background: #f1f5f9;
+  border: 0;
+  border-radius: 50%;
+  font-size: 27px;
+  cursor: pointer;
+}
+
+/* PESQUISA */
+
+body:has(.fiado-resumo) .fiado-busca {
+  margin-bottom: 16px;
+}
+
+/* LISTA DE CLIENTES */
+
+body:has(.fiado-resumo) .fiado-lista {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+body:has(.fiado-resumo) .fiado-cliente-card {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+}
+
+body:has(.fiado-resumo) .fiado-cliente-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+body:has(.fiado-resumo) .fiado-avatar {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  background: #dbeafe;
+  border-radius: 14px;
+  font-size: 23px;
+}
+
+body:has(.fiado-resumo) .fiado-cliente-texto {
+  min-width: 0;
+}
+
+body:has(.fiado-resumo) .fiado-cliente-texto h3 {
+  margin: 0 0 5px;
+  color: #0f172a;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+body:has(.fiado-resumo) .fiado-cliente-texto p {
+  margin: 0 0 5px;
+  color: #64748b;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+body:has(.fiado-resumo) .fiado-cliente-texto small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+body:has(.fiado-resumo) .fiado-cliente-saldo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  background: #fff1f2;
+  border-radius: 10px;
+}
+
+body:has(.fiado-resumo) .fiado-cliente-saldo span {
+  color: #9f1239;
+  font-size: 13px;
+}
+
+body:has(.fiado-resumo) .fiado-cliente-saldo strong {
+  color: #be123c;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+/* LISTA VAZIA */
+
+body:has(.fiado-resumo) .fiado-vazio {
+  padding: 28px 16px;
+  text-align: center;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 15px;
+}
+
+body:has(.fiado-resumo) .fiado-vazio > div {
+  margin-bottom: 12px;
+  font-size: 36px;
+}
+
+body:has(.fiado-resumo) .fiado-vazio h3 {
+  margin: 0 0 8px;
+  color: #334155;
+  font-size: 17px;
+}
+
+body:has(.fiado-resumo) .fiado-vazio p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* MODAIS */
+
+body:has(.fiado-resumo) .fiado-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(3px);
+}
+
+body:has(.fiado-resumo) .fiado-modal.aberto {
+  display: flex;
+}
+
+body:has(.fiado-resumo) .fiado-modal-conteudo {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90%;
+  overflow-y: auto;
+  padding: 22px;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+}
+
+body:has(.fiado-resumo) .fiado-modal-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+body:has(.fiado-resumo) .fiado-modal-topo h2 {
+  margin: 0 0 6px;
+  color: #0f172a;
+  font-size: 21px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+body:has(.fiado-resumo) .fiado-modal-topo p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+body:has(.fiado-resumo) .fiado-etiqueta {
+  display: inline-block;
+  margin-bottom: 7px;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* SALDO NO MODAL */
+
+body:has(.fiado-resumo) .fiado-saldo-destaque {
+  padding: 20px;
+  margin-bottom: 14px;
+  text-align: center;
+  background: #fff1f2;
+  border-radius: 15px;
+}
+
+body:has(.fiado-resumo) .fiado-saldo-destaque span {
+  display: block;
+  margin-bottom: 8px;
+  color: #9f1239;
+  font-size: 14px;
+}
+
+body:has(.fiado-resumo) .fiado-saldo-destaque strong {
+  color: #be123c;
+  font-size: 29px;
+  overflow-wrap: anywhere;
+}
+
+body:has(.fiado-resumo) .fiado-detalhes-resumo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+body:has(.fiado-resumo) .fiado-detalhes-resumo > div {
+  padding: 13px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+body:has(.fiado-resumo) .fiado-detalhes-resumo span,
+body:has(.fiado-resumo) .fiado-detalhes-resumo strong {
+  display: block;
+}
+
+body:has(.fiado-resumo) .fiado-detalhes-resumo span {
+  margin-bottom: 7px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+body:has(.fiado-resumo) .fiado-detalhes-resumo strong {
+  color: #0f172a;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+/* HISTÓRICO DO CLIENTE */
+
+body:has(.fiado-resumo) .fiado-historico {
+  margin-bottom: 20px;
+}
+
+body:has(.fiado-resumo) .fiado-historico h3 {
+  margin: 0 0 12px;
+  color: #0f172a;
+  font-size: 17px;
+}
+
+body:has(.fiado-resumo) .fiado-historico > div > p {
+  color: #64748b;
+  font-size: 14px;
+}
+
+body:has(.fiado-resumo) .fiado-movimento {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+body:has(.fiado-resumo) .fiado-movimento > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+body:has(.fiado-resumo) .fiado-movimento > div > strong {
+  color: #334155;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+body:has(.fiado-resumo) .fiado-movimento small {
+  color: #64748b;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+body:has(.fiado-resumo) .fiado-movimento > strong {
+  flex-shrink: 0;
+  font-size: 13px;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+body:has(.fiado-resumo) .fiado-valor-pago {
+  color: #059669;
+}
+
+body:has(.fiado-resumo) .fiado-valor-divida {
+  color: #d97706;
+}
+
+/* AÇÕES DOS MODAIS */
+
+body:has(.fiado-resumo) .fiado-acoes-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+body:has(.fiado-resumo) .fiado-acoes-modal .fiado-btn {
+  width: 100%;
+}
+
+/* NOTIFICAÇÕES */
+
+body:has(.fiado-resumo) .fiado-notificacao {
+  position: fixed;
+  right: 16px;
+  bottom: 20px;
+  left: 16px;
+  z-index: 10001;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 14px 17px;
+  color: #ffffff;
+  background: #047857;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.18);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+}
+
+body:has(.fiado-resumo) .fiado-notificacao.visivel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+body:has(.fiado-resumo) .fiado-notificacao.erro {
+  background: #b91c1c;
+}
+
+/* CELULARES PEQUENOS */
+
+@media (max-width: 380px) {
+  body:has(.fiado-resumo) .app-container {
+    padding: 12px 10px 28px;
+  }
+
+  body:has(.fiado-resumo) .fiado-secao {
+    padding: 15px;
+  }
+
+  body:has(.fiado-resumo) .fiado-card {
+    padding: 13px;
+  }
+
+  body:has(.fiado-resumo) .fiado-nav a {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  body:has(.fiado-resumo) .fiado-movimento {
+    flex-direction: column;
+  }
+
+  body:has(.fiado-resumo) .fiado-movimento > strong {
+    text-align: left;
+  }
+}
+
+/* TELAS MAIORES */
+
+@media (min-width: 600px) {
+  body:has(.fiado-resumo) .fiado-resumo {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  body:has(.fiado-resumo) .fiado-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  body:has(.fiado-resumo) .fiado-form > button {
+    grid-column: 1 / -1;
+  }
+
+  body:has(.fiado-resumo) .fiado-lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* BARRA DE NAVEGAÇÃO INFERIOR */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000;
+
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+
+  padding: 8px 5px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.08);
+}
+
+.bottom-nav .nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  min-width: 0;
+  min-height: 54px;
+  padding: 5px 2px;
+
+  color: #64748b;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+
+  border-radius: 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav .nav-icon {
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.bottom-nav .nav-item.ativo {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.bottom-nav .nav-item:active {
+  background: #dbeafe;
+}
+
+/* Evita que o conteúdo fique escondido atrás da barra */
+
+body.pagina-fiado {
+  padding-bottom: 90px;
+}
+/* =========================================================
+   CORREÇÕES — NOVA VENDA
+========================================================= */
+
+/* Espaço para o conteúdo não ficar atrás da navegação */
+body {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+}
+
+.app-container {
+    padding-bottom: calc(35px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Pagamentos: duas colunas */
+.payment-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+/* Botões com espaço suficiente para os nomes */
+.payment-options .btn-payment {
+    width: 100%;
+    min-width: 0;
+    min-height: 60px;
+}
+
+/* Fiado ocupa toda a linha, se for o último botão */
+.payment-options .btn-payment:last-child {
+    grid-column: 1 / -1;
+}
+
+/* Evita que o conteúdo seja cortado em telas pequenas */
+.card.calculadora-card,
+.secao-venda,
+.secao-troco {
+    min-width: 0;
+    max-width: 100%;
+}
+/* =========================================================
+   DR. TROCO — AJUSTES DA NOVA VENDA
+========================================================= */
+
+/* Impede que o conteúdo fique escondido atrás da navegação */
+body.pagina-calculadora {
+  padding-bottom: calc(105px + env(safe-area-inset-bottom)) !important;
+}
+
+body.pagina-calculadora .app-container {
+  padding-bottom: calc(30px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Pagamentos organizados */
+.payment-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.payment-options .btn-payment {
+  min-width: 0;
+  min-height: 76px;
+  padding: 10px 6px;
+  border: 1px solid #dfe8e3;
+  border-radius: 15px;
+  background: #fafcfb;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.payment-options .btn-payment span {
+  font-size: 23px;
+}
+
+.payment-options .btn-payment strong {
+  font-size: 12px;
+}
+
+.payment-options .btn-payment.active {
+  border: 2px solid var(--verde);
+  background: var(--verde-claro);
+  color: var(--verde-escuro);
+}
+
+/* Fiado ocupa a largura inteira */
+.payment-options .btn-payment-fiado {
+  grid-column: 1 / -1;
+  min-height: 62px;
+  flex-direction: row;
+  gap: 10px;
+  border-color: #d9c9a6;
+  background: #fffaf0;
+  color: #826126;
+}
+
+.payment-options .btn-payment-fiado.active {
+  border-color: #b78b35;
+  background: #fff1d1;
+  color: #75531a;
+}
+
+/* Campos de Fiado */
+.grupo-fiado .label-campo {
+  display: block;
+  margin: 13px 0 6px;
+  color: var(--texto-2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.campo-texto-fiado {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: #fbfcfb;
+  color: var(--texto);
+  font-size: 14px;
+}
+
+.campo-texto-fiado:focus {
+  outline: 2px solid rgba(32, 167, 103, .2);
+  border-color: var(--verde);
+}
+
+.resumo-fiado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 13px;
+  border-radius: 12px;
+  background: #fff5df;
+  color: #75531a;
+  font-size: 12px;
+}
+
+.resumo-fiado strong {
+  font-size: 17px;
+}
+
+/* Cartões dos produtos adicionados */
+.lista-produtos-venda {
+  gap: 12px;
+}
+
+.lista-produtos-venda > * {
+  min-width: 0;
+}
+
+.lista-produtos-venda .produto-venda,
+.lista-produtos-venda .item-produto-venda,
+.lista-produtos-venda .produto-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e1e9e5;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(30, 50, 42, .06);
+}
+
+.lista-produtos-venda .produto-foto {
+  flex: 0 0 72px;
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f1f6f3;
+}
+
+.lista-produtos-venda .produto-foto img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.lista-produtos-venda .produto-nome {
+  color: var(--texto);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.lista-produtos-venda .produto-preco {
+  color: var(--verde-escuro);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.lista-produtos-venda button {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Modal de produtos: espaço próprio para lista e botão concluir */
+.modal-produtos-venda {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.lista-produtos-estoque-venda {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-acoes-venda {
+  flex-shrink: 0;
+  padding-top: 10px;
+  background: #fff;
+}
+
+/* Ajustes para celulares */
+@media (max-width: 600px) {
+  body.pagina-calculadora {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body.pagina-calculadora .app-container {
+    padding-bottom: 24px !important;
+  }
+
+  .payment-options {
+    gap: 8px;
+  }
+
+  .payment-options .btn-payment {
+    min-height: 70px;
+  }
+
+  .lista-produtos-venda .produto-venda,
+  .lista-produtos-venda .item-produto-venda,
+  .lista-produtos-venda .produto-item {
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .lista-produtos-venda .produto-foto {
+    flex-basis: 62px;
+    width: 62px;
+    height: 62px;
+  }
+
+  .modal-produtos-venda {
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+}
+/* NAVEGAÇÃO INFERIOR — 5 ABAS */
+body nav.menu-inferior {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+body nav.menu-inferior > a.menu-item {
+  min-width: 0;
+  gap: 4px;
+  font-size: 20px;
+}
+
+body nav.menu-inferior > a.menu-item small {
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  body nav.menu-inferior > a.menu-item small {
+    font-size: 9px;
+  }
+}

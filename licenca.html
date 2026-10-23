@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <title>Dr. Troco - Licença</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css">
+
+</head>
+
+
+<body>
+
+  <div class="app-container">
+
+
+    <!-- =========================================
+         CABEÇALHO
+    ========================================== -->
+
+    <header class="app-header">
+
+      <div class="header-logo">
+        🔐
+      </div>
+
+      <div>
+
+        <h1>
+          Dr. Troco
+        </h1>
+
+        <p>
+          Ativação da licença
+        </p>
+
+      </div>
+
+    </header>
+
+
+    <!-- =========================================
+         CONTEÚDO
+    ========================================== -->
+
+    <main class="calculadora-app">
+
+
+      <section class="card calculadora-card">
+
+
+        <!-- CABEÇALHO DA LICENÇA -->
+
+        <div class="cabecalho-calculadora">
+
+          <div>
+
+            <span class="texto-pequeno">
+              LICENÇA
+            </span>
+
+            <h2>
+              Ativar Dr. Troco
+            </h2>
+
+          </div>
+
+
+          <div class="icone-venda">
+            🔐
+          </div>
+
+        </div>
+
+
+        <!-- =====================================
+             ATIVAÇÃO
+        ====================================== -->
+
+        <section class="secao-venda">
+
+
+          <div class="titulo-secao">
+
+            <div>
+
+              <div class="titulo-icone">
+                🏪
+              </div>
+
+
+              <div>
+
+                <h3>
+                  Ativação
+                </h3>
+
+                <p>
+                  Digite o código fornecido pelo Dr. Troco
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <!-- CAMPO DO CÓDIGO -->
+
+          <div class="campo-dinheiro">
+
+            <input
+              type="text"
+              id="codigoLicenca"
+              placeholder="Ex.: DT-8K42-91XF"
+              autocomplete="off"
+              autocapitalize="characters">
+
+          </div>
+
+
+          <!-- BOTÃO -->
+
+          <button
+            type="button"
+            id="btnAtivarLicenca"
+            class="btn-primary btn-registrar-venda">
+
+            <span>
+              ✓
+            </span>
+
+            <span>
+              Ativar licença
+            </span>
+
+          </button>
+
+
+        </section>
+
+
+        <!-- =====================================
+             STATUS DA LICENÇA
+        ====================================== -->
+
+        <section
+          id="statusLicenca"
+          class="secao-venda">
+
+
+          <div class="titulo-secao">
+
+            <div>
+
+              <div class="titulo-icone">
+                📋
+              </div>
+
+
+              <div>
+
+                <h3>
+                  Status da licença
+                </h3>
+
+
+                <p id="textoStatusLicenca">
+                  Nenhuma licença ativada.
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+        </section>
+
+
+        <!-- =====================================
+             VOLTAR
+        ====================================== -->
+
+        <button
+          type="button"
+          class="btn-cancelar-venda"
+          onclick="window.location.href='index.html'">
+
+          Voltar para o Dr. Troco
+
+        </button>
+
+
+      </section>
+
+
+    </main>
+
+
+  </div>
+
+
+  <!-- =========================================
+       SUPABASE
+       IMPORTANTE: vem ANTES do licenca.js
+  ========================================== -->
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js">
+  </script>
+
+
+  <!-- =========================================
+       SISTEMA DE LICENÇA
+  ========================================== -->
+
+  <script src="licenca.js"></script>
+
+
+</body>
+
+</html>

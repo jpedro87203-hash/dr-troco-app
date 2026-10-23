@@ -1,0 +1,2629 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <meta
+        name="theme-color"
+        content="#f5f7fa"
+    >
+
+    <title>Dr. Troco — Estoque</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <style>
+
+        /* =====================================================
+           DR. TROCO — ESTOQUE
+           ESTILOS ESPECÍFICOS DA PÁGINA
+           ===================================================== */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f5f7fa;
+        }
+
+        body.modal-aberto {
+            overflow: hidden;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+
+        /* =====================================================
+           APP
+           ===================================================== */
+
+        .estoque-app {
+            width: 100%;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 18px 14px 110px;
+        }
+
+
+        /* =====================================================
+           CABEÇALHO
+           ===================================================== */
+
+        .estoque-cabecalho {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .estoque-marca {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .estoque-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 15px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: linear-gradient(
+                135deg,
+                #176b45,
+                #28a96a
+            );
+
+            box-shadow:
+                0 8px 20px rgba(24, 130, 76, .18);
+
+            font-size: 25px;
+            flex-shrink: 0;
+        }
+
+        .estoque-marca h1 {
+            margin: 0;
+            color: #263746;
+            font-size: 21px;
+            font-weight: 900;
+        }
+
+        .estoque-marca p {
+            margin: 2px 0 0;
+            color: #8a969e;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .estoque-config {
+            width: 42px;
+            height: 42px;
+            border: 0;
+            border-radius: 13px;
+
+            background: #ffffff;
+            color: #60707b;
+
+            box-shadow:
+                0 5px 18px rgba(30, 50, 65, .07);
+
+            cursor: pointer;
+        }
+
+
+        /* =====================================================
+           KPIs — 2x2
+           ===================================================== */
+
+        .estoque-resumo {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .estoque-kpi {
+            min-width: 0;
+            padding: 15px;
+            border-radius: 17px;
+
+            background: #ffffff;
+
+            border: 1px solid rgba(40, 58, 70, .06);
+
+            box-shadow:
+                0 6px 20px rgba(28, 48, 62, .055);
+        }
+
+        .estoque-kpi-topo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .estoque-kpi-icone {
+            width: 34px;
+            height: 34px;
+            border-radius: 11px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #eef8f2;
+            font-size: 17px;
+        }
+
+        .estoque-kpi strong {
+            display: block;
+            margin-top: 9px;
+
+            color: #263746;
+            font-size: 22px;
+            font-weight: 900;
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .estoque-kpi span {
+            display: block;
+            margin-top: 3px;
+
+            color: #89969e;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .estoque-kpi-alert .estoque-kpi-icone {
+            background: #fff6df;
+        }
+
+        .estoque-kpi-valor .estoque-kpi-icone {
+            background: #edf5ff;
+        }
+
+
+        /* =====================================================
+           AÇÕES
+           ===================================================== */
+
+        .estoque-acoes {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr;
+            gap: 9px;
+            margin-bottom: 17px;
+        }
+
+        .estoque-acao {
+            min-height: 50px;
+            padding: 9px 10px;
+
+            border: 0;
+            border-radius: 14px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+
+            font-size: 12px;
+            font-weight: 900;
+
+            cursor: pointer;
+
+            transition:
+                transform .15s ease,
+                filter .15s ease;
+        }
+
+        .estoque-acao:active {
+            transform: scale(.97);
+        }
+
+        .estoque-acao-principal {
+            color: #ffffff;
+
+            background: linear-gradient(
+                135deg,
+                #16834d,
+                #27ad6a
+            );
+
+            box-shadow:
+                0 7px 18px rgba(22, 131, 77, .18);
+        }
+
+        .estoque-acao-entrada {
+            color: #147844;
+            background: #eaf8f0;
+        }
+
+        .estoque-acao-saida {
+            color: #2864ad;
+            background: #edf4fc;
+        }
+
+        .estoque-acao .simbolo {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+
+        /* =====================================================
+           BUSCA
+           ===================================================== */
+
+        .estoque-busca {
+            position: relative;
+            margin-bottom: 11px;
+        }
+
+        .estoque-busca input {
+            width: 100%;
+            height: 48px;
+
+            padding: 0 44px 0 43px;
+
+            border: 1px solid #e2e8ec;
+            border-radius: 15px;
+
+            background: #ffffff;
+            color: #30414d;
+
+            outline: none;
+
+            box-shadow:
+                0 5px 17px rgba(28, 48, 62, .045);
+        }
+
+        .estoque-busca input:focus {
+            border-color: #56a97b;
+
+            box-shadow:
+                0 0 0 3px rgba(32, 169, 93, .10);
+        }
+
+        .estoque-busca::before {
+            content: "⌕";
+
+            position: absolute;
+            left: 15px;
+            top: 50%;
+
+            transform: translateY(-53%);
+
+            color: #8a979e;
+            font-size: 24px;
+
+            pointer-events: none;
+        }
+
+        #btnLimparBusca {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+
+            transform: translateY(-50%);
+
+            width: 34px;
+            height: 34px;
+
+            border: 0;
+            border-radius: 10px;
+
+            background: #f0f3f5;
+            color: #77848b;
+
+            cursor: pointer;
+        }
+
+
+        /* =====================================================
+           FILTROS
+           ===================================================== */
+
+        .estoque-filtros {
+            display: flex;
+            gap: 7px;
+
+            overflow-x: auto;
+            padding: 1px 1px 7px;
+
+            scrollbar-width: none;
+        }
+
+        .estoque-filtros::-webkit-scrollbar {
+            display: none;
+        }
+
+        .estoque-filtro {
+            flex: 0 0 auto;
+
+            min-height: 36px;
+            padding: 0 12px;
+
+            border: 1px solid #e1e7ea;
+            border-radius: 999px;
+
+            background: #ffffff;
+            color: #697780;
+
+            font-size: 11px;
+            font-weight: 800;
+
+            cursor: pointer;
+        }
+
+        .estoque-filtro.ativo {
+            border-color: #1c9657;
+            background: #eaf8f0;
+            color: #147844;
+        }
+
+
+        /* =====================================================
+           CABEÇALHO DA LISTA
+           ===================================================== */
+
+        .estoque-lista-topo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+
+            margin: 13px 2px 9px;
+        }
+
+        .estoque-lista-topo h2 {
+            margin: 0;
+
+            color: #344652;
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        #estoqueContador {
+            color: #909ba1;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        /* =====================================================
+           LISTA
+           ===================================================== */
+
+        #listaProdutos {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .estoque-produto {
+            position: relative;
+
+            display: grid;
+            grid-template-columns: 52px minmax(0, 1fr) auto 16px;
+            align-items: center;
+            gap: 10px;
+
+            min-height: 82px;
+            padding: 11px 10px;
+
+            background: #ffffff;
+
+            border: 1px solid rgba(39, 57, 69, .06);
+            border-radius: 17px;
+
+            box-shadow:
+                0 5px 17px rgba(28, 48, 62, .045);
+
+            cursor: pointer;
+
+            outline: none;
+
+            transition:
+                transform .15s ease,
+                box-shadow .15s ease;
+        }
+
+        .estoque-produto:active {
+            transform: scale(.992);
+        }
+
+        .estoque-produto:focus-visible {
+            box-shadow:
+                0 0 0 3px rgba(32, 169, 93, .18);
+        }
+
+        .estoque-foto {
+            width: 52px;
+            height: 52px;
+
+            border-radius: 14px;
+            overflow: hidden;
+
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: linear-gradient(
+                135deg,
+                #edf7f1,
+                #e4f1ea
+            );
+
+            color: #16834d;
+            font-size: 22px;
+            font-weight: 900;
+        }
+
+        .estoque-foto img {
+            display: block;
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+        }
+
+        .estoque-inicial {
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .estoque-produto-info {
+            min-width: 0;
+        }
+
+        .estoque-produto-info strong {
+            display: block;
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            color: #2c3e4a;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .estoque-produto-info small {
+            display: block;
+
+            margin-top: 3px;
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            color: #96a0a6;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .estoque-preco {
+            margin-top: 5px;
+
+            color: #16834d;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .estoque-preco span {
+            color: #9aa4aa;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .estoque-produto-direita {
+            min-width: 76px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .estoque-qtd-label {
+            color: #a0a9ae;
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+        .estoque-qtd {
+            color: #344652;
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .estoque-qtd small {
+            color: #8d999f;
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+        .estoque-status {
+            display: inline-flex;
+            align-items: center;
+
+            min-height: 19px;
+            padding: 2px 7px;
+
+            border-radius: 999px;
+
+            font-size: 8px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .estoque-status.normal {
+            color: #147844;
+            background: #eaf8f0;
+        }
+
+        .estoque-status.baixo {
+            color: #a26b00;
+            background: #fff4d8;
+        }
+
+        .estoque-status.zero {
+            color: #a33a3a;
+            background: #ffeded;
+        }
+
+        .estoque-status.vencido {
+            color: #a03333;
+            background: #ffe7e7;
+        }
+
+        .estoque-status.a-vencer {
+            color: #a26b00;
+            background: #fff4d8;
+        }
+
+        .estoque-seta {
+            color: #b1bac0;
+            font-size: 25px;
+            font-weight: 300;
+        }
+
+
+        /* =====================================================
+           VAZIO
+           ===================================================== */
+
+        .estoque-vazio {
+            min-height: 190px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            padding: 30px 20px;
+
+            text-align: center;
+
+            border: 1px dashed #d9e1e5;
+            border-radius: 18px;
+
+            background: #ffffff;
+        }
+
+        .estoque-vazio-icone {
+            margin-bottom: 10px;
+            font-size: 35px;
+        }
+
+        .estoque-vazio strong {
+            color: #52636e;
+            font-size: 14px;
+        }
+
+        .estoque-vazio span {
+            margin-top: 5px;
+
+            color: #9aa5ab;
+            font-size: 11px;
+        }
+
+
+        /* =====================================================
+           MODAIS
+           ===================================================== */
+
+        .estoque-modal {
+            position: fixed;
+            z-index: 9999;
+
+            inset: 0;
+
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+
+            padding: 14px;
+
+            background: rgba(20, 32, 40, .48);
+
+            opacity: 0;
+            visibility: hidden;
+
+            transition:
+                opacity .2s ease,
+                visibility .2s ease;
+        }
+
+        .estoque-modal.aberto {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        
+            
+.estoque-modal-conteudo {
+    width: 100%;
+    max-width: 600px;
+
+    /* Limita a altura à área visível do celular */
+    max-height: 85vh;
+    max-height: 85dvh;
+
+    /* O formulário rola dentro do modal */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+
+    padding: 18px 18px calc(28px + env(safe-area-inset-bottom));
+
+    border-radius: 23px;
+    background: #ffffff;
+
+    box-shadow: 0 20px 60px rgba(10, 25, 35, .20);
+
+    transform: translateY(18px);
+    transition: transform .22s ease;
+}
+
+      
+/* Espaço e proteção para os botões dos modais */
+.estoque-form-acoes {
+    position: relative;
+    z-index: 2;
+    padding-bottom: 8px;
+}
+
+/* Evita que a barra inferior cubra o modal */
+.estoque-modal {
+    padding-bottom: calc(85px + env(safe-area-inset-bottom));
+}
+
+/* Em telas maiores, mantém o modal centralizado */
+@media (min-width: 600px) {
+    .estoque-modal {
+        padding: 14px;
+    }
+
+    .estoque-modal-conteudo {
+        max-height: 88vh;
+    }
+}
+
+
+        .estoque-modal.aberto
+        .estoque-modal-conteudo {
+            transform: translateY(0);
+        }
+
+        .estoque-modal-cabecalho {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 12px;
+
+            margin-bottom: 17px;
+        }
+
+        .estoque-modal-cabecalho h3 {
+            margin: 0;
+
+            color: #2d3e4a;
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .estoque-fechar {
+            width: 38px;
+            height: 38px;
+
+            border: 0;
+            border-radius: 11px;
+
+            background: #f1f4f6;
+            color: #6e7b83;
+
+            font-size: 20px;
+
+            cursor: pointer;
+        }
+
+
+        /* =====================================================
+           FORMULÁRIO
+           ===================================================== */
+
+        .estoque-form-grupo {
+            margin-bottom: 13px;
+        }
+
+        .estoque-form-grupo label {
+            display: block;
+
+            margin-bottom: 6px;
+
+            color: #52636e;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .estoque-form-grupo input,
+        .estoque-form-grupo select {
+            width: 100%;
+            height: 45px;
+
+            padding: 0 12px;
+
+            border: 1px solid #dfe6ea;
+            border-radius: 12px;
+
+            background: #ffffff;
+            color: #344652;
+
+            outline: none;
+        }
+
+        .estoque-form-grupo input:focus,
+        .estoque-form-grupo select:focus {
+            border-color: #4fa976;
+
+            box-shadow:
+                0 0 0 3px rgba(32, 169, 93, .09);
+        }
+
+        .estoque-form-linha {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .estoque-form-acoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+
+            margin-top: 18px;
+        }
+
+        .estoque-btn {
+            min-height: 45px;
+
+            border: 0;
+            border-radius: 12px;
+
+            font-size: 12px;
+            font-weight: 900;
+
+            cursor: pointer;
+        }
+
+        .estoque-btn-secundario {
+            background: #eef2f4;
+            color: #65737c;
+        }
+
+        .estoque-btn-principal {
+            background: #16834d;
+            color: #ffffff;
+        }
+
+        .estoque-btn-perigo {
+            background: #fff0f0;
+            color: #b23b3b;
+        }
+
+
+        /* =====================================================
+           CÓDIGO DE BARRAS
+           ===================================================== */
+
+        .estoque-codigo-linha {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 48px;
+            gap: 7px;
+            align-items: end;
+        }
+
+        .estoque-codigo-linha .estoque-form-grupo {
+            margin-bottom: 0;
+        }
+
+        .estoque-btn-barcode {
+            width: 48px;
+            height: 45px;
+
+            border: 1px solid #dfe6ea;
+            border-radius: 12px;
+
+            background: #edf7f1;
+            color: #16834d;
+
+            font-size: 21px;
+            cursor: pointer;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            transition:
+                transform .15s ease,
+                background .15s ease;
+        }
+
+        .estoque-btn-barcode:active {
+            transform: scale(.95);
+        }
+
+        .estoque-btn-barcode:focus-visible {
+            outline: none;
+
+            box-shadow:
+                0 0 0 3px rgba(32, 169, 93, .12);
+        }
+
+
+        /* =====================================================
+           FOTO
+           ===================================================== */
+
+        .estoque-foto-upload {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            padding: 11px;
+
+            border: 1px dashed #cfd9de;
+            border-radius: 14px;
+
+            background: #fafcfd;
+        }
+
+        .estoque-foto-preview {
+            width: 62px;
+            height: 62px;
+
+            overflow: hidden;
+
+            border-radius: 14px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #edf5f0;
+        }
+
+        .estoque-foto-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .estoque-foto-upload-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .estoque-foto-upload-info strong {
+            display: block;
+
+            color: #435560;
+            font-size: 11px;
+        }
+
+        .estoque-foto-upload-info span {
+            display: block;
+
+            margin-top: 3px;
+
+            color: #9aa5ab;
+            font-size: 9px;
+        }
+
+        .estoque-foto-upload input {
+            width: 100%;
+            margin-top: 7px;
+
+            font-size: 10px;
+        }
+
+
+        /* =====================================================
+           MOVIMENTO
+           ===================================================== */
+
+        .estoque-busca-movimento {
+            margin-bottom: 11px;
+        }
+
+        .estoque-busca-movimento input {
+            width: 100%;
+            height: 44px;
+
+            padding: 0 12px;
+
+            border: 1px solid #dfe6ea;
+            border-radius: 12px;
+
+            outline: none;
+        }
+
+        .estoque-busca-movimento input:focus {
+            border-color: #4fa976;
+        }
+
+        #listaSelecaoProdutos {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+
+            max-height: 270px;
+            overflow-y: auto;
+        }
+
+        .estoque-selecao-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            padding: 9px;
+
+            border: 1px solid #e5eaed;
+            border-radius: 13px;
+
+            background: #ffffff;
+        }
+
+        .estoque-selecao-foto {
+            width: 42px;
+            height: 42px;
+
+            flex-shrink: 0;
+
+            overflow: hidden;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 11px;
+
+            background: #edf6f0;
+            color: #16834d;
+
+            font-size: 15px;
+            font-weight: 900;
+        }
+
+        .estoque-selecao-foto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .estoque-selecao-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .estoque-selecao-info strong {
+            display: block;
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            color: #364955;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .estoque-selecao-info small {
+            display: block;
+
+            margin-top: 3px;
+
+            color: #8f9aa1;
+            font-size: 9px;
+        }
+
+        .estoque-add-produto {
+            width: 38px;
+            height: 38px;
+
+            flex-shrink: 0;
+
+            border: 0;
+            border-radius: 11px;
+
+            background: #eaf8f0;
+            color: #16834d;
+
+            font-size: 22px;
+            font-weight: 800;
+
+            cursor: pointer;
+        }
+
+        .estoque-add-produto.saida {
+            background: #edf4fc;
+            color: #2864ad;
+        }
+
+        .estoque-produto-selecionado {
+            display: none;
+
+            margin-top: 13px;
+            padding: 13px;
+
+            border-radius: 14px;
+
+            background: #f2f8f4;
+            border: 1px solid #dcefe3;
+        }
+
+        .estoque-produto-selecionado.mostrar {
+            display: block;
+        }
+
+        .estoque-produto-selecionado strong {
+            display: block;
+
+            color: #2e4b3b;
+            font-size: 13px;
+        }
+
+        .estoque-produto-selecionado small {
+            display: block;
+
+            margin-top: 3px;
+
+            color: #72827a;
+            font-size: 10px;
+        }
+
+        .estoque-quantidade-movimento {
+            margin-top: 12px;
+        }
+
+        .estoque-quantidade-movimento label {
+            display: block;
+
+            margin-bottom: 6px;
+
+            color: #52636e;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .estoque-quantidade-movimento input {
+            width: 100%;
+            height: 50px;
+
+            text-align: center;
+
+            border: 1px solid #dbe4e8;
+            border-radius: 13px;
+
+            color: #263746;
+            font-size: 21px;
+            font-weight: 900;
+
+            outline: none;
+        }
+
+
+        /* =====================================================
+           DETALHES
+           ===================================================== */
+
+        .estoque-detalhes-topo {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        .estoque-detalhes-foto {
+            width: 76px;
+            height: 76px;
+            flex-basis: 76px;
+        }
+
+        .estoque-detalhes-titulo {
+            min-width: 0;
+        }
+
+        .estoque-detalhes-titulo h4 {
+            margin: 0;
+
+            color: #293b4b;
+            font-size: 20px;
+            font-weight: 900;
+
+            overflow-wrap: anywhere;
+        }
+
+        .estoque-detalhes-codigo {
+            margin-top: 4px;
+
+            color: #89949b;
+            font-size: 11px;
+        }
+
+        .estoque-detalhes-preco {
+            margin-top: 6px;
+
+            color: #16834d;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .estoque-detalhes-preco span {
+            color: #8f9ba1;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .estoque-status-detalhes {
+            display: inline-flex;
+
+            margin-top: 14px;
+            padding: 6px 10px;
+
+            border-radius: 999px;
+
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .estoque-status-detalhes.normal {
+            color: #147844;
+            background: #eaf8f0;
+        }
+
+        .estoque-status-detalhes.baixo,
+        .estoque-status-detalhes.a-vencer {
+            color: #a26b00;
+            background: #fff4d8;
+        }
+
+        .estoque-status-detalhes.zero,
+        .estoque-status-detalhes.vencido {
+            color: #a33a3a;
+            background: #ffeded;
+        }
+
+        .estoque-detalhes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+
+            margin-top: 15px;
+        }
+
+        .estoque-detalhe {
+            padding: 12px;
+
+            border-radius: 13px;
+
+            background: #f7f9fa;
+        }
+
+        .estoque-detalhe small {
+            display: block;
+
+            color: #8d999f;
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+        .estoque-detalhe strong {
+            display: block;
+
+            margin-top: 5px;
+
+            color: #344652;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .estoque-ajuste-btn {
+            width: 100%;
+            min-height: 45px;
+
+            margin-top: 13px;
+
+            border: 0;
+            border-radius: 12px;
+
+            background: #edf4fc;
+            color: #2864ad;
+
+            font-size: 12px;
+            font-weight: 900;
+
+            cursor: pointer;
+        }
+
+        .estoque-detalhes-acoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+
+            margin-top: 12px;
+        }
+
+
+        /* =====================================================
+           AJUSTE DE QUANTIDADE
+           ===================================================== */
+
+        .estoque-ajuste-resumo {
+            padding: 15px;
+
+            border-radius: 15px;
+
+            background: #f4f8fa;
+
+            text-align: center;
+        }
+
+        .estoque-ajuste-resumo strong {
+            display: block;
+
+            color: #344652;
+            font-size: 15px;
+        }
+
+        .estoque-ajuste-resumo span {
+            display: block;
+
+            margin-top: 5px;
+
+            color: #8b989f;
+            font-size: 10px;
+        }
+
+        .estoque-ajuste-input {
+            margin-top: 15px;
+        }
+
+        .estoque-ajuste-input label {
+            display: block;
+
+            margin-bottom: 7px;
+
+            text-align: center;
+
+            color: #52636e;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .estoque-ajuste-input input {
+            width: 100%;
+            height: 65px;
+
+            border: 2px solid #dce5e9;
+            border-radius: 15px;
+
+            background: #ffffff;
+
+            color: #263746;
+
+            text-align: center;
+
+            font-size: 28px;
+            font-weight: 900;
+
+            outline: none;
+        }
+
+        .estoque-ajuste-input input:focus {
+            border-color: #39a46b;
+        }
+
+
+        /* =====================================================
+           EXCLUSÃO
+           ===================================================== */
+
+        .estoque-exclusao-icone {
+            width: 64px;
+            height: 64px;
+
+            margin: 0 auto 13px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 18px;
+
+            background: #fff0f0;
+            color: #b33b3b;
+
+            font-size: 27px;
+        }
+
+        .estoque-exclusao-texto {
+            text-align: center;
+        }
+
+        .estoque-exclusao-texto strong {
+            display: block;
+
+            color: #354752;
+            font-size: 15px;
+        }
+
+        .estoque-exclusao-texto p {
+            margin: 7px 0 0;
+
+            color: #8c989f;
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .estoque-nome-exclusao {
+            color: #b33b3b;
+            font-weight: 900;
+        }
+
+
+        /* =====================================================
+           LEITOR DE CÓDIGO DE BARRAS
+           ===================================================== */
+
+        .estoque-leitor-area {
+            position: relative;
+
+            width: 100%;
+            min-height: 280px;
+
+            overflow: hidden;
+
+            border-radius: 18px;
+
+            background: #111827;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #videoLeitorCodigo {
+            width: 100%;
+            height: 280px;
+
+            object-fit: cover;
+
+            display: none;
+
+            background: #000000;
+        }
+
+        #mensagemLeitorCodigo {
+            padding: 25px;
+
+            text-align: center;
+
+            color: #ffffff;
+
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .moldura-codigo-barras {
+            position: absolute;
+
+            left: 12%;
+            right: 12%;
+
+            top: 50%;
+
+            height: 80px;
+
+            transform: translateY(-50%);
+
+            border: 2px solid #35c879;
+
+            border-radius: 12px;
+
+            display: none;
+
+            pointer-events: none;
+        }
+
+        .moldura-codigo-barras::after {
+            content: "";
+
+            position: absolute;
+
+            left: 0;
+            right: 0;
+
+            top: 50%;
+
+            height: 2px;
+
+            background: #35c879;
+        }
+
+        .estoque-leitor-ajuda {
+            margin: 13px 4px 0;
+
+            text-align: center;
+
+            color: #7d8991;
+
+            font-size: 11px;
+
+            line-height: 1.45;
+        }
+
+
+        /* =====================================================
+           NAVEGAÇÃO INFERIOR
+           Controlada pelo style.css.
+           ===================================================== */
+
+
+        /* =====================================================
+           RESPONSIVO
+           ===================================================== */
+
+        @media (max-width: 390px) {
+
+            .estoque-app {
+                padding-left: 11px;
+                padding-right: 11px;
+            }
+
+            .estoque-acao {
+                font-size: 10px;
+            }
+
+            .estoque-produto {
+                grid-template-columns:
+                    46px
+                    minmax(0, 1fr)
+                    auto
+                    10px;
+
+                gap: 8px;
+
+                padding: 9px 8px;
+            }
+
+            .estoque-foto {
+                width: 46px;
+                height: 46px;
+            }
+
+            .estoque-produto-direita {
+                min-width: 67px;
+            }
+
+            .estoque-detalhes {
+                grid-template-columns: 1fr;
+            }
+
+            .estoque-codigo-linha {
+                grid-template-columns:
+                    minmax(0, 1fr)
+                    45px;
+
+                gap: 6px;
+            }
+
+            .estoque-btn-barcode {
+                width: 45px;
+                height: 45px;
+            }
+
+        }
+
+        @media (min-width: 600px) {
+
+            .estoque-app {
+                padding-top: 25px;
+            }
+
+            .estoque-modal {
+                align-items: center;
+            }
+
+            .estoque-modal-conteudo {
+                max-height: 88vh;
+            }
+
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+    <main class="estoque-app">
+
+
+        <!-- =================================================
+             CABEÇALHO
+             ================================================= -->
+
+        <header class="estoque-cabecalho">
+
+            <div class="estoque-marca">
+
+                <div class="estoque-logo">
+                    💰
+                </div>
+
+                <div>
+
+                    <h1>
+                        Dr. Troco
+                    </h1>
+
+                    <p>
+                        Controle de Estoque
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="estoque-config"
+                type="button"
+                aria-label="Configurações"
+            >
+                ⚙️
+            </button>
+
+        </header>
+
+
+
+        <!-- =================================================
+             KPIs
+             ================================================= -->
+
+        <section
+            class="estoque-resumo"
+            aria-label="Resumo do estoque"
+        >
+
+            <div class="estoque-kpi">
+
+                <div class="estoque-kpi-topo">
+
+                    <div class="estoque-kpi-icone">
+                        📦
+                    </div>
+
+                </div>
+
+                <strong id="estoqueTotalProdutos">
+                    0
+                </strong>
+
+                <span>
+                    Cadastrados
+                </span>
+
+            </div>
+
+
+            <div class="estoque-kpi">
+
+                <div class="estoque-kpi-topo">
+
+                    <div class="estoque-kpi-icone">
+                        🔢
+                    </div>
+
+                </div>
+
+                <strong id="estoqueTotalUnidades">
+                    0
+                </strong>
+
+                <span>
+                    Total em estoque
+                </span>
+
+            </div>
+
+
+            <div class="estoque-kpi estoque-kpi-alert">
+
+                <div class="estoque-kpi-topo">
+
+                    <div class="estoque-kpi-icone">
+                        ⚠️
+                    </div>
+
+                </div>
+
+                <strong id="estoqueTotalBaixo">
+                    0
+                </strong>
+
+                <span>
+                    Estoque baixo
+                </span>
+
+            </div>
+
+
+            <div class="estoque-kpi estoque-kpi-valor">
+
+                <div class="estoque-kpi-topo">
+
+                    <div class="estoque-kpi-icone">
+                        💰
+                    </div>
+
+                </div>
+
+                <strong id="estoqueTotalValor">
+                    R$ 0,00
+                </strong>
+
+                <span>
+                    Valor do estoque
+                </span>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             AÇÕES
+             ================================================= -->
+
+        <section class="estoque-acoes">
+
+            <button
+                id="btnCadastrarProduto"
+                class="estoque-acao estoque-acao-principal"
+                type="button"
+            >
+                <span class="simbolo">＋</span>
+                Cadastrar produto
+            </button>
+
+
+            <button
+                id="btnEntradaEstoque"
+                class="estoque-acao estoque-acao-entrada"
+                type="button"
+            >
+                <span class="simbolo">＋</span>
+                Entrada
+            </button>
+
+
+            <button
+                id="btnSaidaEstoque"
+                class="estoque-acao estoque-acao-saida"
+                type="button"
+            >
+                <span class="simbolo">−</span>
+                Saída
+            </button>
+
+        </section>
+
+
+
+        <!-- =================================================
+             BUSCA
+             ================================================= -->
+
+        <div class="estoque-busca">
+
+            <input
+                id="buscaProduto"
+                type="search"
+                autocomplete="off"
+                placeholder="Buscar por nome ou código..."
+                aria-label="Buscar produto"
+            >
+
+            <button
+                id="btnLimparBusca"
+                type="button"
+                aria-label="Limpar busca"
+            >
+                ✕
+            </button>
+
+        </div>
+
+
+
+        <!-- =================================================
+             FILTROS
+             ================================================= -->
+
+        <div
+            class="estoque-filtros"
+            aria-label="Filtros de estoque"
+        >
+
+            <button
+                class="estoque-filtro ativo"
+                type="button"
+                data-filtro-estoque="todos"
+            >
+                Todos
+            </button>
+
+            <button
+                class="estoque-filtro"
+                type="button"
+                data-filtro-estoque="baixo"
+            >
+                ⚠️ Estoque baixo
+            </button>
+
+            <button
+                class="estoque-filtro"
+                type="button"
+                data-filtro-estoque="zero"
+            >
+                ❌ Sem estoque
+            </button>
+
+            <button
+                class="estoque-filtro"
+                type="button"
+                data-filtro-estoque="vencer"
+            >
+                ⏳ A vencer
+            </button>
+
+        </div>
+
+
+
+        <!-- =================================================
+             TOPO DA LISTA
+             ================================================= -->
+
+        <div class="estoque-lista-topo">
+
+            <h2>
+                Produtos
+            </h2>
+
+            <span id="estoqueContador">
+                0 produtos
+            </span>
+
+        </div>
+
+
+
+        <!-- =================================================
+             LISTA
+             ================================================= -->
+
+        <section
+            id="listaProdutos"
+            aria-live="polite"
+        ></section>
+
+    </main>
+
+
+
+    <!-- =====================================================
+         MODAL — CADASTRO / EDIÇÃO
+         ===================================================== -->
+
+    <div
+        id="modalProduto"
+        class="estoque-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tituloModalProduto"
+    >
+
+        <div class="estoque-modal-conteudo">
+
+            <div class="estoque-modal-cabecalho">
+
+                <h3 id="tituloModalProduto">
+                    Cadastrar produto
+                </h3>
+
+                <button
+                    type="button"
+                    class="estoque-fechar"
+                    data-fechar="modalProduto"
+                    aria-label="Fechar"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <form id="formProduto">
+
+                <input
+                    id="produtoId"
+                    type="hidden"
+                >
+
+
+                <!-- NOME -->
+
+                <div class="estoque-form-grupo">
+
+                    <label for="nomeProduto">
+                        Nome do produto
+                    </label>
+
+                    <input
+                        id="nomeProduto"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="Ex.: Arroz 5kg"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- CÓDIGO + LEITOR -->
+
+                <div class="estoque-form-linha">
+
+                    <div class="estoque-codigo-linha">
+
+                        <div class="estoque-form-grupo">
+
+                            <label for="codigoProduto">
+                                Código
+                            </label>
+
+                            <input
+                                id="codigoProduto"
+                                type="text"
+                                inputmode="numeric"
+                                autocomplete="off"
+                                placeholder="Código do produto"
+                            >
+
+                        </div>
+
+
+                        <button
+                            id="btnLerCodigoBarras"
+                            class="estoque-btn-barcode"
+                            type="button"
+                            aria-label="Ler código de barras"
+                            title="Ler código de barras"
+                        >
+                            📷
+                        </button>
+
+                    </div>
+
+
+                    <div class="estoque-form-grupo">
+
+                        <label for="precoProduto">
+                            Preço unitário
+                        </label>
+
+                        <input
+                            id="precoProduto"
+                            type="number"
+                            inputmode="decimal"
+                            min="0"
+                            step="0.01"
+                            placeholder="0,00"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- TIPO + MÍNIMO -->
+
+                <div class="estoque-form-linha">
+
+                    <div class="estoque-form-grupo">
+
+                        <label for="tipoProduto">
+                            Tipo
+                        </label>
+
+                        <select id="tipoProduto">
+
+                            <option value="nao_perecivel">
+                                Não perecível
+                            </option>
+
+                            <option value="perecivel">
+                                Perecível
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="estoque-form-grupo">
+
+                        <label for="estoqueMinimo">
+                            Estoque mínimo
+                        </label>
+
+                        <input
+                            id="estoqueMinimo"
+                            type="number"
+                            inputmode="numeric"
+                            min="0"
+                            step="1"
+                            value="5"
+                        >
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- QUANTIDADE -->
+
+                <div class="estoque-form-grupo">
+
+                    <label for="quantidadeInicial">
+                        Quantidade inicial
+                    </label>
+
+                    <input
+                        id="quantidadeInicial"
+                        type="number"
+                        inputmode="numeric"
+                        min="0"
+                        step="1"
+                        value="0"
+                        placeholder="0"
+                    >
+
+                </div>
+
+
+
+                <!-- VALIDADE -->
+
+                <div
+                    id="campoValidade"
+                    class="estoque-form-grupo"
+                >
+
+                    <label for="validadeProduto">
+                        Validade
+                    </label>
+
+                    <input
+                        id="validadeProduto"
+                        type="date"
+                    >
+
+                </div>
+
+
+
+                <!-- FOTO -->
+
+                <div class="estoque-form-grupo">
+
+                    <label>
+                        Foto do produto
+                    </label>
+
+
+                    <div class="estoque-foto-upload">
+
+                        <div
+                            id="previewFoto"
+                            class="estoque-foto-preview"
+                            style="display:none"
+                        >
+
+                            <img
+                                id="previewFotoImg"
+                                src=""
+                                alt="Pré-visualização"
+                            >
+
+                        </div>
+
+
+                        <div class="estoque-foto-upload-info">
+
+                            <strong>
+                                Adicionar foto
+                            </strong>
+
+                            <span>
+                                A imagem será reduzida automaticamente.
+                            </span>
+
+                            <input
+                                id="fotoProduto"
+                                type="file"
+                                accept="image/*"
+                            >
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- BOTÕES -->
+
+                <div class="estoque-form-acoes">
+
+                    <button
+                        type="button"
+                        class="estoque-btn estoque-btn-secundario"
+                        data-fechar="modalProduto"
+                    >
+                        Cancelar
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="estoque-btn estoque-btn-principal"
+                    >
+                        Salvar produto
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         MODAL — LEITOR DE CÓDIGO DE BARRAS
+         ===================================================== -->
+
+    <div
+        id="modalLeitorCodigo"
+        class="estoque-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tituloLeitorCodigo"
+    >
+
+        <div class="estoque-modal-conteudo">
+
+            <div class="estoque-modal-cabecalho">
+
+                <h3 id="tituloLeitorCodigo">
+                    Ler código de barras
+                </h3>
+
+                <button
+                    type="button"
+                    class="estoque-fechar"
+                    data-fechar="modalLeitorCodigo"
+                    aria-label="Fechar leitor"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div class="estoque-leitor-area">
+
+                <video
+                    id="videoLeitorCodigo"
+                    autoplay
+                    muted
+                    playsinline
+                ></video>
+
+
+                <div id="mensagemLeitorCodigo">
+                    Preparando câmera...
+                </div>
+
+
+                <div
+                    id="molduraCodigoBarras"
+                    class="moldura-codigo-barras"
+                ></div>
+
+            </div>
+
+
+            <p class="estoque-leitor-ajuda">
+                Aponte a câmera para o código de barras do produto.
+            </p>
+
+
+            <button
+                id="btnFecharLeitorCodigo"
+                type="button"
+                class="estoque-btn estoque-btn-secundario"
+                style="width:100%;margin-top:14px"
+            >
+                Cancelar
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         MODAL — ENTRADA / SAÍDA
+         ===================================================== -->
+
+    <div
+        id="modalMovimento"
+        class="estoque-modal"
+        role="dialog"
+        aria-modal="true"
+    >
+
+        <div class="estoque-modal-conteudo">
+
+            <div class="estoque-modal-cabecalho">
+
+                <h3 id="tituloModalMovimento">
+                    Entrada de estoque
+                </h3>
+
+                <button
+                    type="button"
+                    class="estoque-fechar"
+                    data-fechar="modalMovimento"
+                    aria-label="Fechar"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div class="estoque-busca-movimento">
+
+                <input
+                    id="buscaMovimento"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="Buscar produto..."
+                >
+
+            </div>
+
+
+            <div id="listaSelecaoProdutos"></div>
+
+
+            <div
+                id="produtoSelecionadoMovimento"
+                class="estoque-produto-selecionado"
+            >
+
+                <strong id="nomeSelecionadoMovimento">
+                    Produto
+                </strong>
+
+                <small id="estoqueAtualMovimento">
+                    Estoque atual: 0 unidade(s)
+                </small>
+
+
+                <div class="estoque-quantidade-movimento">
+
+                    <label for="quantidadeMovimento">
+                        Quantidade
+                    </label>
+
+                    <input
+                        id="quantidadeMovimento"
+                        type="number"
+                        inputmode="numeric"
+                        min="1"
+                        step="1"
+                        placeholder="0"
+                    >
+
+                </div>
+
+
+                <button
+                    id="btnConfirmarMovimento"
+                    type="button"
+                    class="estoque-btn estoque-btn-principal"
+                    style="width:100%;margin-top:12px"
+                >
+                    Registrar entrada
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         MODAL — DETALHES
+         ===================================================== -->
+
+    <div
+        id="modalDetalhes"
+        class="estoque-modal"
+        role="dialog"
+        aria-modal="true"
+    >
+
+        <div class="estoque-modal-conteudo">
+
+            <div class="estoque-modal-cabecalho">
+
+                <h3>
+                    Detalhes do produto
+                </h3>
+
+                <button
+                    type="button"
+                    class="estoque-fechar"
+                    data-fechar="modalDetalhes"
+                    aria-label="Fechar"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div id="detalhesProduto"></div>
+
+
+            <div class="estoque-detalhes-acoes">
+
+                <button
+                    id="btnEditarDetalhes"
+                    type="button"
+                    class="estoque-btn estoque-btn-principal"
+                >
+                    ✎ Editar
+                </button>
+
+
+                <button
+                    id="btnExcluirDetalhes"
+                    type="button"
+                    class="estoque-btn estoque-btn-perigo"
+                >
+                    🗑 Excluir
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         MODAL — AJUSTAR QUANTIDADE
+         ===================================================== -->
+
+    <div
+        id="modalQuantidade"
+        class="estoque-modal"
+        role="dialog"
+        aria-modal="true"
+    >
+
+        <div class="estoque-modal-conteudo">
+
+            <div class="estoque-modal-cabecalho">
+
+                <h3>
+                    Ajustar quantidade
+                </h3>
+
+                <button
+                    type="button"
+                    class="estoque-fechar"
+                    data-fechar="modalQuantidade"
+                    aria-label="Fechar"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div class="estoque-ajuste-resumo">
+
+                <strong id="nomeProdutoQuantidade">
+                    Produto
+                </strong>
+
+                <span>
+
+                    Quantidade atual:
+
+                    <b id="quantidadeAtualProduto">
+                        0 un.
+                    </b>
+
+                </span>
+
+            </div>
+
+
+            <div class="estoque-ajuste-input">
+
+                <label for="novaQuantidadeProduto">
+                    Nova quantidade
+                </label>
+
+                <input
+                    id="novaQuantidadeProduto"
+                    type="number"
+                    inputmode="numeric"
+                    min="0"
+                    step="1"
+                    value="0"
+                >
+
+            </div>
+
+
+            <div class="estoque-form-acoes">
+
+                <button
+                    type="button"
+                    class="estoque-btn estoque-btn-secundario"
+                    data-fechar="modalQuantidade"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    id="btnConfirmarQuantidade"
+                    type="button"
+                    class="estoque-btn estoque-btn-principal"
+                >
+                    Salvar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         MODAL — CONFIRMAÇÃO DE EXCLUSÃO
+         ===================================================== -->
+
+    <div
+        id="modalExcluir"
+        class="estoque-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tituloExcluir"
+    >
+
+        <div class="estoque-modal-conteudo">
+
+            <div class="estoque-exclusao-icone">
+                🗑️
+            </div>
+
+
+            <div class="estoque-exclusao-texto">
+
+                <strong id="tituloExcluir">
+                    Excluir produto?
+                </strong>
+
+                <p>
+
+                    Você está prestes a excluir
+
+                    <span
+                        id="nomeExcluirProduto"
+                        class="estoque-nome-exclusao"
+                    >
+                        este produto
+                    </span>.
+
+                    Essa ação não poderá ser desfeita.
+
+                </p>
+
+            </div>
+
+
+            <div
+                class="estoque-form-acoes"
+                style="margin-top:20px"
+            >
+
+                <button
+                    type="button"
+                    class="estoque-btn estoque-btn-secundario"
+                    data-fechar="modalExcluir"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    id="btnConfirmarExclusao"
+                    type="button"
+                    class="estoque-btn estoque-btn-perigo"
+                >
+                    Excluir
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         NAVEGAÇÃO INFERIOR
+         ===================================================== -->
+
+    <nav
+        class="menu-inferior"
+        aria-label="Navegação principal"
+    >
+
+        <a
+            href="index.html"
+            class="menu-item"
+        >
+            <span>🧮</span>
+            <small>Calculadora</small>
+        </a>
+
+
+        <a
+            href="fluxo.html"
+            class="menu-item"
+        >
+            <span>📊</span>
+            <small>Fluxo</small>
+        </a>
+
+
+        <a
+            href="historico.html"
+            class="menu-item"
+        >
+            <span>📋</span>
+            <small>Histórico</small>
+        </a>
+
+
+        <a
+            href="estoque.html"
+            class="menu-item ativo"
+        >
+            <span>📦</span>
+            <small>Estoque</small>
+        </a>
+<a href="fiado.html" class="menu-item">
+  <span>🧾</span>
+  <small>Fiado</small>
+</a>
+    </nav>
+
+
+
+    <!-- =====================================================
+         SCRIPTS
+         ===================================================== -->
+
+    <script src="protecao.js"></script>
+    <script src="estoque.js"></script>
+
+</body>
+
+</html>
