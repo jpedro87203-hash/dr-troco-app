@@ -1,1 +1,29 @@
 
+{
+  "id": "/dr-troco-app/",
+  "name": "Dr. Troco",
+  "short_name": "Dr. Troco",
+  "description": "Controle de vendas, troco, caixa, estoque e fiado.",
+  "lang": "pt-BR",
+  "start_url": "/dr-troco-app/",
+  "scope": "/dr-troco-app/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f8f5",
+  "theme_color": "#168b53",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
+
