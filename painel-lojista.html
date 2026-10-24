@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Dr. Troco - Painel do Lojista</title>
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .painel-lojista {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px 16px 100px;
+    }
+
+    .cabecalho-lojista {
+      margin-bottom: 24px;
+    }
+
+    .cabecalho-lojista h1 {
+      margin-bottom: 6px;
+    }
+
+    .cartao-estabelecimento {
+      background: var(--card, #fff);
+      border: 1px solid var(--borda, #e5e7eb);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    .identidade-loja {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .icone-loja {
+      width: 54px;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      background: #e7f8ee;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .identidade-loja h2 {
+      margin: 0 0 5px;
+      overflow-wrap: anywhere;
+    }
+
+    .identidade-loja p {
+      margin: 0;
+      opacity: .7;
+      font-size: 14px;
+    }
+
+    .informacao-lojista {
+      padding: 14px 0;
+      border-top: 1px solid var(--borda, #e5e7eb);
+    }
+
+    .informacao-lojista small {
+      display: block;
+      margin-bottom: 5px;
+      opacity: .7;
+    }
+
+    .informacao-lojista p {
+      margin: 0;
+      overflow-wrap: anywhere;
+      font-weight: 500;
+    }
+
+    .acoes-lojista {
+      display: grid;
+      gap: 10px;
+    }
+
+    .acoes-lojista a {
+      display: block;
+      box-sizing: border-box;
+      width: 100%;
+      padding: 14px;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .botao-editar-loja {
+      background: #20a767;
+      color: white;
+    }
+
+    .botao-voltar-loja {
+      border: 1px solid var(--borda, #e5e7eb);
+      color: inherit;
+    }
+
+    .aviso-loja {
+      padding: 16px;
+      border-radius: 12px;
+      background: #fff7df;
+      color: #745600;
+      line-height: 1.5;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="painel-lojista">
+    <header class="cabecalho-lojista">
+      <h1>🏪 Painel do lojista</h1>
+      <p>Informações do seu estabelecimento</p>
+    </header>
+
+    <section id="avisoSemCadastro" class="aviso-loja" hidden>
+      <strong>Cadastro não encontrado.</strong>
+      <p>Cadastre os dados do estabelecimento para visualizar as informações aqui.</p>
+      <a href="estabelecimento.html">Cadastrar estabelecimento</a>
+    </section>
+
+    <section id="cartaoEstabelecimento" class="cartao-estabelecimento" hidden>
+      <div class="identidade-loja">
+        <div class="icone-loja">🏪</div>
+        <div>
+          <h2 id="painelNome">—</h2>
+          <p>Dados do estabelecimento</p>
+        </div>
+      </div>
+
+      <div class="informacao-lojista">
+        <small>Responsável</small>
+        <p id="painelResponsavel">—</p>
+      </div>
+
+      <div class="informacao-lojista">
+        <small>Telefone</small>
+        <p id="painelTelefone">—</p>
+      </div>
+
+      <div class="informacao-lojista">
+        <small>E-mail</small>
+        <p id="painelEmail">—</p>
+      </div>
+
+      <div class="informacao-lojista">
+        <small>Endereço</small>
+        <p id="painelEndereco">—</p>
+      </div>
+
+      <div class="informacao-lojista">
+        <small>Cidade</small>
+        <p id="painelCidade">—</p>
+      </div>
+
+      <div class="informacao-lojista">
+        <small>Estado</small>
+        <p id="painelEstado">—</p>
+      </div>
+    </section>
+
+    <nav class="acoes-lojista">
+      <a class="botao-editar-loja" href="estabelecimento.html">
+        ✏️ Editar dados do estabelecimento
+      </a>
+
+      <a class="botao-voltar-loja" href="index.html">
+        Voltar para a calculadora
+      </a>
+    </nav>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const CHAVE = "drTroco_estabelecimento";
+
+      const aviso = document.getElementById("avisoSemCadastro");
+      const cartao = document.getElementById("cartaoEstabelecimento");
+
+      try {
+        const dados = JSON.parse(localStorage.getItem(CHAVE) || "{}");
+
+        const nome = (dados.nomeEstabelecimento || "").trim();
+        const responsavel = (dados.responsavelEstabelecimento || "").trim();
+
+        if (!nome || !responsavel) {
+          aviso.hidden = false;
+          return;
+        }
+
+        document.getElementById("painelNome").textContent = nome;
+        document.getElementById("painelResponsavel").textContent = responsavel;
+        document.getElementById("painelTelefone").textContent =
+          dados.telefoneEstabelecimento || "Não informado";
+        document.getElementById("painelEmail").textContent =
+          dados.emailEstabelecimento || "Não informado";
+        document.getElementById("painelEndereco").textContent =
+          dados.enderecoEstabelecimento || "Não informado";
+        document.getElementById("painelCidade").textContent =
+          dados.cidadeEstabelecimento || "Não informado";
+        document.getElementById("painelEstado").textContent =
+          dados.estadoEstabelecimento || "Não informado";
+
+        cartao.hidden = false;
+      } catch (erro) {
+        aviso.hidden = false;
+        console.error("Erro ao carregar dados do estabelecimento:", erro);
+      }
+    });
+  </script>
+</body>
+</html>
