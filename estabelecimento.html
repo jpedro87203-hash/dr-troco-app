@@ -1,1 +1,65 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#168b53">
+  <title>Meu Estabelecimento - Dr. Troco</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="pagina-estabelecimento">
+    <header>
+      <a href="index.html" class="btn-voltar">← Voltar</a>
+      <h1>Meu Estabelecimento</h1>
+      <p>Cadastre os dados que aparecerão nos relatórios PDF.</p>
+    </header>
+
+    <form id="formEstabelecimento">
+      <label for="nomeEstabelecimento">Nome do estabelecimento *</label>
+      <input id="nomeEstabelecimento" name="nomeEstabelecimento"
+        type="text" maxlength="100" required
+        placeholder="Ex.: Conveniência do João">
+
+      <label for="responsavelEstabelecimento">Nome do responsável *</label>
+      <input id="responsavelEstabelecimento" name="responsavelEstabelecimento"
+        type="text" maxlength="100" required
+        placeholder="Nome completo">
+
+      <label for="telefoneEstabelecimento">Telefone</label>
+      <input id="telefoneEstabelecimento" name="telefoneEstabelecimento"
+        type="tel" maxlength="25"
+        placeholder="(98) 99999-9999">
+
+      <label for="emailEstabelecimento">E-mail</label>
+      <input id="emailEstabelecimento" name="emailEstabelecimento"
+        type="email" maxlength="120"
+        placeholder="contato@exemplo.com">
+
+      <label for="enderecoEstabelecimento">Endereço</label>
+      <input id="enderecoEstabelecimento" name="enderecoEstabelecimento"
+        type="text" maxlength="150"
+        placeholder="Rua, número e bairro">
+
+      <label for="cidadeEstabelecimento">Cidade</label>
+      <input id="cidadeEstabelecimento" name="cidadeEstabelecimento"
+        type="text" maxlength="80"
+        placeholder="Cidade">
+
+      <label for="estadoEstabelecimento">Estado (UF)</label>
+      <input id="estadoEstabelecimento" name="estadoEstabelecimento"
+        type="text" maxlength="2" placeholder="MA">
+
+      <button type="submit" class="btn-salvar-estabelecimento">
+        Salvar dados
+      </button>
+
+      <p id="mensagemEstabelecimento" role="status" aria-live="polite"></p>
+    </form>
+  </main>
+
+  <script src="estabelecimento.js"></script>
+</body>
+</html>
+
