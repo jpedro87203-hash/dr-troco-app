@@ -2773,3 +2773,27 @@ body nav.menu-inferior > a.menu-item small {
     font-size: 9px;
   }
 }
+
+/* Ícone do estabelecimento no cabeçalho */
+.botao-estabelecimento {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #d8eee1;
+  background: #eaf7ef;
+  color: #168b53;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 23px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.botao-estabelecimento:active {
+  transform: scale(0.96);
+}
+
