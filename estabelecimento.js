@@ -50,7 +50,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       localStorage.setItem(CHAVE, JSON.stringify(dados));
-      mensagem.textContent = "Dados do estabelecimento salvos com sucesso!";
+mensagem.textContent = "Dados salvos com sucesso!";
+
+window.location.href = "painel-lojista.html";
     } catch (erro) {
       mensagem.textContent =
         "Não foi possível salvar. Verifique o armazenamento do navegador.";
