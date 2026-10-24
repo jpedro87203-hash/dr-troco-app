@@ -7,59 +7,265 @@
   <meta name="theme-color" content="#168b53">
   <title>Meu Estabelecimento - Dr. Troco</title>
   <link rel="stylesheet" href="style.css">
+
+  <style>
+    .pagina-estabelecimento {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px 16px 100px;
+      box-sizing: border-box;
+    }
+
+    .estab-topo {
+      margin-bottom: 24px;
+    }
+
+    .estab-voltar {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      color: #168b53;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .estab-topo h1 {
+      margin: 0 0 8px;
+      font-size: 26px;
+      line-height: 1.25;
+      color: #168b53;
+    }
+
+    .estab-topo p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #66736b;
+    }
+
+    .estab-cartao {
+      background: #ffffff;
+      border: 1px solid #e1e9e3;
+      border-radius: 16px;
+      padding: 20px 16px;
+      box-shadow: 0 4px 16px rgba(20, 80, 45, 0.06);
+    }
+
+    .estab-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 18px;
+      min-width: 0;
+    }
+
+    .estab-grupo label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #263a2e;
+    }
+
+    .estab-grupo input {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      min-height: 46px;
+      box-sizing: border-box;
+      padding: 12px;
+      border: 1px solid #d4ded7;
+      border-radius: 9px;
+      background: #fbfdfb;
+      color: #263a2e;
+      font: inherit;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .estab-grupo input:focus {
+      border-color: #20a767;
+      box-shadow: 0 0 0 3px rgba(32, 167, 103, 0.12);
+    }
+
+    .estab-grupo input::placeholder {
+      color: #9aa69e;
+    }
+
+    .estab-dupla {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .estab-ajuda {
+      margin: -5px 0 18px;
+      color: #758078;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .btn-salvar-estabelecimento {
+      width: 100%;
+      min-height: 48px;
+      border: none;
+      border-radius: 10px;
+      background: #168b53;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-salvar-estabelecimento:active {
+      background: #116d41;
+    }
+
+    #mensagemEstabelecimento {
+      margin: 14px 0 0;
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #168b53;
+    }
+
+    @media (max-width: 380px) {
+      .estab-cartao {
+        padding: 16px 12px;
+      }
+
+      .estab-dupla {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+      }
+    }
+  </style>
 </head>
+
 <body>
   <main class="pagina-estabelecimento">
-    <header>
-      <a href="index.html" class="btn-voltar">← Voltar</a>
-      <h1>Meu Estabelecimento</h1>
-      <p>Cadastre os dados que aparecerão nos relatórios PDF.</p>
+
+    <header class="estab-topo">
+      <a href="index.html" class="estab-voltar">← Voltar</a>
+      <h1>Meu estabelecimento</h1>
+      <p>
+        Cadastre as informações que aparecerão nos relatórios
+        PDF do Dr. Troco.
+      </p>
     </header>
 
-    <form id="formEstabelecimento">
-      <label for="nomeEstabelecimento">Nome do estabelecimento *</label>
-      <input id="nomeEstabelecimento" name="nomeEstabelecimento"
-        type="text" maxlength="100" required
-        placeholder="Ex.: Conveniência do João">
+    <form id="formEstabelecimento" class="estab-cartao">
 
-      <label for="responsavelEstabelecimento">Nome do responsável *</label>
-      <input id="responsavelEstabelecimento" name="responsavelEstabelecimento"
-        type="text" maxlength="100" required
-        placeholder="Nome completo">
+      <div class="estab-grupo">
+        <label for="nomeEstabelecimento">
+          Nome do estabelecimento *
+        </label>
+        <input
+          id="nomeEstabelecimento"
+          name="nomeEstabelecimento"
+          type="text"
+          maxlength="100"
+          autocomplete="organization"
+          placeholder="Ex.: Conveniência NG"
+          required
+        >
+      </div>
 
-      <label for="telefoneEstabelecimento">Telefone</label>
-      <input id="telefoneEstabelecimento" name="telefoneEstabelecimento"
-        type="tel" maxlength="25"
-        placeholder="(98) 99999-9999">
+      <div class="estab-grupo">
+        <label for="responsavelEstabelecimento">
+          Nome do responsável *
+        </label>
+        <input
+          id="responsavelEstabelecimento"
+          name="responsavelEstabelecimento"
+          type="text"
+          maxlength="100"
+          autocomplete="name"
+          placeholder="Nome do proprietário"
+          required
+        >
+      </div>
 
-      <label for="emailEstabelecimento">E-mail</label>
-      <input id="emailEstabelecimento" name="emailEstabelecimento"
-        type="email" maxlength="120"
-        placeholder="contato@exemplo.com">
+      <div class="estab-grupo">
+        <label for="telefoneEstabelecimento">Telefone</label>
+        <input
+          id="telefoneEstabelecimento"
+          name="telefoneEstabelecimento"
+          type="tel"
+          maxlength="25"
+          autocomplete="tel"
+          placeholder="(98) 99999-9999"
+        >
+      </div>
 
-      <label for="enderecoEstabelecimento">Endereço</label>
-      <input id="enderecoEstabelecimento" name="enderecoEstabelecimento"
-        type="text" maxlength="150"
-        placeholder="Rua, número e bairro">
+      <div class="estab-grupo">
+        <label for="emailEstabelecimento">E-mail</label>
+        <input
+          id="emailEstabelecimento"
+          name="emailEstabelecimento"
+          type="email"
+          maxlength="120"
+          autocomplete="email"
+          placeholder="contato@exemplo.com"
+        >
+      </div>
 
-      <label for="cidadeEstabelecimento">Cidade</label>
-      <input id="cidadeEstabelecimento" name="cidadeEstabelecimento"
-        type="text" maxlength="80"
-        placeholder="Cidade">
+      <div class="estab-grupo">
+        <label for="enderecoEstabelecimento">Endereço</label>
+        <input
+          id="enderecoEstabelecimento"
+          name="enderecoEstabelecimento"
+          type="text"
+          maxlength="150"
+          autocomplete="street-address"
+          placeholder="Rua, número e bairro"
+        >
+      </div>
 
-      <label for="estadoEstabelecimento">Estado (UF)</label>
-      <input id="estadoEstabelecimento" name="estadoEstabelecimento"
-        type="text" maxlength="2" placeholder="MA">
+      <div class="estab-dupla">
+        <div class="estab-grupo">
+          <label for="cidadeEstabelecimento">Cidade</label>
+          <input
+            id="cidadeEstabelecimento"
+            name="cidadeEstabelecimento"
+            type="text"
+            maxlength="80"
+            autocomplete="address-level2"
+            placeholder="Sua cidade"
+          >
+        </div>
+
+        <div class="estab-grupo">
+          <label for="estadoEstabelecimento">Estado (UF)</label>
+          <input
+            id="estadoEstabelecimento"
+            name="estadoEstabelecimento"
+            type="text"
+            maxlength="2"
+            autocomplete="address-level1"
+            placeholder="MA"
+          >
+        </div>
+      </div>
+
+      <p class="estab-ajuda">
+        * Campos obrigatórios. Os demais dados são opcionais.
+      </p>
 
       <button type="submit" class="btn-salvar-estabelecimento">
         Salvar dados
       </button>
 
-      <p id="mensagemEstabelecimento" role="status" aria-live="polite"></p>
+      <p
+        id="mensagemEstabelecimento"
+        role="status"
+        aria-live="polite"
+      ></p>
+
     </form>
   </main>
 
   <script src="estabelecimento.js"></script>
 </body>
 </html>
-
