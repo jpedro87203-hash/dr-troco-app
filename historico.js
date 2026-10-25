@@ -55,11 +55,13 @@ document.addEventListener("DOMContentLoaded", () => {
         detalhesForma: $("detalhesForma"),
         detalhesDescricao: $("detalhesDescricao"),
         detalhesDataHora: $("detalhesDataHora"),
-        btnExcluirDetalhe: $("btnExcluirDetalhe")
+        btnExcluirDetalhe: $("btnExcluirDetalhe"),
+        btnEditarDetalhe: $("btnEditarDetalhe")
     };
 
     let tipoMovimentacaoAtual = "entrada";
     let lancamentoSelecionado = null;
+    let idMovimentacaoEmEdicao = null;
 
     /* =========================
        FUNÇÕES BÁSICAS
@@ -331,10 +333,6 @@ document.addEventListener("DOMContentLoaded", () => {
             );
         }
 
-        /*
-         * Compatibilidade com possíveis formatos antigos.
-         * Não altera nem apaga os dados salvos.
-         */
         if (saldos.saldos && saldos.saldos[dataISO] !== undefined) {
             return numero(saldos.saldos[dataISO]);
         }
@@ -437,13 +435,6 @@ document.addEventListener("DOMContentLoaded", () => {
             .filter(item => item.forma === "dinheiro")
             .reduce((soma, item) => soma + item.valor, 0);
 
-        /*
-         * Caixa físico:
-         * saldo inicial + vendas em dinheiro
-         * + entradas em dinheiro - saídas em dinheiro.
-         *
-         * PIX, débito e crédito não alteram o dinheiro físico.
-         */
         const saldoFinal =
             saldoInicial + dinheiro + entradasDinheiro - saidasDinheiro;
 
@@ -537,14 +528,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         ${sinal}${moeda(registro.valor)}
                     </strong>
 
-                    ${registro.categoria === "venda" ? "" : `
-                        <button type="button"
-                                class="lixeira-historico"
-                                data-indice="${indice}"
-                                aria-label="Excluir lançamento">
-                            🗑
-                        </button>
-                    `}
+                    <button type="button"
+                            class="lixeira-historico"
+                            data-indice="${indice}"
+                            aria-label="Excluir lançamento">
+                        🗑
+                    </button>
                 </article>
             `;
         }).join("");
@@ -575,7 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const indice = Number(botao.dataset.indice);
                 const registro = registros[indice];
 
-                if (registro) excluirMovimentacao(registro);
+                if (registro) excluirRegistro(registro);
             });
         });
     }
@@ -609,26 +598,45 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /* =========================
-       MODAL DE ENTRADA / SAÍDA
+       MODAL DE ENTRADA / SAÍDA (CRIAÇÃO E EDIÇÃO)
     ========================= */
 
-    function abrirModalMovimentacao(tipo) {
+    function abrirModalMovimentacao(tipo, movimentacaoParaEditar = null) {
         tipoMovimentacaoAtual = tipo;
+        idMovimentacaoEmEdicao = movimentacaoParaEditar ? (movimentacaoParaEditar.original?.id ?? movimentacaoParaEditar.id) : null;
 
         if (elementos.formMovimentacao) {
             elementos.formMovimentacao.reset();
         }
 
-        if (elementos.tituloModalMovimentacao) {
-            elementos.tituloModalMovimentacao.textContent =
-                tipo === "entrada" ? "Nova entrada" : "Nova saída";
-        }
+        if (movimentacaoParaEditar) {
+            if (elementos.tituloModalMovimentacao) {
+                elementos.tituloModalMovimentacao.textContent = tipo === "entrada" ? "Editar entrada" : "Editar saída";
+            }
+            if (elementos.subtituloModalMovimentacao) {
+                elementos.subtituloModalMovimentacao.textContent = "Altere os dados da movimentação.";
+            }
+            if (elementos.valorMovimentacao) {
+                elementos.valorMovimentacao.value = movimentacaoParaEditar.valor;
+            }
+            if (elementos.formaPagamentoMovimentacao) {
+                elementos.formaPagamentoMovimentacao.value = movimentacaoParaEditar.forma;
+            }
+            if (elementos.descricaoMovimentacao) {
+                elementos.descricaoMovimentacao.value = movimentacaoParaEditar.descricao;
+            }
+        } else {
+            if (elementos.tituloModalMovimentacao) {
+                elementos.tituloModalMovimentacao.textContent =
+                    tipo === "entrada" ? "Nova entrada" : "Nova saída";
+            }
 
-        if (elementos.subtituloModalMovimentacao) {
-            elementos.subtituloModalMovimentacao.textContent =
-                tipo === "entrada"
-                    ? "Registre um valor que entrou no caixa."
-                    : "Registre um valor que saiu do caixa.";
+            if (elementos.subtituloModalMovimentacao) {
+                elementos.subtituloModalMovimentacao.textContent =
+                    tipo === "entrada"
+                        ? "Registre um valor que entrou no caixa."
+                        : "Registre um valor que saiu do caixa.";
+            }
         }
 
         if (elementos.iconeModalMovimentacao) {
@@ -645,6 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function fecharModalMovimentacao() {
         elementos.modalMovimentacao?.classList.remove("ativo");
+        idMovimentacaoEmEdicao = null;
     }
 
     elementos.btnNovaEntrada?.addEventListener("click", () => {
@@ -691,36 +700,62 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const dataISO = elementos.filtroData?.value || dataISOHoje();
-            const agora = new Date();
-
-            const movimento = {
-                id: criarId(),
-                tipo: tipoMovimentacaoAtual,
-                valor,
-                formaPagamento: forma,
-                descricao,
-                data: formatarDataISO(dataISO),
-                dataChave: dataISO,
-                hora: agora.toLocaleTimeString("pt-BR", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                })
-            };
-
             const movimentacoes = lerMovimentacoes();
-            movimentacoes.push(movimento);
 
-            if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;
+            if (idMovimentacaoEmEdicao) {
+                const indice = movimentacoes.findIndex(item => String(item.id) === String(idMovimentacaoEmEdicao));
 
-            fecharModalMovimentacao();
-            atualizarHistorico();
+                if (indice < 0) {
+                    alert("Não foi possível localizar a movimentação para editar.");
+                    return;
+                }
 
-            alert(
-                tipoMovimentacaoAtual === "entrada"
-                    ? "Entrada registrada com sucesso!"
-                    : "Saída registrada com sucesso!"
-            );
+                movimentacoes[indice] = {
+                    ...movimentacoes[indice],
+                    tipo: tipoMovimentacaoAtual,
+                    valor,
+                    formaPagamento: forma,
+                    descricao
+                };
+
+                if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;
+
+                fecharModalMovimentacao();
+                atualizarHistorico();
+                alert("Movimentação atualizada com sucesso!");
+            } else {
+                const dataISO = elementos.filtroData?.value || dataISOHoje();
+                const agora = new Date();
+
+                const movimento = {
+                    id: criarId(),
+                    tipo: tipoMovimentacaoAtual,
+                    valor,
+                    formaPagamento: forma,
+                    descricao,
+                    data: formatarDataISO(dataISO),
+                    dataChave: dataISO,
+                    hora: agora.toLocaleTimeString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    })
+                };
+
+                movimentacoes.push(movimento);
+
+                if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;
+
+                fecharModalMovimentacao();
+                atualizarHistorico();
+
+                alert(
+                    tipoMovimentacaoAtual === "entrada"
+                        ? "Entrada registrada com sucesso!"
+                        : "Saída registrada com sucesso!"
+                );
+            }
+
+            idMovimentacaoEmEdicao = null;
         });
     }
 
@@ -746,9 +781,14 @@ document.addEventListener("DOMContentLoaded", () => {
         elementos.detalhesDataHora.textContent =
             `${formatarDataISO(registro.dataISO)}${registro.hora ? " às " + registro.hora : ""}`;
 
+        const ehMovimentacaoManual = registro.categoria === "entrada" || registro.categoria === "saida";
+
         if (elementos.btnExcluirDetalhe) {
-            elementos.btnExcluirDetalhe.style.display =
-                registro.categoria === "venda" ? "none" : "";
+            elementos.btnExcluirDetalhe.style.display = ""; // Disponível para todos os registros
+        }
+
+        if (elementos.btnEditarDetalhe) {
+            elementos.btnEditarDetalhe.style.display = ehMovimentacaoManual ? "" : "none";
         }
 
         elementos.modalDetalhes.classList.add("ativo");
@@ -768,55 +808,104 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* =========================
-       EXCLUIR MOVIMENTAÇÃO
+       EXCLUIR REGISTRO (VENDA OU MOVIMENTAÇÃO)
     ========================= */
 
-    function excluirMovimentacao(registro) {
-        if (!registro || registro.categoria === "venda") return;
+    function excluirRegistro(registro) {
+        if (!registro) return;
+
+        const nomeTipo = registro.categoria === "venda" ? "esta venda" :
+            (registro.categoria === "entrada" ? "esta entrada" : "esta saída");
 
         const confirmado = confirm(
-            `Deseja excluir esta ${registro.categoria === "entrada" ? "entrada" : "saída"}?\n\n` +
+            `Deseja excluir ${nomeTipo}?\n\n` +
             `${registro.descricao}\n${moeda(registro.valor)}`
         );
 
         if (!confirmado) return;
 
-        const movimentacoes = lerMovimentacoes();
-        const original = registro.original;
+        if (registro.categoria === "venda") {
+            const vendas = lerVendas();
+            const original = registro.original;
 
-        let indice = movimentacoes.findIndex(item =>
-            String(item.id) === String(original.id) && original.id !== undefined
-        );
-
-        if (indice < 0) {
-            indice = movimentacoes.findIndex(item =>
-                obterDataISO(item) === registro.dataISO &&
-                numero(item.valor) === registro.valor &&
-                obterTipoMovimentacao(item) === registro.categoria &&
-                obterDescricao(item) === registro.descricao &&
-                obterPagamento(item) === registro.forma
+            let indice = vendas.findIndex(item =>
+                String(item.id ?? item.vendaId) === String(original?.id ?? original?.vendaId) &&
+                (original?.id !== undefined || original?.vendaId !== undefined)
             );
+
+            if (indice < 0) {
+                indice = vendas.findIndex(item =>
+                    obterDataISO(item) === registro.dataISO &&
+                    obterValorVenda(item) === registro.valor &&
+                    obterPagamento(item) === registro.forma &&
+                    obterDescricao(item) === registro.descricao
+                );
+            }
+
+            if (indice < 0) {
+                alert("Não foi possível localizar esta venda para excluir.");
+                return;
+            }
+
+            vendas.splice(indice, 1);
+
+            if (!salvarJSON(CHAVE_VENDAS, vendas)) return;
+        } else {
+            const movimentacoes = lerMovimentacoes();
+            const original = registro.original;
+
+            let indice = movimentacoes.findIndex(item =>
+                String(item.id) === String(original?.id) && original?.id !== undefined
+            );
+
+            if (indice < 0) {
+                indice = movimentacoes.findIndex(item =>
+                    obterDataISO(item) === registro.dataISO &&
+                    numero(item.valor) === registro.valor &&
+                    obterTipoMovimentacao(item) === registro.categoria &&
+                    obterDescricao(item) === registro.descricao &&
+                    obterPagamento(item) === registro.forma
+                );
+            }
+
+            if (indice < 0) {
+                alert("Não foi possível localizar este lançamento para excluir.");
+                return;
+            }
+
+            movimentacoes.splice(indice, 1);
+
+            if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;
         }
-
-        if (indice < 0) {
-            alert("Não foi possível localizar este lançamento para excluir.");
-            return;
-        }
-
-        movimentacoes.splice(indice, 1);
-
-        if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;
 
         fecharDetalhes();
         atualizarHistorico();
 
-        alert("Movimentação excluída.");
+        alert("Registro excluído com sucesso!");
     }
 
     elementos.btnExcluirDetalhe?.addEventListener("click", () => {
         if (lancamentoSelecionado) {
-            excluirMovimentacao(lancamentoSelecionado);
+            excluirRegistro(lancamentoSelecionado);
         }
+    });
+
+    /* =========================
+       EDITAR MOVIMENTAÇÃO NOS DETALHES
+    ========================= */
+
+    elementos.btnEditarDetalhe?.addEventListener("click", () => {
+        if (!lancamentoSelecionado) return;
+
+        const registro = lancamentoSelecionado;
+
+        if (registro.categoria !== "entrada" && registro.categoria !== "saida") {
+            alert("Apenas entradas e saídas manuais podem ser editadas.");
+            return;
+        }
+
+        fecharDetalhes();
+        abrirModalMovimentacao(registro.categoria, registro);
     });
 
     /* =========================
@@ -837,11 +926,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const nomeArquivo = `Dr-Troco-Historico-${dataISO.split("-").reverse().join("-")}.pdf`;
 
-        /*
-         * Usa jsPDF caso esteja disponível.
-         * Caso contrário, abre a impressão do navegador,
-         * onde é possível selecionar "Salvar como PDF".
-         */
         const jsPDF =
             window.jspdf?.jsPDF ||
             window.jsPDF;
@@ -936,10 +1020,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        /*
-         * Alternativa sem biblioteca PDF:
-         * a janela de impressão permite salvar em PDF.
-         */
         const janela = window.open("", "_blank");
 
         if (!janela) {
