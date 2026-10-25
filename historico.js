@@ -909,7 +909,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* =========================
-       EXPORTAR PDF
+       EXPORTAR PDF COM DADOS DO ESTABELECIMENTO
     ========================= */
 
     async function exportarPDF() {
@@ -924,106 +924,238 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!continuar) return;
         }
 
-        const nomeArquivo = `Dr-Troco-Historico-${dataISO.split("-").reverse().join("-")}.pdf`;
+        const nomeArquivo =
+            `Dr-Troco-Historico-${dataISO.split("-").reverse().join("-")}.pdf`;
 
-        const jsPDF =
-            window.jspdf?.jsPDF ||
-            window.jsPDF;
+        // Dados cadastrados na página estabelecimento.html
+        let estabelecimento = {};
 
+        try {
+            estabelecimento = JSON.parse(
+                localStorage.getItem("drTroco_estabelecimento") || "{}"
+            );
+
+            if (
+                !estabelecimento ||
+                typeof estabelecimento !== "object" ||
+                Array.isArray(estabelecimento)
+            ) {
+                estabelecimento = {};
+            }
+        } catch (erro) {
+            console.error("Erro ao ler dados do estabelecimento:", erro);
+            estabelecimento = {};
+        }
+
+        const dadosEstabelecimento = [
+            estabelecimento.nomeEstabelecimento,
+            estabelecimento.responsavelEstabelecimento
+                ? `Responsável: ${estabelecimento.responsavelEstabelecimento}`
+                : "",
+            estabelecimento.telefoneEstabelecimento
+                ? `Telefone: ${estabelecimento.telefoneEstabelecimento}`
+                : "",
+            estabelecimento.emailEstabelecimento
+                ? `E-mail: ${estabelecimento.emailEstabelecimento}`
+                : "",
+            estabelecimento.enderecoEstabelecimento,
+            [
+                estabelecimento.cidadeEstabelecimento,
+                estabelecimento.estadoEstabelecimento
+            ].filter(Boolean).join(" - ")
+        ].filter(valor => String(valor || "").trim());
+
+        const jsPDF = window.jspdf?.jsPDF || window.jsPDF;
+
+        const saldoInicial = obterSaldoInicial(dataISO);
+        const vendas = registros.filter(item => item.categoria === "venda");
+        const entradas = registros.filter(item => item.categoria === "entrada");
+        const saidas = registros.filter(item => item.categoria === "saida");
+
+        const totalDinheiro = vendas
+            .filter(item => item.forma === "dinheiro")
+            .reduce((soma, item) => soma + item.valor, 0);
+
+        const entradasDinheiro = entradas
+            .filter(item => item.forma === "dinheiro")
+            .reduce((soma, item) => soma + item.valor, 0);
+
+        const saidasDinheiro = saidas
+            .filter(item => item.forma === "dinheiro")
+            .reduce((soma, item) => soma + item.valor, 0);
+
+        const saldoFinal =
+            saldoInicial + totalDinheiro + entradasDinheiro - saidasDinheiro;
+
+        const totalVendido = vendas.reduce(
+            (soma, item) => soma + item.valor, 0
+        );
+
+        const totalEntradas = entradas.reduce(
+            (soma, item) => soma + item.valor, 0
+        );
+
+        const totalSaidas = saidas.reduce(
+            (soma, item) => soma + item.valor, 0
+        );
+
+        const linhasResumo = [
+            `Saldo inicial: ${moeda(saldoInicial)}`,
+            `Total vendido: ${moeda(totalVendido)}`,
+            `Entradas: ${moeda(totalEntradas)}`,
+            `Saídas: ${moeda(totalSaidas)}`,
+            `Saldo final físico: ${moeda(saldoFinal)}`
+        ];
+
+        // Tenta gerar o PDF diretamente com jsPDF
         if (jsPDF) {
             try {
                 const doc = new jsPDF({ unit: "mm", format: "a4" });
+                const larguraPagina =
+                    doc.internal.pageSize.getWidth();
+                const alturaPagina =
+                    doc.internal.pageSize.getHeight();
+                const margem = 14;
+                const larguraTexto = larguraPagina - margem * 2;
 
                 let y = 18;
 
+                doc.setFont("helvetica", "bold");
                 doc.setFontSize(19);
                 doc.setTextColor(32, 167, 103);
-                doc.text("Dr. Troco — Histórico", 14, y);
+                doc.text("Dr. Troco — Histórico", margem, y);
 
                 y += 9;
-                doc.setFontSize(11);
+
+                // Cabeçalho do estabelecimento
+                if (dadosEstabelecimento.length > 0) {
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(12);
+                    doc.setTextColor(38, 54, 64);
+
+                    const nome = dadosEstabelecimento[0];
+                    const linhasNome = doc.splitTextToSize(
+                        String(nome),
+                        larguraTexto
+                    );
+
+                    doc.text(linhasNome, margem, y);
+                    y += linhasNome.length * 5 + 1;
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(9);
+                    doc.setTextColor(80, 90, 85);
+
+                    dadosEstabelecimento.slice(1).forEach(informacao => {
+                        const linhas = doc.splitTextToSize(
+                            String(informacao),
+                            larguraTexto
+                        );
+
+                        if (y + linhas.length * 4 > alturaPagina - 20) {
+                            doc.addPage();
+                            y = 18;
+                        }
+
+                        doc.text(linhas, margem, y);
+                        y += linhas.length * 4 + 1;
+                    });
+
+                    y += 3;
+                }
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
                 doc.setTextColor(80, 90, 85);
-                doc.text(`Data: ${formatarDataISO(dataISO)}`, 14, y);
+                doc.text(
+                    `Data do relatório: ${formatarDataISO(dataISO)}`,
+                    margem,
+                    y
+                );
 
-                y += 10;
+                y += 9;
 
-                const saldoInicial = obterSaldoInicial(dataISO);
-                const vendas = registros.filter(item => item.categoria === "venda");
-                const entradas = registros.filter(item => item.categoria === "entrada");
-                const saidas = registros.filter(item => item.categoria === "saida");
-
-                const totalDinheiro = vendas
-                    .filter(item => item.forma === "dinheiro")
-                    .reduce((soma, item) => soma + item.valor, 0);
-
-                const entradasDinheiro = entradas
-                    .filter(item => item.forma === "dinheiro")
-                    .reduce((soma, item) => soma + item.valor, 0);
-
-                const saidasDinheiro = saidas
-                    .filter(item => item.forma === "dinheiro")
-                    .reduce((soma, item) => soma + item.valor, 0);
-
-                const saldoFinal = saldoInicial + totalDinheiro +
-                    entradasDinheiro - saidasDinheiro;
-
-                const totalVendido = vendas.reduce((soma, item) => soma + item.valor, 0);
-                const totalEntradas = entradas.reduce((soma, item) => soma + item.valor, 0);
-                const totalSaidas = saidas.reduce((soma, item) => soma + item.valor, 0);
-
-                const linhasResumo = [
-                    `Saldo inicial: ${moeda(saldoInicial)}`,
-                    `Total vendido: ${moeda(totalVendido)}`,
-                    `Entradas: ${moeda(totalEntradas)}`,
-                    `Saídas: ${moeda(totalSaidas)}`,
-                    `Saldo final físico: ${moeda(saldoFinal)}`
-                ];
-
+                // Resumo financeiro
                 doc.setFontSize(11);
                 doc.setTextColor(38, 54, 64);
 
                 linhasResumo.forEach(linha => {
-                    doc.text(linha, 14, y);
-                    y += 7;
-                });
-
-                y += 5;
-                doc.setFontSize(13);
-                doc.setFont(undefined, "bold");
-                doc.text("Movimentações", 14, y);
-                y += 8;
-
-                doc.setFont(undefined, "normal");
-                doc.setFontSize(9);
-
-                registros.forEach(registro => {
-                    if (y > 275) {
+                    if (y > alturaPagina - 20) {
                         doc.addPage();
                         y = 18;
                     }
 
+                    doc.text(linha, margem, y);
+                    y += 7;
+                });
+
+                y += 5;
+
+                if (y > alturaPagina - 25) {
+                    doc.addPage();
+                    y = 18;
+                }
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(13);
+                doc.text("Movimentações", margem, y);
+                y += 8;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+
+                if (registros.length === 0) {
+                    doc.text(
+                        "Nenhuma movimentação nesta data.",
+                        margem,
+                        y
+                    );
+                }
+
+                registros.forEach(registro => {
                     const texto =
-                        `${nomeTipoRegistro(registro)} | ${registro.descricao} | ` +
-                        `${nomePagamento(registro.forma)} | ${moeda(registro.valor)}`;
+                        `${nomeTipoRegistro(registro)} | ` +
+                        `${registro.descricao} | ` +
+                        `${nomePagamento(registro.forma)} | ` +
+                        `${registro.hora || "Sem horário"} | ` +
+                        `${moeda(registro.valor)}`;
 
-                    const linhas = doc.splitTextToSize(texto, 180);
+                    const linhas = doc.splitTextToSize(
+                        texto,
+                        larguraTexto
+                    );
 
-                    doc.text(linhas, 14, y);
-                    y += linhas.length * 5 + 2;
+                    const alturaBloco = linhas.length * 5 + 3;
+
+                    if (y + alturaBloco > alturaPagina - 15) {
+                        doc.addPage();
+                        y = 18;
+                    }
+
+                    doc.text(linhas, margem, y);
+                    y += alturaBloco;
                 });
 
                 doc.save(nomeArquivo);
                 return;
+
             } catch (erro) {
                 console.error("Erro ao criar PDF:", erro);
-                alert("Não foi possível criar o PDF. O navegador tentará abrir a impressão.");
+                alert(
+                    "Não foi possível criar o PDF diretamente. " +
+                    "O navegador tentará abrir a impressão."
+                );
             }
         }
 
+        // Alternativa: abrir a versão para impressão
         const janela = window.open("", "_blank");
 
         if (!janela) {
-            alert("O navegador bloqueou a janela de impressão. Permita pop-ups e tente novamente.");
+            alert(
+                "O navegador bloqueou a janela de impressão. " +
+                "Permita pop-ups e tente novamente."
+            );
             return;
         }
 
@@ -1037,11 +1169,19 @@ document.addEventListener("DOMContentLoaded", () => {
             </tr>
         `).join("");
 
+        const dadosEstabelecimentoHTML = dadosEstabelecimento
+            .map((informacao, indice) => indice === 0
+                ? `<h2>${escaparHTML(informacao)}</h2>`
+                : `<p>${escaparHTML(informacao)}</p>`
+            )
+            .join("");
+
         janela.document.write(`
             <!DOCTYPE html>
             <html lang="pt-BR">
             <head>
                 <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>${escaparHTML(nomeArquivo)}</title>
                 <style>
                     body {
@@ -1049,13 +1189,41 @@ document.addEventListener("DOMContentLoaded", () => {
                         padding: 25px;
                         color: #263640;
                     }
-                    h1 { color: #168b53; }
-                    p { color: #52635b; }
+
+                    h1 {
+                        color: #168b53;
+                        margin-bottom: 8px;
+                    }
+
+                    h2 {
+                        font-size: 17px;
+                        margin: 12px 0 6px;
+                    }
+
+                    p {
+                        color: #52635b;
+                        margin: 4px 0;
+                        font-size: 12px;
+                        overflow-wrap: anywhere;
+                    }
+
+                    .resumo {
+                        margin-top: 18px;
+                        padding: 12px;
+                        background: #eaf8f1;
+                        border-radius: 6px;
+                    }
+
+                    .resumo p {
+                        margin: 7px 0;
+                    }
+
                     table {
                         width: 100%;
                         border-collapse: collapse;
                         margin-top: 20px;
                     }
+
                     th, td {
                         padding: 9px 6px;
                         border-bottom: 1px solid #ddd;
@@ -1063,16 +1231,40 @@ document.addEventListener("DOMContentLoaded", () => {
                         font-size: 11px;
                         overflow-wrap: anywhere;
                     }
-                    th { background: #eaf8f1; }
+
+                    th {
+                        background: #eaf8f1;
+                    }
+
                     @media print {
-                        body { padding: 0; }
+                        body {
+                            padding: 0;
+                        }
+
+                        tr {
+                            break-inside: avoid;
+                        }
                     }
                 </style>
             </head>
             <body>
                 <h1>Dr. Troco — Histórico</h1>
-                <p>Data: ${escaparHTML(formatarDataISO(dataISO))}</p>
-                <p>Registros: ${registros.length}</p>
+
+                ${dadosEstabelecimentoHTML}
+
+                <p>
+                    Data do relatório:
+                    ${escaparHTML(formatarDataISO(dataISO))}
+                </p>
+
+                <p>Quantidade de registros: ${registros.length}</p>
+
+                <section class="resumo">
+                    <strong>Resumo financeiro</strong>
+                    ${linhasResumo.map(linha =>
+                        `<p>${escaparHTML(linha)}</p>`
+                    ).join("")}
+                </section>
 
                 <table>
                     <thead>
@@ -1085,7 +1277,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         </tr>
                     </thead>
                     <tbody>
-                        ${linhasHTML || '<tr><td colspan="5">Nenhum registro nesta data.</td></tr>'}
+                        ${linhasHTML || `
+                            <tr>
+                                <td colspan="5">
+                                    Nenhum registro nesta data.
+                                </td>
+                            </tr>
+                        `}
                     </tbody>
                 </table>
 
@@ -1101,6 +1299,7 @@ document.addEventListener("DOMContentLoaded", () => {
         janela.document.close();
     }
 
+    
     elementos.btnExportarPDF?.addEventListener("click", exportarPDF);
 
     /* =========================
