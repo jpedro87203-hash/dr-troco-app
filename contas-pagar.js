@@ -1,4 +1,3 @@
-
 /* =========================================================
    DR. TROCO — CONTAS A PAGAR
    Integração com o Fluxo de Caixa
@@ -122,11 +121,58 @@
         box-shadow: 0 4px 16px rgba(20, 80, 45, .07);
       }
 
+      /* Cabeçalho que abre e fecha a seção */
       .cp-cabecalho {
         display: flex;
         align-items: center;
         gap: 12px;
         margin-bottom: 16px;
+      }
+
+      .cp-cabecalho-toggle {
+        width: 100%;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .cp-cabecalho-toggle:focus-visible {
+        outline: 2px solid #168b53;
+        outline-offset: 5px;
+        border-radius: 8px;
+      }
+
+      .cp-titulo-cabecalho {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .cp-seta {
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: #e7f7ed;
+        color: #168b53;
+        font-size: 23px;
+        line-height: 1;
+        transition: transform .2s ease;
+      }
+
+      .cp-cabecalho-toggle[aria-expanded="true"] .cp-seta {
+        transform: rotate(180deg);
+      }
+
+      /* Garante que a seção fechada realmente fique oculta */
+      #conteudoContasPagar[hidden] {
+        display: none !important;
       }
 
       .cp-icone {
@@ -354,11 +400,29 @@
       }
 
       @media (max-width: 360px) {
-        .cp-secao { padding: 12px; }
-        .cp-resumos { gap: 5px; }
-        .cp-resumo { padding: 9px 5px; }
-        .cp-resumo strong { font-size: 12px; }
-        .cp-conta-topo { flex-direction: column; }
+        .cp-secao {
+          padding: 12px;
+        }
+
+        .cp-resumos {
+          gap: 5px;
+        }
+
+        .cp-resumo {
+          padding: 9px 5px;
+        }
+
+        .cp-resumo strong {
+          font-size: 12px;
+        }
+
+        .cp-conta-topo {
+          flex-direction: column;
+        }
+
+        .cp-cabecalho h2 {
+          font-size: 17px;
+        }
       }
     `;
 
@@ -367,6 +431,7 @@
 
   // ---------------------------------------------------------
   // CRIAR A INTERFACE DENTRO DO FLUXO DE CAIXA
+  // A seção começa fechada.
   // ---------------------------------------------------------
 
   function criarInterface() {
@@ -386,109 +451,128 @@
     secao.className = 'cp-secao';
 
     secao.innerHTML = `
-      <div class="cp-cabecalho">
-        <div class="cp-icone">🧾</div>
-        <div>
+      <button
+        type="button"
+        class="cp-cabecalho cp-cabecalho-toggle"
+        id="btnToggleContasPagar"
+        aria-expanded="false"
+        aria-controls="conteudoContasPagar"
+      >
+        <span class="cp-icone" aria-hidden="true">🧾</span>
+
+        <span class="cp-titulo-cabecalho">
           <h2>Contas a pagar</h2>
           <p>Organize vencimentos e registre pagamentos no caixa.</p>
+        </span>
+
+        <span class="cp-seta" aria-hidden="true">⌄</span>
+      </button>
+
+      <div id="conteudoContasPagar" hidden>
+        <div class="cp-resumos">
+          <div class="cp-resumo">
+            <span>Pendentes</span>
+            <strong id="cpTotalPendentes">R$ 0,00</strong>
+          </div>
+
+          <div class="cp-resumo">
+            <span>Atrasadas</span>
+            <strong id="cpTotalAtrasadas">R$ 0,00</strong>
+          </div>
+
+          <div class="cp-resumo">
+            <span>Pagas hoje</span>
+            <strong id="cpTotalPagas">R$ 0,00</strong>
+          </div>
         </div>
+
+        <form id="cpFormConta" class="cp-form">
+          <h3>＋ Cadastrar conta</h3>
+
+          <div class="cp-campo">
+            <label for="cpDescricao">Descrição da conta</label>
+            <input
+              id="cpDescricao"
+              name="descricao"
+              type="text"
+              maxlength="100"
+              placeholder="Ex.: fornecedor, energia, aluguel"
+              required
+            >
+          </div>
+
+          <div class="cp-campo">
+            <label for="cpValor">Valor (R$)</label>
+            <input
+              id="cpValor"
+              name="valor"
+              type="number"
+              min="0.01"
+              step="0.01"
+              inputmode="decimal"
+              placeholder="0,00"
+              required
+            >
+          </div>
+
+          <div class="cp-campo">
+            <label for="cpVencimento">Data de vencimento</label>
+            <input
+              id="cpVencimento"
+              name="vencimento"
+              type="date"
+              required
+            >
+          </div>
+
+          <button class="cp-btn cp-btn-principal" type="submit">
+            Salvar conta
+          </button>
+        </form>
+
+        <div class="cp-filtros">
+          <button
+            type="button"
+            class="cp-filtro ativo"
+            data-filtro="pendentes"
+          >Pendentes</button>
+
+          <button
+            type="button"
+            class="cp-filtro"
+            data-filtro="pagas"
+          >Pagas</button>
+
+          <button
+            type="button"
+            class="cp-filtro"
+            data-filtro="todas"
+          >Todas</button>
+        </div>
+
+        <div id="cpListaContas" class="cp-lista"></div>
+
+        <p class="cp-nota">
+          Uma conta só entra nas saídas do Fluxo de Caixa quando seu
+          pagamento é confirmado. Confira o valor e a forma de pagamento
+          antes de confirmar.
+        </p>
       </div>
-
-      <div class="cp-resumos">
-        <div class="cp-resumo">
-          <span>Pendentes</span>
-          <strong id="cpTotalPendentes">R$ 0,00</strong>
-        </div>
-        <div class="cp-resumo">
-          <span>Atrasadas</span>
-          <strong id="cpTotalAtrasadas">R$ 0,00</strong>
-        </div>
-        <div class="cp-resumo">
-          <span>Pagas hoje</span>
-          <strong id="cpTotalPagas">R$ 0,00</strong>
-        </div>
-      </div>
-
-      <form id="cpFormConta" class="cp-form">
-        <h3>＋ Cadastrar conta</h3>
-
-        <div class="cp-campo">
-          <label for="cpDescricao">Descrição da conta</label>
-          <input
-            id="cpDescricao"
-            name="descricao"
-            type="text"
-            maxlength="100"
-            placeholder="Ex.: fornecedor, energia, aluguel"
-            required
-          >
-        </div>
-
-        <div class="cp-campo">
-          <label for="cpValor">Valor (R$)</label>
-          <input
-            id="cpValor"
-            name="valor"
-            type="number"
-            min="0.01"
-            step="0.01"
-            inputmode="decimal"
-            placeholder="0,00"
-            required
-          >
-        </div>
-
-        <div class="cp-campo">
-          <label for="cpVencimento">Data de vencimento</label>
-          <input
-            id="cpVencimento"
-            name="vencimento"
-            type="date"
-            required
-          >
-        </div>
-
-        <button class="cp-btn cp-btn-principal" type="submit">
-          Salvar conta
-        </button>
-      </form>
-
-      <div class="cp-filtros">
-        <button
-          type="button"
-          class="cp-filtro ativo"
-          data-filtro="pendentes"
-        >Pendentes</button>
-        <button
-          type="button"
-          class="cp-filtro"
-          data-filtro="pagas"
-        >Pagas</button>
-        <button
-          type="button"
-          class="cp-filtro"
-          data-filtro="todas"
-        >Todas</button>
-      </div>
-
-      <div id="cpListaContas" class="cp-lista"></div>
-
-      <p class="cp-nota">
-        Uma conta só entra nas saídas do Fluxo de Caixa quando seu
-        pagamento é confirmado. Confira o valor e a forma de pagamento
-        antes de confirmar.
-      </p>
     `;
 
     principal.appendChild(secao);
 
+    // Define a data inicial do formulário.
     document.getElementById('cpVencimento').value = dataHojeISO();
 
+    // Cadastro de contas.
     document.getElementById('cpFormConta')
       .addEventListener('submit', cadastrarConta);
 
+    // Clique no cabeçalho, filtros e botões das contas.
     secao.addEventListener('click', tratarClique);
 
+    // Renderiza os dados mesmo com a seção fechada.
     renderizar();
   }
 
@@ -582,7 +666,7 @@
       'Confirmar pagamento?\n\n' +
       conta.descricao + '\n' +
       formatarReal(conta.valor) + '\n' +
-      'Forma: ' + nomeForma[formaPagamento] + '\n\n' +
+      'Forma: ' + (nomeForma[formaPagamento] || formaPagamento) + '\n\n' +
       'Será registrada uma saída no Fluxo de Caixa.'
     );
 
@@ -672,10 +756,32 @@
   }
 
   // ---------------------------------------------------------
-  // FILTROS E AÇÕES
+  // ABRIR/FECHAR, FILTROS E AÇÕES
   // ---------------------------------------------------------
 
   function tratarClique(evento) {
+    // Abrir ou fechar a seção Contas a pagar.
+    const botaoToggle = evento.target.closest('#btnToggleContasPagar');
+
+    if (botaoToggle) {
+      const conteudo = document.getElementById('conteudoContasPagar');
+
+      if (!conteudo) return;
+
+      const estaAberto =
+        botaoToggle.getAttribute('aria-expanded') === 'true';
+
+      botaoToggle.setAttribute(
+        'aria-expanded',
+        String(!estaAberto)
+      );
+
+      conteudo.hidden = estaAberto;
+
+      return;
+    }
+
+    // Filtros: pendentes, pagas e todas.
     const botaoFiltro = evento.target.closest('[data-filtro]');
 
     if (botaoFiltro) {
@@ -692,6 +798,7 @@
       return;
     }
 
+    // Confirmar pagamento.
     const botaoPagar = evento.target.closest('[data-cp-pagar]');
 
     if (botaoPagar) {
@@ -699,6 +806,7 @@
       return;
     }
 
+    // Excluir conta pendente.
     const botaoExcluir = evento.target.closest('[data-cp-excluir]');
 
     if (botaoExcluir) {
@@ -721,7 +829,7 @@
     const pendentes = contas.filter(conta => !conta.paga);
 
     const atrasadas = pendentes.filter(
-      conta => conta.vencimento < hoje
+      conta => conta.vencimento && conta.vencimento < hoje
     );
 
     const pagasHoje = contas.filter(
@@ -753,7 +861,9 @@
 
     exibidas.sort((a, b) => {
       if (a.paga !== b.paga) return a.paga ? 1 : -1;
-      return String(a.vencimento).localeCompare(String(b.vencimento));
+
+      return String(a.vencimento || '')
+        .localeCompare(String(b.vencimento || ''));
     });
 
     if (exibidas.length === 0) {
@@ -766,7 +876,7 @@
       lista.innerHTML = `
         <div class="cp-vazio">
           <div style="font-size:25px;margin-bottom:8px">🧾</div>
-          ${mensagens[filtroAtual]}
+          ${mensagens[filtroAtual] || mensagens.pendentes}
         </div>
       `;
 
@@ -774,31 +884,50 @@
     }
 
     lista.innerHTML = exibidas.map(conta => {
-      const atrasada = !conta.paga && conta.vencimento < hoje;
+      const atrasada =
+        !conta.paga &&
+        conta.vencimento &&
+        conta.vencimento < hoje;
 
       let status = 'Pendente';
-      if (conta.paga) status = 'Paga';
-      else if (atrasada) status = 'Vencida';
+
+      if (conta.paga) {
+        status = 'Paga';
+      } else if (atrasada) {
+        status = 'Vencida';
+      }
 
       const statusClasse = atrasada ? ' atrasada' : '';
 
       const pagamento = conta.paga
         ? `
           <div class="cp-detalhes">
-            <span>Pagamento: ${escaparHTML(formatarData(conta.dataPagamento))}</span>
-            <span>Forma: ${escaparHTML(conta.formaPagamento || 'Não informada')}</span>
+            <span>
+              Pagamento:
+              ${escaparHTML(formatarData(conta.dataPagamento))}
+            </span>
+
+            <span>
+              Forma:
+              ${escaparHTML(
+                conta.formaPagamento || 'Não informada'
+              )}
+            </span>
           </div>
         `
         : '';
+
+      const idSeguro = escaparHTML(conta.id);
 
       const acoes = conta.paga
         ? ''
         : `
           <div class="cp-campo" style="margin-top:12px">
-            <label for="cpMetodo-${escaparHTML(conta.id)}">
+            <label for="cpMetodo-${idSeguro}">
               Forma de pagamento
             </label>
-            <select id="cpMetodo-${escaparHTML(conta.id)}">
+
+            <select id="cpMetodo-${idSeguro}">
               <option value="dinheiro">Dinheiro</option>
               <option value="pix">Pix</option>
               <option value="debito">Débito</option>
@@ -810,13 +939,13 @@
             <button
               type="button"
               class="cp-btn cp-btn-pagar"
-              data-cp-pagar="${escaparHTML(conta.id)}"
+              data-cp-pagar="${idSeguro}"
             >✓ Confirmar pagamento</button>
 
             <button
               type="button"
               class="cp-btn cp-btn-excluir"
-              data-cp-excluir="${escaparHTML(conta.id)}"
+              data-cp-excluir="${idSeguro}"
             >Excluir</button>
           </div>
         `;
@@ -827,13 +956,17 @@
             <h3 class="cp-conta-nome">
               ${escaparHTML(conta.descricao)}
             </h3>
+
             <strong class="cp-conta-valor">
               ${formatarReal(conta.valor)}
             </strong>
           </div>
 
           <div class="cp-detalhes">
-            <span>Vencimento: ${escaparHTML(formatarData(conta.vencimento))}</span>
+            <span>
+              Vencimento:
+              ${escaparHTML(formatarData(conta.vencimento))}
+            </span>
           </div>
 
           <span class="cp-status${statusClasse}">
