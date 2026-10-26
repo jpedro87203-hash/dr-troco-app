@@ -2796,4 +2796,204 @@ body nav.menu-inferior > a.menu-item small {
 .botao-estabelecimento:active {
   transform: scale(0.96);
 }
+/* ==========================================
+   DR. TROCO — VISUAL ATUALIZADO DO FIADO
+   Cole este bloco no FINAL do style.css
+   ========================================== */
 
+.pagina-fiado #modalDetalhesFiado {
+  color: #26352e;
+}
+
+.pagina-fiado #modalDetalhesFiado > div,
+.pagina-fiado #modalDetalhesFiado .modal-conteudo,
+.pagina-fiado #modalDetalhesFiado .modal-content,
+.pagina-fiado #modalDetalhesFiado .modal-card,
+.pagina-fiado #modalDetalhesFiado .modal-dialog,
+.pagina-fiado #modalDetalhesFiado .conteudo-modal {
+  box-sizing: border-box;
+  border-radius: 24px !important;
+}
+
+/* Títulos e textos */
+.pagina-fiado #modalDetalhesFiado h1,
+.pagina-fiado #modalDetalhesFiado h2,
+.pagina-fiado #modalDetalhesFiado h3 {
+  color: #20352b;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.pagina-fiado #modalDetalhesFiado p {
+  color: #718078;
+  line-height: 1.55;
+}
+
+/* Campos de formulário */
+.pagina-fiado #modalDetalhesFiado input,
+.pagina-fiado #modalDetalhesFiado select,
+.pagina-fiado #modalDetalhesFiado textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
+  color: #26352e;
+  background: #f7faf8;
+  border: 1px solid #dce6e0;
+  border-radius: 15px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pagina-fiado #modalDetalhesFiado input:focus,
+.pagina-fiado #modalDetalhesFiado select:focus,
+.pagina-fiado #modalDetalhesFiado textarea:focus {
+  border-color: #20a767;
+  box-shadow: 0 0 0 3px rgba(32, 167, 103, 0.12);
+}
+
+/* Rótulos */
+.pagina-fiado #modalDetalhesFiado label {
+  display: block;
+  margin: 12px 0 7px;
+  color: #3e5147;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Cartões e áreas de resumo */
+.pagina-fiado #modalDetalhesFiado .card,
+.pagina-fiado #modalDetalhesFiado .resumo-card,
+.pagina-fiado #modalDetalhesFiado .info-card,
+.pagina-fiado #modalDetalhesFiado .stat-card,
+.pagina-fiado #modalDetalhesFiado .resumo-item {
+  box-sizing: border-box;
+  padding: 17px;
+  background: #f7faf8;
+  border: 1px solid #e0e8e3;
+  border-radius: 18px;
+}
+
+/* Saldo do cliente */
+.pagina-fiado #fiadoDetalhesSaldo {
+  color: #a35d20;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+/* Nome do cliente */
+.pagina-fiado #fiadoDetalhesNome {
+  color: #20352b;
+  font-size: 28px;
+  font-weight: 850;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+/* Telefone */
+.pagina-fiado #fiadoDetalhesTelefone {
+  color: #78847d;
+  font-size: 15px;
+}
+
+/* Botões da tela de detalhes */
+.pagina-fiado #modalDetalhesFiado button {
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 12px 17px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.pagina-fiado #modalDetalhesFiado button:active {
+  transform: scale(0.98);
+}
+
+/* Registrar compra */
+.pagina-fiado #btnAdicionarDividaFiado {
+  color: #218457;
+  background: #eaf7f0;
+  border: 1px solid #cfe9db;
+}
+
+/* Registrar pagamento */
+.pagina-fiado #btnRegistrarPagamentoFiado {
+  color: #ffffff;
+  background: linear-gradient(135deg, #25ad70, #168b53);
+  border: 1px solid #168b53;
+  box-shadow: 0 5px 12px rgba(22, 139, 83, 0.14);
+}
+
+/* Gerar extrato */
+.pagina-fiado #btnExportarFiadoPDF {
+  color: #218457;
+  background: #eaf7f0;
+  border: 1px solid #cfe9db;
+}
+
+/* Excluir cliente: manter separado dos botões principais */
+.pagina-fiado #btnExcluirClienteFiado {
+  color: #b42318;
+  background: #fff4f2;
+  border: 1px solid #f3d0cc;
+}
+
+/* Histórico de movimentações */
+.pagina-fiado #fiadoHistoricoCliente {
+  margin-top: 14px;
+}
+
+.pagina-fiado #fiadoHistoricoCliente > *,
+.pagina-fiado #fiadoDetalhesCompras > * {
+  box-sizing: border-box;
+}
+
+/* Tabelas, caso existam no histórico */
+.pagina-fiado #modalDetalhesFiado table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid #e1e9e4;
+  border-radius: 15px;
+}
+
+.pagina-fiado #modalDetalhesFiado th {
+  padding: 12px;
+  color: #4b6254;
+  background: #eef6f1;
+  font-size: 13px;
+  text-align: left;
+}
+
+.pagina-fiado #modalDetalhesFiado td {
+  padding: 12px;
+  color: #394b40;
+  background: #ffffff;
+  border-top: 1px solid #e7eee9;
+  font-size: 14px;
+}
+
+/* Telas pequenas */
+@media (max-width: 480px) {
+  .pagina-fiado #modalDetalhesFiado > div,
+  .pagina-fiado #modalDetalhesFiado .modal-conteudo,
+  .pagina-fiado #modalDetalhesFiado .modal-content,
+  .pagina-fiado #modalDetalhesFiado .modal-card,
+  .pagina-fiado #modalDetalhesFiado .modal-dialog,
+  .pagina-fiado #modalDetalhesFiado .conteudo-modal {
+    max-width: 100%;
+  }
+
+  .pagina-fiado #fiadoDetalhesNome {
+    font-size: 24px;
+  }
+
+  .pagina-fiado #modalDetalhesFiado button {
+    max-width: 100%;
+  }
+}
