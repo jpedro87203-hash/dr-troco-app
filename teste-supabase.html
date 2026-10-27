@@ -8,20 +8,35 @@
 </head>
 <body>
   <h2>Teste de conexão</h2>
-  <p id="resultado">Verificando...</p>
+  <p id="resultado">Consultando o banco...</p>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <script>
-    const resultado = document.getElementById("resultado");
+    async function testar() {
+      const resultado = document.getElementById("resultado");
 
-    if (window.supabaseClient) {
-      resultado.textContent =
-        "Biblioteca e cliente Supabase carregados corretamente.";
-    } else {
-      resultado.textContent =
-        "Não foi possível carregar o cliente Supabase.";
+      try {
+        const { data, error } = await window.supabaseClient
+          .from("comercios")
+          .select("uuid")
+          .limit(1);
+
+        if (error) {
+          resultado.textContent =
+            "Cliente carregado, mas a consulta falhou: " +
+            error.message;
+          return;
+        }
+
+        resultado.textContent =
+          "Consulta realizada! Registros retornados: " + data.length;
+      } catch (erro) {
+        resultado.textContent = "Erro: " + erro.message;
+      }
     }
+
+    testar();
   </script>
 </body>
 </html>
