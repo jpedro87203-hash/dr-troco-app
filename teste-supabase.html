@@ -19,7 +19,7 @@
       try {
         const { data, error } = await window.supabaseClient
           .from("comercios")
-          .select("uuid")
+.select("id")
           .limit(1);
 
         if (error) {
