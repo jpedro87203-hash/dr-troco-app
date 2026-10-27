@@ -1,0 +1,27 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teste Supabase - Dr. Troco</title>
+</head>
+<body>
+  <h2>Teste de conexão</h2>
+  <p id="resultado">Verificando...</p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script>
+    const resultado = document.getElementById("resultado");
+
+    if (window.supabaseClient) {
+      resultado.textContent =
+        "Biblioteca e cliente Supabase carregados corretamente.";
+    } else {
+      resultado.textContent =
+        "Não foi possível carregar o cliente Supabase.";
+    }
+  </script>
+</body>
+</html>
