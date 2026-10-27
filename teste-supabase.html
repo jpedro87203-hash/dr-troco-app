@@ -4,39 +4,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Teste Supabase - Dr. Troco</title>
+  <title>Teste de login - Dr. Troco</title>
 </head>
 <body>
-  <h2>Teste de conexão</h2>
-  <p id="resultado">Consultando o banco...</p>
+  <h2>Teste Supabase</h2>
+
+  <form id="formLogin">
+    <p>
+      <label>E-mail</label><br>
+      <input id="email" type="email" required>
+    </p>
+    <p>
+      <label>Senha</label><br>
+      <input id="senha" type="password" required>
+    </p>
+    <button type="submit">Entrar e testar</button>
+  </form>
+
+  <p id="resultado">Aguardando login.</p>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <script>
-    async function testar() {
+    document.getElementById("formLogin").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
       const resultado = document.getElementById("resultado");
+      resultado.textContent = "Verificando login...";
 
-      try {
-        const { data, error } = await window.supabaseClient
-          .from("comercios")
-.select("id")
-          .limit(1);
+      const { data: login, error: erroLogin } =
+        await window.supabaseClient.auth.signInWithPassword({
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("senha").value
+        });
 
-        if (error) {
-          resultado.textContent =
-            "Cliente carregado, mas a consulta falhou: " +
-            error.message;
-          return;
-        }
-
-        resultado.textContent =
-          "Consulta realizada! Registros retornados: " + data.length;
-      } catch (erro) {
-        resultado.textContent = "Erro: " + erro.message;
+      if (erroLogin) {
+        resultado.textContent = "Falha no login: " + erroLogin.message;
+        return;
       }
-    }
 
-    testar();
+      const { data, error } = await window.supabaseClient
+        .from("comercios")
+        .select("id")
+        .limit(1);
+
+      if (error) {
+        resultado.textContent =
+          "Login realizado, mas a consulta falhou: " + error.message;
+        return;
+      }
+
+      resultado.textContent =
+        "Login realizado! Consulta autorizada. Registros: " + data.length;
+    });
   </script>
 </body>
 </html>
+
