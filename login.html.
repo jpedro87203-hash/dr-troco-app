@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#168b53">
+  <title>Entrar — Dr. Troco</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background: #f2f7f3;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 390px;
+      padding: 28px 22px;
+      box-sizing: border-box;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 5px 24px #14502d12;
+    }
+    .login-card h1 {
+      color: #168b53;
+      margin: 0 0 8px;
+    }
+    .login-card p {
+      color: #66736b;
+      line-height: 1.5;
+    }
+    .login-card label {
+      display: block;
+      margin: 16px 0 7px;
+      font-weight: 600;
+    }
+    .login-card input {
+      width: 100%;
+      min-height: 46px;
+      padding: 12px;
+      box-sizing: border-box;
+      border: 1px solid #d4ded7;
+      border-radius: 9px;
+      font: inherit;
+    }
+    .login-card button {
+      width: 100%;
+      min-height: 48px;
+      margin-top: 20px;
+      border: 0;
+      border-radius: 10px;
+      background: #168b53;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    #mensagemLogin {
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+  <main class="login-card">
+    <h1>🧮 Dr. Troco</h1>
+    <p>Entre com seu e-mail e sua senha para acessar o aplicativo.</p>
+
+    <form id="formLogin">
+      <label for="emailLogin">E-mail</label>
+      <input
+        id="emailLogin"
+        type="email"
+        autocomplete="username"
+        required
+      >
+
+      <label for="senhaLogin">Senha</label>
+      <input
+        id="senhaLogin"
+        type="password"
+        autocomplete="current-password"
+        required
+      >
+
+      <button id="botaoLogin" type="submit">Entrar</button>
+      <p id="mensagemLogin" role="status" aria-live="polite"></p>
+    </form>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script>
+    const form = document.getElementById("formLogin");
+    const mensagem = document.getElementById("mensagemLogin");
+    const botao = document.getElementById("botaoLogin");
+
+    form.addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+      botao.disabled = true;
+      mensagem.textContent = "Verificando acesso...";
+
+      try {
+        const client = window.supabaseClient;
+        if (!client) throw new Error("Cliente Supabase indisponível.");
+
+        const { error } = await client.auth.signInWithPassword({
+          email: document.getElementById("emailLogin").value.trim(),
+          password: document.getElementById("senhaLogin").value
+        });
+
+        if (error) throw error;
+
+        mensagem.textContent = "Login realizado. Abrindo aplicativo...";
+        window.location.replace("index.html");
+      } catch (erro) {
+        mensagem.textContent = "Não foi possível entrar. Confira o e-mail e a senha.";
+        console.error("Erro de login:", erro);
+      } finally {
+        botao.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
