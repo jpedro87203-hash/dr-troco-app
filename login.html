@@ -427,12 +427,12 @@
         });
 
         if (error) {
-          console.error("Erro no cadastro:", error);
-          mostrarMensagem(
-            "Não foi possível criar a conta. Confira o e-mail e tente novamente.",
-            "erro"
-          );
-          return;
+  console.error("Erro no cadastro:", error);
+  mostrarMensagem(
+    "Erro no cadastro: " + error.message,
+    "erro"
+  );
+  return;
         }
 
         if (data.session) {
