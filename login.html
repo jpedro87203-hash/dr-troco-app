@@ -5,8 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#168b53">
-  <title>Entrar — Dr. Troco</title>
+  <title>Acesso — Dr. Troco</title>
+
   <link rel="stylesheet" href="style.css">
+
   <style>
     body {
       min-height: 100vh;
@@ -16,29 +18,40 @@
       padding: 20px;
       box-sizing: border-box;
       background: #f2f7f3;
+      font-family: Arial, sans-serif;
     }
+
     .login-card {
       width: 100%;
-      max-width: 390px;
+      max-width: 410px;
       padding: 28px 22px;
       box-sizing: border-box;
-      background: white;
+      background: #fff;
       border-radius: 18px;
       box-shadow: 0 5px 24px #14502d12;
     }
+
     .login-card h1 {
       color: #168b53;
       margin: 0 0 8px;
     }
+
     .login-card p {
       color: #66736b;
       line-height: 1.5;
     }
+
+    .campo {
+      margin-top: 16px;
+    }
+
     .login-card label {
       display: block;
-      margin: 16px 0 7px;
+      margin-bottom: 7px;
       font-weight: 600;
+      color: #26352b;
     }
+
     .login-card input {
       width: 100%;
       min-height: 46px;
@@ -47,82 +60,567 @@
       border: 1px solid #d4ded7;
       border-radius: 9px;
       font: inherit;
+      background: #fff;
+      color: #26352b;
     }
-    .login-card button {
+
+    .login-card input:focus {
+      outline: 2px solid #168b53;
+      outline-offset: 1px;
+    }
+
+    .botao-principal {
       width: 100%;
       min-height: 48px;
-      margin-top: 20px;
+      margin-top: 22px;
+      padding: 12px;
       border: 0;
       border-radius: 10px;
       background: #168b53;
       color: white;
       font-size: 16px;
       font-weight: 700;
+      cursor: pointer;
     }
+
+    .botao-principal:hover {
+      background: #117244;
+    }
+
+    .botao-principal:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-top: 22px;
+      text-align: center;
+    }
+
+    .links a {
+      color: #168b53;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+
     #mensagemLogin {
       overflow-wrap: anywhere;
+      font-size: 14px;
+      margin-top: 16px;
+    }
+
+    #mensagemLogin:empty {
+      display: none;
+    }
+
+    #mensagemLogin.erro {
+      color: #b42318;
+    }
+
+    #mensagemLogin.sucesso {
+      color: #117244;
+    }
+
+    .aviso {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 9px;
+      background: #f2f7f3;
+      color: #526257;
+      font-size: 13px;
+      line-height: 1.5;
     }
   </style>
 </head>
+
 <body>
   <main class="login-card">
     <h1>🧮 Dr. Troco</h1>
-    <p>Entre com seu e-mail e sua senha para acessar o aplicativo.</p>
+    <p id="descricaoLogin">
+      Entre na sua conta para acessar o aplicativo.
+    </p>
 
-    <form id="formLogin">
-      <label for="emailLogin">E-mail</label>
-      <input
-        id="emailLogin"
-        type="email"
-        autocomplete="username"
-        required
-      >
+    <section id="conteudoAuth" aria-live="polite"></section>
 
-      <label for="senhaLogin">Senha</label>
-      <input
-        id="senhaLogin"
-        type="password"
-        autocomplete="current-password"
-        required
-      >
-
-      <button id="botaoLogin" type="submit">Entrar</button>
-      <p id="mensagemLogin" role="status" aria-live="polite"></p>
-    </form>
+    <p id="mensagemLogin" role="status" aria-live="polite"></p>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
+
   <script>
-    const form = document.getElementById("formLogin");
-    const mensagem = document.getElementById("mensagemLogin");
-    const botao = document.getElementById("botaoLogin");
+    (() => {
+      "use strict";
 
-    form.addEventListener("submit", async (evento) => {
-      evento.preventDefault();
-      botao.disabled = true;
-      mensagem.textContent = "Verificando acesso...";
+      const conteudo = document.getElementById("conteudoAuth");
+      const descricao = document.getElementById("descricaoLogin");
+      const mensagem = document.getElementById("mensagemLogin");
 
-      try {
-        const client = window.supabaseClient;
-        if (!client) throw new Error("Cliente Supabase indisponível.");
+      const parametros = new URLSearchParams(window.location.search);
+      const URL_LOGIN =
+        window.location.origin + window.location.pathname;
 
-        const { error } = await client.auth.signInWithPassword({
-          email: document.getElementById("emailLogin").value.trim(),
-          password: document.getElementById("senhaLogin").value
+      const cliente = window.supabaseClient;
+
+      let modo = parametros.get("modo") || "entrar";
+      let envioEmAndamento = false;
+
+      function mostrarMensagem(texto, tipo = "") {
+        mensagem.textContent = texto;
+        mensagem.className = tipo;
+      }
+
+      function campoEmail() {
+        return `
+          <div class="campo">
+            <label for="emailAuth">E-mail</label>
+            <input
+              id="emailAuth"
+              name="email"
+              type="email"
+              autocomplete="email"
+              maxlength="254"
+              required
+            >
+          </div>
+        `;
+      }
+
+      function campoSenha(id, rotulo, autocomplete) {
+        return `
+          <div class="campo">
+            <label for="${id}">${rotulo}</label>
+            <input
+              id="${id}"
+              name="${id}"
+              type="password"
+              autocomplete="${autocomplete}"
+              minlength="6"
+              required
+            >
+          </div>
+        `;
+      }
+
+      function botoesLinks(links) {
+        return `
+          <div class="links">
+            ${links.map(link => `
+              <a href="${link.href}"
+                 data-modo="${link.modo}">
+                ${link.texto}
+              </a>
+            `).join("")}
+          </div>
+        `;
+      }
+
+      function renderizar(novoModo, mensagemInicial = "") {
+        modo = novoModo;
+        mensagem.textContent = "";
+        mensagem.className = "";
+
+        if (mensagemInicial) {
+          mostrarMensagem(mensagemInicial, "sucesso");
+        }
+
+        if (modo === "cadastrar") {
+          descricao.textContent =
+            "Crie sua conta para começar a usar o Dr. Troco.";
+
+          conteudo.innerHTML = `
+            <form id="formAuth" data-acao="cadastrar">
+              ${campoEmail()}
+              ${campoSenha(
+                "senhaAuth",
+                "Criar senha",
+                "new-password"
+              )}
+              ${campoSenha(
+                "confirmarSenha",
+                "Confirmar senha",
+                "new-password"
+              )}
+
+              <button class="botao-principal" type="submit">
+                Criar minha conta
+              </button>
+            </form>
+
+            <div class="aviso">
+              Use um e-mail ao qual você tenha acesso.
+              Poderá ser necessário confirmar o endereço antes de entrar.
+            </div>
+
+            ${botoesLinks([
+              {
+                texto: "Já tenho uma conta — Entrar",
+                modo: "entrar"
+              }
+            ])}
+          `;
+          return;
+        }
+
+        if (modo === "recuperar") {
+          descricao.textContent =
+            "Informe seu e-mail para receber as instruções de recuperação.";
+
+          conteudo.innerHTML = `
+            <form id="formAuth" data-acao="recuperar">
+              ${campoEmail()}
+
+              <button class="botao-principal" type="submit">
+                Enviar link de recuperação
+              </button>
+            </form>
+
+            ${botoesLinks([
+              {
+                texto: "Voltar para o login",
+                modo: "entrar"
+              }
+            ])}
+          `;
+          return;
+        }
+
+        if (modo === "nova-senha") {
+          descricao.textContent =
+            "Defina sua nova senha para recuperar o acesso.";
+
+          conteudo.innerHTML = `
+            <form id="formAuth" data-acao="nova-senha">
+              ${campoSenha(
+                "novaSenha",
+                "Nova senha",
+                "new-password"
+              )}
+              ${campoSenha(
+                "confirmarNovaSenha",
+                "Confirmar nova senha",
+                "new-password"
+              )}
+
+              <button class="botao-principal" type="submit">
+                Salvar nova senha
+              </button>
+            </form>
+
+            ${botoesLinks([
+              {
+                texto: "Voltar para o login",
+                modo: "entrar"
+              }
+            ])}
+          `;
+          return;
+        }
+
+        modo = "entrar";
+        descricao.textContent =
+          "Entre com seu e-mail e sua senha para acessar o aplicativo.";
+
+        conteudo.innerHTML = `
+          <form id="formAuth" data-acao="entrar">
+            ${campoEmail()}
+
+            ${campoSenha(
+              "senhaAuth",
+              "Senha",
+              "current-password"
+            )}
+
+            <button class="botao-principal" type="submit">
+              Entrar no aplicativo
+            </button>
+          </form>
+
+          ${botoesLinks([
+            {
+              texto: "Esqueci minha senha",
+              modo: "recuperar"
+            },
+            {
+              texto: "Não tenho conta — Cadastrar",
+              modo: "cadastrar"
+            }
+          ])}
+        `;
+      }
+
+      function obterValor(id) {
+        return document.getElementById(id)?.value ?? "";
+      }
+
+      function definirCarregamento(form, carregando, textoOriginal) {
+        const botao = form.querySelector('button[type="submit"]');
+
+        if (!botao) return;
+
+        botao.disabled = carregando;
+        botao.textContent = carregando
+          ? "Aguarde..."
+          : textoOriginal;
+      }
+
+      async function processarEntrar(form) {
+        const email = obterValor("emailAuth").trim();
+        const senha = obterValor("senhaAuth");
+
+        const { error } = await cliente.auth.signInWithPassword({
+          email,
+          password: senha
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Erro no login:", error);
+          mostrarMensagem(
+            "Não foi possível entrar. Confira o e-mail e a senha.",
+            "erro"
+          );
+          return;
+        }
 
-        mensagem.textContent = "Login realizado. Abrindo aplicativo...";
-        window.location.replace("index.html");
-      } catch (erro) {
-        mensagem.textContent = "Não foi possível entrar. Confira o e-mail e a senha.";
-        console.error("Erro de login:", erro);
-      } finally {
-        botao.disabled = false;
+        mostrarMensagem("Login realizado. Abrindo aplicativo...", "sucesso");
+
+        const destino =
+          parametros.get("aposCadastro") === "1"
+            ? "licenca.html"
+            : "index.html";
+
+        window.location.replace(destino);
       }
-    });
+
+      async function processarCadastro() {
+        const email = obterValor("emailAuth").trim();
+        const senha = obterValor("senhaAuth");
+        const confirmacao = obterValor("confirmarSenha");
+
+        if (senha !== confirmacao) {
+          mostrarMensagem("As senhas não coincidem.", "erro");
+          return;
+        }
+
+        if (senha.length < 6) {
+          mostrarMensagem(
+            "A senha deve ter pelo menos 6 caracteres.",
+            "erro"
+          );
+          return;
+        }
+
+        const { data, error } = await cliente.auth.signUp({
+          email,
+          password: senha,
+          options: {
+            emailRedirectTo: `${URL_LOGIN}?aposCadastro=1`
+          }
+        });
+
+        if (error) {
+          console.error("Erro no cadastro:", error);
+          mostrarMensagem(
+            "Não foi possível criar a conta. Confira o e-mail e tente novamente.",
+            "erro"
+          );
+          return;
+        }
+
+        if (data.session) {
+          mostrarMensagem(
+            "Conta criada! Vamos para a ativação do acesso.",
+            "sucesso"
+          );
+          window.location.replace("licenca.html");
+          return;
+        }
+
+        renderizar(
+          "entrar",
+          "Cadastro iniciado! Confira seu e-mail para confirmar a conta. Depois, volte para entrar."
+        );
+      }
+
+      async function processarRecuperacao(form) {
+        const email = obterValor("emailAuth").trim();
+
+        const { error } = await cliente.auth.resetPasswordForEmail(
+          email,
+          {
+            redirectTo: `${URL_LOGIN}?modo=nova-senha`
+          }
+        );
+
+        if (error) {
+          console.error("Erro ao solicitar recuperação:", error);
+          mostrarMensagem(
+            "Não foi possível enviar a solicitação. Tente novamente mais tarde.",
+            "erro"
+          );
+          return;
+        }
+
+        mostrarMensagem(
+          "Se houver uma conta cadastrada com esse e-mail, você receberá as instruções para recuperar a senha.",
+          "sucesso"
+        );
+      }
+
+      async function processarNovaSenha() {
+        const senha = obterValor("novaSenha");
+        const confirmacao = obterValor("confirmarNovaSenha");
+
+        if (senha !== confirmacao) {
+          mostrarMensagem("As senhas não coincidem.", "erro");
+          return;
+        }
+
+        if (senha.length < 6) {
+          mostrarMensagem(
+            "A senha deve ter pelo menos 6 caracteres.",
+            "erro"
+          );
+          return;
+        }
+
+        const { error } = await cliente.auth.updateUser({
+          password: senha
+        });
+
+        if (error) {
+          console.error("Erro ao alterar senha:", error);
+          mostrarMensagem(
+            "Não foi possível alterar a senha. Abra novamente o link recebido por e-mail ou solicite outro.",
+            "erro"
+          );
+          return;
+        }
+
+        // Encerra a sessão de recuperação para que a pessoa
+        // entre novamente usando a nova senha.
+        await cliente.auth.signOut();
+
+        parametros.delete("modo");
+        parametros.delete("aposCadastro");
+
+        window.history.replaceState(
+          {},
+          "",
+          URL_LOGIN
+        );
+
+        renderizar(
+          "entrar",
+          "Senha alterada com sucesso! Entre com sua nova senha."
+        );
+      }
+
+      document.addEventListener("click", evento => {
+        const link = evento.target.closest("a[data-modo]");
+
+        if (!link) return;
+
+        evento.preventDefault();
+
+        const novoModo = link.dataset.modo;
+        renderizar(novoModo);
+      });
+
+      document.addEventListener("submit", async evento => {
+        const form = evento.target;
+
+        if (form.id !== "formAuth") return;
+
+        evento.preventDefault();
+
+        if (envioEmAndamento) return;
+
+        if (!cliente) {
+          mostrarMensagem(
+            "Não foi possível conectar ao serviço de autenticação. Recarregue a página.",
+            "erro"
+          );
+          return;
+        }
+
+        const acao = form.dataset.acao;
+        const textoOriginal =
+          form.querySelector('button[type="submit"]').textContent;
+
+        envioEmAndamento = true;
+        definirCarregamento(form, true, textoOriginal);
+
+        try {
+          if (acao === "entrar") {
+            await processarEntrar(form);
+          } else if (acao === "cadastrar") {
+            await processarCadastro();
+          } else if (acao === "recuperar") {
+            await processarRecuperacao(form);
+          } else if (acao === "nova-senha") {
+            await processarNovaSenha();
+          }
+        } catch (erro) {
+          console.error("Erro na autenticação:", erro);
+          mostrarMensagem(
+            "Ocorreu um erro inesperado. Tente novamente.",
+            "erro"
+          );
+        } finally {
+          envioEmAndamento = false;
+
+          const botao = form.querySelector('button[type="submit"]');
+          if (botao) definirCarregamento(form, false, textoOriginal);
+        }
+      });
+
+      renderizar(
+        modo,
+        parametros.get("aposCadastro") === "1"
+          ? "Confirmação recebida. Entre para continuar a configuração do seu acesso."
+          : ""
+      );
+
+      if (cliente) {
+        cliente.auth.onAuthStateChange((evento, sessao) => {
+          if (evento === "PASSWORD_RECOVERY") {
+            renderizar(
+              "nova-senha",
+              "Digite e confirme sua nova senha."
+            );
+          }
+
+          if (
+            evento === "SIGNED_IN" &&
+            sessao &&
+            parametros.get("aposCadastro") === "1"
+          ) {
+            window.location.replace("licenca.html");
+          }
+        });
+
+        // Verifica também se o Supabase já restaurou uma sessão
+        // ao retornar do link de confirmação de cadastro.
+        cliente.auth.getSession().then(({ data, error }) => {
+          if (
+            !error &&
+            data.session &&
+            parametros.get("aposCadastro") === "1"
+          ) {
+            window.location.replace("licenca.html");
+          }
+        });
+      }
+    })();
   </script>
 </body>
 </html>
