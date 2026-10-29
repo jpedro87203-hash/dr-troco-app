@@ -8,13 +8,13 @@
 // ==========================================
 
 const SUPABASE_URL =
-    'https://wgfltbowqvyruwdhgjgb.supabase.co';
+    'https://wyeutjahcgqjzalfraup.supabase.co';
 
 const SUPABASE_ANON_KEY =
-    'sb_publishable_o8FPOzZMSuJTzRy1j-q_Kw_oXT75y-_';
+    'sb_publishable_S_rdGBhmzJrxniwy5Abb7A_tRb3wQsA';
 
 const ID_ADMINISTRADOR =
-    '2f3965ec-72d9-48f8-808e-7a04e01cc50a';
+    'f650eab5-f9e1-467f-a55f-15826c6f092a';
 
 let supabaseClient = null;
 
@@ -76,13 +76,11 @@ function inicializarAdmin() {
         return;
     }
 
-
     supabaseClient =
         window.supabase.createClient(
             SUPABASE_URL,
             SUPABASE_ANON_KEY
         );
-
 
     // --------------------------------------
     // Elementos
@@ -163,14 +161,12 @@ function inicializarAdmin() {
         );
     }
 
-
     if (btnGerarLicenca) {
         btnGerarLicenca.addEventListener(
             'click',
             gerarLicenca
         );
     }
-
 
     if (btnCopiarLicenca) {
         btnCopiarLicenca.addEventListener(
@@ -179,14 +175,12 @@ function inicializarAdmin() {
         );
     }
 
-
     if (btnSairAdmin) {
         btnSairAdmin.addEventListener(
             'click',
             sairAdmin
         );
     }
-
 
     if (btnVoltarLogin) {
         btnVoltarLogin.addEventListener(
@@ -198,7 +192,6 @@ function inicializarAdmin() {
         );
     }
 
-
     if (btnVoltarAdmin) {
         btnVoltarAdmin.addEventListener(
             'click',
@@ -209,14 +202,12 @@ function inicializarAdmin() {
         );
     }
 
-
     if (btnAtualizarLicencas) {
         btnAtualizarLicencas.addEventListener(
             'click',
             carregarLicencas
         );
     }
-
 
     if (pesquisaLicencas) {
         pesquisaLicencas.addEventListener(
@@ -244,7 +235,6 @@ function inicializarAdmin() {
         );
     }
 
-
     if (senhaAdmin) {
         senhaAdmin.addEventListener(
             'keydown',
@@ -258,7 +248,6 @@ function inicializarAdmin() {
             }
         );
     }
-
 
     verificarSessao();
 }
@@ -282,12 +271,10 @@ async function verificarSessao() {
                 ? resultado.data.user
                 : null;
 
-
         if (!user) {
             mostrarLogin();
             return;
         }
-
 
         if (user.id !== ID_ADMINISTRADOR) {
 
@@ -297,7 +284,6 @@ async function verificarSessao() {
 
             return;
         }
-
 
         mostrarPainelAdmin();
 
@@ -324,14 +310,12 @@ async function fazerLogin() {
         return;
     }
 
-
     if (!emailAdmin || !senhaAdmin) {
         alert(
             'Os campos de login não foram encontrados.'
         );
         return;
     }
-
 
     const email =
         emailAdmin.value
@@ -340,7 +324,6 @@ async function fazerLogin() {
 
     const senha =
         senhaAdmin.value;
-
 
     if (!email) {
 
@@ -353,7 +336,6 @@ async function fazerLogin() {
         return;
     }
 
-
     if (!senha) {
 
         alert('Digite a senha.');
@@ -362,7 +344,6 @@ async function fazerLogin() {
 
         return;
     }
-
 
     if (btnEntrarAdmin) {
 
@@ -373,7 +354,6 @@ async function fazerLogin() {
             '<span>Entrando...</span>';
     }
 
-
     try {
 
         const resultado =
@@ -383,13 +363,11 @@ async function fazerLogin() {
                     password: senha
                 });
 
-
         const data =
             resultado.data;
 
         const error =
             resultado.error;
-
 
         if (error) {
 
@@ -411,12 +389,10 @@ async function fazerLogin() {
             return;
         }
 
-
         const user =
             data && data.user
                 ? data.user
                 : null;
-
 
         if (!user) {
 
@@ -426,7 +402,6 @@ async function fazerLogin() {
 
             return;
         }
-
 
         if (user.id !== ID_ADMINISTRADOR) {
 
@@ -440,13 +415,11 @@ async function fazerLogin() {
             return;
         }
 
-
         alert(
             'Login realizado com sucesso!'
         );
 
         mostrarPainelAdmin();
-
 
     } catch (erro) {
 
@@ -459,7 +432,6 @@ async function fazerLogin() {
             'ERRO AO REALIZAR LOGIN.\n\n' +
             (erro.message || erro)
         );
-
 
     } finally {
 
@@ -509,7 +481,6 @@ function mostrarPainelAdmin() {
         nomeComercio.focus();
     }
 
-
     // Carregar licenças automaticamente
     carregarLicencas();
 }
@@ -523,7 +494,6 @@ function gerarCodigoLicenca() {
 
     const caracteres =
         'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
 
     function parte() {
 
@@ -543,7 +513,6 @@ function gerarCodigoLicenca() {
 
         return resultado;
     }
-
 
     return (
         'DT-' +
@@ -573,7 +542,6 @@ function dataISO(data) {
             data.getDate()
         ).padStart(2, '0');
 
-
     return (
         ano +
         '-' +
@@ -594,16 +562,13 @@ function dataBR(dataISOTexto) {
         return '';
     }
 
-
     const partes =
         String(dataISOTexto)
             .split('-');
 
-
     if (partes.length !== 3) {
         return dataISOTexto;
     }
-
 
     return (
         partes[2] +
@@ -630,7 +595,6 @@ async function gerarLicenca() {
         return;
     }
 
-
     if (!nomeComercio) {
 
         alert(
@@ -640,10 +604,8 @@ async function gerarLicenca() {
         return;
     }
 
-
     const comercio =
         nomeComercio.value.trim();
-
 
     if (!comercio) {
 
@@ -655,7 +617,6 @@ async function gerarLicenca() {
 
         return;
     }
-
 
     // --------------------------------------
     // Verificar administrador
@@ -671,7 +632,6 @@ async function gerarLicenca() {
                 ? resultado.data.user
                 : null;
 
-
         if (!user) {
 
             alert(
@@ -682,7 +642,6 @@ async function gerarLicenca() {
 
             return;
         }
-
 
         if (user.id !== ID_ADMINISTRADOR) {
 
@@ -697,7 +656,6 @@ async function gerarLicenca() {
             return;
         }
 
-
     } catch (erro) {
 
         alert(
@@ -708,7 +666,6 @@ async function gerarLicenca() {
         return;
     }
 
-
     if (btnGerarLicenca) {
 
         btnGerarLicenca.disabled = true;
@@ -718,7 +675,6 @@ async function gerarLicenca() {
             '<span>Gerando...</span>';
     }
 
-
     try {
 
         const hoje =
@@ -727,7 +683,6 @@ async function gerarLicenca() {
         const inicio =
             dataISO(hoje);
 
-
         const validadeData =
             new Date(hoje);
 
@@ -735,14 +690,11 @@ async function gerarLicenca() {
             validadeData.getDate() + 30
         );
 
-
         const validade =
             dataISO(validadeData);
 
-
         const codigo =
             gerarCodigoLicenca();
-
 
         const resultado =
             await supabaseClient.rpc(
@@ -756,10 +708,8 @@ async function gerarLicenca() {
                 }
             );
 
-
         const error =
             resultado.error;
-
 
         if (error) {
 
@@ -783,7 +733,6 @@ async function gerarLicenca() {
             return;
         }
 
-
         // ----------------------------------
         // Resultado
         // ----------------------------------
@@ -802,7 +751,6 @@ async function gerarLicenca() {
             '\n' +
             'Validade: ' +
             dataBR(validade);
-
 
         if (dadosLicenca) {
 
@@ -828,24 +776,19 @@ async function gerarLicenca() {
                 dataBR(validade);
         }
 
-
         if (resultadoLicenca) {
             resultadoLicenca.style.display = 'block';
         }
 
-
         // Atualizar lista
         await carregarLicencas();
-
 
         // Limpar campo
         nomeComercio.value = '';
 
-
         alert(
             'Licença gerada com sucesso!'
         );
-
 
     } catch (erro) {
 
@@ -858,7 +801,6 @@ async function gerarLicenca() {
             'ERRO AO GERAR LICENÇA.\n\n' +
             (erro.message || erro)
         );
-
 
     } finally {
 
@@ -904,7 +846,6 @@ async function copiarLicenca() {
         return;
     }
 
-
     if (
         navigator.clipboard &&
         navigator.clipboard.writeText
@@ -931,7 +872,6 @@ async function copiarLicenca() {
         }
     }
 
-
     const textarea =
         document.createElement('textarea');
 
@@ -944,7 +884,6 @@ async function copiarLicenca() {
     textarea.style.left =
         '-9999px';
 
-
     document.body.appendChild(
         textarea
     );
@@ -952,7 +891,6 @@ async function copiarLicenca() {
     textarea.focus();
 
     textarea.select();
-
 
     try {
 
@@ -970,7 +908,6 @@ async function copiarLicenca() {
         );
     }
 
-
     document.body.removeChild(
         textarea
     );
@@ -987,7 +924,6 @@ async function verificarAdministrador() {
         return false;
     }
 
-
     try {
 
         const resultado =
@@ -998,7 +934,6 @@ async function verificarAdministrador() {
                 ? resultado.data.user
                 : null;
 
-
         if (
             !user ||
             user.id !== ID_ADMINISTRADOR
@@ -1006,7 +941,6 @@ async function verificarAdministrador() {
 
             return false;
         }
-
 
         return true;
 
@@ -1032,10 +966,8 @@ async function carregarLicencas() {
         return;
     }
 
-
     const autorizado =
         await verificarAdministrador();
-
 
     if (!autorizado) {
 
@@ -1043,7 +975,6 @@ async function carregarLicencas() {
 
         return;
     }
-
 
     listaLicencas.innerHTML =
         '<div style="' +
@@ -1053,7 +984,6 @@ async function carregarLicencas() {
         '⏳ Carregando licenças...' +
         '</div>';
 
-
     try {
 
         const resultado =
@@ -1061,13 +991,11 @@ async function carregarLicencas() {
                 'admin_listar_licencas'
             );
 
-
         const data =
             resultado.data;
 
         const error =
             resultado.error;
-
 
         if (error) {
 
@@ -1084,7 +1012,6 @@ async function carregarLicencas() {
                 'Erro ao carregar licenças.' +
                 '</div>';
 
-
             alert(
                 'ERRO AO CARREGAR LICENÇAS.\n\n' +
                 (error.message || 'Sem mensagem')
@@ -1093,17 +1020,14 @@ async function carregarLicencas() {
             return;
         }
 
-
         todasLicencas =
             Array.isArray(data)
                 ? data
                 : [];
 
-
         atualizarResumo();
 
         renderizarLicencas();
-
 
     } catch (erro) {
 
@@ -1137,7 +1061,6 @@ function obterStatusLicenca(licenca) {
         };
     }
 
-
     const hoje =
         new Date();
 
@@ -1145,18 +1068,15 @@ function obterStatusLicenca(licenca) {
         0, 0, 0, 0
     );
 
-
     const validade =
         new Date(
             String(licenca.validade) +
             'T00:00:00'
         );
 
-
     validade.setHours(
         0, 0, 0, 0
     );
-
 
     if (validade < hoje) {
 
@@ -1165,7 +1085,6 @@ function obterStatusLicenca(licenca) {
             texto: 'Expirada'
         };
     }
-
 
     return {
         tipo: 'ativa',
@@ -1187,23 +1106,19 @@ function diasRestantes(licenca) {
         0, 0, 0, 0
     );
 
-
     const validade =
         new Date(
             String(licenca.validade) +
             'T00:00:00'
         );
 
-
     validade.setHours(
         0, 0, 0, 0
     );
 
-
     const diferenca =
         validade.getTime() -
         hoje.getTime();
-
 
     return Math.ceil(
         diferenca /
@@ -1222,11 +1137,9 @@ function atualizarResumo() {
         return;
     }
 
-
     let ativas = 0;
     let expiradas = 0;
     let desativadas = 0;
-
 
     todasLicencas.forEach(
         function (licenca) {
@@ -1235,7 +1148,6 @@ function atualizarResumo() {
                 obterStatusLicenca(
                     licenca
                 );
-
 
             if (status.tipo === 'ativa') {
                 ativas++;
@@ -1254,24 +1166,20 @@ function atualizarResumo() {
         }
     );
 
-
     if (totalLicencas) {
         totalLicencas.textContent =
             todasLicencas.length;
     }
-
 
     if (licencasAtivas) {
         licencasAtivas.textContent =
             ativas;
     }
 
-
     if (licencasExpiradas) {
         licencasExpiradas.textContent =
             expiradas;
     }
-
 
     if (licencasDesativadas) {
         licencasDesativadas.textContent =
@@ -1290,14 +1198,12 @@ function renderizarLicencas() {
         return;
     }
 
-
     const pesquisa =
         pesquisaLicencas
             ? pesquisaLicencas.value
                 .trim()
                 .toLowerCase()
             : '';
-
 
     const filtradas =
         todasLicencas.filter(
@@ -1307,18 +1213,15 @@ function renderizarLicencas() {
                     return true;
                 }
 
-
                 const comercio =
                     String(
                         licenca.comercio || ''
                     ).toLowerCase();
 
-
                 const codigo =
                     String(
                         licenca.codigo || ''
                     ).toLowerCase();
-
 
                 return (
                     comercio.includes(pesquisa) ||
@@ -1326,7 +1229,6 @@ function renderizarLicencas() {
                 );
             }
         );
-
 
     if (!filtradas.length) {
 
@@ -1341,9 +1243,7 @@ function renderizarLicencas() {
         return;
     }
 
-
     let html = '';
-
 
     filtradas.forEach(
         function (licenca) {
@@ -1353,15 +1253,12 @@ function renderizarLicencas() {
                     licenca
                 );
 
-
             const dias =
                 diasRestantes(
                     licenca
                 );
 
-
             let textoDias = '';
-
 
             if (status.tipo === 'ativa') {
 
@@ -1407,10 +1304,8 @@ function renderizarLicencas() {
                     'Acesso bloqueado';
             }
 
-
             let corStatus =
                 '#198754';
-
 
             if (
                 status.tipo === 'expirada'
@@ -1421,7 +1316,6 @@ function renderizarLicencas() {
 
             }
 
-
             if (
                 status.tipo === 'desativada'
             ) {
@@ -1429,7 +1323,6 @@ function renderizarLicencas() {
                 corStatus =
                     '#b00020';
             }
-
 
             html +=
 
@@ -1442,7 +1335,6 @@ function renderizarLicencas() {
                 'box-sizing:border-box;' +
                 '">' +
 
-
                 '<div style="' +
                 'display:flex;' +
                 'justify-content:space-between;' +
@@ -1451,7 +1343,6 @@ function renderizarLicencas() {
                 'flex-wrap:wrap;' +
                 'margin-bottom:10px;' +
                 '">' +
-
 
                 '<div style="' +
                 'min-width:0;' +
@@ -1478,7 +1369,6 @@ function renderizarLicencas() {
 
                 '</div>' +
 
-
                 '<div style="' +
                 'padding:5px 9px;' +
                 'border-radius:20px;' +
@@ -1496,7 +1386,6 @@ function renderizarLicencas() {
                 '</div>' +
 
                 '</div>' +
-
 
                 '<div style="' +
                 'line-height:1.8;' +
@@ -1534,14 +1423,12 @@ function renderizarLicencas() {
 
                 '</div>' +
 
-
                 '<div style="' +
                 'display:grid;' +
                 'grid-template-columns:repeat(2,minmax(0,1fr));' +
                 'gap:8px;' +
                 'margin-top:12px;' +
                 '">' +
-
 
                 '<button ' +
                 'type="button" ' +
@@ -1556,7 +1443,6 @@ function renderizarLicencas() {
                 '📋 Copiar' +
                 '</button>' +
 
-
                 '<button ' +
                 'type="button" ' +
                 'data-acao="renovar" ' +
@@ -1569,7 +1455,6 @@ function renderizarLicencas() {
                 'style="padding:10px;">' +
                 '🔄 Renovar' +
                 '</button>' +
-
 
                 (
                     licenca.ativa
@@ -1603,7 +1488,6 @@ function renderizarLicencas() {
                         )
                 ) +
 
-
                 '<button ' +
                 'type="button" ' +
                 'data-acao="excluir" ' +
@@ -1617,18 +1501,14 @@ function renderizarLicencas() {
                 '🗑️ Excluir' +
                 '</button>' +
 
-
                 '</div>' +
-
 
                 '</div>';
         }
     );
 
-
     listaLicencas.innerHTML =
         html;
-
 
     // --------------------------------------
     // Eventos dos botões
@@ -1638,7 +1518,6 @@ function renderizarLicencas() {
         listaLicencas.querySelectorAll(
             '[data-acao]'
         );
-
 
     botoes.forEach(
         function (botao) {
@@ -1656,7 +1535,6 @@ function renderizarLicencas() {
                         botao.getAttribute(
                             'data-id'
                         );
-
 
                     executarAcaoLicenca(
                         acao,
@@ -1684,14 +1562,12 @@ async function executarAcaoLicenca(
         return;
     }
 
-
     const licenca =
         todasLicencas.find(
             function (item) {
                 return item.id === id;
             }
         );
-
 
     if (!licenca) {
 
@@ -1725,7 +1601,6 @@ async function executarAcaoLicenca(
             '\n' +
             'Validade: ' +
             dataBR(licenca.validade);
-
 
         try {
 
@@ -1763,11 +1638,9 @@ async function executarAcaoLicenca(
                 );
             }
 
-
             alert(
                 'Dados da licença copiados!'
             );
-
 
         } catch (erro) {
 
@@ -1794,11 +1667,9 @@ async function executarAcaoLicenca(
                 '" por 30 dias?'
             );
 
-
         if (!confirmar) {
             return;
         }
-
 
         try {
 
@@ -1810,12 +1681,10 @@ async function executarAcaoLicenca(
                     }
                 );
 
-
             if (resultado.error) {
 
                 throw resultado.error;
             }
-
 
             alert(
                 'Licença renovada com sucesso!\n\n' +
@@ -1825,9 +1694,7 @@ async function executarAcaoLicenca(
                 )
             );
 
-
             await carregarLicencas();
-
 
         } catch (erro) {
 
@@ -1860,11 +1727,9 @@ async function executarAcaoLicenca(
                 'O cliente perderá o acesso ao aplicativo.'
             );
 
-
         if (!confirmar) {
             return;
         }
-
 
         try {
 
@@ -1876,19 +1741,15 @@ async function executarAcaoLicenca(
                     }
                 );
 
-
             if (resultado.error) {
                 throw resultado.error;
             }
-
 
             alert(
                 'Licença desativada com sucesso.'
             );
 
-
             await carregarLicencas();
-
 
         } catch (erro) {
 
@@ -1920,11 +1781,9 @@ async function executarAcaoLicenca(
                 '"?'
             );
 
-
         if (!confirmar) {
             return;
         }
-
 
         try {
 
@@ -1936,19 +1795,15 @@ async function executarAcaoLicenca(
                     }
                 );
 
-
             if (resultado.error) {
                 throw resultado.error;
             }
-
 
             alert(
                 'Licença reativada com sucesso.'
             );
 
-
             await carregarLicencas();
-
 
         } catch (erro) {
 
@@ -1985,11 +1840,9 @@ async function executarAcaoLicenca(
                 'Esta ação não pode ser desfeita.'
             );
 
-
         if (!confirmar) {
             return;
         }
-
 
         try {
 
@@ -2001,19 +1854,15 @@ async function executarAcaoLicenca(
                     }
                 );
 
-
             if (resultado.error) {
                 throw resultado.error;
             }
-
 
             alert(
                 'Licença excluída com sucesso.'
             );
 
-
             await carregarLicencas();
-
 
         } catch (erro) {
 
@@ -2052,31 +1901,25 @@ async function sairAdmin() {
         }
     }
 
-
     ultimaLicenca = '';
 
     todasLicencas = [];
-
 
     if (nomeComercio) {
         nomeComercio.value = '';
     }
 
-
     if (resultadoLicenca) {
         resultadoLicenca.style.display = 'none';
     }
-
 
     if (dadosLicenca) {
         dadosLicenca.innerHTML = '';
     }
 
-
     if (listaLicencas) {
         listaLicencas.innerHTML = '';
     }
-
 
     mostrarLogin();
 }
@@ -2116,4 +1959,4 @@ if (
 
     inicializarAdmin();
 
-}
+    }
