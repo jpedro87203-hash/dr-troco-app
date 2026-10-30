@@ -1790,21 +1790,23 @@ function verificarModaisAbertos() {
 
 // ------------------------------------------------------------
 // Denominações e sugestões de troco
+// As imagens ficam na pasta "cedulas" do projeto.
+// Moedas sem imagem (25c, 10c, 5c, 1c) usam um círculo simples.
 // ------------------------------------------------------------
 const denominacoesTroco = [
-    { valor: 200, nome: 'R$ 200', tipo: 'cédula', simbolo: '💵' },
-    { valor: 100, nome: 'R$ 100', tipo: 'cédula', simbolo: '💵' },
-    { valor: 50, nome: 'R$ 50', tipo: 'cédula', simbolo: '💵' },
-    { valor: 20, nome: 'R$ 20', tipo: 'cédula', simbolo: '💵' },
-    { valor: 10, nome: 'R$ 10', tipo: 'cédula', simbolo: '💵' },
-    { valor: 5, nome: 'R$ 5', tipo: 'cédula', simbolo: '💵' },
-    { valor: 2, nome: 'R$ 2', tipo: 'cédula', simbolo: '💵' },
-    { valor: 1, nome: 'R$ 1', tipo: 'moeda', simbolo: '🪙' },
-    { valor: 0.50, nome: 'R$ 0,50', tipo: 'moeda', simbolo: '🪙' },
-    { valor: 0.25, nome: 'R$ 0,25', tipo: 'moeda', simbolo: '🪙' },
-    { valor: 0.10, nome: 'R$ 0,10', tipo: 'moeda', simbolo: '🪙' },
-    { valor: 0.05, nome: 'R$ 0,05', tipo: 'moeda', simbolo: '🪙' },
-    { valor: 0.01, nome: 'R$ 0,01', tipo: 'moeda', simbolo: '🪙' }
+    { valor: 200, nome: 'R$ 200', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-200.jpg' },
+    { valor: 100, nome: 'R$ 100', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-100.jpg' },
+    { valor: 50, nome: 'R$ 50', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-50.jpg' },
+    { valor: 20, nome: 'R$ 20', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-20.jpg' },
+    { valor: 10, nome: 'R$ 10', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-10.jpg' },
+    { valor: 5, nome: 'R$ 5', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-5.jpg' },
+    { valor: 2, nome: 'R$ 2', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-2.jpg' },
+    { valor: 1, nome: 'R$ 1', tipo: 'moeda', simbolo: '🪙', imagem: 'cedulas/moeda-100c.jpg' },
+    { valor: 0.50, nome: 'R$ 0,50', tipo: 'moeda', simbolo: '🪙', imagem: 'cedulas/moeda-50c.jpg' },
+    { valor: 0.25, nome: 'R$ 0,25', tipo: 'moeda', simbolo: '🪙', imagem: '', rotulo: '25c' },
+    { valor: 0.10, nome: 'R$ 0,10', tipo: 'moeda', simbolo: '🪙', imagem: '', rotulo: '10c' },
+    { valor: 0.05, nome: 'R$ 0,05', tipo: 'moeda', simbolo: '🪙', imagem: '', rotulo: '5c' },
+    { valor: 0.01, nome: 'R$ 0,01', tipo: 'moeda', simbolo: '🪙', imagem: '', rotulo: '1c' }
 ];
 
 function calcularMelhorTroco(valorCentavos, bloqueadas = []) {
@@ -1920,6 +1922,146 @@ function gerarSugestoesTroco(valor) {
     renderizarSugestoesTroco(sugestoes);
 }
 
+// Troca a imagem pelo texto caso o arquivo não carregue.
+const ERRO_IMAGEM_TROCO =
+    "this.style.display='none';" +
+    "this.nextElementSibling.style.display='flex';";
+
+// Monta o visual de uma nota ou moeda, com selo de quantidade.
+function criarPecaTroco(item) {
+    const ehMoeda = item.tipo === 'moeda';
+    const nome = escaparHTML(item.nome);
+    const empilhada = !ehMoeda && item.quantidade > 1;
+
+    let visual = '';
+
+    if (!ehMoeda) {
+        const sombra = empilhada
+            ? '5px 5px 0 -1px #c5ccd1, 10px 10px 0 -2px #dde2e6, 0 3px 8px rgba(0,0,0,0.2)'
+            : '0 3px 8px rgba(0,0,0,0.25)';
+
+        visual = `
+            <div style="
+                position:relative;
+                width:100%;
+                box-sizing:border-box;
+                padding:0 ${empilhada ? 10 : 0}px ${empilhada ? 10 : 0}px 0;
+            ">
+                <img
+                    src="${escaparAtributo(item.imagem)}"
+                    alt="${escaparAtributo(item.nome)}"
+                    onerror="${ERRO_IMAGEM_TROCO}"
+                    style="
+                        display:block;
+                        width:100%;
+                        height:auto;
+                        border-radius:8px;
+                        box-shadow:${sombra};
+                    "
+                >
+                <div style="
+                    display:none;
+                    align-items:center;
+                    justify-content:center;
+                    aspect-ratio:2 / 1;
+                    border-radius:8px;
+                    background:#e8efe9;
+                    color:#27343d;
+                    font-weight:700;
+                ">${item.simbolo} ${nome}</div>
+            </div>
+        `;
+    } else if (item.imagem) {
+        visual = `
+            <div style="position:relative;width:64px;height:64px;">
+                <img
+                    src="${escaparAtributo(item.imagem)}"
+                    alt="${escaparAtributo(item.nome)}"
+                    onerror="${ERRO_IMAGEM_TROCO}"
+                    style="
+                        display:block;
+                        width:64px;
+                        height:64px;
+                        border-radius:50%;
+                        object-fit:cover;
+                        box-shadow:0 3px 8px rgba(0,0,0,0.25);
+                    "
+                >
+                <div style="
+                    display:none;
+                    width:64px;
+                    height:64px;
+                    border-radius:50%;
+                    align-items:center;
+                    justify-content:center;
+                    background:#e8efe9;
+                    font-size:26px;
+                ">${item.simbolo}</div>
+            </div>
+        `;
+    } else {
+        visual = `
+            <div style="
+                width:64px;
+                height:64px;
+                border-radius:50%;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                background:radial-gradient(circle at 30% 30%, #e0a86a, #a8692f);
+                border:3px solid #c98a4b;
+                box-sizing:border-box;
+                box-shadow:0 3px 8px rgba(0,0,0,0.25);
+                color:#ffffff;
+                font-weight:800;
+                font-size:16px;
+            ">${escaparHTML(item.rotulo || '')}</div>
+        `;
+    }
+
+    return `
+        <div style="
+            position:relative;
+            width:${ehMoeda ? '72px' : 'calc(50% - 6px)'};
+            box-sizing:border-box;
+            display:flex;
+            flex-direction:column;
+            align-items:${ehMoeda ? 'center' : 'stretch'};
+            gap:6px;
+        ">
+            <div style="position:relative;">
+                ${visual}
+
+                <span style="
+                    position:absolute;
+                    top:-8px;
+                    right:-6px;
+                    min-width:28px;
+                    height:28px;
+                    padding:0 6px;
+                    box-sizing:border-box;
+                    border-radius:14px;
+                    border:2px solid #ffffff;
+                    background:#20a66a;
+                    color:#ffffff;
+                    font-size:14px;
+                    font-weight:800;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    box-shadow:0 2px 6px rgba(0,0,0,0.25);
+                ">${item.quantidade}×</span>
+            </div>
+
+            <strong style="
+                font-size:13px;
+                color:#27343d;
+                text-align:center;
+            ">${nome}</strong>
+        </div>
+    `;
+}
+
 function renderizarSugestoesTroco(sugestoes) {
     if (!listaCedulas) return;
 
@@ -1952,7 +2094,7 @@ function renderizarSugestoesTroco(sugestoes) {
                     display:flex;
                     align-items:center;
                     justify-content:space-between;
-                    margin-bottom:10px;
+                    margin-bottom:14px;
                 ">
                     <strong style="font-size:18px;color:#27343d">
                         ${index === 0 ? '⭐ Opção 1' : `Opção ${index + 1}`}
@@ -1963,27 +2105,13 @@ function renderizarSugestoesTroco(sugestoes) {
                     </small>
                 </div>
 
-                <div style="display:flex;flex-direction:column;gap:6px">
-                    ${sugestao.map(item => `
-                        <div style="
-                            display:grid;
-                            grid-template-columns:32px 1fr auto;
-                            align-items:center;
-                            gap:8px;
-                            padding:9px 10px;
-                            border-radius:10px;
-                            background:#f5f6f7;
-                        ">
-                            <strong>${item.quantidade}×</strong>
-                            <span>
-                                ${item.simbolo}
-                                <strong>${item.nome}</strong>
-                            </span>
-                            <span style="font-size:13px;color:#78838a">
-                                ${item.tipo}
-                            </span>
-                        </div>
-                    `).join('')}
+                <div style="
+                    display:flex;
+                    flex-wrap:wrap;
+                    align-items:flex-start;
+                    gap:18px 12px;
+                ">
+                    ${sugestao.map(criarPecaTroco).join('')}
                 </div>
             </div>
         `;
@@ -2001,4 +2129,4 @@ if (document.readyState === 'loading') {
     );
 } else {
     iniciarCalculadora();
-}
+                                                 }
