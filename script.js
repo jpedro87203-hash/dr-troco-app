@@ -74,6 +74,34 @@ const btnCancelarConfirmacao = document.getElementById('btnCancelarConfirmacao')
 const btnConfirmarVenda = document.getElementById('btnConfirmarVenda');
 
 // ------------------------------------------------------------
+// Suporte Multiestabelecimento (Chaves Dinâmicas)
+// ------------------------------------------------------------
+function obterComercioIdLocal() {
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const chave = localStorage.key(i);
+            if (chave && chave.startsWith("drTroco_estoque_") && chave !== "drTroco_estoque_legado") {
+                return chave.replace("drTroco_estoque_", "");
+            }
+        }
+    } catch (e) {
+        console.warn("Erro ao buscar comércio ID:", e);
+    }
+    return null;
+}
+
+function obterChaveEstoqueComercio() {
+    const comercioId = obterComercioIdLocal();
+    return comercioId ? `${CHAVE_ESTOQUE}_${comercioId}` : CHAVE_ESTOQUE;
+}
+
+function obterChaveMovimentacoesEstoqueComercio() {
+    const comercioId = obterComercioIdLocal();
+    const base = "drTroco_movimentacoesEstoque";
+    return comercioId ? `${base}_${comercioId}` : base;
+}
+
+// ------------------------------------------------------------
 // Funções básicas
 // ------------------------------------------------------------
 function numeroSeguro(valor) {
@@ -139,7 +167,6 @@ function abrirModalOverlay(modal, camada = 9999) {
         return false;
     }
 
-    // Evita que o modal seja cortado por outro container da página.
     if (modal.parentElement !== document.body) {
         document.body.appendChild(modal);
     }
@@ -200,11 +227,11 @@ function salvarListaLocalStorage(chave, dados) {
 }
 
 function obterEstoque() {
-    return lerListaLocalStorage(CHAVE_ESTOQUE);
+    return lerListaLocalStorage(obterChaveEstoqueComercio());
 }
 
 function salvarEstoque(estoque) {
-    return salvarListaLocalStorage(CHAVE_ESTOQUE, estoque);
+    return salvarListaLocalStorage(obterChaveEstoqueComercio(), estoque);
 }
 
 // ------------------------------------------------------------
@@ -416,6 +443,7 @@ function configurarEventos() {
         }
     });
 }
+
 // ------------------------------------------------------------
 // Botões e resumo visual de pagamento
 // ------------------------------------------------------------
@@ -878,6 +906,7 @@ function encontrarProdutoPorCodigo(codigo) {
         item => String(item.codigo || '').trim() === alvo
     ) || null;
 }
+
 // ------------------------------------------------------------
 // Leitor de código de barras
 // ------------------------------------------------------------
@@ -1480,6 +1509,7 @@ function criarResumoConfirmacao(resumo) {
 function fecharConfirmacao() {
     fecharModalOverlay(modalConfirmarVenda);
 }
+
 // ------------------------------------------------------------
 // Movimentações de pagamentos de fiado
 // ------------------------------------------------------------
@@ -1556,7 +1586,35 @@ function confirmarVenda() {
         produto.atualizadoEm = new Date().toISOString();
     }
 
+    // ============================================================
+    // Registo automático da saída para o relatório PDF do Stock
+    // ============================================================
     const dataHora = obterDataHoraAtual();
+    const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
+    let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque);
+
+    for (const item of produtosVenda) {
+        const produtoOriginal = estoqueOriginal.find(
+            registro => String(registro.id) === String(item.id)
+        );
+        const qtdAnterior = produtoOriginal ? numeroSeguro(produtoOriginal.quantidade) : 0;
+        const qtdNova = Math.max(0, qtdAnterior - numeroSeguro(item.quantidade));
+
+        movimentacoesEstoque.push({
+            id: `mov_venda_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            produtoId: item.id,
+            produtoNome: item.nome,
+            tipo: "saida",
+            quantidade: numeroSeguro(item.quantidade),
+            quantidadeAnterior: qtdAnterior,
+            quantidadeNova: qtdNova,
+            data: dataHora.dataChave,
+            hora: dataHora.hora
+        });
+    }
+
+    localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
+    // ============================================================
 
     const idVenda =
         `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -1651,7 +1709,6 @@ function confirmarVenda() {
     const vendas = lerListaLocalStorage(CHAVE_VENDAS);
     const vendasNovas = [...vendas, venda];
 
-    // Guarda os dados anteriores para permitir restauração em caso de erro.
     const vendasAntes = localStorage.getItem(CHAVE_VENDAS);
     const estoqueAntes = localStorage.getItem(CHAVE_ESTOQUE);
     const movimentosAntes = localStorage.getItem(CHAVE_MOVIMENTACOES);
@@ -1783,15 +1840,11 @@ function verificarModaisAbertos() {
     );
 
     document.body.classList.toggle('modal-aberto', algumAberto);
-
-    // Só desbloqueia a página quando todos os modais estiverem fechados.
     document.body.style.overflow = algumAberto ? 'hidden' : '';
 }
 
 // ------------------------------------------------------------
 // Denominações e sugestões de troco
-// As imagens ficam na pasta "cedulas" do projeto.
-// Moedas sem imagem (25c, 10c, 5c, 1c) usam um círculo simples.
 // ------------------------------------------------------------
 const denominacoesTroco = [
     { valor: 200, nome: 'R$ 200', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-200.jpg' },
@@ -1922,12 +1975,10 @@ function gerarSugestoesTroco(valor) {
     renderizarSugestoesTroco(sugestoes);
 }
 
-// Troca a imagem pelo texto caso o arquivo não carregue.
 const ERRO_IMAGEM_TROCO =
     "this.style.display='none';" +
     "this.nextElementSibling.style.display='flex';";
 
-// Monta o visual de uma nota ou moeda, com selo de quantidade.
 function criarPecaTroco(item) {
     const ehMoeda = item.tipo === 'moeda';
     const nome = escaparHTML(item.nome);
@@ -2129,4 +2180,4 @@ if (document.readyState === 'loading') {
     );
 } else {
     iniciarCalculadora();
-                                                 }
+}
