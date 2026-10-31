@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -149,6 +148,19 @@ body nav.menu-inferior>a.menu-item.ativo{background:#eaf8f1;color:#20a767}
   .secao-fluxo{padding:13px}
   body nav.menu-inferior>a.menu-item>small{font-size:9px}
 }
+
+.status-caixa{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.4px}
+.status-caixa.aberto{background:#e5f7ed;color:#168b53}
+.status-caixa.fechado{background:#fff0f0;color:#b42318}
+.controle-sessao{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:13px;border:1px solid #e1e9e5;border-radius:16px;background:#fff}
+.controle-sessao-acoes{display:flex;gap:8px;flex-wrap:wrap}
+.btn-sessao{min-height:40px;padding:9px 13px;border:0;border-radius:11px;background:#168b53;color:#fff;font-weight:900;font-size:12px}
+.btn-sessao.sec{background:#fceeee;color:#b42318}
+.painel-sessao{margin:0 0 15px;padding:14px;border:1px solid #d9eee2;border-radius:15px;background:#f5fbf7}
+.painel-sessao p{margin:5px 0;color:#64766c;font-size:12px}
+.painel-sessao strong{color:#168b53}
+.resumo-sessao{line-height:1.7}
+
 </style>
 </head>
 
@@ -171,7 +183,25 @@ body nav.menu-inferior>a.menu-item.ativo{background:#eaf8f1;color:#20a767}
       <span class="texto-pequeno">MOVIMENTO DE HOJE</span>
       <h2 id="dataFluxo">Hoje</h2>
     </div>
-    <button type="button" id="btnSaldoInicial" class="btn-secundario">⚙️ Saldo inicial</button>
+    <button type="button" id="btnSaldoInicial" class="btn-secundario" title="Recurso diário antigo, não substitui a abertura da sessão">⚙️ Saldo diário</button>
+  </section>
+
+  <section class="controle-sessao">
+    <div>
+      <span id="statusSessaoCaixa" class="status-caixa fechado">CAIXA FECHADO</span>
+      <p id="sessaoAberturaInfo" style="margin:7px 0 0;color:#829087;font-size:11px">Abra uma sessão para iniciar o controle.</p>
+    </div>
+    <div class="controle-sessao-acoes">
+      <button type="button" id="btnAbrirSessaoCaixa" class="btn-sessao">＋ Abrir caixa</button>
+      <button type="button" id="btnFecharSessaoCaixa" class="btn-sessao sec" hidden>Fechar caixa</button>
+    </div>
+  </section>
+
+  <section id="painelSessaoCaixa" class="painel-sessao" hidden>
+    <p>Valor de abertura: <strong id="sessaoValorAbertura">R$ 0,00</strong></p>
+    <p>Vendas na sessão: <strong id="sessaoVendasTotal">R$ 0,00</strong></p>
+    <p>Dinheiro esperado no caixa: <strong id="sessaoCaixaEsperado">R$ 0,00</strong></p>
+    <p id="sessaoPagamentosResumo" class="resumo-sessao"></p>
   </section>
 
   <section class="saldo-card">
@@ -201,14 +231,14 @@ body nav.menu-inferior>a.menu-item.ativo{background:#eaf8f1;color:#20a767}
   <section class="acoes-fluxo">
     <button type="button" id="btnAdicionarEntrada" class="acao-card entrada">
       <span class="acao-icone" aria-hidden="true">＋</span>
-      <span class="acao-titulo">Entrada</span>
-      <small>Registrar dinheiro recebido</small>
+      <span class="acao-titulo">Entrada / reforço</span>
+      <small>Registrar entrada ou reforço</small>
     </button>
 
     <button type="button" id="btnAdicionarSaida" class="acao-card saida">
       <span class="acao-icone" aria-hidden="true">−</span>
-      <span class="acao-titulo">Saída</span>
-      <small>Registrar dinheiro retirado</small>
+      <span class="acao-titulo">Saída / sangria</span>
+      <small>Registrar saída ou sangria</small>
     </button>
   </section>
 
@@ -250,6 +280,28 @@ body nav.menu-inferior>a.menu-item.ativo{background:#eaf8f1;color:#20a767}
       <div>
         <span>Vendas</span>
         <strong id="quantidadeVendas">0</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao-fluxo">
+    <div class="titulo-secao">
+      <div>
+        <span class="titulo-icone" aria-hidden="true">🗂️</span>
+        <div>
+          <h3>Histórico de sessões</h3>
+          <p>Consulte aberturas e fechamentos anteriores</p>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <input type="date" id="filtroDataSessoesCaixa" aria-label="Filtrar sessões por data" style="flex:1;min-width:150px;min-height:40px;padding:8px;border:1px solid #dfe8e3;border-radius:10px">
+      <button type="button" id="btnImprimirSessoesCaixa" class="btn-secundario">Imprimir histórico</button>
+    </div>
+    <div id="listaSessoesCaixa">
+      <div class="movimentacoes-vazio">
+        <strong>Nenhuma sessão registrada</strong>
+        <span>As aberturas e fechamentos aparecerão aqui.</span>
       </div>
     </div>
   </section>
@@ -311,6 +363,47 @@ body nav.menu-inferior>a.menu-item.ativo{background:#eaf8f1;color:#20a767}
   </a>
 </nav>
 
+<div id="modalAbrirSessaoCaixa" class="modal-fluxo">
+  <div class="modal-caixa">
+    <div class="modal-cabecalho">
+      <h3>＋ Abrir sessão de caixa</h3>
+      <button type="button" id="btnFecharModalAbrirCaixa" class="btn-fechar-modal" aria-label="Fechar">×</button>
+    </div>
+    <form id="formAbrirSessaoCaixa" class="modal-form">
+      <label for="valorAberturaCaixa">Dinheiro inicial no caixa</label>
+      <input type="number" id="valorAberturaCaixa" min="0" step="0.01" value="0" inputmode="decimal" required>
+
+      <label for="operadorAberturaCaixa">Operador (opcional)</label>
+      <input type="text" id="operadorAberturaCaixa" maxlength="80" placeholder="Nome do operador">
+
+      <label for="obsAberturaCaixa">Observação (opcional)</label>
+      <input type="text" id="obsAberturaCaixa" maxlength="180" placeholder="Observações da abertura">
+
+      <button type="submit" class="btn-confirmar">Confirmar abertura</button>
+    </form>
+  </div>
+</div>
+
+<div id="modalFecharSessaoCaixa" class="modal-fluxo">
+  <div class="modal-caixa">
+    <div class="modal-cabecalho">
+      <h3>🔒 Conferir e fechar caixa</h3>
+      <button type="button" id="btnCancelarFechamentoCaixa" class="btn-fechar-modal" aria-label="Fechar">×</button>
+    </div>
+    <p id="fechamentoResumoCaixa" style="font-size:12px;line-height:1.7;color:#52635b"></p>
+    <p style="font-size:13px">Dinheiro esperado: <strong id="fechamentoEsperadoCaixa">R$ 0,00</strong></p>
+    <form id="formFecharSessaoCaixa" class="modal-form">
+      <label for="valorContadoCaixa">Dinheiro contado fisicamente</label>
+      <input type="number" id="valorContadoCaixa" min="0" step="0.01" inputmode="decimal" required>
+
+      <label for="obsFechamentoCaixa">Observação do fechamento (opcional)</label>
+      <input type="text" id="obsFechamentoCaixa" maxlength="180" placeholder="Observações">
+
+      <button type="submit" class="btn-confirmar">Confirmar fechamento</button>
+    </form>
+  </div>
+</div>
+
 <div id="modalSaldoInicial" class="modal-fluxo">
   <div class="modal-caixa">
     <div class="modal-cabecalho">
@@ -354,9 +447,9 @@ body nav.menu-inferior>a.menu-item.ativo{background:#eaf8f1;color:#20a767}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="auth-guard.js"></script>
+<script src="caixa-sessoes.js"></script>
 <script src="fluxo.js"></script>
 <script src="contas-pagar.js"></script>
-
 
 <script>
 (() => {
