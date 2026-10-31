@@ -217,10 +217,6 @@ async function carregarProdutos() {
 
     } catch (erro) {
         console.error("Erro ao carregar estoque do Supabase:", erro);
-        alert(
-    "ERRO AO CARREGAR ESTOQUE:\n" +
-    (erro.message || String(erro))
-);
 
         // Em falha de rede, permite apenas visualizar o cache deste comércio.
         // As alterações ficam bloqueadas enquanto a nuvem não confirmar conexão.
@@ -362,7 +358,7 @@ function produtoPassaFiltro(produto) {
     if (filtroAtual === "baixo") return status.classe === "baixo";
     if (filtroAtual === "zero") return status.classe === "zero";
     if (filtroAtual === "vencer") return status.classe === "a-vencer" || status.classe === "vencido";
-    return true;
+        return true;
 }
 
 /* =========================================================
@@ -541,8 +537,7 @@ function abrirEdicaoProduto(id) {
     window._estoqueFotoSelecionada = undefined;
     abrirModal("modalProduto");
     setTimeout(() => nome?.focus(), 150);
-}
-
+                                                           }
 /* =========================================================
 SALVAR PRODUTO — CLOUD FIRST
 ========================================================= */
@@ -722,7 +717,7 @@ function configurarTipoProduto() {
             campo.style.display = "none";
             const validade = document.getElementById("validadeProduto");
             if (validade) validade.value = "";
-        }
+                    }
     }
     tipo.addEventListener("change", atualizar);
     atualizar();
@@ -902,7 +897,7 @@ DETALHES DO PRODUTO
 function abrirDetalhes(id) {
     const produto = produtos.find(item => String(item.id) === String(id));
     if (!produto) return;
-    produtoDetalhesAtual = produto;
+        produtoDetalhesAtual = produto;
 
     const container = document.getElementById("detalhesProduto");
     if (!container) return;
@@ -1057,8 +1052,6 @@ async function confirmarExclusao() {
         renderizarProdutos();
     } catch (erro) {
         console.error("Erro ao excluir produto:", erro);
-        // Restaura o cadastro na nuvem caso a exclusão tenha ocorrido,
-        // mas o registro da movimentação tenha falhado.
         if (!produtos.some(produto => String(produto.id) === String(id))) {
             produtos.push(copiaProduto);
         }
@@ -1082,7 +1075,7 @@ function configurarBusca() {
     if (limpar) {
         limpar.addEventListener("click", () => {
             if (campo) campo.value = "";
-            renderizarProdutos();
+                        renderizarProdutos();
             campo?.focus();
         });
     }
@@ -1262,7 +1255,7 @@ async function iniciarDeteccaoCodigoBarras() {
         ultimaVerificacao = agora;
 
         if (detectorEmExecucao) {
-            frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
+                        frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
             return;
         }
 
@@ -1442,7 +1435,7 @@ async function abrirLeitorCodigo() {
 
         const novoStream = await navigator.mediaDevices.getUserMedia({
             video: {
-                facingMode: { ideal: "environment" },
+                                facingMode: { ideal: "environment" },
                 width: { ideal: 1920 },
                 height: { ideal: 1080 },
                 frameRate: { ideal: 30, max: 30 }
@@ -1620,6 +1613,208 @@ function configurarFechamentoModais() {
     });
 }
 
+
+/* =========================================================
+/* =========================================================
+RELATÓRIO DO ESTOQUE — EXPORTAÇÃO EM PDF
+========================================================= */
+
+function obterRotuloTipoMovimento(tipo) {
+    const rotulos = {
+        cadastro: "Cadastro",
+        entrada: "Entrada",
+        saida: "Saída",
+        ajuste: "Ajuste",
+        exclusao: "Exclusão"
+    };
+    return rotulos[String(tipo || "").toLowerCase()] || String(tipo || "Movimentação");
+}
+
+function obterDataHoraRelatorio(movimento) {
+    const dataOriginal = movimento?.data || movimento?.created_at || movimento?.createdAt || "";
+    const horaOriginal = movimento?.hora || movimento?.hora_movimento || "";
+    let data = "—";
+    let hora = "—";
+
+    if (dataOriginal) {
+        const valor = String(dataOriginal);
+        const dataParte = valor.includes("T") ? valor.split("T")[0] : valor;
+        data = formatarDataBR(dataParte);
+        if (!horaOriginal && valor.includes("T")) {
+            hora = valor.split("T")[1].slice(0, 5) || "—";
+        }
+    }
+    if (horaOriginal) hora = String(horaOriginal).slice(0, 8);
+    return { data, hora };
+}
+
+function configurarBotaoExportarPDF() {
+    const acoes = document.querySelector(".estoque-acoes");
+    if (!acoes || document.getElementById("btnExportarEstoquePDF")) return;
+
+    const botao = document.createElement("button");
+    botao.id = "btnExportarEstoquePDF";
+    botao.type = "button";
+    botao.className = "estoque-acao";
+    botao.innerHTML = '<span class="simbolo">📄</span> Exportar relatório PDF';
+    botao.style.gridColumn = "1 / -1";
+    botao.style.minHeight = "46px";
+    botao.style.color = "#176b45";
+    botao.style.background = "#eaf7ef";
+    botao.style.border = "1px solid #cdebd8";
+    botao.style.boxShadow = "none";
+    botao.style.fontWeight = "900";
+    botao.addEventListener("click", exportarRelatorioEstoquePDF);
+    acoes.appendChild(botao);
+}
+
+function exportarRelatorioEstoquePDF() {
+    if (!estoquePronto || !comercioIdEstoque) {
+        alert("O estoque precisa estar conectado para gerar o relatório. Verifique a conexão e atualize a página.");
+        return;
+    }
+
+    // As movimentações disponíveis neste arquivo são as confirmadas e guardadas
+    // no cache local separado por estabelecimento.
+    const movimentacoes = carregarMovimentacoes().slice().sort((a, b) => {
+        const dataA = `${a?.data || a?.created_at || ""} ${a?.hora || ""}`;
+        const dataB = `${b?.data || b?.created_at || ""} ${b?.hora || ""}`;
+        return dataB.localeCompare(dataA);
+    });
+
+    const totalProdutos = produtos.length;
+    const totalUnidades = produtos.reduce((soma, produto) => soma + numeroSeguro(produto.quantidade), 0);
+    const totalValor = produtos.reduce((soma, produto) => soma + numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade), 0);
+    const totalAtencao = produtos.filter(produto => {
+        const status = obterStatusProduto(produto);
+        return status.classe === "baixo" || status.classe === "zero" || status.classe === "vencido" || status.classe === "a-vencer";
+    }).length;
+
+    const contagemMovimentos = {
+        entrada: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "entrada").length,
+        saida: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "saida").length,
+        ajuste: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "ajuste").length,
+        cadastro: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "cadastro").length,
+        exclusao: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "exclusao").length
+    };
+
+    const linhasProdutos = produtos.slice().sort((a, b) =>
+        String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR")
+    ).map(produto => {
+        const status = obterStatusProduto(produto);
+        const quantidade = numeroSeguro(produto.quantidade);
+        const preco = numeroSeguro(produto.preco);
+        const tipo = produto.tipo === "perecivel" ? "Perecível" : "Não perecível";
+        return `
+            <tr>
+                <td>${escaparHTML(produto.nome || "—")}</td>
+                <td>${escaparHTML(produto.codigo || "—")}</td>
+                <td>${tipo}</td>
+                <td class="numero">${quantidade}</td>
+                <td class="numero">${numeroSeguro(produto.estoqueMinimo)}</td>
+                <td class="numero">${formatarReal(preco)}</td>
+                <td class="numero">${formatarReal(preco * quantidade)}</td>
+                <td>${escaparHTML(status.texto)}</td>
+                <td>${produto.validade ? formatarDataBR(produto.validade) : "—"}</td>
+            </tr>`;
+    }).join("");
+
+    const linhasMovimentacoes = movimentacoes.map(movimento => {
+        const quando = obterDataHoraRelatorio(movimento);
+        return `
+            <tr>
+                <td>${escaparHTML(quando.data)}</td>
+                <td>${escaparHTML(quando.hora)}</td>
+                <td>${escaparHTML(obterRotuloTipoMovimento(movimento.tipo))}</td>
+                <td>${escaparHTML(movimento.produtoNome || movimento.nomeProduto || "Produto não informado")}</td>
+                <td class="numero">${numeroSeguro(movimento.quantidade)}</td>
+                <td class="numero">${movimento.quantidadeAnterior === undefined ? "—" : numeroSeguro(movimento.quantidadeAnterior)}</td>
+                <td class="numero">${movimento.quantidadeNova === undefined ? "—" : numeroSeguro(movimento.quantidadeNova)}</td>
+            </tr>`;
+    }).join("");
+
+    const geradoEm = new Date().toLocaleString("pt-BR");
+    const janela = window.open("", "_blank");
+    if (!janela) {
+        alert("O navegador bloqueou a janela do relatório. Permita pop-ups para este aplicativo e tente novamente.");
+        return;
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatório de Estoque - Dr. Troco</title>
+<style>
+    @page { size: A4 landscape; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #253542; margin: 0; font-size: 10px; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 3px solid #218653; padding-bottom: 12px; margin-bottom: 14px; }
+    h1 { margin: 0 0 4px; color: #176b45; font-size: 22px; }
+    h2 { margin: 22px 0 9px; color: #176b45; font-size: 15px; page-break-after: avoid; }
+    p { margin: 3px 0; color: #667581; }
+    .gerado { text-align: right; white-space: nowrap; }
+    .resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0; }
+    .kpi { border: 1px solid #dce8e1; background: #f4faf6; border-radius: 7px; padding: 10px; }
+    .kpi span { display: block; color: #64756c; font-size: 9px; font-weight: bold; }
+    .kpi strong { display: block; margin-top: 5px; color: #176b45; font-size: 16px; }
+    .mov-resumo { display: flex; flex-wrap: wrap; gap: 7px; margin: 8px 0 12px; }
+    .mov-resumo span { padding: 6px 9px; border: 1px solid #dfe7e3; border-radius: 5px; background: #f8faf9; }
+    table { width: 100%; border-collapse: collapse; table-layout: auto; }
+    thead { display: table-header-group; }
+    th { background: #176b45; color: #fff; text-align: left; font-weight: bold; }
+    th, td { border: 1px solid #dbe2e6; padding: 6px 7px; vertical-align: top; }
+    tbody tr:nth-child(even) { background: #f6f8f7; }
+    .numero { text-align: right; white-space: nowrap; }
+    .vazio { padding: 14px; text-align: center; border: 1px dashed #cbd5d0; color: #697781; }
+    .nota { margin-top: 14px; padding: 9px; background: #fff8e8; border: 1px solid #eedeb1; color: #725c28; border-radius: 5px; }
+    footer { margin-top: 18px; border-top: 1px solid #dbe2e6; padding-top: 7px; color: #78848b; font-size: 8px; }
+    .acoes { margin: 0 0 14px; }
+    .acoes button { background: #176b45; color: #fff; border: 0; border-radius: 6px; padding: 9px 14px; font-weight: bold; }
+    @media print { .acoes { display: none; } h2 { page-break-after: avoid; } tr { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="acoes"><button onclick="window.print()">Imprimir / Salvar como PDF</button></div>
+<header>
+    <div><h1>Dr. Troco — Relatório de Estoque</h1><p>Posição atual do estoque e histórico de movimentações</p><p>Estabelecimento: ${escaparHTML(String(comercioIdEstoque))}</p></div>
+    <div class="gerado"><strong>Relatório gerado em</strong><p>${escaparHTML(geradoEm)}</p></div>
+</header>
+<section class="resumo">
+    <div class="kpi"><span>PRODUTOS CADASTRADOS</span><strong>${totalProdutos}</strong></div>
+    <div class="kpi"><span>UNIDADES EM ESTOQUE</span><strong>${totalUnidades}</strong></div>
+    <div class="kpi"><span>VALOR ESTIMADO DO ESTOQUE</span><strong>${formatarReal(totalValor)}</strong></div>
+    <div class="kpi"><span>PRODUTOS QUE EXIGEM ATENÇÃO</span><strong>${totalAtencao}</strong></div>
+</section>
+<h2>Resumo das movimentações</h2>
+<div class="mov-resumo">
+    <span>Entradas: <strong>${contagemMovimentos.entrada}</strong></span>
+    <span>Saídas: <strong>${contagemMovimentos.saida}</strong></span>
+    <span>Ajustes: <strong>${contagemMovimentos.ajuste}</strong></span>
+    <span>Cadastros: <strong>${contagemMovimentos.cadastro}</strong></span>
+    <span>Exclusões: <strong>${contagemMovimentos.exclusao}</strong></span>
+    <span>Total: <strong>${movimentacoes.length}</strong></span>
+</div>
+        <h2>Produtos e posição atual</h2>
+${produtos.length ? `<table><thead><tr><th>Produto</th><th>Código</th><th>Tipo</th><th>Qtd.</th><th>Mínimo</th><th>Preço un.</th><th>Valor total</th><th>Status</th><th>Validade</th></tr></thead><tbody>${linhasProdutos}</tbody></table>` : '<div class="vazio">Nenhum produto cadastrado.</div>'}
+<h2>Histórico de movimentações</h2>
+${movimentacoes.length ? `<table><thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Produto</th><th>Qtd. mov.</th><th>Qtd. anterior</th><th>Qtd. nova</th></tr></thead><tbody>${linhasMovimentacoes}</tbody></table>` : '<div class="vazio">Nenhuma movimentação disponível no histórico local deste estabelecimento.</div>'}
+<div class="nota"><strong>Observação:</strong> o histórico exportado corresponde às movimentações disponíveis no cache deste dispositivo. O relatório não altera nem exclui dados do estoque.</div>
+<footer>Dr. Troco • Relatório gerado localmente em ${escaparHTML(geradoEm)}</footer>
+</body>
+</html>`;
+
+    janela.document.open();
+    janela.document.write(html);
+    janela.document.close();
+    janela.focus();
+    setTimeout(() => {
+        try { janela.print(); }
+        catch (erro) { console.error("Não foi possível abrir a impressão do relatório:", erro); }
+    }, 500);
+}
+
 /* =========================================================
 CONFIGURAÇÕES DE BOTÕES
 ========================================================= */
@@ -1636,6 +1831,7 @@ function configurarBotoes() {
     const form = document.getElementById("formProduto");
     const lerCodigo = document.getElementById("btnLerCodigoBarras");
     const fecharLeitor = document.getElementById("btnFecharLeitorCodigo");
+    configurarBotaoExportarPDF();
 
     if (cadastrar) cadastrar.addEventListener("click", abrirCadastroProduto);
     if (entrada) entrada.addEventListener("click", () => abrirMovimento("entrada"));
