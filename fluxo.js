@@ -1,5 +1,5 @@
 // ============================================
-// DR. TROCO — FLUXO DE CAIXA
+// DR. TROCO — FLUXO DE CAIXA (LIMPO)
 // ============================================
 
 const CHAVE_VENDAS = 'drTroco_vendas';
@@ -22,13 +22,9 @@ function obterConfigCaixa() {
     }
 }
 
-function salvarConfigCaixa(config) {
-    localStorage.setItem(CHAVE_CONFIG_CAIXA, JSON.stringify(config));
-}
-
 
 // ============================================
-// FUNÇÕES BÁSICAS E DATA OPERACIONAL (COM CORTE)
+// FUNÇÕES BÁSICAS E DATA OPERACIONAL
 // ============================================
 
 function obterVendas() {
@@ -62,7 +58,6 @@ function formatarReal(valor) {
     });
 }
 
-// Calcula a data operacional considerando o horário de corte (ex: turno que avança pela madrugada)
 function obterDataOperacional(dataCustomizada = new Date()) {
     const config = obterConfigCaixa();
     const [horaCorte, minutoCorte] = (config.horarioCorte || '04:00').split(':').map(Number);
@@ -71,7 +66,6 @@ function obterDataOperacional(dataCustomizada = new Date()) {
     const horaAtualD = d.getHours();
     const minutoAtualD = d.getMinutes();
 
-    // Se a hora atual for menor que a hora de corte, ainda pertencemos ao dia operacional anterior
     if (horaAtualD < horaCorte || (horaAtualD === horaCorte && minutoAtualD < minutoCorte)) {
         d.setDate(d.getDate() - 1);
     }
@@ -101,7 +95,7 @@ function dataChave() {
 
 
 // ============================================
-// ELEMENTOS
+// ELEMENTOS DA TELA DE FLUXO
 // ============================================
 
 const saldoCaixa = document.getElementById('saldoCaixa');
@@ -165,7 +159,6 @@ function nomeFormaPagamento(forma) {
         debito: 'Débito',
         credito: 'Crédito'
     };
-
     return nomes[forma] || forma;
 }
 
@@ -185,16 +178,13 @@ function salvarSaldoInicial(valor) {
     localStorage.setItem(CHAVE_SALDOS_INICIAIS, JSON.stringify(saldos));
 }
 
-
-// ============================================
-// ABRIR SALDO INICIAL
-// ============================================
-
 function abrirSaldoInicial() {
-    valorSaldoInicial.value = obterSaldoInicialHoje() || '';
+    if (valorSaldoInicial) {
+        valorSaldoInicial.value = obterSaldoInicialHoje() || '';
+    }
     esconderMenuInferior();
-    modalSaldoInicial.classList.add('aberto');
-    setTimeout(() => { valorSaldoInicial.focus(); }, 150);
+    if (modalSaldoInicial) modalSaldoInicial.classList.add('aberto');
+    setTimeout(() => { if (valorSaldoInicial) valorSaldoInicial.focus(); }, 150);
 }
 
 
@@ -203,35 +193,29 @@ function abrirSaldoInicial() {
 // ============================================
 
 function abrirEntrada() {
-    if (window.DrTrocoCaixa && !window.DrTrocoCaixa.requireOpen()) {
-        return;
-    }
     tipoMovimentoAtual = 'entrada';
-    tituloModalMovimento.textContent = '➕ Nova entrada';
-    btnConfirmarMovimento.textContent = 'Registrar entrada';
+    if (tituloModalMovimento) tituloModalMovimento.textContent = '➕ Nova entrada';
+    if (btnConfirmarMovimento) btnConfirmarMovimento.textContent = 'Registrar entrada';
     limparFormularioMovimento();
     esconderMenuInferior();
-    modalMovimento.classList.add('aberto');
-    setTimeout(() => { valorMovimento.focus(); }, 150);
+    if (modalMovimento) modalMovimento.classList.add('aberto');
+    setTimeout(() => { if (valorMovimento) valorMovimento.focus(); }, 150);
 }
 
 function abrirSaida() {
-    if (window.DrTrocoCaixa && !window.DrTrocoCaixa.requireOpen()) {
-        return;
-    }
     tipoMovimentoAtual = 'saida';
-    tituloModalMovimento.textContent = '➖ Nova saída';
-    btnConfirmarMovimento.textContent = 'Registrar saída';
+    if (tituloModalMovimento) tituloModalMovimento.textContent = '➖ Nova saída';
+    if (btnConfirmarMovimento) btnConfirmarMovimento.textContent = 'Registrar saída';
     limparFormularioMovimento();
     esconderMenuInferior();
-    modalMovimento.classList.add('aberto');
-    setTimeout(() => { valorMovimento.focus(); }, 150);
+    if (modalMovimento) modalMovimento.classList.add('aberto');
+    setTimeout(() => { if (valorMovimento) valorMovimento.focus(); }, 150);
 }
 
 function limparFormularioMovimento() {
-    valorMovimento.value = '';
-    descricaoMovimento.value = '';
-    formaPagamentoMovimento.value = 'dinheiro';
+    if (valorMovimento) valorMovimento.value = '';
+    if (descricaoMovimento) descricaoMovimento.value = '';
+    if (formaPagamentoMovimento) formaPagamentoMovimento.value = 'dinheiro';
 }
 
 
@@ -292,7 +276,7 @@ if (formMovimento) {
             alert('Digite um valor válido.');
             return;
         }
-        const forma = formaPagamentoMovimento.value;
+        const forma = formaPagamentoMovimento ? formaPagamentoMovimento.value : 'dinheiro';
         const descricao = descricaoMovimento.value.trim() ||
             (tipoMovimentoAtual === 'entrada' ? 'Entrada manual' : 'Saída manual');
 
@@ -308,15 +292,6 @@ if (formMovimento) {
             formaPagamento: forma,
             formaPagamentoNome: nomeFormaPagamento(forma)
         };
-
-        if (window.DrTrocoCaixa) {
-            try {
-                window.DrTrocoCaixa.attachMovement(novoMovimento);
-            } catch (erro) {
-                alert(erro.message);
-                return;
-            }
-        }
 
         movimentacoes.push(novoMovimento);
         localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(movimentacoes));
@@ -340,7 +315,7 @@ if (btnAdicionarSaida) btnAdicionarSaida.addEventListener('click', abrirSaida);
 
 
 // ============================================
-// CALCULAR FLUXO E INTEGRAÇÃO COM HISTÓRICO
+// CALCULAR FLUXO DO DIA
 // ============================================
 
 function carregarFluxo() {
@@ -354,7 +329,6 @@ function carregarFluxo() {
         dataFluxo.textContent = hojeStr;
     }
 
-    // Vendas baseadas na data operacional com horário de corte
     const vendasHoje = vendas.filter(venda => venda.data === hojeStr || venda.dataChave === chaveHoje);
 
     let dinheiro = 0;
@@ -372,15 +346,6 @@ function carregarFluxo() {
 
     const movimentosHoje = movimentacoes.filter(movimento => {
         return movimento.data === hojeStr || movimento.dataChave === chaveHoje;
-    });
-
-    let entradas = 0;
-    let saidas = 0;
-
-    movimentosHoje.forEach(movimento => {
-        const valor = Number(movimento.valor || 0);
-        if (movimento.tipo === 'entrada') entradas += valor;
-        else if (movimento.tipo === 'saida') saidas += valor;
     });
 
     const saldoInicial = obterSaldoInicialHoje();
@@ -410,36 +375,6 @@ function carregarFluxo() {
     if (quantidadeVendas) quantidadeVendas.textContent = vendasHoje.length;
 
     renderizarMovimentacoes(movimentosHoje);
-
-    // Integração com Sessão de Caixa e Histórico
-    const sessaoAtual = window.DrTrocoCaixa?.current();
-    if (sessaoAtual) {
-        const resumoSessao = window.DrTrocoCaixa.totals(sessaoAtual);
-        const movimentosSessao = obterMovimentacoes().filter(m => m.caixaSessaoId === sessaoAtual.id);
-
-        const entradasDinheiroSessao = movimentosSessao
-            .filter(m => m.tipo === 'entrada' && (!m.formaPagamento || m.formaPagamento === 'dinheiro'))
-            .reduce((s, m) => s + Number(m.valor || 0), 0);
-
-        const saidasDinheiroSessao = movimentosSessao
-            .filter(m => m.tipo === 'saida' && (!m.formaPagamento || m.formaPagamento === 'dinheiro'))
-            .reduce((s, m) => s + Number(m.valor || 0), 0);
-
-        if (saldoCaixa) saldoCaixa.textContent = formatarReal(resumoSessao.caixaEsperado);
-        if (saldoInicialEl) saldoInicialEl.textContent = formatarReal(sessaoAtual.valorAbertura);
-        if (totalEntradasCaixa) totalEntradasCaixa.textContent = formatarReal(resumoSessao.dinheiro + entradasDinheiroSessao);
-        if (totalSaidasCaixa) totalSaidasCaixa.textContent = formatarReal(saidasDinheiroSessao);
-
-        if (totalDinheiro) totalDinheiro.textContent = formatarReal(resumoSessao.dinheiro);
-        if (totalPix) totalPix.textContent = formatarReal(resumoSessao.pix);
-        if (totalDebito) totalDebito.textContent = formatarReal(resumoSessao.debito);
-        if (totalCredito) totalCredito.textContent = formatarReal(resumoSessao.credito);
-
-        if (totalVendas) totalVendas.textContent = formatarReal(resumoSessao.totalVendas);
-        if (quantidadeVendas) quantidadeVendas.textContent = resumoSessao.vendas;
-
-        renderizarMovimentacoes(movimentosSessao);
-    }
 }
 
 
@@ -517,12 +452,6 @@ function escaparHTML(texto) {
 }
 
 function excluirMovimentacao(id) {
-    const registro = obterMovimentacoes().find(m => String(m.id) === String(id));
-    if (registro?.caixaSessaoId) {
-        alert('Esta movimentação está vinculada a uma sessão de caixa. Não exclua o lançamento; registre uma movimentação de ajuste para manter a conferência.');
-        return;
-    }
-
     if (!confirm('Excluir esta movimentação?')) return;
 
     const movimentacoes = obterMovimentacoes();
