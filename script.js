@@ -235,18 +235,25 @@ function salvarEstoque(estoque) {
 }
 
 // ------------------------------------------------------------
-// Data e hora
+// Data e hora (Com suporte a turno noturno até às 06:00)
 // ------------------------------------------------------------
 function obterDataHoraAtual() {
     const agora = new Date();
+    const horaAtual = agora.getHours();
+
+    // Se forem entre 00:00 e 06:00 da manhã, consideramos comercialmente 
+    // que ainda pertencem ao dia anterior (turnos das 18h às 02h/04h)
+    if (horaAtual >= 0 && horaAtual < 6) {
+        agora.setDate(agora.getDate() - 1);
+    }
 
     const dia = String(agora.getDate()).padStart(2, '0');
     const mes = String(agora.getMonth() + 1).padStart(2, '0');
     const ano = agora.getFullYear();
 
-    const hora = String(agora.getHours()).padStart(2, '0');
-    const minuto = String(agora.getMinutes()).padStart(2, '0');
-    const segundo = String(agora.getSeconds()).padStart(2, '0');
+    const hora = String(new Date().getHours()).padStart(2, '0');
+    const minuto = String(new Date().getMinutes()).padStart(2, '0');
+    const segundo = String(new Date().getSeconds()).padStart(2, '0');
 
     return {
         data: `${dia}/${mes}/${ano}`,
@@ -254,6 +261,31 @@ function obterDataHoraAtual() {
         hora: `${hora}:${minuto}:${segundo}`
     };
 }
+
+// ------------------------------------------------------------
+// ESTORNO AUTOMÁTICO AO EXCLUIR VENDA
+// ------------------------------------------------------------
+function reverterEstoquePorVenda(venda) {
+    if (!venda || !venda.produtos || !Array.isArray(venda.produtos)) return;
+
+    // 1. Devolve os produtos ao estoque
+    const estoque = obterEstoque();
+    for (const itemVendido of venda.produtos) {
+        const produtoEstoque = estoque.find(p => String(p.id) === String(itemVendido.id));
+        if (produtoEstoque) {
+            produtoEstoque.quantidade = numeroSeguro(produtoEstoque.quantidade) + numeroSeguro(itemVendido.quantidade);
+            produtoEstoque.atualizadoEm = new Date().toISOString();
+        }
+    }
+    salvarEstoque(estoque);
+
+    // 2. Apaga o histórico de saída do estoque para que não conste no PDF
+    const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
+    let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque);
+    movimentacoesEstoque = movimentacoesEstoque.filter(mov => mov.vendaId !== venda.id);
+    localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
+}
+window.reverterEstoquePorVenda = reverterEstoquePorVenda;
 
 function nomeFormaPagamento(metodo) {
     const nomes = {
@@ -1586,10 +1618,12 @@ function confirmarVenda() {
         produto.atualizadoEm = new Date().toISOString();
     }
 
-    // ============================================================
-    // Registo automático da saída para o relatório PDF do Stock
-    // ============================================================
     const dataHora = obterDataHoraAtual();
+    const idVenda = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+    // ============================================================
+    // Registo automático da saída com vendaId vinculado
+    // ============================================================
     const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
     let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque);
 
@@ -1602,6 +1636,7 @@ function confirmarVenda() {
 
         movimentacoesEstoque.push({
             id: `mov_venda_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            vendaId: idVenda, // Vínculo essencial para permitir o estorno na exclusão
             produtoId: item.id,
             produtoNome: item.nome,
             tipo: "saida",
@@ -1615,9 +1650,6 @@ function confirmarVenda() {
 
     localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
     // ============================================================
-
-    const idVenda =
-        `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
     const isFiado = resumo.formaPagamento === 'fiado';
 
@@ -1845,6 +1877,8 @@ function verificarModaisAbertos() {
 
 // ------------------------------------------------------------
 // Denominações e sugestões de troco
+// As imagens ficam na pasta "cedulas" do projeto.
+// Moedas sem imagem (25c, 10c, 5c, 1c) usam um círculo simples.
 // ------------------------------------------------------------
 const denominacoesTroco = [
     { valor: 200, nome: 'R$ 200', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-200.jpg' },
