@@ -21,6 +21,7 @@ window.EstoqueSupabase = (() => {
     if (!usuario) {
       throw new Error("Usuário não autenticado.");
     }
+    console.log("USUÁRIO AUTENTICADO:", usuario.id);
 
     const { data, error } = await client
       .from("membros_comercio")
