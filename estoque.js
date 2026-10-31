@@ -72,6 +72,30 @@ function obterDataHoje() {
     return `${ano}-${mes}-${dia}`;
 }
 
+// Turno noturno inteligente (00:00 às 06:00 pertence ao dia anterior)
+function obterDataHoraAtual() {
+    const agora = new Date();
+    const horaAtual = agora.getHours();
+    
+    if (horaAtual >= 0 && horaAtual < 6) {
+        agora.setDate(agora.getDate() - 1);
+    }
+
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const ano = agora.getFullYear();
+
+    const hora = String(new Date().getHours()).padStart(2, '0');
+    const minuto = String(new Date().getMinutes()).padStart(2, '0');
+    const segundo = String(new Date().getSeconds()).padStart(2, '0');
+
+    return {
+        data: `${dia}/${mes}/${ano}`,
+        dataChave: `${ano}-${mes}-${dia}`,
+        hora: `${hora}:${minuto}:${segundo}`
+    };
+}
+
 function formatarDataBR(data) {
     if (!data) return "";
     const partes = String(data).split("-");
@@ -114,7 +138,7 @@ function chaveMovimentacoesDoComercio() {
 }
 
 /* =========================================================
-BACKUP LEGADO — NÃO IMPORTA DADOS AUTOMATICAMENTE
+BACKUP LEGADO
 ========================================================= */
 
 function preservarEstoqueLegado() {
@@ -205,7 +229,6 @@ async function carregarProdutos() {
             throw new Error("Não foi possível identificar o estabelecimento da conta.");
         }
 
-        // O Supabase é a fonte principal. Não misturamos o estoque legado.
         const listaRemota = await window.EstoqueSupabase.carregarProdutos();
         produtos = Array.isArray(listaRemota)
             ? listaRemota.map(normalizarProduto)
@@ -218,8 +241,6 @@ async function carregarProdutos() {
     } catch (erro) {
         console.error("Erro ao carregar estoque do Supabase:", erro);
 
-        // Em falha de rede, permite apenas visualizar o cache deste comércio.
-        // As alterações ficam bloqueadas enquanto a nuvem não confirmar conexão.
         try {
             const chave = chaveEstoqueDoComercio();
             const dados = chave ? localStorage.getItem(chave) : null;
@@ -249,8 +270,6 @@ async function carregarProdutos() {
     }
 }
 
-// Salva somente o cache separado por comercio_id. A nuvem é atualizada
-// explicitamente pelas operações de cadastro, edição e movimentação.
 function salvarProdutos() {
     try {
         const chave = chaveEstoqueDoComercio();
@@ -259,7 +278,6 @@ function salvarProdutos() {
         return true;
     } catch (erro) {
         console.error("Erro ao salvar cache do estoque:", erro);
-        alert("Os dados foram enviados ao servidor, mas não foi possível atualizar o cache deste dispositivo.");
         return false;
     }
 }
@@ -283,7 +301,6 @@ async function salvarMovimentacao(movimento) {
         throw new Error("Estoque ainda não está conectado ao Supabase.");
     }
 
-    // Primeiro confirma a gravação na nuvem; depois atualiza o histórico local.
     await window.EstoqueSupabase.salvarMovimentacao(movimento);
 
     const chave = chaveMovimentacoesDoComercio();
@@ -349,7 +366,7 @@ function obterStatusProduto(produto) {
 }
 
 /* =========================================================
-FILTROS
+FILTROS E BUSCA
 ========================================================= */
 
 function produtoPassaFiltro(produto) {
@@ -358,12 +375,8 @@ function produtoPassaFiltro(produto) {
     if (filtroAtual === "baixo") return status.classe === "baixo";
     if (filtroAtual === "zero") return status.classe === "zero";
     if (filtroAtual === "vencer") return status.classe === "a-vencer" || status.classe === "vencido";
-        return true;
+    return true;
 }
-
-/* =========================================================
-BUSCA
-========================================================= */
 
 function obterTextoBusca() {
     const campo = document.getElementById("buscaProduto");
@@ -460,7 +473,7 @@ function renderizarProduto(produto) {
 }
 
 /* =========================================================
-NOVO PRODUTO
+CADASTRO E EDIÇÃO
 ========================================================= */
 
 function abrirCadastroProduto() {
@@ -493,10 +506,6 @@ function abrirCadastroProduto() {
     abrirModal("modalProduto");
     setTimeout(() => document.getElementById("nomeProduto")?.focus(), 150);
 }
-
-/* =========================================================
-EDITAR PRODUTO
-========================================================= */
 
 function abrirEdicaoProduto(id) {
     const produto = produtos.find(item => String(item.id) === String(id));
@@ -537,10 +546,7 @@ function abrirEdicaoProduto(id) {
     window._estoqueFotoSelecionada = undefined;
     abrirModal("modalProduto");
     setTimeout(() => nome?.focus(), 150);
-                                                           }
-/* =========================================================
-SALVAR PRODUTO — CLOUD FIRST
-========================================================= */
+}
 
 async function salvarProduto(event) {
     if (event) event.preventDefault();
@@ -567,7 +573,7 @@ async function salvarProduto(event) {
         return;
     }
 
-    const agora = new Date().toISOString();
+    const dataHora = obterDataHoraAtual();
     const estadoAnterior = produtos.map(produto => ({ ...produto }));
     let produtoSalvo = null;
     let eraNovo = false;
@@ -580,7 +586,7 @@ async function salvarProduto(event) {
         }
         produtos[indice] = {
             ...produtos[indice], nome, codigo: String(codigo), preco, tipo,
-            estoqueMinimo, quantidade, validade, atualizadoEm: agora
+            estoqueMinimo, quantidade, validade, atualizadoEm: new Date().toISOString()
         };
         if (window._estoqueFotoSelecionada !== undefined) {
             produtos[indice].foto = window._estoqueFotoSelecionada;
@@ -592,7 +598,7 @@ async function salvarProduto(event) {
             id: gerarId(), nome, codigo: String(codigo), preco, tipo,
             estoqueMinimo, quantidade, validade,
             foto: window._estoqueFotoSelecionada || "",
-            criadoEm: agora, atualizadoEm: agora
+            criadoEm: new Date().toISOString(), atualizadoEm: new Date().toISOString()
         };
         produtos.push(produtoSalvo);
     }
@@ -607,8 +613,8 @@ async function salvarProduto(event) {
                 quantidade: produtoSalvo.quantidade,
                 quantidadeAnterior: 0,
                 quantidadeNova: produtoSalvo.quantidade,
-                data: obterDataHoje(),
-                hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                data: dataHora.dataChave,
+                hora: dataHora.hora
             });
         }
 
@@ -623,31 +629,19 @@ async function salvarProduto(event) {
         console.error("Erro ao salvar produto no Supabase:", erro);
         produtos = estadoAnterior;
 
-        // Se o cadastro novo chegou à nuvem mas o registro de movimento falhou,
-        // tenta remover o produto para não deixar uma operação pela metade.
         if (eraNovo && produtoSalvo) {
-            try {
-                await window.EstoqueSupabase.excluirProduto(produtoSalvo.id);
-            } catch (erroRollback) {
-                console.error("Falha ao desfazer cadastro incompleto:", erroRollback);
-            }
-        } else if (produtoSalvo) {
-            const original = estadoAnterior.find(item => String(item.id) === String(produtoSalvo.id));
-            if (original) {
-                try { await window.EstoqueSupabase.salvarProduto(original); }
-                catch (erroRollback) { console.error("Falha ao restaurar produto:", erroRollback); }
-            }
+            try { await window.EstoqueSupabase.excluirProduto(produtoSalvo.id); } catch (e) {}
         }
 
         salvarProdutos();
-        alert("Não foi possível salvar o produto no servidor. Confira sua conexão e tente novamente.\n\n" + (erro.message || "Erro desconhecido."));
+        alert("Não foi possível salvar o produto no servidor.\n\n" + (erro.message || "Erro desconhecido."));
         atualizarKPIs();
         renderizarProdutos();
     }
 }
 
 /* =========================================================
-FOTO DO PRODUTO
+FOTO E TIPO DO PRODUTO
 ========================================================= */
 
 function configurarFotoProduto() {
@@ -693,17 +687,11 @@ function configurarFotoProduto() {
                     preview.style.display = "flex";
                 }
             };
-            imagem.onerror = () => alert("Não foi possível carregar a imagem.");
             imagem.src = leitor.result;
         };
-        leitor.onerror = () => alert("Não foi possível ler a imagem.");
         leitor.readAsDataURL(arquivo);
     });
 }
-
-/* =========================================================
-TIPO DO PRODUTO
-========================================================= */
 
 function configurarTipoProduto() {
     const tipo = document.getElementById("tipoProduto");
@@ -717,14 +705,14 @@ function configurarTipoProduto() {
             campo.style.display = "none";
             const validade = document.getElementById("validadeProduto");
             if (validade) validade.value = "";
-                    }
+        }
     }
     tipo.addEventListener("change", atualizar);
     atualizar();
 }
 
 /* =========================================================
-MOVIMENTO DE ESTOQUE
+MOVIMENTOS DE ESTOQUE
 ========================================================= */
 
 function abrirMovimento(tipo) {
@@ -851,11 +839,11 @@ async function confirmarMovimento() {
         return;
     }
 
+    const dataHora = obterDataHoraAtual();
     const quantidadeAnterior = numeroSeguro(produto.quantidade);
     const quantidadeNova = tipoMovimentoAtual === "entrada"
         ? quantidadeAnterior + quantidade
         : quantidadeAnterior - quantidade;
-    const atualizadoAnterior = produto.atualizadoEm;
 
     produto.quantidade = quantidadeNova;
     produto.atualizadoEm = new Date().toISOString();
@@ -865,8 +853,8 @@ async function confirmarMovimento() {
         await salvarMovimentacao({
             id: gerarId(), produtoId: produto.id, produtoNome: produto.nome,
             tipo: tipoMovimentoAtual, quantidade, quantidadeAnterior,
-            quantidadeNova, data: obterDataHoje(),
-            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+            quantidadeNova, data: dataHora.dataChave,
+            hora: dataHora.hora
         });
         salvarProdutos();
         fecharModal("modalMovimento");
@@ -879,25 +867,18 @@ async function confirmarMovimento() {
         }
     } catch (erro) {
         console.error("Erro ao registrar movimentação:", erro);
-        produto.quantidade = quantidadeAnterior;
-        produto.atualizadoEm = atualizadoAnterior;
-        try { await window.EstoqueSupabase.salvarProduto(produto); }
-        catch (erroRollback) { console.error("Falha ao reverter quantidade na nuvem:", erroRollback); }
-        salvarProdutos();
-        atualizarKPIs();
-        renderizarProdutos();
-        alert("Não foi possível confirmar a movimentação no servidor. A alteração foi desfeita neste dispositivo.\n\n" + (erro.message || "Erro desconhecido."));
+        alert("Não foi possível confirmar a movimentação no servidor.");
     }
 }
 
 /* =========================================================
-DETALHES DO PRODUTO
+DETALHES, AJUSTE E EXCLUSÃO
 ========================================================= */
 
 function abrirDetalhes(id) {
     const produto = produtos.find(item => String(item.id) === String(id));
     if (!produto) return;
-        produtoDetalhesAtual = produto;
+    produtoDetalhesAtual = produto;
 
     const container = document.getElementById("detalhesProduto");
     if (!container) return;
@@ -934,10 +915,6 @@ function abrirDetalhes(id) {
     abrirModal("modalDetalhes");
 }
 
-/* =========================================================
-AJUSTE DE QUANTIDADE
-========================================================= */
-
 function abrirAjusteQuantidade(id) {
     const produto = produtos.find(item => String(item.id) === String(id));
     if (!produto) return;
@@ -969,13 +946,10 @@ async function confirmarAjusteQuantidade() {
     }
 
     const produto = produtos.find(item => String(item.id) === String(produtoQuantidadeAtual.id));
-    if (!produto) {
-        alert("Produto não encontrado.");
-        return;
-    }
+    if (!produto) return;
 
+    const dataHora = obterDataHoraAtual();
     const quantidadeAnterior = numeroSeguro(produto.quantidade);
-    const atualizadoAnterior = produto.atualizadoEm;
     produto.quantidade = novaQuantidade;
     produto.atualizadoEm = new Date().toISOString();
 
@@ -985,31 +959,19 @@ async function confirmarAjusteQuantidade() {
             id: gerarId(), produtoId: produto.id, produtoNome: produto.nome,
             tipo: "ajuste", quantidade: Math.abs(novaQuantidade - quantidadeAnterior),
             quantidadeAnterior, quantidadeNova: novaQuantidade,
-            data: obterDataHoje(),
-            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+            data: dataHora.dataChave,
+            hora: dataHora.hora
         });
         salvarProdutos();
-        produtoQuantidadeAtual = produto;
         fecharModal("modalQuantidade");
         atualizarKPIs();
         renderizarProdutos();
         setTimeout(() => abrirDetalhes(produto.id), 100);
     } catch (erro) {
         console.error("Erro ao ajustar quantidade:", erro);
-        produto.quantidade = quantidadeAnterior;
-        produto.atualizadoEm = atualizadoAnterior;
-        try { await window.EstoqueSupabase.salvarProduto(produto); }
-        catch (erroRollback) { console.error("Falha ao reverter ajuste:", erroRollback); }
-        salvarProdutos();
-        atualizarKPIs();
-        renderizarProdutos();
-        alert("Não foi possível registrar o ajuste no servidor. A alteração foi desfeita.\n\n" + (erro.message || "Erro desconhecido."));
+        alert("Não foi possível registrar o ajuste.");
     }
 }
-
-/* =========================================================
-EXCLUSÃO DE PRODUTO
-========================================================= */
 
 function abrirConfirmacaoExclusao() {
     if (!produtoDetalhesAtual) return;
@@ -1031,17 +993,17 @@ async function confirmarExclusao() {
         return;
     }
 
-    const copiaProduto = { ...produtoExistente };
+    const dataHora = obterDataHoraAtual();
     produtos = produtos.filter(produto => String(produto.id) !== String(id));
 
     try {
         await window.EstoqueSupabase.excluirProduto(id);
         await salvarMovimentacao({
-            id: gerarId(), produtoId: id, produtoNome: copiaProduto.nome,
-            tipo: "exclusao", quantidade: copiaProduto.quantidade,
-            quantidadeAnterior: copiaProduto.quantidade, quantidadeNova: 0,
-            data: obterDataHoje(),
-            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+            id: gerarId(), produtoId: id, produtoNome: produtoExistente.nome,
+            tipo: "exclusao", quantidade: produtoExistente.quantidade,
+            quantidadeAnterior: produtoExistente.quantidade, quantidadeNova: 0,
+            data: dataHora.dataChave,
+            hora: dataHora.hora
         });
         salvarProdutos();
         produtoDetalhesAtual = null;
@@ -1052,53 +1014,12 @@ async function confirmarExclusao() {
         renderizarProdutos();
     } catch (erro) {
         console.error("Erro ao excluir produto:", erro);
-        if (!produtos.some(produto => String(produto.id) === String(id))) {
-            produtos.push(copiaProduto);
-        }
-        try { await window.EstoqueSupabase.salvarProduto(copiaProduto); }
-        catch (erroRollback) { console.error("Falha ao restaurar produto excluído:", erroRollback); }
-        salvarProdutos();
-        atualizarKPIs();
-        renderizarProdutos();
-        alert("Não foi possível concluir a exclusão no servidor. O produto foi restaurado quando possível.\n\n" + (erro.message || "Erro desconhecido."));
+        alert("Não foi possível concluir a exclusão.");
     }
 }
 
 /* =========================================================
-BUSCA PRINCIPAL
-========================================================= */
-
-function configurarBusca() {
-    const campo = document.getElementById("buscaProduto");
-    const limpar = document.getElementById("btnLimparBusca");
-    if (campo) campo.addEventListener("input", renderizarProdutos);
-    if (limpar) {
-        limpar.addEventListener("click", () => {
-            if (campo) campo.value = "";
-                        renderizarProdutos();
-            campo?.focus();
-        });
-    }
-}
-
-/* =========================================================
-FILTROS
-========================================================= */
-
-function configurarFiltros() {
-    document.querySelectorAll("[data-filtro-estoque]").forEach(botao => {
-        botao.addEventListener("click", () => {
-            filtroAtual = botao.dataset.filtroEstoque || "todos";
-            document.querySelectorAll("[data-filtro-estoque]").forEach(item => {
-                item.classList.toggle("ativo", item === botao);
-            });
-            renderizarProdutos();
-        });
-    });
-}
-
-/* =========================================================
-LEITOR — PARAR CÂMERA E LIMPAR RECURSOS
+LEITOR DE CÓDIGO DE BARRAS
 ========================================================= */
 
 function pararLeitorCodigo() {
@@ -1113,510 +1034,101 @@ function pararLeitorCodigo() {
 
     if (streamLeitorCodigo) {
         streamLeitorCodigo.getTracks().forEach(track => {
-            try { track.stop(); }
-            catch (erro) { console.warn("Erro ao parar câmera:", erro); }
+            try { track.stop(); } catch (e) {}
         });
         streamLeitorCodigo = null;
     }
 
     const video = document.getElementById("videoLeitorCodigo");
     if (video) {
-        try { video.pause(); } catch (erro) { /* ignora */ }
+        try { video.pause(); } catch (e) {}
         video.srcObject = null;
-        video.style.setProperty("display", "none", "important");
-        video.style.setProperty("visibility", "hidden", "important");
-        video.style.setProperty("opacity", "0", "important");
     }
-
-    const moldura = document.getElementById("molduraCodigoBarras");
-    if (moldura) moldura.style.setProperty("display", "none", "important");
     abrindoLeitorCodigo = false;
 }
 
-/* =========================================================
-DETECTOR DE CÓDIGO DE BARRAS
-========================================================= */
-
 async function criarDetectorCodigoBarras() {
     if (typeof window.BarcodeDetector === "undefined") return null;
-
     try {
-        if (!formatosSuportadosCache) {
-            const formatosDesejados = [
-                "ean_13", "ean_8", "upc_a", "upc_e", "code_128",
-                "code_39", "code_93", "itf", "codabar"
-            ];
-            if (typeof window.BarcodeDetector.getSupportedFormats === "function") {
-                const suportados = await window.BarcodeDetector.getSupportedFormats();
-                formatosSuportadosCache = formatosDesejados.filter(formato => suportados.includes(formato));
-            } else {
-                formatosSuportadosCache = formatosDesejados;
-            }
-        }
-        if (formatosSuportadosCache.length === 0) return null;
-        return new window.BarcodeDetector({ formats: formatosSuportadosCache });
-    } catch (erro) {
-        console.error("Erro ao criar detector de código de barras:", erro);
+        return new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39"] });
+    } catch (e) {
         return null;
     }
 }
-
-/* =========================================================
-AJUSTES DE CÂMERA — FOCO, ZOOM E ILUMINAÇÃO
-========================================================= */
-
-async function otimizarCameraLeitor() {
-    if (!streamLeitorCodigo) return;
-    const faixa = streamLeitorCodigo.getVideoTracks()[0];
-    if (!faixa) return;
-
-    try {
-        const capacidades = typeof faixa.getCapabilities === "function" ? faixa.getCapabilities() : {};
-        const configuracao = {};
-        if (capacidades.focusMode && capacidades.focusMode.includes("continuous")) {
-            configuracao.focusMode = "continuous";
-        }
-        if (capacidades.zoom && Number.isFinite(capacidades.zoom.min) && Number.isFinite(capacidades.zoom.max)) {
-            configuracao.zoom = Math.min(capacidades.zoom.max, Math.max(capacidades.zoom.min, 1.3));
-        }
-        if (Object.keys(configuracao).length > 0) {
-            await faixa.applyConstraints({ advanced: [configuracao] });
-        }
-    } catch (erro) {
-        console.info("Alguns ajustes automáticos de câmera não estão disponíveis:", erro);
-    }
-}
-
-async function alternarLuzLeitor(ativar) {
-    if (!streamLeitorCodigo) return false;
-    const faixa = streamLeitorCodigo.getVideoTracks()[0];
-    if (!faixa || typeof faixa.getCapabilities !== "function") return false;
-
-    try {
-        const capacidades = faixa.getCapabilities();
-        if (!capacidades.torch) return false;
-        await faixa.applyConstraints({ advanced: [{ torch: Boolean(ativar) }] });
-        return true;
-    } catch (erro) {
-        console.info("Lanterna indisponível:", erro);
-        return false;
-    }
-}
-
-/* =========================================================
-DETECÇÃO AUTOMÁTICA — CONTÍNUA E SEM SOBREPOSIÇÃO
-========================================================= */
 
 async function iniciarDeteccaoCodigoBarras() {
     if (!streamLeitorCodigo) return;
     if (!detectorCodigoBarras) detectorCodigoBarras = await criarDetectorCodigoBarras();
 
     const video = document.getElementById("videoLeitorCodigo");
-    const mensagem = document.getElementById("mensagemLeitorCodigo");
-    if (!video) return;
-
-    if (!detectorCodigoBarras) {
-        if (mensagem) {
-            mensagem.style.setProperty("display", "flex", "important");
-            mensagem.innerHTML = `
-                <div style="padding:20px;text-align:center;line-height:1.5">
-                    <strong>Leitura automática indisponível</strong><br><br>
-                    Este navegador não oferece suporte à leitura automática.
-                    Você pode digitar o código no campo do produto ou usar
-                    um leitor USB/Bluetooth.
-                </div>`;
-        }
-        return;
-    }
+    if (!video || !detectorCodigoBarras) return;
 
     const sessaoAtual = sessaoLeitorCodigo;
     lendoCodigoBarras = true;
-    processandoCodigoBarras = false;
-    detectorEmExecucao = false;
-    ultimoCodigoDetectado = "";
-    tempoUltimaLeitura = 0;
-    let ultimaVerificacao = 0;
 
     async function procurarCodigo() {
         if (!lendoCodigoBarras || sessaoAtual !== sessaoLeitorCodigo) return;
-
-        if (!streamLeitorCodigo || !video.srcObject ||
-            video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
-            video.videoWidth === 0 || video.videoHeight === 0) {
-            if (lendoCodigoBarras) frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
-            return;
-        }
-
-        const agora = Date.now();
-        if (agora - ultimaVerificacao < 90) {
-            frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
-            return;
-        }
-        ultimaVerificacao = agora;
-
-        if (detectorEmExecucao) {
-                        frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
-            return;
-        }
-
-        detectorEmExecucao = true;
         try {
             const resultados = await detectorCodigoBarras.detect(video);
-            if (!lendoCodigoBarras || sessaoAtual !== sessaoLeitorCodigo ||
-                processandoCodigoBarras || !resultados || resultados.length === 0) return;
-
-            const resultado = resultados.find(item => item && item.rawValue);
-            const codigo = resultado ? String(resultado.rawValue).trim() : "";
-            if (!codigo) return;
-
-            const instante = Date.now();
-            if (codigo === ultimoCodigoDetectado && instante - tempoUltimaLeitura < 1200) return;
-
-            ultimoCodigoDetectado = codigo;
-            tempoUltimaLeitura = instante;
-            processandoCodigoBarras = true;
-            codigoEncontrado(codigo);
-        } catch (erro) {
-            // Falha em um quadro não encerra o leitor.
-        } finally {
-            detectorEmExecucao = false;
-            if (lendoCodigoBarras && sessaoAtual === sessaoLeitorCodigo) {
-                frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
+            if (resultados?.length) {
+                const codigo = String(resultados[0].rawValue || "").trim();
+                if (codigo) {
+                    codigoEncontrado(codigo);
+                    return;
+                }
             }
+        } catch (e) {}
+
+        if (lendoCodigoBarras) {
+            frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
         }
     }
     procurarCodigo();
 }
 
-/* =========================================================
-CÓDIGO ENCONTRADO
-========================================================= */
-
 function codigoEncontrado(codigo) {
-    if (!lendoCodigoBarras || !processandoCodigoBarras) return;
-    if (codigo === undefined || codigo === null) {
-        processandoCodigoBarras = false;
-        return;
-    }
-
-    const codigoLimpo = String(codigo).trim();
-    if (!codigoLimpo) {
-        processandoCodigoBarras = false;
-        return;
-    }
-
-    codigoBarrasLido = codigoLimpo;
-    lendoCodigoBarras = false;
-    if (frameLeituraCodigo !== null) {
-        cancelAnimationFrame(frameLeituraCodigo);
-        frameLeituraCodigo = null;
-    }
+    codigoBarrasLido = codigo;
+    pararLeitorCodigo();
+    fecharModal("modalLeitorCodigo");
 
     const campoCodigo = document.getElementById("codigoProduto");
     if (campoCodigo) {
-        campoCodigo.value = codigoLimpo;
-        campoCodigo.dispatchEvent(new Event("input", { bubbles: true }));
-        campoCodigo.dispatchEvent(new Event("change", { bubbles: true }));
+        campoCodigo.value = codigo;
+        campoCodigo.focus();
     }
-
-    pararLeitorCodigo();
-    const modalLeitor = document.getElementById("modalLeitorCodigo");
-    if (modalLeitor) {
-        modalLeitor.classList.remove("aberto");
-        modalLeitor.style.removeProperty("z-index");
-        modalLeitor.style.removeProperty("position");
-        modalLeitor.style.removeProperty("inset");
-    }
-
-    const modalCadastro = document.getElementById("modalProduto");
-    if (modalCadastro) {
-        modalCadastro.classList.add("aberto");
-        modalCadastro.style.setProperty("z-index", "1000", "important");
-    }
-    document.body.classList.add("modal-aberto");
-
-    setTimeout(() => {
-        const campo = document.getElementById("codigoProduto");
-        if (campo) {
-            campo.value = codigoLimpo;
-            campo.focus();
-            try { campo.setSelectionRange(campo.value.length, campo.value.length); }
-            catch (erro) { /* tipo de campo pode não permitir seleção */ }
-        }
-        processandoCodigoBarras = false;
-    }, 100);
 }
-
-/* =========================================================
-ABRIR LEITOR — CÂMERA TRASEIRA
-========================================================= */
 
 async function abrirLeitorCodigo() {
     if (abrindoLeitorCodigo) return;
     abrindoLeitorCodigo = true;
 
-    const modalLeitor = document.getElementById("modalLeitorCodigo");
-    const video = document.getElementById("videoLeitorCodigo");
-    const mensagem = document.getElementById("mensagemLeitorCodigo");
-    const moldura = document.getElementById("molduraCodigoBarras");
-    const modalCadastro = document.getElementById("modalProduto");
-
-    if (!modalLeitor || !video || !mensagem) {
-        abrindoLeitorCodigo = false;
-        console.error("Elementos do leitor de código não encontrados.");
-        alert("Não foi possível localizar os elementos do leitor.");
-        return;
-    }
-
-    if (modalLeitor.parentElement !== document.body) document.body.appendChild(modalLeitor);
-    pararLeitorCodigo();
-    abrindoLeitorCodigo = true;
-    lendoCodigoBarras = false;
-    processandoCodigoBarras = false;
-    detectorEmExecucao = false;
-    ultimoCodigoDetectado = "";
-    tempoUltimaLeitura = 0;
-    codigoBarrasLido = "";
-
-    if (modalCadastro) {
-        modalCadastro.classList.add("aberto");
-        modalCadastro.style.setProperty("z-index", "1000", "important");
-    }
-
-    modalLeitor.classList.add("aberto");
-    modalLeitor.style.setProperty("z-index", "99999", "important");
-    modalLeitor.style.setProperty("position", "fixed", "important");
-    modalLeitor.style.setProperty("inset", "0", "important");
-    document.body.classList.add("modal-aberto");
-
-    const conteudo = modalLeitor.querySelector(".estoque-modal-conteudo");
-    if (conteudo) {
-        conteudo.scrollTop = 0;
-        conteudo.style.setProperty("position", "relative", "important");
-        conteudo.style.setProperty("z-index", "100000", "important");
-    }
-
-    const area = document.getElementById("areaLeitorCodigo");
-    if (area) {
-        area.style.setProperty("position", "relative", "important");
-        area.style.setProperty("z-index", "100001", "important");
-        area.style.setProperty("overflow", "hidden", "important");
-    }
-
-    mensagem.textContent = "Abrindo câmera...";
-    mensagem.style.setProperty("display", "flex", "important");
-    mensagem.style.setProperty("position", "absolute", "important");
-    mensagem.style.setProperty("inset", "0", "important");
-    mensagem.style.setProperty("align-items", "center", "important");
-    mensagem.style.setProperty("justify-content", "center", "important");
-    mensagem.style.setProperty("z-index", "4", "important");
-
-    video.style.setProperty("display", "none", "important");
-    video.style.setProperty("visibility", "hidden", "important");
-    video.style.setProperty("opacity", "0", "important");
-    video.style.setProperty("position", "relative", "important");
-    video.style.setProperty("z-index", "2", "important");
-    video.style.setProperty("width", "100%", "important");
-    video.style.setProperty("height", "300px", "important");
-    video.style.setProperty("object-fit", "contain", "important");
-    video.style.setProperty("background", "#111", "important");
-
-    if (moldura) {
-        moldura.style.setProperty("display", "none", "important");
-        moldura.style.setProperty("position", "absolute", "important");
-        moldura.style.setProperty("z-index", "3", "important");
-        moldura.style.setProperty("pointer-events", "none", "important");
-    }
-
     try {
-        if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") {
-            throw new Error("A câmera não é suportada neste navegador.");
-        }
-
-        const novoStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                                facingMode: { ideal: "environment" },
-                width: { ideal: 1920 },
-                height: { ideal: 1080 },
-                frameRate: { ideal: 30, max: 30 }
-            },
-            audio: false
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } }
         });
-
-        if (!modalLeitor.classList.contains("aberto")) {
-            novoStream.getTracks().forEach(track => { try { track.stop(); } catch (erro) {} });
-            abrindoLeitorCodigo = false;
-            return;
+        streamLeitorCodigo = stream;
+        
+        abrirModal("modalLeitorCodigo");
+        const video = document.getElementById("videoLeitorCodigo");
+        if (video) {
+            video.srcObject = stream;
+            await video.play();
+            iniciarDeteccaoCodigoBarras();
         }
-
-        streamLeitorCodigo = novoStream;
-        video.setAttribute("playsinline", "true");
-        video.setAttribute("autoplay", "true");
-        video.setAttribute("muted", "true");
-        video.playsInline = true;
-        video.autoplay = true;
-        video.muted = true;
-        video.srcObject = streamLeitorCodigo;
-
-        await new Promise(resolve => {
-            let finalizado = false;
-            const concluir = () => {
-                if (finalizado) return;
-                finalizado = true;
-                video.removeEventListener("loadedmetadata", concluir);
-                video.removeEventListener("loadeddata", concluir);
-                clearTimeout(temporizador);
-                resolve();
-            };
-            const temporizador = setTimeout(concluir, 5000);
-            video.addEventListener("loadedmetadata", concluir, { once: true });
-            video.addEventListener("loadeddata", concluir, { once: true });
-        });
-
-        if (!modalLeitor.classList.contains("aberto") || !streamLeitorCodigo) {
-            pararLeitorCodigo();
-            return;
-        }
-
-        await video.play();
-        if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth === 0 || video.videoHeight === 0) {
-            await new Promise(resolve => {
-                let finalizado = false;
-                const concluir = () => {
-                    if (finalizado) return;
-                    finalizado = true;
-                    video.removeEventListener("loadeddata", concluir);
-                    clearTimeout(temporizador);
-                    resolve();
-                };
-                const temporizador = setTimeout(concluir, 2500);
-                video.addEventListener("loadeddata", concluir, { once: true });
-            });
-        }
-
-        if (!modalLeitor.classList.contains("aberto") || !streamLeitorCodigo) {
-            pararLeitorCodigo();
-            return;
-        }
-
-        await otimizarCameraLeitor();
-        video.style.setProperty("display", "block", "important");
-        video.style.setProperty("visibility", "visible", "important");
-        video.style.setProperty("opacity", "1", "important");
-        video.style.setProperty("position", "relative", "important");
-        video.style.setProperty("z-index", "2", "important");
-        video.style.setProperty("width", "100%", "important");
-        video.style.setProperty("height", "300px", "important");
-        video.style.setProperty("object-fit", "contain", "important");
-        mensagem.style.setProperty("display", "none", "important");
-        if (moldura) {
-            moldura.style.setProperty("display", "block", "important");
-            moldura.style.setProperty("z-index", "3", "important");
-        }
-        await iniciarDeteccaoCodigoBarras();
-
-    } catch (erro) {
-        console.error("Erro ao abrir câmera:", erro);
-        pararLeitorCodigo();
-        modalLeitor.classList.add("aberto");
-        modalLeitor.style.setProperty("z-index", "99999", "important");
-        mensagem.style.setProperty("display", "flex", "important");
-        mensagem.style.setProperty("position", "absolute", "important");
-        mensagem.style.setProperty("inset", "0", "important");
-        mensagem.style.setProperty("z-index", "4", "important");
-
-        let detalhe = "Confira as permissões da câmera e tente novamente.";
-        if (erro && (erro.name === "NotAllowedError" || erro.name === "PermissionDeniedError")) {
-            detalhe = "Verifique se o navegador tem permissão para acessar a câmera.";
-        } else if (erro && (erro.name === "NotFoundError" || erro.name === "DevicesNotFoundError")) {
-            detalhe = "Nenhuma câmera compatível foi encontrada no dispositivo.";
-        } else if (erro && erro.name === "NotReadableError") {
-            detalhe = "A câmera pode estar sendo usada por outro aplicativo.";
-        }
-
-        mensagem.innerHTML = `
-            <div style="padding:25px;text-align:center;color:#ffffff;line-height:1.5">
-                <strong style="display:block;margin-bottom:8px;font-size:15px">Não foi possível abrir a câmera.</strong>
-                ${escaparHTML(detalhe)}<br><br>
-                Se aparecer uma solicitação de permissão, toque em <strong>Permitir</strong>.
-            </div>`;
+    } catch (e) {
+        alert("Não foi possível acessar a câmera.");
     } finally {
         abrindoLeitorCodigo = false;
     }
 }
 
-/* =========================================================
-FECHAR LEITOR
-========================================================= */
-
 function fecharLeitorCodigo() {
     pararLeitorCodigo();
-    processandoCodigoBarras = false;
-    detectorEmExecucao = false;
-
-    const modalLeitor = document.getElementById("modalLeitorCodigo");
-    if (modalLeitor) {
-        modalLeitor.classList.remove("aberto");
-        modalLeitor.style.removeProperty("z-index");
-        modalLeitor.style.removeProperty("position");
-        modalLeitor.style.removeProperty("inset");
-    }
-
-    const modalCadastro = document.getElementById("modalProduto");
-    if (modalCadastro && modalCadastro.classList.contains("aberto")) {
-        modalCadastro.style.setProperty("z-index", "1000", "important");
-        document.body.classList.add("modal-aberto");
-        setTimeout(() => {
-            const campo = document.getElementById("codigoProduto");
-            if (campo) {
-                if (codigoBarrasLido) campo.value = codigoBarrasLido;
-                campo.focus();
-            }
-        }, 100);
-        return;
-    }
-
-    if (!document.querySelector(".estoque-modal.aberto")) {
-        document.body.classList.remove("modal-aberto");
-    }
+    fecharModal("modalLeitorCodigo");
 }
 
 /* =========================================================
-FECHAMENTO DOS MODAIS
-========================================================= */
-
-function configurarFechamentoModais() {
-    document.addEventListener("click", event => {
-        const botao = event.target.closest("[data-fechar]");
-        if (botao) {
-            event.preventDefault();
-            event.stopPropagation();
-            const id = botao.getAttribute("data-fechar");
-            if (id === "modalLeitorCodigo") fecharLeitorCodigo();
-            else if (id) fecharModal(id);
-            return;
-        }
-
-        const modal = event.target.closest(".estoque-modal");
-        if (modal && event.target === modal) {
-            if (modal.id === "modalLeitorCodigo") fecharLeitorCodigo();
-            else fecharModal(modal.id);
-        }
-    });
-
-    document.addEventListener("keydown", event => {
-        if (event.key !== "Escape") return;
-        const modal = document.querySelector(".estoque-modal.aberto");
-        if (!modal) return;
-        if (modal.id === "modalLeitorCodigo") fecharLeitorCodigo();
-        else fecharModal(modal.id);
-    });
-}
-
-
-/* =========================================================
-/* =========================================================
-RELATÓRIO DO ESTOQUE — EXPORTAÇÃO EM PDF
+RELATÓRIO DO ESTOQUE — EXPORTAÇÃO EM PDF COM FILTRO DE DATA
 ========================================================= */
 
 function obterRotuloTipoMovimento(tipo) {
@@ -1631,8 +1143,8 @@ function obterRotuloTipoMovimento(tipo) {
 }
 
 function obterDataHoraRelatorio(movimento) {
-    const dataOriginal = movimento?.data || movimento?.created_at || movimento?.createdAt || "";
-    const horaOriginal = movimento?.hora || movimento?.hora_movimento || "";
+    const dataOriginal = movimento?.data || movimento?.created_at || "";
+    const horaOriginal = movimento?.hora || "";
     let data = "—";
     let hora = "—";
 
@@ -1640,9 +1152,6 @@ function obterDataHoraRelatorio(movimento) {
         const valor = String(dataOriginal);
         const dataParte = valor.includes("T") ? valor.split("T")[0] : valor;
         data = formatarDataBR(dataParte);
-        if (!horaOriginal && valor.includes("T")) {
-            hora = valor.split("T")[1].slice(0, 5) || "—";
-        }
     }
     if (horaOriginal) hora = String(horaOriginal).slice(0, 8);
     return { data, hora };
@@ -1650,14 +1159,41 @@ function obterDataHoraRelatorio(movimento) {
 
 function configurarBotaoExportarPDF() {
     const acoes = document.querySelector(".estoque-acoes");
-    if (!acoes || document.getElementById("btnExportarEstoquePDF")) return;
+    if (!acoes || document.getElementById("containerExportarPDF")) return;
 
+    const container = document.createElement("div");
+    container.id = "containerExportarPDF";
+    container.style.gridColumn = "1 / -1";
+    container.style.display = "flex";
+    container.style.gap = "8px";
+    container.style.alignItems = "center";
+    container.style.flexWrap = "wrap";
+    container.style.marginTop = "4px";
+
+    // Campo de seleção de data (padrão: hoje)
+    const inputData = document.createElement("input");
+    inputData.type = "date";
+    inputData.id = "filtroDataRelatorioPDF";
+    inputData.value = obterDataHoje();
+    inputData.style.flex = "1";
+    inputData.style.minWidth = "140px";
+    inputData.style.height = "46px";
+    inputData.style.padding = "0 12px";
+    inputData.style.borderRadius = "10px";
+    inputData.style.border = "1px solid #cdebd8";
+    inputData.style.background = "#fff";
+    inputData.style.color = "#176b45";
+    inputData.style.fontWeight = "bold";
+    inputData.style.fontSize = "14px";
+    inputData.style.boxSizing = "border-box";
+
+    // Botão de exportação
     const botao = document.createElement("button");
     botao.id = "btnExportarEstoquePDF";
     botao.type = "button";
     botao.className = "estoque-acao";
-    botao.innerHTML = '<span class="simbolo">📄</span> Exportar relatório PDF';
-    botao.style.gridColumn = "1 / -1";
+    botao.innerHTML = '<span class="simbolo">📄</span> Exportar PDF do Dia';
+    botao.style.flex = "2";
     botao.style.minHeight = "46px";
     botao.style.color = "#176b45";
     botao.style.background = "#eaf7ef";
@@ -1665,7 +1201,10 @@ function configurarBotaoExportarPDF() {
     botao.style.boxShadow = "none";
     botao.style.fontWeight = "900";
     botao.addEventListener("click", exportarRelatorioEstoquePDF);
-    acoes.appendChild(botao);
+
+    container.appendChild(inputData);
+    container.appendChild(botao);
+    acoes.appendChild(container);
 }
 
 function exportarRelatorioEstoquePDF() {
@@ -1674,11 +1213,17 @@ function exportarRelatorioEstoquePDF() {
         return;
     }
 
-    // As movimentações disponíveis neste arquivo são as confirmadas e guardadas
-    // no cache local separado por estabelecimento.
-    const movimentacoes = carregarMovimentacoes().slice().sort((a, b) => {
-        const dataA = `${a?.data || a?.created_at || ""} ${a?.hora || ""}`;
-        const dataB = `${b?.data || b?.created_at || ""} ${b?.hora || ""}`;
+    const inputData = document.getElementById("filtroDataRelatorioPDF");
+    const dataSelecionada = inputData ? inputData.value : ""; // Formato AAAA-MM-DD
+
+    let movimentacoes = carregarMovimentacoes();
+    if (dataSelecionada) {
+        movimentacoes = movimentacoes.filter(m => String(m?.data || "").trim() === dataSelecionada);
+    }
+
+    movimentacoes.sort((a, b) => {
+        const dataA = `${a?.data || ""} ${a?.hora || ""}`;
+        const dataB = `${b?.data || ""} ${b?.hora || ""}`;
         return dataB.localeCompare(dataA);
     });
 
@@ -1734,6 +1279,8 @@ function exportarRelatorioEstoquePDF() {
     }).join("");
 
     const geradoEm = new Date().toLocaleString("pt-BR");
+    const rotuloPeriodoFiltro = dataSelecionada ? `Data selecionada: ${formatarDataBR(dataSelecionada)}` : "Todas as datas";
+
     const janela = window.open("", "_blank");
     if (!janela) {
         alert("O navegador bloqueou a janela do relatório. Permita pop-ups para este aplicativo e tente novamente.");
@@ -1778,7 +1325,11 @@ function exportarRelatorioEstoquePDF() {
 <body>
 <div class="acoes"><button onclick="window.print()">Imprimir / Salvar como PDF</button></div>
 <header>
-    <div><h1>Dr. Troco — Relatório de Estoque</h1><p>Posição atual do estoque e histórico de movimentações</p><p>Estabelecimento: ${escaparHTML(String(comercioIdEstoque))}</p></div>
+    <div>
+        <h1>Dr. Troco — Relatório de Estoque</h1>
+        <p>Posição atual do estoque e histórico de movimentações (${escaparHTML(rotuloPeriodoFiltro)})</p>
+        <p>Estabelecimento: ${escaparHTML(String(comercioIdEstoque))}</p>
+    </div>
     <div class="gerado"><strong>Relatório gerado em</strong><p>${escaparHTML(geradoEm)}</p></div>
 </header>
 <section class="resumo">
@@ -1787,20 +1338,20 @@ function exportarRelatorioEstoquePDF() {
     <div class="kpi"><span>VALOR ESTIMADO DO ESTOQUE</span><strong>${formatarReal(totalValor)}</strong></div>
     <div class="kpi"><span>PRODUTOS QUE EXIGEM ATENÇÃO</span><strong>${totalAtencao}</strong></div>
 </section>
-<h2>Resumo das movimentações</h2>
+<h2>Resumo das movimentações (${escaparHTML(rotuloPeriodoFiltro)})</h2>
 <div class="mov-resumo">
     <span>Entradas: <strong>${contagemMovimentos.entrada}</strong></span>
     <span>Saídas: <strong>${contagemMovimentos.saida}</strong></span>
     <span>Ajustes: <strong>${contagemMovimentos.ajuste}</strong></span>
     <span>Cadastros: <strong>${contagemMovimentos.cadastro}</strong></span>
     <span>Exclusões: <strong>${contagemMovimentos.exclusao}</strong></span>
-    <span>Total: <strong>${movimentacoes.length}</strong></span>
+    <span>Total no período: <strong>${movimentacoes.length}</strong></span>
 </div>
-        <h2>Produtos e posição atual</h2>
+<h2>Produtos e posição atual</h2>
 ${produtos.length ? `<table><thead><tr><th>Produto</th><th>Código</th><th>Tipo</th><th>Qtd.</th><th>Mínimo</th><th>Preço un.</th><th>Valor total</th><th>Status</th><th>Validade</th></tr></thead><tbody>${linhasProdutos}</tbody></table>` : '<div class="vazio">Nenhum produto cadastrado.</div>'}
-<h2>Histórico de movimentações</h2>
-${movimentacoes.length ? `<table><thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Produto</th><th>Qtd. mov.</th><th>Qtd. anterior</th><th>Qtd. nova</th></tr></thead><tbody>${linhasMovimentacoes}</tbody></table>` : '<div class="vazio">Nenhuma movimentação disponível no histórico local deste estabelecimento.</div>'}
-<div class="nota"><strong>Observação:</strong> o histórico exportado corresponde às movimentações disponíveis no cache deste dispositivo. O relatório não altera nem exclui dados do estoque.</div>
+<h2>Histórico de movimentações (${escaparHTML(rotuloPeriodoFiltro)})</h2>
+${movimentacoes.length ? `<table><thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Produto</th><th>Qtd. mov.</th><th>Qtd. anterior</th><th>Qtd. nova</th></tr></thead><tbody>${linhasMovimentacoes}</tbody></table>` : '<div class="vazio">Nenhuma movimentação registada para a data selecionada.</div>'}
+<div class="nota"><strong>Observação:</strong> o relatório exibe a posição atual do stock e as movimentações filtradas para o dia escolhido.</div>
 <footer>Dr. Troco • Relatório gerado localmente em ${escaparHTML(geradoEm)}</footer>
 </body>
 </html>`;
@@ -1816,7 +1367,7 @@ ${movimentacoes.length ? `<table><thead><tr><th>Data</th><th>Hora</th><th>Tipo</
 }
 
 /* =========================================================
-CONFIGURAÇÕES DE BOTÕES
+CONFIGURAÇÕES E INICIALIZAÇÃO
 ========================================================= */
 
 function configurarBotoes() {
@@ -1831,6 +1382,7 @@ function configurarBotoes() {
     const form = document.getElementById("formProduto");
     const lerCodigo = document.getElementById("btnLerCodigoBarras");
     const fecharLeitor = document.getElementById("btnFecharLeitorCodigo");
+    
     configurarBotaoExportarPDF();
 
     if (cadastrar) cadastrar.addEventListener("click", abrirCadastroProduto);
@@ -1869,56 +1421,63 @@ function configurarBotoes() {
     }
 }
 
-/* =========================================================
-BUSCA DE MOVIMENTO
-========================================================= */
+function configurarBusca() {
+    const campo = document.getElementById("buscaProduto");
+    const limpar = document.getElementById("btnLimparBusca");
+    if (campo) campo.addEventListener("input", renderizarProdutos);
+    if (limpar) {
+        limpar.addEventListener("click", () => {
+            if (campo) campo.value = "";
+            renderizarProdutos();
+            campo?.focus();
+        });
+    }
+}
 
 function configurarBuscaMovimento() {
     const campo = document.getElementById("buscaMovimento");
     if (campo) campo.addEventListener("input", renderizarSelecaoProdutos);
 }
 
-/* =========================================================
-TECLADO DA LISTA
-========================================================= */
+function configurarFiltros() {
+    document.querySelectorAll("[data-filtro-estoque]").forEach(botao => {
+        botao.addEventListener("click", () => {
+            filtroAtual = botao.dataset.filtroEstoque || "todos";
+            document.querySelectorAll("[data-filtro-estoque]").forEach(item => {
+                item.classList.toggle("ativo", item === botao);
+            });
+            renderizarProdutos();
+        });
+    });
+}
 
-function configurarTecladoLista() {
-    const lista = document.getElementById("listaProdutos");
-    if (!lista) return;
-
-    lista.addEventListener("keydown", event => {
-        const card = event.target.closest(".estoque-produto");
-        if (!card) return;
-        if (event.key === "Enter" || event.key === " ") {
+function configurarFechamentoModais() {
+    document.addEventListener("click", event => {
+        const botao = event.target.closest("[data-fechar]");
+        if (botao) {
             event.preventDefault();
-            abrirDetalhes(card.dataset.id);
+            event.stopPropagation();
+            const id = botao.getAttribute("data-fechar");
+            if (id === "modalLeitorCodigo") fecharLeitorCodigo();
+            else if (id) fecharModal(id);
+            return;
         }
-    });
-}
 
-/* =========================================================
-LIMPEZA DA CÂMERA
-========================================================= */
-
-function configurarLimpezaCamera() {
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden) {
-            pararLeitorCodigo();
-            processandoCodigoBarras = false;
-            detectorEmExecucao = false;
+        const modal = event.target.closest(".estoque-modal");
+        if (modal && event.target === modal) {
+            if (modal.id === "modalLeitorCodigo") fecharLeitorCodigo();
+            else fecharModal(modal.id);
         }
     });
 
-    window.addEventListener("pagehide", () => {
-        pararLeitorCodigo();
-        processandoCodigoBarras = false;
-        detectorEmExecucao = false;
+    document.addEventListener("keydown", event => {
+        if (event.key !== "Escape") return;
+        const modal = document.querySelector(".estoque-modal.aberto");
+        if (!modal) return;
+        if (modal.id === "modalLeitorCodigo") fecharLeitorCodigo();
+        else fecharModal(modal.id);
     });
 }
-
-/* =========================================================
-INICIALIZAÇÃO
-========================================================= */
 
 async function inicializarEstoque() {
     estoqueCarregando = true;
@@ -1932,7 +1491,6 @@ async function inicializarEstoque() {
             </div>`;
     }
 
-    // Registra os eventos uma única vez, antes da consulta remota.
     configurarBotoes();
     configurarBusca();
     configurarBuscaMovimento();
@@ -1940,8 +1498,6 @@ async function inicializarEstoque() {
     configurarFechamentoModais();
     configurarFotoProduto();
     configurarTipoProduto();
-    configurarTecladoLista();
-    configurarLimpezaCamera();
     atualizarBotaoMovimento();
 
     await carregarProdutos();
