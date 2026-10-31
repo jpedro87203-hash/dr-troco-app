@@ -1,1954 +1,1143 @@
-/* =========================================================
-DR. TROCO — ESTOQUE (estoque.js)
-Sincronização Supabase por estabelecimento
-========================================================= */
-
-const CHAVE_ESTOQUE = "drTroco_estoque";
-const CHAVE_MOVIMENTACOES_ESTOQUE = "drTroco_movimentacoesEstoque";
-const CHAVE_BACKUP_ESTOQUE_LEGADO = "drTroco_estoque_backup_antes_supabase_v1";
-const CHAVE_BACKUP_MOVIMENTOS_LEGADO = "drTroco_movimentacoes_backup_antes_supabase_v1";
-
-let produtos = [];
-let comercioIdEstoque = null;
-let estoquePronto = false;
-let estoqueCarregando = false;
-
-let produtoDetalhesAtual = null;
-let produtoQuantidadeAtual = null;
-let produtoExclusaoAtual = null;
-let produtoSelecionadoMovimento = null;
-
-let tipoMovimentoAtual = "entrada";
-let filtroAtual = "todos";
-
-/* =========================================================
-LEITOR DE CÓDIGO DE BARRAS — CONTROLE
-========================================================= */
-
-let streamLeitorCodigo = null;
-let detectorCodigoBarras = null;
-let lendoCodigoBarras = false;
-let frameLeituraCodigo = null;
-let codigoBarrasLido = "";
-let formatosSuportadosCache = null;
-
-let abrindoLeitorCodigo = false;
-let processandoCodigoBarras = false;
-let detectorEmExecucao = false;
-let ultimoCodigoDetectado = "";
-let tempoUltimaLeitura = 0;
-let sessaoLeitorCodigo = 0;
-
-/* =========================================================
-UTILITÁRIOS
-========================================================= */
-
-function numeroSeguro(valor, padrao = 0) {
-    const numero = Number(valor);
-    return Number.isFinite(numero) ? numero : padrao;
-}
-
-function escaparHTML(valor) {
-    return String(valor ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function formatarReal(valor) {
-    return numeroSeguro(valor).toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL"
-    });
-}
-
-function obterDataHoje() {
-    const agora = new Date();
-    const ano = agora.getFullYear();
-    const mes = String(agora.getMonth() + 1).padStart(2, "0");
-    const dia = String(agora.getDate()).padStart(2, "0");
-    return `${ano}-${mes}-${dia}`;
-}
-
-function formatarDataBR(data) {
-    if (!data) return "";
-    const partes = String(data).split("-");
-    return partes.length === 3
-        ? `${partes[2]}/${partes[1]}/${partes[0]}`
-        : String(data);
-}
-
-function gerarId() {
-    return "prod_" + Date.now().toString(36) + "_" +
-        Math.random().toString(36).substring(2, 8);
-}
-
-function exigirEstoquePronto() {
-    if (estoqueCarregando) {
-        alert("O estoque ainda está carregando. Aguarde um instante.");
-        return false;
-    }
-    if (!estoquePronto || !comercioIdEstoque) {
-        alert("Não foi possível conectar ao estoque deste estabelecimento. Verifique sua conexão e atualize a página.");
-        return false;
-    }
-    if (!window.EstoqueSupabase) {
-        alert("A integração com o Supabase não foi carregada. Confira a ordem dos arquivos JavaScript.");
-        return false;
-    }
-    return true;
-}
-
-function chaveEstoqueDoComercio() {
-    return comercioIdEstoque
-        ? `${CHAVE_ESTOQUE}_${comercioIdEstoque}`
-        : null;
-}
-
-function chaveMovimentacoesDoComercio() {
-    return comercioIdEstoque
-        ? `${CHAVE_MOVIMENTACOES_ESTOQUE}_${comercioIdEstoque}`
-        : null;
-}
-
-/* =========================================================
-BACKUP LEGADO — NÃO IMPORTA DADOS AUTOMATICAMENTE
-========================================================= */
-
-function preservarEstoqueLegado() {
-    try {
-        const estoqueAntigo = localStorage.getItem(CHAVE_ESTOQUE);
-        const movimentosAntigos = localStorage.getItem(CHAVE_MOVIMENTACOES_ESTOQUE);
-
-        if (
-            estoqueAntigo !== null &&
-            localStorage.getItem(CHAVE_BACKUP_ESTOQUE_LEGADO) === null
-        ) {
-            localStorage.setItem(CHAVE_BACKUP_ESTOQUE_LEGADO, estoqueAntigo);
-        }
-
-        if (
-            movimentosAntigos !== null &&
-            localStorage.getItem(CHAVE_BACKUP_MOVIMENTOS_LEGADO) === null
-        ) {
-            localStorage.setItem(CHAVE_BACKUP_MOVIMENTOS_LEGADO, movimentosAntigos);
-        }
-    } catch (erro) {
-        console.error("Não foi possível criar o backup dos dados antigos:", erro);
-    }
-}
-
-/* =========================================================
-MODAIS
-========================================================= */
-
-function abrirModal(id, fecharOutros = true) {
-    const modal = document.getElementById(id);
-    if (!modal) return;
-
-    if (fecharOutros) fecharTodosModais(id);
-
-    modal.classList.add("aberto");
-    document.body.classList.add("modal-aberto");
-
-    const conteudo = modal.querySelector(".estoque-modal-conteudo");
-    if (conteudo) conteudo.scrollTop = 0;
-}
-
-function fecharModal(id) {
-    const modal = document.getElementById(id);
-    if (!modal) return;
-
-    if (id === "modalLeitorCodigo") {
-        fecharLeitorCodigo();
-        return;
+```javascript
+        return nomes[forma] || forma || "Não informado";
     }
 
-    modal.classList.remove("aberto");
-
-    setTimeout(() => {
-        if (!document.querySelector(".estoque-modal.aberto")) {
-            document.body.classList.remove("modal-aberto");
-        }
-    }, 0);
-}
-
-function fecharTodosModais(excepto = null) {
-    document.querySelectorAll(".estoque-modal.aberto").forEach(modal => {
-        if (modal.id === "modalLeitorCodigo") pararLeitorCodigo();
-        if (modal.id !== excepto) modal.classList.remove("aberto");
-    });
-
-    if (!document.querySelector(".estoque-modal.aberto")) {
-        document.body.classList.remove("modal-aberto");
-    }
-}
-
-/* =========================================================
-LOCAL CACHE POR ESTABELECIMENTO + SUPABASE
-========================================================= */
-
-async function carregarProdutos() {
-    estoqueCarregando = true;
-    estoquePronto = false;
-    preservarEstoqueLegado();
-
-    try {
-        if (!window.EstoqueSupabase) {
-            throw new Error("estoque-supabase.js não foi carregado.");
-        }
-
-        comercioIdEstoque = await window.EstoqueSupabase.obterComercioId();
-        if (!comercioIdEstoque) {
-            throw new Error("Não foi possível identificar o estabelecimento da conta.");
-        }
-
-        // O Supabase é a fonte principal. Não misturamos o estoque legado.
-        const listaRemota = await window.EstoqueSupabase.carregarProdutos();
-        produtos = Array.isArray(listaRemota)
-            ? listaRemota.map(normalizarProduto)
-            : [];
-
-        salvarProdutos();
-        estoquePronto = true;
-        return true;
-
-    } catch (erro) {
-        console.error("Erro ao carregar estoque do Supabase:", erro);
-
-        // Em falha de rede, permite apenas visualizar o cache deste comércio.
-        // As alterações ficam bloqueadas enquanto a nuvem não confirmar conexão.
-        try {
-            const chave = chaveEstoqueDoComercio();
-            const dados = chave ? localStorage.getItem(chave) : null;
-            const lista = dados ? JSON.parse(dados) : [];
-            produtos = Array.isArray(lista) ? lista.map(normalizarProduto) : [];
-        } catch (erroCache) {
-            console.error("Erro ao carregar cache local:", erroCache);
-            produtos = [];
-        }
-
-        estoquePronto = false;
-        const listaElemento = document.getElementById("listaProdutos");
-        if (listaElemento && !produtos.length) {
-            listaElemento.innerHTML = `
-                <div class="estoque-vazio">
-                    <div class="estoque-vazio-icone">☁️</div>
-                    <strong>Não foi possível carregar o estoque</strong>
-                    <span>Verifique a conexão e atualize a página.</span>
-                </div>`;
-        }
-        return false;
-
-    } finally {
-        estoqueCarregando = false;
-        atualizarKPIs();
-        renderizarProdutos();
-    }
-}
-
-// Salva somente o cache separado por comercio_id. A nuvem é atualizada
-// explicitamente pelas operações de cadastro, edição e movimentação.
-function salvarProdutos() {
-    try {
-        const chave = chaveEstoqueDoComercio();
-        if (!chave) throw new Error("Estabelecimento não identificado.");
-        localStorage.setItem(chave, JSON.stringify(produtos));
-        return true;
-    } catch (erro) {
-        console.error("Erro ao salvar cache do estoque:", erro);
-        alert("Os dados foram enviados ao servidor, mas não foi possível atualizar o cache deste dispositivo.");
-        return false;
-    }
-}
-
-function carregarMovimentacoes() {
-    try {
-        const chave = chaveMovimentacoesDoComercio();
-        if (!chave) return [];
-        const dados = localStorage.getItem(chave);
-        if (!dados) return [];
-        const lista = JSON.parse(dados);
-        return Array.isArray(lista) ? lista : [];
-    } catch (erro) {
-        console.error("Erro ao carregar movimentações:", erro);
-        return [];
-    }
-}
-
-async function salvarMovimentacao(movimento) {
-    if (!exigirEstoquePronto()) {
-        throw new Error("Estoque ainda não está conectado ao Supabase.");
+    function obterDescricao(registro) {
+        return String(
+            registro.descricao ??
+            registro.nome ??
+            registro.produtoNome ??
+            registro.produto ??
+            registro.observacao ??
+            registro.itensResumo ??
+            "Movimentação"
+        );
     }
 
-    // Primeiro confirma a gravação na nuvem; depois atualiza o histórico local.
-    await window.EstoqueSupabase.salvarMovimentacao(movimento);
+    function obterTipoMovimentacao(registro) {
+        const tipo = String(
+            registro.tipo ??
+            registro.tipoMovimentacao ??
+            registro.operacao ??
+            ""
+        ).toLowerCase();
 
-    const chave = chaveMovimentacoesDoComercio();
-    const lista = carregarMovimentacoes();
-    lista.push(movimento);
-    localStorage.setItem(chave, JSON.stringify(lista));
-    return true;
-}
-
-async function persistirProdutoNaNuvem(produto) {
-    if (!exigirEstoquePronto()) {
-        throw new Error("Estoque ainda não está conectado ao Supabase.");
-    }
-    return await window.EstoqueSupabase.salvarProduto(produto);
-}
-
-/* =========================================================
-NORMALIZAÇÃO
-========================================================= */
-
-function normalizarProduto(produto) {
-    const tipo = produto.tipo || produto.tipoProduto || "nao_perecivel";
-    const codigoSalvo = produto.codigo ?? produto.codigoProduto ?? "";
-
-    return {
-        id: produto.id || gerarId(),
-        nome: String(produto.nome ?? produto.nomeProduto ?? "").trim(),
-        codigo: String(codigoSalvo).trim(),
-        preco: numeroSeguro(produto.preco ?? produto.precoUnitario ?? produto.precoProduto),
-        tipo,
-        estoqueMinimo: Math.max(0, Math.floor(numeroSeguro(produto.estoqueMinimo ?? produto.estoque_minimo, 5))),
-        quantidade: Math.max(0, Math.floor(numeroSeguro(produto.quantidade ?? produto.estoque ?? produto.quantidadeInicial))),
-        validade: produto.validade || "",
-        foto: produto.foto || produto.imagem || "",
-        criadoEm: produto.criadoEm || produto.criado_em || new Date().toISOString(),
-        atualizadoEm: produto.atualizadoEm || produto.atualizado_em || new Date().toISOString()
-    };
-}
-
-/* =========================================================
-STATUS
-========================================================= */
-
-function obterStatusProduto(produto) {
-    const quantidade = numeroSeguro(produto.quantidade);
-    const minimo = numeroSeguro(produto.estoqueMinimo);
-
-    if (quantidade <= 0) return { classe: "zero", texto: "Sem estoque" };
-
-    if (produto.validade && produto.tipo === "perecivel") {
-        const hoje = obterDataHoje();
-        if (produto.validade < hoje) return { classe: "vencido", texto: "Vencido" };
-
-        const hojeData = new Date(hoje + "T00:00:00");
-        const validadeData = new Date(produto.validade + "T00:00:00");
-        const diferenca = Math.ceil((validadeData - hojeData) / (1000 * 60 * 60 * 24));
-
-        if (diferenca <= 30) return { classe: "a-vencer", texto: "A vencer" };
+        if (tipo.includes("saida") || tipo.includes("saída")) return "saida";
+        return "entrada";
     }
 
-    if (quantidade <= minimo) return { classe: "baixo", texto: "Estoque baixo" };
-    return { classe: "normal", texto: "Normal" };
-}
+    function obterTipoEstoque(movimento) {
+        const tipo = String(movimento?.tipo || "").toLowerCase().trim();
 
-/* =========================================================
-FILTROS
-========================================================= */
+        if (tipo.includes("saida") || tipo.includes("saída")) return "saida";
+        if (tipo.includes("entrada")) return "entrada";
+        if (tipo.includes("ajuste")) return "ajuste";
+        if (tipo.includes("cadastro")) return "cadastro";
+        if (tipo.includes("exclusao") || tipo.includes("exclusão")) return "exclusao";
 
-function produtoPassaFiltro(produto) {
-    const status = obterStatusProduto(produto);
-    if (filtroAtual === "todos") return true;
-    if (filtroAtual === "baixo") return status.classe === "baixo";
-    if (filtroAtual === "zero") return status.classe === "zero";
-    if (filtroAtual === "vencer") return status.classe === "a-vencer" || status.classe === "vencido";
-        return true;
-}
-
-/* =========================================================
-BUSCA
-========================================================= */
-
-function obterTextoBusca() {
-    const campo = document.getElementById("buscaProduto");
-    return campo ? campo.value.trim().toLowerCase() : "";
-}
-
-function produtoPassaBusca(produto) {
-    const busca = obterTextoBusca();
-    if (!busca) return true;
-    const nome = String(produto.nome || "").toLowerCase();
-    const codigo = String(produto.codigo || "").toLowerCase();
-    return nome.includes(busca) || codigo.includes(busca);
-}
-
-/* =========================================================
-KPIs
-========================================================= */
-
-function atualizarKPIs() {
-    const totalProdutos = produtos.length;
-    const totalUnidades = produtos.reduce((total, produto) => total + numeroSeguro(produto.quantidade), 0);
-    const totalBaixo = produtos.filter(produto => {
-        const status = obterStatusProduto(produto);
-        return status.classe === "baixo" || status.classe === "zero";
-    }).length;
-    const totalValor = produtos.reduce((total, produto) => total + numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade), 0);
-
-    const elementoProdutos = document.getElementById("estoqueTotalProdutos");
-    const elementoUnidades = document.getElementById("estoqueTotalUnidades");
-    const elementoBaixo = document.getElementById("estoqueTotalBaixo");
-    const elementoValor = document.getElementById("estoqueTotalValor");
-
-    if (elementoProdutos) elementoProdutos.textContent = totalProdutos;
-    if (elementoUnidades) elementoUnidades.textContent = totalUnidades;
-    if (elementoBaixo) elementoBaixo.textContent = totalBaixo;
-    if (elementoValor) elementoValor.textContent = formatarReal(totalValor);
-}
-
-/* =========================================================
-LISTA DE PRODUTOS
-========================================================= */
-
-function renderizarProdutos() {
-    const lista = document.getElementById("listaProdutos");
-    if (!lista) return;
-
-    const produtosFiltrados = produtos.filter(produto => produtoPassaFiltro(produto) && produtoPassaBusca(produto));
-    const contador = document.getElementById("estoqueContador");
-
-    if (contador) {
-        contador.textContent = `${produtosFiltrados.length} ${produtosFiltrados.length === 1 ? "produto" : "produtos"}`;
+        return tipo || "movimentacao";
     }
 
-    if (produtosFiltrados.length === 0) {
-        lista.innerHTML = `
-            <div class="estoque-vazio">
-                <div class="estoque-vazio-icone">📦</div>
-                <strong>Nenhum produto encontrado</strong>
-                <span>Cadastre um produto ou altere os filtros.</span>
-            </div>`;
-        return;
+    function ehRegistroEstoque(registro) {
+        return registro?.categoria === "estoque";
     }
 
-    lista.innerHTML = produtosFiltrados.map(renderizarProduto).join("");
-    lista.querySelectorAll(".estoque-produto").forEach(card => {
-        card.addEventListener("click", () => abrirDetalhes(card.dataset.id));
-    });
-}
-
-function renderizarProduto(produto) {
-    const status = obterStatusProduto(produto);
-    const inicial = String(produto.nome || "?").trim().charAt(0).toUpperCase() || "?";
-    const foto = produto.foto
-        ? `<img src="${escaparHTML(produto.foto)}" alt="${escaparHTML(produto.nome)}">`
-        : `<div class="estoque-inicial">${escaparHTML(inicial)}</div>`;
-    const codigo = produto.codigo ? `Código: ${escaparHTML(produto.codigo)}` : "Sem código";
-    const unidade = produto.tipo === "perecivel" ? "Perecível" : "Não perecível";
-
-    return `
-        <article class="estoque-produto" data-id="${escaparHTML(produto.id)}" tabindex="0" role="button" aria-label="Abrir detalhes de ${escaparHTML(produto.nome)}">
-            <div class="estoque-foto">${foto}</div>
-            <div class="estoque-produto-info">
-                <strong>${escaparHTML(produto.nome)}</strong>
-                <small>${codigo} · ${unidade}</small>
-                <div class="estoque-preco">${formatarReal(produto.preco)} <span>/un.</span></div>
-            </div>
-            <div class="estoque-produto-direita">
-                <span class="estoque-qtd-label">Estoque</span>
-                <span class="estoque-qtd">${numeroSeguro(produto.quantidade)} <small>un.</small></span>
-                <span class="estoque-status ${status.classe}">${status.texto}</span>
-            </div>
-            <div class="estoque-seta">›</div>
-        </article>`;
-}
-
-/* =========================================================
-NOVO PRODUTO
-========================================================= */
-
-function abrirCadastroProduto() {
-    const form = document.getElementById("formProduto");
-    if (form) form.reset();
-
-    const produtoId = document.getElementById("produtoId");
-    const titulo = document.getElementById("tituloModalProduto");
-    const quantidade = document.getElementById("quantidadeInicial");
-    const estoqueMinimo = document.getElementById("estoqueMinimo");
-    const campoValidade = document.getElementById("campoValidade");
-    const validade = document.getElementById("validadeProduto");
-    const preview = document.getElementById("previewFoto");
-    const previewImg = document.getElementById("previewFotoImg");
-    const campoCodigo = document.getElementById("codigoProduto");
-
-    if (produtoId) produtoId.value = "";
-    if (titulo) titulo.textContent = "Cadastrar produto";
-    if (quantidade) quantidade.value = "0";
-    if (estoqueMinimo) estoqueMinimo.value = "5";
-    if (campoValidade) campoValidade.style.display = "";
-    if (validade) validade.value = "";
-    if (preview) preview.style.display = "none";
-    if (previewImg) previewImg.src = "";
-
-    window._estoqueFotoSelecionada = undefined;
-    codigoBarrasLido = "";
-    if (campoCodigo) campoCodigo.value = "";
-
-    abrirModal("modalProduto");
-    setTimeout(() => document.getElementById("nomeProduto")?.focus(), 150);
-}
-
-/* =========================================================
-EDITAR PRODUTO
-========================================================= */
-
-function abrirEdicaoProduto(id) {
-    const produto = produtos.find(item => String(item.id) === String(id));
-    if (!produto) return;
-
-    const produtoId = document.getElementById("produtoId");
-    const nome = document.getElementById("nomeProduto");
-    const codigo = document.getElementById("codigoProduto");
-    const preco = document.getElementById("precoProduto");
-    const tipo = document.getElementById("tipoProduto");
-    const minimo = document.getElementById("estoqueMinimo");
-    const quantidade = document.getElementById("quantidadeInicial");
-    const validade = document.getElementById("validadeProduto");
-    const titulo = document.getElementById("tituloModalProduto");
-    const preview = document.getElementById("previewFoto");
-    const previewImg = document.getElementById("previewFotoImg");
-
-    if (produtoId) produtoId.value = produto.id;
-    if (nome) nome.value = produto.nome;
-    const valorCodigo = String(produto.codigo || "").trim();
-    if (codigo) codigo.value = valorCodigo;
-    codigoBarrasLido = valorCodigo;
-    if (preco) preco.value = produto.preco;
-    if (tipo) tipo.value = produto.tipo;
-    if (minimo) minimo.value = produto.estoqueMinimo;
-    if (quantidade) quantidade.value = produto.quantidade;
-    if (validade) validade.value = produto.validade || "";
-    if (titulo) titulo.textContent = "Editar produto";
-
-    if (produto.foto && preview && previewImg) {
-        previewImg.src = produto.foto;
-        preview.style.display = "flex";
-    } else if (preview && previewImg) {
-        preview.style.display = "none";
-        previewImg.src = "";
+    function obterQuantidadeTexto(registro) {
+        const quantidade = numero(registro.quantidade);
+        return `${quantidade} ${quantidade === 1 ? "unidade" : "unidades"}`;
     }
 
-    window._estoqueFotoSelecionada = undefined;
-    abrirModal("modalProduto");
-    setTimeout(() => nome?.focus(), 150);
-                                                           }
-/* =========================================================
-SALVAR PRODUTO — CLOUD FIRST
-========================================================= */
+    function obterVariacaoEstoque(registro) {
+        const anterior = registro.quantidadeAnterior;
+        const nova = registro.quantidadeNova;
 
-async function salvarProduto(event) {
-    if (event) event.preventDefault();
-    if (!exigirEstoquePronto()) return;
+        if (anterior === undefined || nova === undefined) return "";
 
-    const id = document.getElementById("produtoId")?.value.trim();
-    const nome = document.getElementById("nomeProduto")?.value.trim();
-    const campoCodigo = document.getElementById("codigoProduto");
-    const codigoCampo = campoCodigo ? String(campoCodigo.value || "").trim() : "";
-    const codigo = codigoCampo || String(codigoBarrasLido || "").trim();
-    const preco = numeroSeguro(document.getElementById("precoProduto")?.value);
-    const tipo = document.getElementById("tipoProduto")?.value || "nao_perecivel";
-    const estoqueMinimo = Math.max(0, Math.floor(numeroSeguro(document.getElementById("estoqueMinimo")?.value, 5)));
-    const quantidade = Math.max(0, Math.floor(numeroSeguro(document.getElementById("quantidadeInicial")?.value)));
-    const validade = document.getElementById("validadeProduto")?.value || "";
-
-    if (!nome) {
-        alert("Digite o nome do produto.");
-        document.getElementById("nomeProduto")?.focus();
-        return;
-    }
-    if (preco < 0) {
-        alert("O preço não pode ser negativo.");
-        return;
+        return `Estoque: ${numero(anterior)} → ${numero(nova)} unidades`;
     }
 
-    const agora = new Date().toISOString();
-    const estadoAnterior = produtos.map(produto => ({ ...produto }));
-    let produtoSalvo = null;
-    let eraNovo = false;
-
-    if (id) {
-        const indice = produtos.findIndex(produto => String(produto.id) === String(id));
-        if (indice === -1) {
-            alert("Produto não encontrado.");
-            return;
-        }
-        produtos[indice] = {
-            ...produtos[indice], nome, codigo: String(codigo), preco, tipo,
-            estoqueMinimo, quantidade, validade, atualizadoEm: agora
-        };
-        if (window._estoqueFotoSelecionada !== undefined) {
-            produtos[indice].foto = window._estoqueFotoSelecionada;
-        }
-        produtoSalvo = produtos[indice];
-    } else {
-        eraNovo = true;
-        produtoSalvo = {
-            id: gerarId(), nome, codigo: String(codigo), preco, tipo,
-            estoqueMinimo, quantidade, validade,
-            foto: window._estoqueFotoSelecionada || "",
-            criadoEm: agora, atualizadoEm: agora
-        };
-        produtos.push(produtoSalvo);
-    }
-
-    try {
-        await persistirProdutoNaNuvem(produtoSalvo);
-
-        if (eraNovo) {
-            await salvarMovimentacao({
-                id: gerarId(), produtoId: produtoSalvo.id,
-                produtoNome: produtoSalvo.nome, tipo: "cadastro",
-                quantidade: produtoSalvo.quantidade,
-                quantidadeAnterior: 0,
-                quantidadeNova: produtoSalvo.quantidade,
-                data: obterDataHoje(),
-                hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-            });
-        }
-
-        salvarProdutos();
-        window._estoqueFotoSelecionada = undefined;
-        codigoBarrasLido = "";
-        fecharModal("modalProduto");
-        atualizarKPIs();
-        renderizarProdutos();
-
-    } catch (erro) {
-        console.error("Erro ao salvar produto no Supabase:", erro);
-        produtos = estadoAnterior;
-
-        // Se o cadastro novo chegou à nuvem mas o registro de movimento falhou,
-        // tenta remover o produto para não deixar uma operação pela metade.
-        if (eraNovo && produtoSalvo) {
-            try {
-                await window.EstoqueSupabase.excluirProduto(produtoSalvo.id);
-            } catch (erroRollback) {
-                console.error("Falha ao desfazer cadastro incompleto:", erroRollback);
-            }
-        } else if (produtoSalvo) {
-            const original = estadoAnterior.find(item => String(item.id) === String(produtoSalvo.id));
-            if (original) {
-                try { await window.EstoqueSupabase.salvarProduto(original); }
-                catch (erroRollback) { console.error("Falha ao restaurar produto:", erroRollback); }
-            }
-        }
-
-        salvarProdutos();
-        alert("Não foi possível salvar o produto no servidor. Confira sua conexão e tente novamente.\n\n" + (erro.message || "Erro desconhecido."));
-        atualizarKPIs();
-        renderizarProdutos();
-    }
-}
-
-/* =========================================================
-FOTO DO PRODUTO
-========================================================= */
-
-function configurarFotoProduto() {
-    const input = document.getElementById("fotoProduto");
-    if (!input) return;
-
-    input.addEventListener("change", event => {
-        const arquivo = event.target.files?.[0];
-        if (!arquivo) return;
-
-        if (!arquivo.type.startsWith("image/")) {
-            alert("Selecione uma imagem válida.");
-            input.value = "";
-            return;
-        }
-
-        const leitor = new FileReader();
-        leitor.onload = function () {
-            const imagem = new Image();
-            imagem.onload = function () {
-                const tamanhoMaximo = 700;
-                let largura = imagem.width;
-                let altura = imagem.height;
-
-                if (largura > tamanhoMaximo || altura > tamanhoMaximo) {
-                    const escala = Math.min(tamanhoMaximo / largura, tamanhoMaximo / altura);
-                    largura = Math.round(largura * escala);
-                    altura = Math.round(altura * escala);
-                }
-
-                const canvas = document.createElement("canvas");
-                canvas.width = largura;
-                canvas.height = altura;
-                const contexto = canvas.getContext("2d");
-                contexto.drawImage(imagem, 0, 0, largura, altura);
-                const fotoReduzida = canvas.toDataURL("image/jpeg", 0.78);
-                window._estoqueFotoSelecionada = fotoReduzida;
-
-                const preview = document.getElementById("previewFoto");
-                const previewImg = document.getElementById("previewFotoImg");
-                if (preview && previewImg) {
-                    previewImg.src = fotoReduzida;
-                    preview.style.display = "flex";
-                }
+    function escaparHTML(valor) {
+        return String(valor ?? "").replace(/[&<>"']/g, caractere => {
+            const mapa = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;"
             };
-            imagem.onerror = () => alert("Não foi possível carregar a imagem.");
-            imagem.src = leitor.result;
+            return mapa[caractere];
+        });
+    }
+
+    function criarId() {
+        return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    }
+
+    /* =========================
+       SALDO INICIAL
+    ========================= */
+
+    function obterSaldoInicial(dataISO) {
+        const saldos = lerSaldos();
+
+        if (typeof saldos[dataISO] === "number" || typeof saldos[dataISO] === "string") {
+            return numero(saldos[dataISO]);
+        }
+
+        if (saldos[dataISO] && typeof saldos[dataISO] === "object") {
+            return numero(
+                saldos[dataISO].saldoInicial ??
+                saldos[dataISO].saldo ??
+                saldos[dataISO].valor
+            );
+        }
+
+        if (saldos.saldos && saldos.saldos[dataISO] !== undefined) {
+            return numero(saldos.saldos[dataISO]);
+        }
+
+        if (saldos.data === dataISO) {
+            return numero(saldos.saldoInicial ?? saldos.saldo ?? saldos.valor);
+        }
+
+        return 0;
+    }
+
+    /* =========================
+       LISTA DE LANÇAMENTOS
+    ========================= */
+
+    function criarRegistroVenda(venda, indice) {
+        return {
+            categoria: "venda",
+            tipo: "venda",
+            id: venda.id ?? venda.vendaId ?? `venda_${indice}`,
+            original: venda,
+            dataISO: obterDataISO(venda),
+            valor: obterValorVenda(venda),
+            forma: obterPagamento(venda),
+            descricao: obterDescricao(venda),
+            hora: obterHora(venda)
         };
-        leitor.onerror = () => alert("Não foi possível ler a imagem.");
-        leitor.readAsDataURL(arquivo);
-    });
-}
-
-/* =========================================================
-TIPO DO PRODUTO
-========================================================= */
-
-function configurarTipoProduto() {
-    const tipo = document.getElementById("tipoProduto");
-    const campo = document.getElementById("campoValidade");
-    if (!tipo || !campo) return;
-
-    function atualizar() {
-        if (tipo.value === "perecivel") {
-            campo.style.display = "";
-        } else {
-            campo.style.display = "none";
-            const validade = document.getElementById("validadeProduto");
-            if (validade) validade.value = "";
-                    }
-    }
-    tipo.addEventListener("change", atualizar);
-    atualizar();
-}
-
-/* =========================================================
-MOVIMENTO DE ESTOQUE
-========================================================= */
-
-function abrirMovimento(tipo) {
-    if (!estoquePronto) {
-        alert("O estoque deste estabelecimento ainda não foi carregado.");
-        return;
-    }
-    tipoMovimentoAtual = tipo === "saida" ? "saida" : "entrada";
-    produtoSelecionadoMovimento = null;
-
-    const titulo = document.getElementById("tituloModalMovimento");
-    const busca = document.getElementById("buscaMovimento");
-    const quantidade = document.getElementById("quantidadeMovimento");
-    const selecionado = document.getElementById("produtoSelecionadoMovimento");
-
-    if (titulo) titulo.textContent = tipoMovimentoAtual === "saida" ? "Saída de estoque" : "Entrada de estoque";
-    if (busca) busca.value = "";
-    if (quantidade) quantidade.value = "";
-    if (selecionado) selecionado.classList.remove("mostrar");
-
-    renderizarSelecaoProdutos();
-    atualizarBotaoMovimento();
-    abrirModal("modalMovimento");
-    setTimeout(() => busca?.focus(), 150);
-}
-
-function renderizarSelecaoProdutos() {
-    const lista = document.getElementById("listaSelecaoProdutos");
-    if (!lista) return;
-    const campo = document.getElementById("buscaMovimento");
-    const busca = campo ? campo.value.trim().toLowerCase() : "";
-
-    const filtrados = produtos.filter(produto => {
-        if (!busca) return true;
-        return String(produto.nome || "").toLowerCase().includes(busca) ||
-            String(produto.codigo || "").toLowerCase().includes(busca);
-    });
-
-    if (filtrados.length === 0) {
-        lista.innerHTML = `
-            <div class="estoque-vazio" style="min-height:130px">
-                <div class="estoque-vazio-icone">🔎</div>
-                <strong>Nenhum produto encontrado</strong>
-                <span>Tente outro nome ou código.</span>
-            </div>`;
-        return;
     }
 
-    lista.innerHTML = filtrados.map(produto => {
-        const inicial = String(produto.nome || "?").trim().charAt(0).toUpperCase() || "?";
-        const foto = produto.foto ? `<img src="${escaparHTML(produto.foto)}" alt="">` : escaparHTML(inicial);
-        const classeBotao = tipoMovimentoAtual === "saida" ? "saida" : "";
-        return `
-            <div class="estoque-selecao-item">
-                <div class="estoque-selecao-foto">${foto}</div>
-                <div class="estoque-selecao-info">
-                    <strong>${escaparHTML(produto.nome)}</strong>
-                    <small>Estoque: ${numeroSeguro(produto.quantidade)} un.</small>
+    function criarRegistroMovimentacao(movimento, indice) {
+        const tipo = obterTipoMovimentacao(movimento);
+
+        return {
+            categoria: tipo,
+            tipo,
+            id: movimento.id ?? movimento.movimentacaoId ?? `mov_${indice}`,
+            original: movimento,
+            dataISO: obterDataISO(movimento),
+            valor: numero(movimento.valor),
+            forma: obterPagamento(movimento),
+            descricao: obterDescricao(movimento),
+            hora: obterHora(movimento)
+        };
+    }
+
+    function criarRegistroMovimentacaoEstoque(item, indice) {
+        const movimento = item.movimento;
+
+        return {
+            categoria: "estoque",
+            tipo: "estoque",
+            tipoEstoque: obterTipoEstoque(movimento),
+            id: movimento.id ?? `estoque_${indice}`,
+            original: movimento,
+            chaveOrigem: item.chave,
+            indiceOrigem: item.indice,
+            dataISO: obterDataISO(movimento),
+            hora: obterHora(movimento),
+            descricao: obterDescricao(movimento),
+            quantidade: numero(movimento.quantidade),
+            quantidadeAnterior: movimento.quantidadeAnterior,
+            quantidadeNova: movimento.quantidadeNova,
+            valor: 0,
+            forma: "estoque"
+        };
+    }
+
+    function obterRegistrosDoDia(dataISO) {
+        const vendas = lerVendas()
+            .map(criarRegistroVenda)
+            .filter(registro => registro.dataISO === dataISO);
+
+        const movimentacoes = lerMovimentacoes()
+            .map(criarRegistroMovimentacao)
+            .filter(registro => registro.dataISO === dataISO);
+
+        const movimentacoesEstoque = lerMovimentacoesEstoque()
+            .map(criarRegistroMovimentacaoEstoque)
+            .filter(registro => registro.dataISO === dataISO);
+
+        return [...vendas, ...movimentacoes, ...movimentacoesEstoque].sort((a, b) => {
+            const horaA = a.hora || "";
+            const horaB = b.hora || "";
+            return horaB.localeCompare(horaA);
+        });
+    }
+
+    /* =========================
+       RESUMO FINANCEIRO
+       Movimentações de estoque NÃO entram nos valores do caixa.
+    ========================= */
+
+    function atualizarResumo(registros, dataISO) {
+        const registrosFinanceiros = registros.filter(item => !ehRegistroEstoque(item));
+        const vendas = registrosFinanceiros.filter(item => item.categoria === "venda");
+        const entradas = registrosFinanceiros.filter(item => item.categoria === "entrada");
+        const saidas = registrosFinanceiros.filter(item => item.categoria === "saida");
+
+        const totalVendido = vendas.reduce((soma, item) => soma + item.valor, 0);
+
+        const dinheiro = vendas
+            .filter(item => item.forma === "dinheiro")
+            .reduce((soma, item) => soma + item.valor, 0);
+
+        const pix = vendas
+            .filter(item => item.forma === "pix")
+            .reduce((soma, item) => soma + item.valor, 0);
+
+        const debito = vendas
+            .filter(item => item.forma === "debito")
+            .reduce((soma, item) => soma + item.valor, 0);
+
+        const credito = vendas
+            .filter(item => item.forma === "credito")
+            .reduce((soma, item) => soma + item.valor, 0);
+
+        const totalEntradas = entradas.reduce((soma, item) => soma + item.valor, 0);
+        const totalSaidas = saidas.reduce((soma, item) => soma + item.valor, 0);
+
+        const saldoInicial = obterSaldoInicial(dataISO);
+
+        const entradasDinheiro = entradas
+            .filter(item => item.forma === "dinheiro")
+            .reduce((soma, item) => soma + item.valor, 0);
+
+        const saidasDinheiro = saidas
+            .filter(item => item.forma === "dinheiro")
+            .reduce((soma, item) => soma + item.valor, 0);
+
+        const saldoFinal = saldoInicial + dinheiro + entradasDinheiro - saidasDinheiro;
+
+        if (elementos.saldoInicial) elementos.saldoInicial.textContent = moeda(saldoInicial);
+        if (elementos.saldoFinal) elementos.saldoFinal.textContent = moeda(saldoFinal);
+        if (elementos.dinheiro) elementos.dinheiro.textContent = moeda(dinheiro);
+        if (elementos.pix) elementos.pix.textContent = moeda(pix);
+        if (elementos.debito) elementos.debito.textContent = moeda(debito);
+        if (elementos.credito) elementos.credito.textContent = moeda(credito);
+        if (elementos.total) elementos.total.textContent = moeda(totalVendido);
+
+        if (elementos.quantidade) {
+            elementos.quantidade.textContent = `${vendas.length} venda${vendas.length === 1 ? "" : "s"}`;
+        }
+
+        if (elementos.entradas) elementos.entradas.textContent = moeda(totalEntradas);
+        if (elementos.saidas) elementos.saidas.textContent = moeda(totalSaidas);
+
+        if (elementos.quantidadeLancamentos) {
+            elementos.quantidadeLancamentos.textContent =
+                `${registros.length} registro${registros.length === 1 ? "" : "s"}`;
+        }
+
+        if (elementos.dataRelatorio) {
+            elementos.dataRelatorio.textContent = `Relatório de ${formatarDataISO(dataISO)}`;
+        }
+    }
+
+    /* =========================
+       RENDERIZAR HISTÓRICO
+    ========================= */
+
+    function iconeRegistro(registro) {
+        if (registro.categoria === "venda") return "🧾";
+
+        if (ehRegistroEstoque(registro)) {
+            if (registro.tipoEstoque === "entrada") return "📥";
+            if (registro.tipoEstoque === "saida") return "📤";
+            if (registro.tipoEstoque === "ajuste") return "🔧";
+            if (registro.tipoEstoque === "cadastro") return "📦";
+            if (registro.tipoEstoque === "exclusao") return "🗑️";
+            return "📦";
+        }
+
+        if (registro.categoria === "entrada") return "↗";
+        return "↘";
+    }
+
+    function nomeTipoRegistro(registro) {
+        if (registro.categoria === "venda") return "Venda";
+
+        if (ehRegistroEstoque(registro)) {
+            const nomes = {
+                entrada: "Entrada no estoque",
+                saida: "Saída do estoque",
+                ajuste: "Ajuste de estoque",
+                cadastro: "Cadastro de produto",
+                exclusao: "Exclusão de produto"
+            };
+            return nomes[registro.tipoEstoque] || "Movimentação de estoque";
+        }
+
+        if (registro.categoria === "entrada") return "Entrada no caixa";
+        return "Saída do caixa";
+    }
+
+    function renderizarHistorico(registros) {
+        if (!elementos.listaHistorico) return;
+
+        if (registros.length === 0) {
+            elementos.listaHistorico.innerHTML = `
+                <div class="historico-vazio">
+                    <span class="icone">🧾</span>
+                    <strong>Nenhuma movimentação encontrada</strong>
+                    <p>Não existem registros para a data selecionada.</p>
                 </div>
-                <button type="button" class="estoque-add-produto ${classeBotao}"
-                    data-selecionar-produto="${escaparHTML(produto.id)}"
-                    aria-label="Selecionar ${escaparHTML(produto.nome)}">+</button>
-            </div>`;
-    }).join("");
-
-    lista.querySelectorAll("[data-selecionar-produto]").forEach(botao => {
-        botao.addEventListener("click", event => {
-            event.stopPropagation();
-            selecionarProdutoMovimento(botao.dataset.selecionarProduto);
-        });
-    });
-}
-
-function selecionarProdutoMovimento(id) {
-    const produto = produtos.find(item => String(item.id) === String(id));
-    if (!produto) return;
-    produtoSelecionadoMovimento = produto;
-
-    const bloco = document.getElementById("produtoSelecionadoMovimento");
-    const nome = document.getElementById("nomeSelecionadoMovimento");
-    const estoque = document.getElementById("estoqueAtualMovimento");
-    const quantidade = document.getElementById("quantidadeMovimento");
-
-    if (nome) nome.textContent = produto.nome;
-    if (estoque) estoque.textContent = `Estoque atual: ${numeroSeguro(produto.quantidade)} unidade(s)`;
-    if (bloco) bloco.classList.add("mostrar");
-    if (quantidade) {
-        quantidade.value = "";
-        quantidade.focus();
-    }
-    atualizarBotaoMovimento();
-}
-
-function atualizarBotaoMovimento() {
-    const botao = document.getElementById("btnConfirmarMovimento");
-    if (!botao) return;
-    botao.textContent = tipoMovimentoAtual === "saida" ? "Registrar saída" : "Registrar entrada";
-}
-
-async function confirmarMovimento() {
-    if (!exigirEstoquePronto()) return;
-    if (!produtoSelecionadoMovimento) {
-        alert("Selecione um produto primeiro.");
-        return;
-    }
-
-    const campo = document.getElementById("quantidadeMovimento");
-    const quantidade = Math.floor(numeroSeguro(campo?.value));
-    if (quantidade <= 0) {
-        alert("Informe uma quantidade maior que zero.");
-        campo?.focus();
-        return;
-    }
-
-    const produto = produtos.find(item => String(item.id) === String(produtoSelecionadoMovimento.id));
-    if (!produto) {
-        alert("Produto não encontrado.");
-        return;
-    }
-
-    if (tipoMovimentoAtual === "saida" && quantidade > numeroSeguro(produto.quantidade)) {
-        alert(`Não há estoque suficiente.\n\nEstoque atual: ${produto.quantidade} unidade(s).`);
-        campo?.focus();
-        return;
-    }
-
-    const quantidadeAnterior = numeroSeguro(produto.quantidade);
-    const quantidadeNova = tipoMovimentoAtual === "entrada"
-        ? quantidadeAnterior + quantidade
-        : quantidadeAnterior - quantidade;
-    const atualizadoAnterior = produto.atualizadoEm;
-
-    produto.quantidade = quantidadeNova;
-    produto.atualizadoEm = new Date().toISOString();
-
-    try {
-        await persistirProdutoNaNuvem(produto);
-        await salvarMovimentacao({
-            id: gerarId(), produtoId: produto.id, produtoNome: produto.nome,
-            tipo: tipoMovimentoAtual, quantidade, quantidadeAnterior,
-            quantidadeNova, data: obterDataHoje(),
-            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-        });
-        salvarProdutos();
-        fecharModal("modalMovimento");
-        atualizarKPIs();
-        renderizarProdutos();
-
-        if (produtoDetalhesAtual && String(produtoDetalhesAtual.id) === String(produto.id)) {
-            produtoDetalhesAtual = produto;
-            abrirDetalhes(produto.id);
+            `;
+            return;
         }
-    } catch (erro) {
-        console.error("Erro ao registrar movimentação:", erro);
-        produto.quantidade = quantidadeAnterior;
-        produto.atualizadoEm = atualizadoAnterior;
-        try { await window.EstoqueSupabase.salvarProduto(produto); }
-        catch (erroRollback) { console.error("Falha ao reverter quantidade na nuvem:", erroRollback); }
-        salvarProdutos();
-        atualizarKPIs();
-        renderizarProdutos();
-        alert("Não foi possível confirmar a movimentação no servidor. A alteração foi desfeita neste dispositivo.\n\n" + (erro.message || "Erro desconhecido."));
-    }
-}
 
-/* =========================================================
-DETALHES DO PRODUTO
-========================================================= */
+        elementos.listaHistorico.innerHTML = registros.map((registro, indice) => {
+            const ehEstoque = ehRegistroEstoque(registro);
+            const ehSaida = registro.categoria === "saida" ||
+                (ehEstoque && registro.tipoEstoque === "saida");
+            const corValor = ehSaida ? "#d94b4b" : "#168b53";
+            const sinal = registro.categoria === "saida" ? "− " :
+                registro.categoria === "entrada" ? "+ " : "";
 
-function abrirDetalhes(id) {
-    const produto = produtos.find(item => String(item.id) === String(id));
-    if (!produto) return;
-        produtoDetalhesAtual = produto;
+            const detalhes = ehEstoque
+                ? ["Estoque", formatarDataISO(registro.dataISO), registro.hora].filter(Boolean).join(" · ")
+                : [nomePagamento(registro.forma), formatarDataISO(registro.dataISO), registro.hora].filter(Boolean).join(" · ");
 
-    const container = document.getElementById("detalhesProduto");
-    if (!container) return;
+            const valorExibido = ehEstoque
+                ? obterQuantidadeTexto(registro)
+                : `${sinal}${moeda(registro.valor)}`;
 
-    const status = obterStatusProduto(produto);
-    const inicial = String(produto.nome || "?").trim().charAt(0).toUpperCase() || "?";
-    const foto = produto.foto
-        ? `<img src="${escaparHTML(produto.foto)}" alt="${escaparHTML(produto.nome)}">`
-        : `<div class="estoque-inicial">${escaparHTML(inicial)}</div>`;
-    const validade = produto.validade ? formatarDataBR(produto.validade) : "Não informada";
-    const tipo = produto.tipo === "perecivel" ? "Perecível" : "Não perecível";
+            return `
+                <article class="item-historico"
+                         data-indice="${indice}"
+                         role="button"
+                         tabindex="0"
+                         aria-label="Ver detalhes: ${escaparHTML(nomeTipoRegistro(registro))}">
 
-    container.innerHTML = `
-        <div class="estoque-detalhes-topo">
-            <div class="estoque-foto estoque-detalhes-foto">${foto}</div>
-            <div class="estoque-detalhes-titulo">
-                <h4>${escaparHTML(produto.nome)}</h4>
-                <div class="estoque-detalhes-codigo">${produto.codigo ? `Código: ${escaparHTML(produto.codigo)}` : "Sem código"}</div>
-                <div class="estoque-detalhes-preco">${formatarReal(produto.preco)} <span>/ unidade</span></div>
-            </div>
-        </div>
-        <div class="estoque-status-detalhes ${status.classe}">${status.texto}</div>
-        <div class="estoque-detalhes">
-            <div class="estoque-detalhe"><small>Quantidade</small><strong>${numeroSeguro(produto.quantidade)} un.</strong></div>
-            <div class="estoque-detalhe"><small>Estoque mínimo</small><strong>${numeroSeguro(produto.estoqueMinimo)} un.</strong></div>
-            <div class="estoque-detalhe"><small>Tipo</small><strong>${tipo}</strong></div>
-            <div class="estoque-detalhe"><small>Validade</small><strong>${validade}</strong></div>
-            <div class="estoque-detalhe"><small>Valor em estoque</small><strong>${formatarReal(numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade))}</strong></div>
-            <div class="estoque-detalhe"><small>Código</small><strong>${produto.codigo ? escaparHTML(produto.codigo) : "—"}</strong></div>
-        </div>
-        <button id="btnAjustarQuantidadeInterno" type="button" class="estoque-ajuste-btn">🔢 Ajustar quantidade</button>`;
+                    <div class="icone-lancamento">
+                        ${iconeRegistro(registro)}
+                    </div>
 
-    document.getElementById("btnAjustarQuantidadeInterno")?.addEventListener("click", () => abrirAjusteQuantidade(produto.id));
-    abrirModal("modalDetalhes");
-}
+                    <div class="info-lancamento">
+                        <span class="titulo-lancamento">
+                            ${escaparHTML(registro.descricao || nomeTipoRegistro(registro))}
+                        </span>
 
-/* =========================================================
-AJUSTE DE QUANTIDADE
-========================================================= */
+                        <span class="detalhes-lancamento">
+                            ${escaparHTML(nomeTipoRegistro(registro))} ·
+                            ${escaparHTML(detalhes)}
+                        </span>
+                    </div>
 
-function abrirAjusteQuantidade(id) {
-    const produto = produtos.find(item => String(item.id) === String(id));
-    if (!produto) return;
-    produtoQuantidadeAtual = produto;
+                    <strong class="valor-lancamento" style="color:${corValor}">
+                        ${escaparHTML(valorExibido)}
+                    </strong>
 
-    const nome = document.getElementById("nomeProdutoQuantidade");
-    const atual = document.getElementById("quantidadeAtualProduto");
-    const nova = document.getElementById("novaQuantidadeProduto");
-    if (nome) nome.textContent = produto.nome;
-    if (atual) atual.textContent = `${numeroSeguro(produto.quantidade)} un.`;
-    if (nova) {
-        nova.value = numeroSeguro(produto.quantidade);
-        nova.focus();
-        nova.select();
-    }
-    fecharModal("modalDetalhes");
-    abrirModal("modalQuantidade");
-}
+                    ${ehEstoque ? "" : `
+                        <button type="button"
+                                class="lixeira-historico"
+                                data-indice="${indice}"
+                                aria-label="Excluir lançamento">
+                            🗑
+                        </button>
+                    `}
+                </article>
+            `;
+        }).join("");
 
-async function confirmarAjusteQuantidade() {
-    if (!exigirEstoquePronto()) return;
-    if (!produtoQuantidadeAtual) return;
-
-    const campo = document.getElementById("novaQuantidadeProduto");
-    const novaQuantidade = Math.floor(numeroSeguro(campo?.value));
-    if (novaQuantidade < 0) {
-        alert("A quantidade não pode ser negativa.");
-        return;
-    }
-
-    const produto = produtos.find(item => String(item.id) === String(produtoQuantidadeAtual.id));
-    if (!produto) {
-        alert("Produto não encontrado.");
-        return;
-    }
-
-    const quantidadeAnterior = numeroSeguro(produto.quantidade);
-    const atualizadoAnterior = produto.atualizadoEm;
-    produto.quantidade = novaQuantidade;
-    produto.atualizadoEm = new Date().toISOString();
-
-    try {
-        await persistirProdutoNaNuvem(produto);
-        await salvarMovimentacao({
-            id: gerarId(), produtoId: produto.id, produtoNome: produto.nome,
-            tipo: "ajuste", quantidade: Math.abs(novaQuantidade - quantidadeAnterior),
-            quantidadeAnterior, quantidadeNova: novaQuantidade,
-            data: obterDataHoje(),
-            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-        });
-        salvarProdutos();
-        produtoQuantidadeAtual = produto;
-        fecharModal("modalQuantidade");
-        atualizarKPIs();
-        renderizarProdutos();
-        setTimeout(() => abrirDetalhes(produto.id), 100);
-    } catch (erro) {
-        console.error("Erro ao ajustar quantidade:", erro);
-        produto.quantidade = quantidadeAnterior;
-        produto.atualizadoEm = atualizadoAnterior;
-        try { await window.EstoqueSupabase.salvarProduto(produto); }
-        catch (erroRollback) { console.error("Falha ao reverter ajuste:", erroRollback); }
-        salvarProdutos();
-        atualizarKPIs();
-        renderizarProdutos();
-        alert("Não foi possível registrar o ajuste no servidor. A alteração foi desfeita.\n\n" + (erro.message || "Erro desconhecido."));
-    }
-}
-
-/* =========================================================
-EXCLUSÃO DE PRODUTO
-========================================================= */
-
-function abrirConfirmacaoExclusao() {
-    if (!produtoDetalhesAtual) return;
-    produtoExclusaoAtual = produtoDetalhesAtual;
-    const nome = document.getElementById("nomeExcluirProduto");
-    if (nome) nome.textContent = produtoDetalhesAtual.nome;
-    fecharModal("modalDetalhes");
-    abrirModal("modalExcluir");
-}
-
-async function confirmarExclusao() {
-    if (!exigirEstoquePronto()) return;
-    if (!produtoExclusaoAtual) return;
-
-    const id = produtoExclusaoAtual.id;
-    const produtoExistente = produtos.find(produto => String(produto.id) === String(id));
-    if (!produtoExistente) {
-        fecharModal("modalExcluir");
-        return;
-    }
-
-    const copiaProduto = { ...produtoExistente };
-    produtos = produtos.filter(produto => String(produto.id) !== String(id));
-
-    try {
-        await window.EstoqueSupabase.excluirProduto(id);
-        await salvarMovimentacao({
-            id: gerarId(), produtoId: id, produtoNome: copiaProduto.nome,
-            tipo: "exclusao", quantidade: copiaProduto.quantidade,
-            quantidadeAnterior: copiaProduto.quantidade, quantidadeNova: 0,
-            data: obterDataHoje(),
-            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-        });
-        salvarProdutos();
-        produtoDetalhesAtual = null;
-        produtoQuantidadeAtual = null;
-        produtoExclusaoAtual = null;
-        fecharModal("modalExcluir");
-        atualizarKPIs();
-        renderizarProdutos();
-    } catch (erro) {
-        console.error("Erro ao excluir produto:", erro);
-        if (!produtos.some(produto => String(produto.id) === String(id))) {
-            produtos.push(copiaProduto);
-        }
-        try { await window.EstoqueSupabase.salvarProduto(copiaProduto); }
-        catch (erroRollback) { console.error("Falha ao restaurar produto excluído:", erroRollback); }
-        salvarProdutos();
-        atualizarKPIs();
-        renderizarProdutos();
-        alert("Não foi possível concluir a exclusão no servidor. O produto foi restaurado quando possível.\n\n" + (erro.message || "Erro desconhecido."));
-    }
-}
-
-/* =========================================================
-BUSCA PRINCIPAL
-========================================================= */
-
-function configurarBusca() {
-    const campo = document.getElementById("buscaProduto");
-    const limpar = document.getElementById("btnLimparBusca");
-    if (campo) campo.addEventListener("input", renderizarProdutos);
-    if (limpar) {
-        limpar.addEventListener("click", () => {
-            if (campo) campo.value = "";
-                        renderizarProdutos();
-            campo?.focus();
-        });
-    }
-}
-
-/* =========================================================
-FILTROS
-========================================================= */
-
-function configurarFiltros() {
-    document.querySelectorAll("[data-filtro-estoque]").forEach(botao => {
-        botao.addEventListener("click", () => {
-            filtroAtual = botao.dataset.filtroEstoque || "todos";
-            document.querySelectorAll("[data-filtro-estoque]").forEach(item => {
-                item.classList.toggle("ativo", item === botao);
+        elementos.listaHistorico.querySelectorAll(".item-historico").forEach(item => {
+            item.addEventListener("click", evento => {
+                if (evento.target.closest(".lixeira-historico")) return;
+                const indice = Number(item.dataset.indice);
+                abrirDetalhes(registros[indice]);
             });
-            renderizarProdutos();
+
+            item.addEventListener("keydown", evento => {
+                if (evento.target !== item) return;
+
+                if (evento.key === "Enter" || evento.key === " ") {
+                    evento.preventDefault();
+                    const indice = Number(item.dataset.indice);
+                    abrirDetalhes(registros[indice]);
+                }
+            });
         });
+
+        elementos.listaHistorico.querySelectorAll(".lixeira-historico").forEach(botao => {
+            botao.addEventListener("click", evento => {
+                evento.stopPropagation();
+                const indice = Number(botao.dataset.indice);
+                const registro = registros[indice];
+                if (registro) excluirRegistro(registro);
+            });
+        });
+    }
+
+    function atualizarHistorico() {
+        const dataISO = elementos.filtroData?.value || dataISOHoje();
+        const registros = obterRegistrosDoDia(dataISO);
+        atualizarResumo(registros, dataISO);
+        renderizarHistorico(registros);
+    }
+
+    /* =========================
+       FILTRO DE DATA
+    ========================= */
+
+    if (elementos.filtroData) {
+        elementos.filtroData.value = dataISOHoje();
+        elementos.filtroData.addEventListener("change", atualizarHistorico);
+    }
+
+    if (elementos.btnHoje) {
+        elementos.btnHoje.addEventListener("click", () => {
+            if (elementos.filtroData) elementos.filtroData.value = dataISOHoje();
+            atualizarHistorico();
+        });
+    }
+
+    /* =========================
+       MODAL DE ENTRADA / SAÍDA (CRIAÇÃO E EDIÇÃO)
+    ========================= */
+
+    function abrirModalMovimentacao(tipo, movimentacaoParaEditar = null) {
+        tipoMovimentacaoAtual = tipo;
+        idMovimentacaoEmEdicao = movimentacaoParaEditar
+            ? (movimentacaoParaEditar.original?.id ?? movimentacaoParaEditar.id)
+            : null;
+
+        if (elementos.formMovimentacao) elementos.formMovimentacao.reset();
+
+        if (movimentacaoParaEditar) {
+            if (elementos.tituloModalMovimentacao) {
+                elementos.tituloModalMovimentacao.textContent =
+                    tipo === "entrada" ? "Editar entrada" : "Editar saída";
+            }
+
+            if (elementos.subtituloModalMovimentacao) {
+                elementos.subtituloModalMovimentacao.textContent =
+                    "Altere os dados da movimentação.";
+            }
+
+            if (elementos.valorMovimentacao) {
+                elementos.valorMovimentacao.value = movimentacaoParaEditar.valor;
+            }
+
+            if (elementos.formaPagamentoMovimentacao) {
+                elementos.formaPagamentoMovimentacao.value = movimentacaoParaEditar.forma;
+            }
+
+            if (elementos.descricaoMovimentacao) {
+                elementos.descricaoMovimentacao.value = movimentacaoParaEditar.descricao;
+            }
+        } else {
+            if (elementos.tituloModalMovimentacao) {
+                elementos.tituloModalMovimentacao.textContent =
+                    tipo === "entrada" ? "Nova entrada" : "Nova saída";
+            }
+
+            if (elementos.subtituloModalMovimentacao) {
+                elementos.subtituloModalMovimentacao.textContent =
+                    tipo === "entrada"
+                        ? "Registre um valor que entrou no caixa."
+                        : "Registre um valor que saiu do caixa.";
+            }
+        }
+
+        if (elementos.iconeModalMovimentacao) {
+            elementos.iconeModalMovimentacao.textContent =
+                tipo === "entrada" ? "↗" : "↘";
+        }
+
+        elementos.modalMovimentacao?.classList.add("ativo");
+        setTimeout(() => elementos.valorMovimentacao?.focus(), 100);
+    }
+
+    function fecharModalMovimentacao() {
+        elementos.modalMovimentacao?.classList.remove("ativo");
+        idMovimentacaoEmEdicao = null;
+    }
+
+    elementos.btnNovaEntrada?.addEventListener("click", () => {
+        abrirModalMovimentacao("entrada");
     });
-}
 
-/* =========================================================
-LEITOR — PARAR CÂMERA E LIMPAR RECURSOS
-========================================================= */
+    elementos.btnNovaSaida?.addEventListener("click", () => {
+        abrirModalMovimentacao("saida");
+    });
 
-function pararLeitorCodigo() {
-    sessaoLeitorCodigo++;
-    lendoCodigoBarras = false;
-    detectorEmExecucao = false;
+    elementos.btnFecharModalMovimentacao?.addEventListener("click", fecharModalMovimentacao);
+    elementos.btnCancelarMovimentacao?.addEventListener("click", fecharModalMovimentacao);
 
-    if (frameLeituraCodigo !== null) {
-        cancelAnimationFrame(frameLeituraCodigo);
-        frameLeituraCodigo = null;
-    }
+    elementos.modalMovimentacao?.addEventListener("click", evento => {
+        if (evento.target === elementos.modalMovimentacao) fecharModalMovimentacao();
+    });
 
-    if (streamLeitorCodigo) {
-        streamLeitorCodigo.getTracks().forEach(track => {
-            try { track.stop(); }
-            catch (erro) { console.warn("Erro ao parar câmera:", erro); }
-        });
-        streamLeitorCodigo = null;
-    }
+    if (elementos.formMovimentacao) {
+        elementos.formMovimentacao.addEventListener("submit", evento => {
+            evento.preventDefault();
 
-    const video = document.getElementById("videoLeitorCodigo");
-    if (video) {
-        try { video.pause(); } catch (erro) { /* ignora */ }
-        video.srcObject = null;
-        video.style.setProperty("display", "none", "important");
-        video.style.setProperty("visibility", "hidden", "important");
-        video.style.setProperty("opacity", "0", "important");
-    }
+            const valor = numero(elementos.valorMovimentacao?.value);
+            const forma = elementos.formaPagamentoMovimentacao?.value || "dinheiro";
+            const descricao = elementos.descricaoMovimentacao?.value.trim();
 
-    const moldura = document.getElementById("molduraCodigoBarras");
-    if (moldura) moldura.style.setProperty("display", "none", "important");
-    abrindoLeitorCodigo = false;
-}
-
-/* =========================================================
-DETECTOR DE CÓDIGO DE BARRAS
-========================================================= */
-
-async function criarDetectorCodigoBarras() {
-    if (typeof window.BarcodeDetector === "undefined") return null;
-
-    try {
-        if (!formatosSuportadosCache) {
-            const formatosDesejados = [
-                "ean_13", "ean_8", "upc_a", "upc_e", "code_128",
-                "code_39", "code_93", "itf", "codabar"
-            ];
-            if (typeof window.BarcodeDetector.getSupportedFormats === "function") {
-                const suportados = await window.BarcodeDetector.getSupportedFormats();
-                formatosSuportadosCache = formatosDesejados.filter(formato => suportados.includes(formato));
-            } else {
-                formatosSuportadosCache = formatosDesejados;
+            if (!Number.isFinite(valor) || valor <= 0) {
+                alert("Informe um valor maior que zero.");
+                elementos.valorMovimentacao?.focus();
+                return;
             }
-        }
-        if (formatosSuportadosCache.length === 0) return null;
-        return new window.BarcodeDetector({ formats: formatosSuportadosCache });
-    } catch (erro) {
-        console.error("Erro ao criar detector de código de barras:", erro);
-        return null;
-    }
-}
 
-/* =========================================================
-AJUSTES DE CÂMERA — FOCO, ZOOM E ILUMINAÇÃO
-========================================================= */
-
-async function otimizarCameraLeitor() {
-    if (!streamLeitorCodigo) return;
-    const faixa = streamLeitorCodigo.getVideoTracks()[0];
-    if (!faixa) return;
-
-    try {
-        const capacidades = typeof faixa.getCapabilities === "function" ? faixa.getCapabilities() : {};
-        const configuracao = {};
-        if (capacidades.focusMode && capacidades.focusMode.includes("continuous")) {
-            configuracao.focusMode = "continuous";
-        }
-        if (capacidades.zoom && Number.isFinite(capacidades.zoom.min) && Number.isFinite(capacidades.zoom.max)) {
-            configuracao.zoom = Math.min(capacidades.zoom.max, Math.max(capacidades.zoom.min, 1.3));
-        }
-        if (Object.keys(configuracao).length > 0) {
-            await faixa.applyConstraints({ advanced: [configuracao] });
-        }
-    } catch (erro) {
-        console.info("Alguns ajustes automáticos de câmera não estão disponíveis:", erro);
-    }
-}
-
-async function alternarLuzLeitor(ativar) {
-    if (!streamLeitorCodigo) return false;
-    const faixa = streamLeitorCodigo.getVideoTracks()[0];
-    if (!faixa || typeof faixa.getCapabilities !== "function") return false;
-
-    try {
-        const capacidades = faixa.getCapabilities();
-        if (!capacidades.torch) return false;
-        await faixa.applyConstraints({ advanced: [{ torch: Boolean(ativar) }] });
-        return true;
-    } catch (erro) {
-        console.info("Lanterna indisponível:", erro);
-        return false;
-    }
-}
-
-/* =========================================================
-DETECÇÃO AUTOMÁTICA — CONTÍNUA E SEM SOBREPOSIÇÃO
-========================================================= */
-
-async function iniciarDeteccaoCodigoBarras() {
-    if (!streamLeitorCodigo) return;
-    if (!detectorCodigoBarras) detectorCodigoBarras = await criarDetectorCodigoBarras();
-
-    const video = document.getElementById("videoLeitorCodigo");
-    const mensagem = document.getElementById("mensagemLeitorCodigo");
-    if (!video) return;
-
-    if (!detectorCodigoBarras) {
-        if (mensagem) {
-            mensagem.style.setProperty("display", "flex", "important");
-            mensagem.innerHTML = `
-                <div style="padding:20px;text-align:center;line-height:1.5">
-                    <strong>Leitura automática indisponível</strong><br><br>
-                    Este navegador não oferece suporte à leitura automática.
-                    Você pode digitar o código no campo do produto ou usar
-                    um leitor USB/Bluetooth.
-                </div>`;
-        }
-        return;
-    }
-
-    const sessaoAtual = sessaoLeitorCodigo;
-    lendoCodigoBarras = true;
-    processandoCodigoBarras = false;
-    detectorEmExecucao = false;
-    ultimoCodigoDetectado = "";
-    tempoUltimaLeitura = 0;
-    let ultimaVerificacao = 0;
-
-    async function procurarCodigo() {
-        if (!lendoCodigoBarras || sessaoAtual !== sessaoLeitorCodigo) return;
-
-        if (!streamLeitorCodigo || !video.srcObject ||
-            video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
-            video.videoWidth === 0 || video.videoHeight === 0) {
-            if (lendoCodigoBarras) frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
-            return;
-        }
-
-        const agora = Date.now();
-        if (agora - ultimaVerificacao < 90) {
-            frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
-            return;
-        }
-        ultimaVerificacao = agora;
-
-        if (detectorEmExecucao) {
-                        frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
-            return;
-        }
-
-        detectorEmExecucao = true;
-        try {
-            const resultados = await detectorCodigoBarras.detect(video);
-            if (!lendoCodigoBarras || sessaoAtual !== sessaoLeitorCodigo ||
-                processandoCodigoBarras || !resultados || resultados.length === 0) return;
-
-            const resultado = resultados.find(item => item && item.rawValue);
-            const codigo = resultado ? String(resultado.rawValue).trim() : "";
-            if (!codigo) return;
-
-            const instante = Date.now();
-            if (codigo === ultimoCodigoDetectado && instante - tempoUltimaLeitura < 1200) return;
-
-            ultimoCodigoDetectado = codigo;
-            tempoUltimaLeitura = instante;
-            processandoCodigoBarras = true;
-            codigoEncontrado(codigo);
-        } catch (erro) {
-            // Falha em um quadro não encerra o leitor.
-        } finally {
-            detectorEmExecucao = false;
-            if (lendoCodigoBarras && sessaoAtual === sessaoLeitorCodigo) {
-                frameLeituraCodigo = requestAnimationFrame(procurarCodigo);
+            if (!descricao) {
+                alert("Informe uma descrição para a movimentação.");
+                elementos.descricaoMovimentacao?.focus();
+                return;
             }
-        }
-    }
-    procurarCodigo();
-}
 
-/* =========================================================
-CÓDIGO ENCONTRADO
-========================================================= */
+            const movimentacoes = lerMovimentacoes();
 
-function codigoEncontrado(codigo) {
-    if (!lendoCodigoBarras || !processandoCodigoBarras) return;
-    if (codigo === undefined || codigo === null) {
-        processandoCodigoBarras = false;
-        return;
-    }
+            if (idMovimentacaoEmEdicao) {
+                const indice = movimentacoes.findIndex(item =>
+                    String(item.id) === String(idMovimentacaoEmEdicao)
+                );
 
-    const codigoLimpo = String(codigo).trim();
-    if (!codigoLimpo) {
-        processandoCodigoBarras = false;
-        return;
-    }
+                if (indice < 0) {
+                    alert("Não foi possível localizar a movimentação para editar.");
+                    return;
+                }
 
-    codigoBarrasLido = codigoLimpo;
-    lendoCodigoBarras = false;
-    if (frameLeituraCodigo !== null) {
-        cancelAnimationFrame(frameLeituraCodigo);
-        frameLeituraCodigo = null;
-    }
-
-    const campoCodigo = document.getElementById("codigoProduto");
-    if (campoCodigo) {
-        campoCodigo.value = codigoLimpo;
-        campoCodigo.dispatchEvent(new Event("input", { bubbles: true }));
-        campoCodigo.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-
-    pararLeitorCodigo();
-    const modalLeitor = document.getElementById("modalLeitorCodigo");
-    if (modalLeitor) {
-        modalLeitor.classList.remove("aberto");
-        modalLeitor.style.removeProperty("z-index");
-        modalLeitor.style.removeProperty("position");
-        modalLeitor.style.removeProperty("inset");
-    }
-
-    const modalCadastro = document.getElementById("modalProduto");
-    if (modalCadastro) {
-        modalCadastro.classList.add("aberto");
-        modalCadastro.style.setProperty("z-index", "1000", "important");
-    }
-    document.body.classList.add("modal-aberto");
-
-    setTimeout(() => {
-        const campo = document.getElementById("codigoProduto");
-        if (campo) {
-            campo.value = codigoLimpo;
-            campo.focus();
-            try { campo.setSelectionRange(campo.value.length, campo.value.length); }
-            catch (erro) { /* tipo de campo pode não permitir seleção */ }
-        }
-        processandoCodigoBarras = false;
-    }, 100);
-}
-
-/* =========================================================
-ABRIR LEITOR — CÂMERA TRASEIRA
-========================================================= */
-
-async function abrirLeitorCodigo() {
-    if (abrindoLeitorCodigo) return;
-    abrindoLeitorCodigo = true;
-
-    const modalLeitor = document.getElementById("modalLeitorCodigo");
-    const video = document.getElementById("videoLeitorCodigo");
-    const mensagem = document.getElementById("mensagemLeitorCodigo");
-    const moldura = document.getElementById("molduraCodigoBarras");
-    const modalCadastro = document.getElementById("modalProduto");
-
-    if (!modalLeitor || !video || !mensagem) {
-        abrindoLeitorCodigo = false;
-        console.error("Elementos do leitor de código não encontrados.");
-        alert("Não foi possível localizar os elementos do leitor.");
-        return;
-    }
-
-    if (modalLeitor.parentElement !== document.body) document.body.appendChild(modalLeitor);
-    pararLeitorCodigo();
-    abrindoLeitorCodigo = true;
-    lendoCodigoBarras = false;
-    processandoCodigoBarras = false;
-    detectorEmExecucao = false;
-    ultimoCodigoDetectado = "";
-    tempoUltimaLeitura = 0;
-    codigoBarrasLido = "";
-
-    if (modalCadastro) {
-        modalCadastro.classList.add("aberto");
-        modalCadastro.style.setProperty("z-index", "1000", "important");
-    }
-
-    modalLeitor.classList.add("aberto");
-    modalLeitor.style.setProperty("z-index", "99999", "important");
-    modalLeitor.style.setProperty("position", "fixed", "important");
-    modalLeitor.style.setProperty("inset", "0", "important");
-    document.body.classList.add("modal-aberto");
-
-    const conteudo = modalLeitor.querySelector(".estoque-modal-conteudo");
-    if (conteudo) {
-        conteudo.scrollTop = 0;
-        conteudo.style.setProperty("position", "relative", "important");
-        conteudo.style.setProperty("z-index", "100000", "important");
-    }
-
-    const area = document.getElementById("areaLeitorCodigo");
-    if (area) {
-        area.style.setProperty("position", "relative", "important");
-        area.style.setProperty("z-index", "100001", "important");
-        area.style.setProperty("overflow", "hidden", "important");
-    }
-
-    mensagem.textContent = "Abrindo câmera...";
-    mensagem.style.setProperty("display", "flex", "important");
-    mensagem.style.setProperty("position", "absolute", "important");
-    mensagem.style.setProperty("inset", "0", "important");
-    mensagem.style.setProperty("align-items", "center", "important");
-    mensagem.style.setProperty("justify-content", "center", "important");
-    mensagem.style.setProperty("z-index", "4", "important");
-
-    video.style.setProperty("display", "none", "important");
-    video.style.setProperty("visibility", "hidden", "important");
-    video.style.setProperty("opacity", "0", "important");
-    video.style.setProperty("position", "relative", "important");
-    video.style.setProperty("z-index", "2", "important");
-    video.style.setProperty("width", "100%", "important");
-    video.style.setProperty("height", "300px", "important");
-    video.style.setProperty("object-fit", "contain", "important");
-    video.style.setProperty("background", "#111", "important");
-
-    if (moldura) {
-        moldura.style.setProperty("display", "none", "important");
-        moldura.style.setProperty("position", "absolute", "important");
-        moldura.style.setProperty("z-index", "3", "important");
-        moldura.style.setProperty("pointer-events", "none", "important");
-    }
-
-    try {
-        if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") {
-            throw new Error("A câmera não é suportada neste navegador.");
-        }
-
-        const novoStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                                facingMode: { ideal: "environment" },
-                width: { ideal: 1920 },
-                height: { ideal: 1080 },
-                frameRate: { ideal: 30, max: 30 }
-            },
-            audio: false
-        });
-
-        if (!modalLeitor.classList.contains("aberto")) {
-            novoStream.getTracks().forEach(track => { try { track.stop(); } catch (erro) {} });
-            abrindoLeitorCodigo = false;
-            return;
-        }
-
-        streamLeitorCodigo = novoStream;
-        video.setAttribute("playsinline", "true");
-        video.setAttribute("autoplay", "true");
-        video.setAttribute("muted", "true");
-        video.playsInline = true;
-        video.autoplay = true;
-        video.muted = true;
-        video.srcObject = streamLeitorCodigo;
-
-        await new Promise(resolve => {
-            let finalizado = false;
-            const concluir = () => {
-                if (finalizado) return;
-                finalizado = true;
-                video.removeEventListener("loadedmetadata", concluir);
-                video.removeEventListener("loadeddata", concluir);
-                clearTimeout(temporizador);
-                resolve();
-            };
-            const temporizador = setTimeout(concluir, 5000);
-            video.addEventListener("loadedmetadata", concluir, { once: true });
-            video.addEventListener("loadeddata", concluir, { once: true });
-        });
-
-        if (!modalLeitor.classList.contains("aberto") || !streamLeitorCodigo) {
-            pararLeitorCodigo();
-            return;
-        }
-
-        await video.play();
-        if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth === 0 || video.videoHeight === 0) {
-            await new Promise(resolve => {
-                let finalizado = false;
-                const concluir = () => {
-                    if (finalizado) return;
-                    finalizado = true;
-                    video.removeEventListener("loadeddata", concluir);
-                    clearTimeout(temporizador);
-                    resolve();
+                movimentacoes[indice] = {
+                    ...movimentacoes[indice],
+                    tipo: tipoMovimentacaoAtual,
+                    valor,
+                    formaPagamento: forma,
+                    descricao
                 };
-                const temporizador = setTimeout(concluir, 2500);
-                video.addEventListener("loadeddata", concluir, { once: true });
-            });
-        }
 
-        if (!modalLeitor.classList.contains("aberto") || !streamLeitorCodigo) {
-            pararLeitorCodigo();
-            return;
-        }
+                if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;
 
-        await otimizarCameraLeitor();
-        video.style.setProperty("display", "block", "important");
-        video.style.setProperty("visibility", "visible", "important");
-        video.style.setProperty("opacity", "1", "important");
-        video.style.setProperty("position", "relative", "important");
-        video.style.setProperty("z-index", "2", "important");
-        video.style.setProperty("width", "100%", "important");
-        video.style.setProperty("height", "300px", "important");
-        video.style.setProperty("object-fit", "contain", "important");
-        mensagem.style.setProperty("display", "none", "important");
-        if (moldura) {
-            moldura.style.setProperty("display", "block", "important");
-            moldura.style.setProperty("z-index", "3", "important");
-        }
-        await iniciarDeteccaoCodigoBarras();
+                fecharModalMovimentacao();
+                atualizarHistorico();
+                alert("Movimentação atualizada com sucesso!");
+            } else {
+                const dataISO = elementos.filtroData?.value || dataISOHoje();
+                const agora = new Date();
 
-    } catch (erro) {
-        console.error("Erro ao abrir câmera:", erro);
-        pararLeitorCodigo();
-        modalLeitor.classList.add("aberto");
-        modalLeitor.style.setProperty("z-index", "99999", "important");
-        mensagem.style.setProperty("display", "flex", "important");
-        mensagem.style.setProperty("position", "absolute", "important");
-        mensagem.style.setProperty("inset", "0", "important");
-        mensagem.style.setProperty("z-index", "4", "important");
+                const movimento = {
+                    id: criarId(),
+                    tipo: tipoMovimentacaoAtual,
+                    valor,
+                    formaPagamento: forma,
+                    descricao,
+                    data: formatarDataISO(dataISO),
+                    dataChave: dataISO,
+                    hora: agora.toLocaleTimeString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    })
+                };
 
-        let detalhe = "Confira as permissões da câmera e tente novamente.";
-        if (erro && (erro.name === "NotAllowedError" || erro.name === "PermissionDeniedError")) {
-            detalhe = "Verifique se o navegador tem permissão para acessar a câmera.";
-        } else if (erro && (erro.name === "NotFoundError" || erro.name === "DevicesNotFoundError")) {
-            detalhe = "Nenhuma câmera compatível foi encontrada no dispositivo.";
-        } else if (erro && erro.name === "NotReadableError") {
-            detalhe = "A câmera pode estar sendo usada por outro aplicativo.";
-        }
+                movimentacoes.push(movimento);
 
-        mensagem.innerHTML = `
-            <div style="padding:25px;text-align:center;color:#ffffff;line-height:1.5">
-                <strong style="display:block;margin-bottom:8px;font-size:15px">Não foi possível abrir a câmera.</strong>
-                ${escaparHTML(detalhe)}<br><br>
-                Se aparecer uma solicitação de permissão, toque em <strong>Permitir</strong>.
-            </div>`;
-    } finally {
-        abrindoLeitorCodigo = false;
-    }
-}
+                if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;
 
-/* =========================================================
-FECHAR LEITOR
-========================================================= */
+                fecharModalMovimentacao();
+                atualizarHistorico();
 
-function fecharLeitorCodigo() {
-    pararLeitorCodigo();
-    processandoCodigoBarras = false;
-    detectorEmExecucao = false;
-
-    const modalLeitor = document.getElementById("modalLeitorCodigo");
-    if (modalLeitor) {
-        modalLeitor.classList.remove("aberto");
-        modalLeitor.style.removeProperty("z-index");
-        modalLeitor.style.removeProperty("position");
-        modalLeitor.style.removeProperty("inset");
-    }
-
-    const modalCadastro = document.getElementById("modalProduto");
-    if (modalCadastro && modalCadastro.classList.contains("aberto")) {
-        modalCadastro.style.setProperty("z-index", "1000", "important");
-        document.body.classList.add("modal-aberto");
-        setTimeout(() => {
-            const campo = document.getElementById("codigoProduto");
-            if (campo) {
-                if (codigoBarrasLido) campo.value = codigoBarrasLido;
-                campo.focus();
+                alert(
+                    tipoMovimentacaoAtual === "entrada"
+                        ? "Entrada registrada com sucesso!"
+                        : "Saída registrada com sucesso!"
+                );
             }
-        }, 100);
-        return;
+
+            idMovimentacaoEmEdicao = null;
+        });
     }
 
-    if (!document.querySelector(".estoque-modal.aberto")) {
-        document.body.classList.remove("modal-aberto");
+    /* =========================
+       DETALHES DO LANÇAMENTO
+    ========================= */
+
+    function abrirDetalhes(registro) {
+        if (!registro || !elementos.modalDetalhes) return;
+
+        lancamentoSelecionado = registro;
+
+        if (elementos.detalhesIcone) elementos.detalhesIcone.textContent = iconeRegistro(registro);
+        if (elementos.detalhesTipo) elementos.detalhesTipo.textContent = nomeTipoRegistro(registro);
+
+        const sinal = registro.categoria === "saida" ? "− " :
+            registro.categoria === "entrada" ? "+ " : "";
+
+        if (elementos.detalhesValor) {
+            elementos.detalhesValor.textContent = ehRegistroEstoque(registro)
+                ? obterQuantidadeTexto(registro)
+                : sinal + moeda(registro.valor);
+        }
+
+        if (elementos.detalhesForma) {
+            elementos.detalhesForma.textContent = ehRegistroEstoque(registro)
+                ? obterVariacaoEstoque(registro) || "Movimentação de estoque"
+                : nomePagamento(registro.forma);
+        }
+
+        if (elementos.detalhesDescricao) {
+            elementos.detalhesDescricao.textContent = registro.descricao || "Sem descrição";
+        }
+
+        if (elementos.detalhesDataHora) {
+            elementos.detalhesDataHora.textContent =
+                `${formatarDataISO(registro.dataISO)}${registro.hora ? " às " + registro.hora : ""}`;
+        }
+
+        const ehMovimentacaoManual =
+            registro.categoria === "entrada" || registro.categoria === "saida";
+
+        if (elementos.btnExcluirDetalhe) {
+            elementos.btnExcluirDetalhe.style.display = ehRegistroEstoque(registro) ? "none" : "";
+        }
+
+        if (elementos.btnEditarDetalhe) {
+            elementos.btnEditarDetalhe.style.display = ehMovimentacaoManual ? "" : "none";
+        }
+
+        elementos.modalDetalhes.classList.add("ativo");
     }
-}
 
-/* =========================================================
-FECHAMENTO DOS MODAIS
-========================================================= */
+    function fecharDetalhes() {
+        elementos.modalDetalhes?.classList.remove("ativo");
+        lancamentoSelecionado = null;
+    }
 
-function configurarFechamentoModais() {
-    document.addEventListener("click", event => {
-        const botao = event.target.closest("[data-fechar]");
-        if (botao) {
-            event.preventDefault();
-            event.stopPropagation();
-            const id = botao.getAttribute("data-fechar");
-            if (id === "modalLeitorCodigo") fecharLeitorCodigo();
-            else if (id) fecharModal(id);
+    elementos.btnFecharDetalhes?.addEventListener("click", fecharDetalhes);
+
+    elementos.modalDetalhes?.addEventListener("click", evento => {
+        if (evento.target === elementos.modalDetalhes) fecharDetalhes();
+    });
+
+    /* =========================
+       EXCLUIR REGISTRO (VENDA OU MOVIMENTAÇÃO FINANCEIRA)
+    ========================= */
+
+    function excluirRegistro(registro) {
+        if (!registro || ehRegistroEstoque(registro)) return;
+
+        const nomeTipo = registro.categoria === "venda"
+            ? "esta venda"
+            : (registro.categoria === "entrada" ? "esta entrada" : "esta saída");
+
+        const confirmado = confirm(
+            `Deseja excluir ${nomeTipo}?\n\n${registro.descricao}\n${moeda(registro.valor)}`
+        );
+
+        if (!confirmado) return;
+
+        if (registro.categoria === "venda") {
+            const vendas = lerVendas();
+            const original = registro.original;
+
+            let indice = vendas.findIndex(item =>
+                String(item.id ?? item.vendaId) === String(original?.id ?? original?.vendaId) &&
+                (original?.id !== undefined || original?.vendaId !== undefined)
+            );
+
+            if (indice < 0) {
+                indice = vendas.findIndex(item =>
+                    obterDataISO(item) === registro.dataISO &&
+                    obterValorVenda(item) === registro.valor &&
+                    obterPagamento(item) === registro.forma &&
+                    obterDescricao(item) === registro.descricao
+                );
+            }
+
+            if (indice < 0) {
+                alert("Não foi possível localizar esta venda para excluir.");
+                return;
+            }
+
+            vendas.splice(indice, 1);
+            if (!salvarJSON(CHAVE_VENDAS, vendas)) return;
+        } else {
+            const movimentacoes = lerMovimentacoes();
+            const original = registro.original;
+
+            let indice = movimentacoes.findIndex(item =>
+                String(item.id) === String(original?.id) && original?.id !== undefined
+            );
+
+            if (indice < 0) {
+                indice = movimentacoes.findIndex(item =>
+                    obterDataISO(item) === registro.dataISO &&
+                    numero(item.valor) === registro.valor &&
+                    obterTipoMovimentacao(item) === registro.categoria &&
+                    obterDescricao(item) === registro.descricao &&
+                    obterPagamento(item) === registro.forma
+                );
+            }
+
+            if (indice < 0) {
+                alert("Não foi possível localizar este lançamento para excluir.");
+                return;
+            }
+
+            movimentacoes.splice(indice, 1);
+            if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;
+        }
+
+        fecharDetalhes();
+        atualizarHistorico();
+        alert("Registro excluído com sucesso!");
+    }
+
+    elementos.btnExcluirDetalhe?.addEventListener("click", () => {
+        if (lancamentoSelecionado) excluirRegistro(lancamentoSelecionado);
+    });
+
+    /* =========================
+       EDITAR MOVIMENTAÇÃO NOS DETALHES
+    ========================= */
+
+    elementos.btnEditarDetalhe?.addEventListener("click", () => {
+        if (!lancamentoSelecionado) return;
+
+        const registro = lancamentoSelecionado;
+
+        if (registro.categoria !== "entrada" && registro.categoria !== "saida") {
+            alert("Apenas entradas e saídas manuais podem ser editadas.");
             return;
         }
 
-        const modal = event.target.closest(".estoque-modal");
-        if (modal && event.target === modal) {
-            if (modal.id === "modalLeitorCodigo") fecharLeitorCodigo();
-            else fecharModal(modal.id);
+        fecharDetalhes();
+        abrirModalMovimentacao(registro.categoria, registro);
+    });
+        /* =========================
+       EXPORTAR PDF COM DADOS DO ESTABELECIMENTO
+    ========================= */
+
+    async function exportarPDF() {
+        const dataISO = elementos.filtroData?.value || dataISOHoje();
+        const registros = obterRegistrosDoDia(dataISO);
+
+        if (registros.length === 0) {
+            const continuar = confirm(
+                "Não existem movimentações nesta data. Deseja gerar o relatório mesmo assim?"
+            );
+            if (!continuar) return;
         }
-    });
 
-    document.addEventListener("keydown", event => {
-        if (event.key !== "Escape") return;
-        const modal = document.querySelector(".estoque-modal.aberto");
-        if (!modal) return;
-        if (modal.id === "modalLeitorCodigo") fecharLeitorCodigo();
-        else fecharModal(modal.id);
-    });
-}
+        const nomeArquivo =
+            `Dr-Troco-Historico-${dataISO.split("-").reverse().join("-")}.pdf`;
 
+        // Dados cadastrados na página estabelecimento.html
+        let estabelecimento = {};
 
-/* =========================================================
-/* =========================================================
-RELATÓRIO DO ESTOQUE — EXPORTAÇÃO EM PDF
-========================================================= */
+        try {
+            estabelecimento = JSON.parse(
+                localStorage.getItem("drTroco_estabelecimento") || "{}"
+            );
 
-function obterRotuloTipoMovimento(tipo) {
-    const rotulos = {
-        cadastro: "Cadastro",
-        entrada: "Entrada",
-        saida: "Saída",
-        ajuste: "Ajuste",
-        exclusao: "Exclusão"
-    };
-    return rotulos[String(tipo || "").toLowerCase()] || String(tipo || "Movimentação");
-}
-
-function obterDataHoraRelatorio(movimento) {
-    const dataOriginal = movimento?.data || movimento?.created_at || movimento?.createdAt || "";
-    const horaOriginal = movimento?.hora || movimento?.hora_movimento || "";
-    let data = "—";
-    let hora = "—";
-
-    if (dataOriginal) {
-        const valor = String(dataOriginal);
-        const dataParte = valor.includes("T") ? valor.split("T")[0] : valor;
-        data = formatarDataBR(dataParte);
-        if (!horaOriginal && valor.includes("T")) {
-            hora = valor.split("T")[1].slice(0, 5) || "—";
+            if (
+                !estabelecimento ||
+                typeof estabelecimento !== "object" ||
+                Array.isArray(estabelecimento)
+            ) {
+                estabelecimento = {};
+            }
+        } catch (erro) {
+            console.error("Erro ao ler dados do estabelecimento:", erro);
+            estabelecimento = {};
         }
-    }
-    if (horaOriginal) hora = String(horaOriginal).slice(0, 8);
-    return { data, hora };
-}
 
-function configurarBotaoExportarPDF() {
-    const acoes = document.querySelector(".estoque-acoes");
-    if (!acoes || document.getElementById("btnExportarEstoquePDF")) return;
+        const dadosEstabelecimento = [
+            estabelecimento.nomeEstabelecimento,
+            estabelecimento.responsavelEstabelecimento
+                ? `Responsável: ${estabelecimento.responsavelEstabelecimento}`
+                : "",
+            estabelecimento.telefoneEstabelecimento
+                ? `Telefone: ${estabelecimento.telefoneEstabelecimento}`
+                : "",
+            estabelecimento.emailEstabelecimento
+                ? `E-mail: ${estabelecimento.emailEstabelecimento}`
+                : "",
+            estabelecimento.enderecoEstabelecimento,
+            [
+                estabelecimento.cidadeEstabelecimento,
+                estabelecimento.estadoEstabelecimento
+            ].filter(Boolean).join(" - ")
+        ].filter(valor => String(valor || "").trim());
 
-    const botao = document.createElement("button");
-    botao.id = "btnExportarEstoquePDF";
-    botao.type = "button";
-    botao.className = "estoque-acao";
-    botao.innerHTML = '<span class="simbolo">📄</span> Exportar relatório PDF';
-    botao.style.gridColumn = "1 / -1";
-    botao.style.minHeight = "46px";
-    botao.style.color = "#176b45";
-    botao.style.background = "#eaf7ef";
-    botao.style.border = "1px solid #cdebd8";
-    botao.style.boxShadow = "none";
-    botao.style.fontWeight = "900";
-    botao.addEventListener("click", exportarRelatorioEstoquePDF);
-    acoes.appendChild(botao);
-}
+        const jsPDF = window.jspdf?.jsPDF || window.jsPDF;
 
-function exportarRelatorioEstoquePDF() {
-    if (!estoquePronto || !comercioIdEstoque) {
-        alert("O estoque precisa estar conectado para gerar o relatório. Verifique a conexão e atualize a página.");
-        return;
-    }
+        const saldoInicial = obterSaldoInicial(dataISO);
+        const registrosFinanceiros = registros.filter(item => !ehRegistroEstoque(item));
+        const vendas = registrosFinanceiros.filter(item => item.categoria === "venda");
+        const entradas = registrosFinanceiros.filter(item => item.categoria === "entrada");
+        const saidas = registrosFinanceiros.filter(item => item.categoria === "saida");
+        const movimentacoesEstoque = registros.filter(ehRegistroEstoque);
 
-    // As movimentações disponíveis neste arquivo são as confirmadas e guardadas
-    // no cache local separado por estabelecimento.
-    const movimentacoes = carregarMovimentacoes().slice().sort((a, b) => {
-        const dataA = `${a?.data || a?.created_at || ""} ${a?.hora || ""}`;
-        const dataB = `${b?.data || b?.created_at || ""} ${b?.hora || ""}`;
-        return dataB.localeCompare(dataA);
-    });
+        const totalDinheiro = vendas
+            .filter(item => item.forma === "dinheiro")
+            .reduce((soma, item) => soma + item.valor, 0);
 
-    const totalProdutos = produtos.length;
-    const totalUnidades = produtos.reduce((soma, produto) => soma + numeroSeguro(produto.quantidade), 0);
-    const totalValor = produtos.reduce((soma, produto) => soma + numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade), 0);
-    const totalAtencao = produtos.filter(produto => {
-        const status = obterStatusProduto(produto);
-        return status.classe === "baixo" || status.classe === "zero" || status.classe === "vencido" || status.classe === "a-vencer";
-    }).length;
+        const entradasDinheiro = entradas
+            .filter(item => item.forma === "dinheiro")
+            .reduce((soma, item) => soma + item.valor, 0);
 
-    const contagemMovimentos = {
-        entrada: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "entrada").length,
-        saida: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "saida").length,
-        ajuste: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "ajuste").length,
-        cadastro: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "cadastro").length,
-        exclusao: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "exclusao").length
-    };
+        const saidasDinheiro = saidas
+            .filter(item => item.forma === "dinheiro")
+            .reduce((soma, item) => soma + item.valor, 0);
 
-    const linhasProdutos = produtos.slice().sort((a, b) =>
-        String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR")
-    ).map(produto => {
-        const status = obterStatusProduto(produto);
-        const quantidade = numeroSeguro(produto.quantidade);
-        const preco = numeroSeguro(produto.preco);
-        const tipo = produto.tipo === "perecivel" ? "Perecível" : "Não perecível";
-        return `
-            <tr>
-                <td>${escaparHTML(produto.nome || "—")}</td>
-                <td>${escaparHTML(produto.codigo || "—")}</td>
-                <td>${tipo}</td>
-                <td class="numero">${quantidade}</td>
-                <td class="numero">${numeroSeguro(produto.estoqueMinimo)}</td>
-                <td class="numero">${formatarReal(preco)}</td>
-                <td class="numero">${formatarReal(preco * quantidade)}</td>
-                <td>${escaparHTML(status.texto)}</td>
-                <td>${produto.validade ? formatarDataBR(produto.validade) : "—"}</td>
-            </tr>`;
-    }).join("");
+        const saldoFinal =
+            saldoInicial + totalDinheiro + entradasDinheiro - saidasDinheiro;
 
-    const linhasMovimentacoes = movimentacoes.map(movimento => {
-        const quando = obterDataHoraRelatorio(movimento);
-        return `
-            <tr>
-                <td>${escaparHTML(quando.data)}</td>
-                <td>${escaparHTML(quando.hora)}</td>
-                <td>${escaparHTML(obterRotuloTipoMovimento(movimento.tipo))}</td>
-                <td>${escaparHTML(movimento.produtoNome || movimento.nomeProduto || "Produto não informado")}</td>
-                <td class="numero">${numeroSeguro(movimento.quantidade)}</td>
-                <td class="numero">${movimento.quantidadeAnterior === undefined ? "—" : numeroSeguro(movimento.quantidadeAnterior)}</td>
-                <td class="numero">${movimento.quantidadeNova === undefined ? "—" : numeroSeguro(movimento.quantidadeNova)}</td>
-            </tr>`;
-    }).join("");
+        const totalVendido = vendas.reduce((soma, item) => soma + item.valor, 0);
+        const totalEntradas = entradas.reduce((soma, item) => soma + item.valor, 0);
+        const totalSaidas = saidas.reduce((soma, item) => soma + item.valor, 0);
 
-    const geradoEm = new Date().toLocaleString("pt-BR");
-    const janela = window.open("", "_blank");
-    if (!janela) {
-        alert("O navegador bloqueou a janela do relatório. Permita pop-ups para este aplicativo e tente novamente.");
-        return;
-    }
+        const linhasResumo = [
+            `Saldo inicial: ${moeda(saldoInicial)}`,
+            `Total vendido: ${moeda(totalVendido)}`,
+            `Entradas: ${moeda(totalEntradas)}`,
+            `Saídas: ${moeda(totalSaidas)}`,
+            `Saldo final físico: ${moeda(saldoFinal)}`
+        ];
 
-    const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Relatório de Estoque - Dr. Troco</title>
-<style>
-    @page { size: A4 landscape; margin: 12mm; }
-    * { box-sizing: border-box; }
-    body { font-family: Arial, Helvetica, sans-serif; color: #253542; margin: 0; font-size: 10px; }
-    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 3px solid #218653; padding-bottom: 12px; margin-bottom: 14px; }
-    h1 { margin: 0 0 4px; color: #176b45; font-size: 22px; }
-    h2 { margin: 22px 0 9px; color: #176b45; font-size: 15px; page-break-after: avoid; }
-    p { margin: 3px 0; color: #667581; }
-    .gerado { text-align: right; white-space: nowrap; }
-    .resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0; }
-    .kpi { border: 1px solid #dce8e1; background: #f4faf6; border-radius: 7px; padding: 10px; }
-    .kpi span { display: block; color: #64756c; font-size: 9px; font-weight: bold; }
-    .kpi strong { display: block; margin-top: 5px; color: #176b45; font-size: 16px; }
-    .mov-resumo { display: flex; flex-wrap: wrap; gap: 7px; margin: 8px 0 12px; }
-    .mov-resumo span { padding: 6px 9px; border: 1px solid #dfe7e3; border-radius: 5px; background: #f8faf9; }
-    table { width: 100%; border-collapse: collapse; table-layout: auto; }
-    thead { display: table-header-group; }
-    th { background: #176b45; color: #fff; text-align: left; font-weight: bold; }
-    th, td { border: 1px solid #dbe2e6; padding: 6px 7px; vertical-align: top; }
-    tbody tr:nth-child(even) { background: #f6f8f7; }
-    .numero { text-align: right; white-space: nowrap; }
-    .vazio { padding: 14px; text-align: center; border: 1px dashed #cbd5d0; color: #697781; }
-    .nota { margin-top: 14px; padding: 9px; background: #fff8e8; border: 1px solid #eedeb1; color: #725c28; border-radius: 5px; }
-    footer { margin-top: 18px; border-top: 1px solid #dbe2e6; padding-top: 7px; color: #78848b; font-size: 8px; }
-    .acoes { margin: 0 0 14px; }
-    .acoes button { background: #176b45; color: #fff; border: 0; border-radius: 6px; padding: 9px 14px; font-weight: bold; }
-    @media print { .acoes { display: none; } h2 { page-break-after: avoid; } tr { page-break-inside: avoid; } }
-</style>
-</head>
-<body>
-<div class="acoes"><button onclick="window.print()">Imprimir / Salvar como PDF</button></div>
-<header>
-    <div><h1>Dr. Troco — Relatório de Estoque</h1><p>Posição atual do estoque e histórico de movimentações</p><p>Estabelecimento: ${escaparHTML(String(comercioIdEstoque))}</p></div>
-    <div class="gerado"><strong>Relatório gerado em</strong><p>${escaparHTML(geradoEm)}</p></div>
-</header>
-<section class="resumo">
-    <div class="kpi"><span>PRODUTOS CADASTRADOS</span><strong>${totalProdutos}</strong></div>
-    <div class="kpi"><span>UNIDADES EM ESTOQUE</span><strong>${totalUnidades}</strong></div>
-    <div class="kpi"><span>VALOR ESTIMADO DO ESTOQUE</span><strong>${formatarReal(totalValor)}</strong></div>
-    <div class="kpi"><span>PRODUTOS QUE EXIGEM ATENÇÃO</span><strong>${totalAtencao}</strong></div>
-</section>
-<h2>Resumo das movimentações</h2>
-<div class="mov-resumo">
-    <span>Entradas: <strong>${contagemMovimentos.entrada}</strong></span>
-    <span>Saídas: <strong>${contagemMovimentos.saida}</strong></span>
-    <span>Ajustes: <strong>${contagemMovimentos.ajuste}</strong></span>
-    <span>Cadastros: <strong>${contagemMovimentos.cadastro}</strong></span>
-    <span>Exclusões: <strong>${contagemMovimentos.exclusao}</strong></span>
-    <span>Total: <strong>${movimentacoes.length}</strong></span>
-</div>
-        <h2>Produtos e posição atual</h2>
-${produtos.length ? `<table><thead><tr><th>Produto</th><th>Código</th><th>Tipo</th><th>Qtd.</th><th>Mínimo</th><th>Preço un.</th><th>Valor total</th><th>Status</th><th>Validade</th></tr></thead><tbody>${linhasProdutos}</tbody></table>` : '<div class="vazio">Nenhum produto cadastrado.</div>'}
-<h2>Histórico de movimentações</h2>
-${movimentacoes.length ? `<table><thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Produto</th><th>Qtd. mov.</th><th>Qtd. anterior</th><th>Qtd. nova</th></tr></thead><tbody>${linhasMovimentacoes}</tbody></table>` : '<div class="vazio">Nenhuma movimentação disponível no histórico local deste estabelecimento.</div>'}
-<div class="nota"><strong>Observação:</strong> o histórico exportado corresponde às movimentações disponíveis no cache deste dispositivo. O relatório não altera nem exclui dados do estoque.</div>
-<footer>Dr. Troco • Relatório gerado localmente em ${escaparHTML(geradoEm)}</footer>
-</body>
-</html>`;
+        function descricaoRegistroPDF(registro) {
+            if (ehRegistroEstoque(registro)) {
+                return `${nomeTipoRegistro(registro)} | ${registro.descricao} | ${obterQuantidadeTexto(registro)} | ${obterVariacaoEstoque(registro)} | ${registro.hora || "Sem horário"}`;
+            }
 
-    janela.document.open();
-    janela.document.write(html);
-    janela.document.close();
-    janela.focus();
-    setTimeout(() => {
-        try { janela.print(); }
-        catch (erro) { console.error("Não foi possível abrir a impressão do relatório:", erro); }
-    }, 500);
-}
-
-/* =========================================================
-CONFIGURAÇÕES DE BOTÕES
-========================================================= */
-
-function configurarBotoes() {
-    const cadastrar = document.getElementById("btnCadastrarProduto");
-    const entrada = document.getElementById("btnEntradaEstoque");
-    const saida = document.getElementById("btnSaidaEstoque");
-    const btnConfirmarMovimento = document.getElementById("btnConfirmarMovimento");
-    const editarDetalhes = document.getElementById("btnEditarDetalhes");
-    const excluirDetalhes = document.getElementById("btnExcluirDetalhes");
-    const confirmarQuantidade = document.getElementById("btnConfirmarQuantidade");
-    const btnConfirmarExclusao = document.getElementById("btnConfirmarExclusao");
-    const form = document.getElementById("formProduto");
-    const lerCodigo = document.getElementById("btnLerCodigoBarras");
-    const fecharLeitor = document.getElementById("btnFecharLeitorCodigo");
-    configurarBotaoExportarPDF();
-
-    if (cadastrar) cadastrar.addEventListener("click", abrirCadastroProduto);
-    if (entrada) entrada.addEventListener("click", () => abrirMovimento("entrada"));
-    if (saida) saida.addEventListener("click", () => abrirMovimento("saida"));
-    if (btnConfirmarMovimento) btnConfirmarMovimento.addEventListener("click", confirmarMovimento);
-
-    if (editarDetalhes) {
-        editarDetalhes.addEventListener("click", () => {
-            if (!produtoDetalhesAtual) return;
-            const id = produtoDetalhesAtual.id;
-            fecharModal("modalDetalhes");
-            abrirEdicaoProduto(id);
-        });
-    }
-
-    if (excluirDetalhes) excluirDetalhes.addEventListener("click", abrirConfirmacaoExclusao);
-    if (confirmarQuantidade) confirmarQuantidade.addEventListener("click", confirmarAjusteQuantidade);
-    if (btnConfirmarExclusao) btnConfirmarExclusao.addEventListener("click", confirmarExclusao);
-    if (form) form.addEventListener("submit", salvarProduto);
-
-    if (lerCodigo) {
-        lerCodigo.addEventListener("click", event => {
-            event.preventDefault();
-            event.stopPropagation();
-            abrirLeitorCodigo();
-        });
-    }
-
-    if (fecharLeitor) {
-        fecharLeitor.addEventListener("click", event => {
-            event.preventDefault();
-            event.stopPropagation();
-            fecharLeitorCodigo();
-        });
-    }
-}
-
-/* =========================================================
-BUSCA DE MOVIMENTO
-========================================================= */
-
-function configurarBuscaMovimento() {
-    const campo = document.getElementById("buscaMovimento");
-    if (campo) campo.addEventListener("input", renderizarSelecaoProdutos);
-}
-
-/* =========================================================
-TECLADO DA LISTA
-========================================================= */
-
-function configurarTecladoLista() {
-    const lista = document.getElementById("listaProdutos");
-    if (!lista) return;
-
-    lista.addEventListener("keydown", event => {
-        const card = event.target.closest(".estoque-produto");
-        if (!card) return;
-        if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            abrirDetalhes(card.dataset.id);
+            return `${nomeTipoRegistro(registro)} | ${registro.descricao} | ${nomePagamento(registro.forma)} | ${registro.hora || "Sem horário"} | ${moeda(registro.valor)}`;
         }
-    });
-}
 
-/* =========================================================
-LIMPEZA DA CÂMERA
-========================================================= */
+        // Tenta gerar o PDF diretamente com jsPDF
+        if (jsPDF) {
+            try {
+                const doc = new jsPDF({ unit: "mm", format: "a4" });
+                const larguraPagina = doc.internal.pageSize.getWidth();
+                const alturaPagina = doc.internal.pageSize.getHeight();
+                const margem = 14;
+                const larguraTexto = larguraPagina - margem * 2;
+                let y = 18;
 
-function configurarLimpezaCamera() {
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden) {
-            pararLeitorCodigo();
-            processandoCodigoBarras = false;
-            detectorEmExecucao = false;
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(19);
+                doc.setTextColor(32, 167, 103);
+                doc.text("Dr. Troco — Histórico", margem, y);
+                y += 9;
+
+                // Cabeçalho do estabelecimento
+                if (dadosEstabelecimento.length > 0) {
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(12);
+                    doc.setTextColor(38, 54, 64);
+
+                    const nome = dadosEstabelecimento[0];
+                    const linhasNome = doc.splitTextToSize(String(nome), larguraTexto);
+                    doc.text(linhasNome, margem, y);
+                    y += linhasNome.length * 5 + 1;
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(9);
+                    doc.setTextColor(80, 90, 85);
+
+                    dadosEstabelecimento.slice(1).forEach(informacao => {
+                        const linhas = doc.splitTextToSize(String(informacao), larguraTexto);
+
+                        if (y + linhas.length * 4 > alturaPagina - 20) {
+                            doc.addPage();
+                            y = 18;
+                        }
+
+                        doc.text(linhas, margem, y);
+                        y += linhas.length * 4 + 1;
+                    });
+
+                    y += 3;
+                }
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.setTextColor(80, 90, 85);
+                doc.text(
+                    `Data do relatório: ${formatarDataISO(dataISO)}`,
+                    margem,
+                    y
+                );
+                y += 9;
+
+                // Resumo financeiro
+                doc.setFontSize(11);
+                doc.setTextColor(38, 54, 64);
+
+                linhasResumo.forEach(linha => {
+                    if (y > alturaPagina - 20) {
+                        doc.addPage();
+                        y = 18;
+                    }
+
+                    doc.text(linha, margem, y);
+                    y += 7;
+                });
+
+                y += 5;
+
+                if (y > alturaPagina - 25) {
+                    doc.addPage();
+                    y = 18;
+                }
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(13);
+                doc.text("Registros do dia", margem, y);
+                y += 8;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+
+                if (registros.length === 0) {
+                    doc.text("Nenhuma movimentação nesta data.", margem, y);
+                }
+
+                registros.forEach(registro => {
+                    const linhas = doc.splitTextToSize(
+                        descricaoRegistroPDF(registro),
+                        larguraTexto
+                    );
+
+                    const alturaBloco = linhas.length * 5 + 3;
+
+                    if (y + alturaBloco > alturaPagina - 15) {
+                        doc.addPage();
+                        y = 18;
+                    }
+
+                    doc.text(linhas, margem, y);
+                    y += alturaBloco;
+                });
+
+                if (movimentacoesEstoque.length > 0) {
+                    y += 3;
+
+                    if (y > alturaPagina - 20) {
+                        doc.addPage();
+                        y = 18;
+                    }
+
+                    doc.setFont("helvetica", "italic");
+                    doc.setFontSize(8);
+                    doc.text(
+                        "As movimentações de estoque são informativas e não compõem o resumo financeiro do caixa.",
+                        margem,
+                        y
+                    );
+                }
+
+                doc.save(nomeArquivo);
+                return;
+
+            } catch (erro) {
+                console.error("Erro ao criar PDF:", erro);
+                alert(
+                    "Não foi possível criar o PDF diretamente. " +
+                    "O navegador tentará abrir a impressão."
+                );
+            }
         }
-    });
 
-    window.addEventListener("pagehide", () => {
-        pararLeitorCodigo();
-        processandoCodigoBarras = false;
-        detectorEmExecucao = false;
-    });
-}
+        // Alternativa: abrir a versão para impressão
+        const janela = window.open("", "_blank");
 
-/* =========================================================
-INICIALIZAÇÃO
-========================================================= */
+        if (!janela) {
+            alert(
+                "O navegador bloqueou a janela de impressão. " +
+                "Permita pop-ups e tente novamente."
+            );
+            return;
+        }
 
-async function inicializarEstoque() {
-    estoqueCarregando = true;
-    const lista = document.getElementById("listaProdutos");
-    if (lista) {
-        lista.innerHTML = `
-            <div class="estoque-vazio">
-                <div class="estoque-vazio-icone">☁️</div>
-                <strong>Carregando estoque...</strong>
-                <span>Buscando os produtos deste estabelecimento.</span>
-            </div>`;
+        const linhasHTML = registros.map(registro => {
+            const ehEstoque = ehRegistroEstoque(registro);
+
+            const detalhe = ehEstoque
+                ? `${obterQuantidadeTexto(registro)} · ${obterVariacaoEstoque(registro)}`
+                : nomePagamento(registro.forma);
+
+            const valorExibido = ehEstoque ? "—" : moeda(registro.valor);
+
+            return `
+                <tr>
+                    <td>${escaparHTML(nomeTipoRegistro(registro))}</td>
+                    <td>${escaparHTML(registro.descricao)}</td>
+                    <td>${escaparHTML(detalhe)}</td>
+                    <td>${escaparHTML(registro.hora || "—")}</td>
+                    <td>${escaparHTML(valorExibido)}</td>
+                </tr>
+            `;
+        }).join("");
+
+        const dadosEstabelecimentoHTML = dadosEstabelecimento
+            .map((informacao, indice) => indice === 0
+                ? `<h2>${escaparHTML(informacao)}</h2>`
+                : `<p>${escaparHTML(informacao)}</p>`
+            ).join("");
+
+        janela.document.write(`
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${escaparHTML(nomeArquivo)}</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 25px;
+                        color: #263640;
+                    }
+
+                    h1 {
+                        color: #168b53;
+                        margin-bottom: 8px;
+                    }
+
+                    h2 {
+                        font-size: 17px;
+                        margin: 12px 0 6px;
+                    }
+
+                    p {
+                        color: #52635b;
+                        margin: 4px 0;
+                        font-size: 12px;
+                        overflow-wrap: anywhere;
+                    }
+
+                    .resumo {
+                        margin-top: 18px;
+                        padding: 12px;
+                        background: #eaf8f1;
+                        border-radius: 6px;
+                    }
+
+                    .resumo p {
+                        margin: 7px 0;
+                    }
+
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }
+
+                    th, td {
+                        padding: 9px 6px;
+                        border-bottom: 1px solid #ddd;
+                        text-align: left;
+                        font-size: 11px;
+                        overflow-wrap: anywhere;
+                    }
+
+                    th {
+                        background: #eaf8f1;
+                    }
+
+                    .nota {
+                        margin-top: 14px;
+                        font-size: 10px;
+                        color: #667;
+                    }
+
+                    @media print {
+                        body {
+                            padding: 0;
+                        }
+
+                        tr {
+                            break-inside: avoid;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Dr. Troco — Histórico</h1>
+
+                ${dadosEstabelecimentoHTML}
+
+                <p>
+                    Data do relatório:
+                    ${escaparHTML(formatarDataISO(dataISO))}
+                </p>
+
+                <p>Quantidade de registros: ${registros.length}</p>
+
+                <section class="resumo">
+                    <strong>Resumo financeiro</strong>
+                    ${linhasResumo.map(linha =>
+                        `<p>${escaparHTML(linha)}</p>`
+                    ).join("")}
+                </section>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Descrição / Produto</th>
+                            <th>Pagamento / Quantidade</th>
+                            <th>Hora</th>
+                            <th>Valor financeiro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${linhasHTML || `
+                            <tr>
+                                <td colspan="5">Nenhum registro nesta data.</td>
+                            </tr>
+                        `}
+                    </tbody>
+                </table>
+
+                ${movimentacoesEstoque.length > 0
+                    ? '<p class="nota">As movimentações de estoque são informativas e não compõem o resumo financeiro do caixa.</p>'
+                    : ''}
+
+                <script>
+                    window.onload = function() {
+                        window.print();
+                    };
+                <\/script>
+            </body>
+            </html>
+        `);
+
+        janela.document.close();
     }
 
-    // Registra os eventos uma única vez, antes da consulta remota.
-    configurarBotoes();
-    configurarBusca();
-    configurarBuscaMovimento();
-    configurarFiltros();
-    configurarFechamentoModais();
-    configurarFotoProduto();
-    configurarTipoProduto();
-    configurarTecladoLista();
-    configurarLimpezaCamera();
-    atualizarBotaoMovimento();
+    elementos.btnExportarPDF?.addEventListener("click", exportarPDF);
 
-    await carregarProdutos();
-}
+    /* =========================
+       TECLA ESC FECHA OS MODAIS
+    ========================= */
 
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", inicializarEstoque);
-} else {
-    inicializarEstoque();
-}
+    document.addEventListener("keydown", evento => {
+        if (evento.key !== "Escape") return;
+
+        fecharModalMovimentacao();
+        fecharDetalhes();
+    });
+
+    /* =========================
+       INICIALIZAÇÃO
+    ========================= */
+
+    atualizarHistorico();
+});
