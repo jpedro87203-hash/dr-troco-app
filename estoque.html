@@ -694,56 +694,46 @@
             visibility: visible;
         }
 
-        
-            
-.estoque-modal-conteudo {
-    width: 100%;
-    max-width: 600px;
+        .estoque-modal-conteudo {
+            width: 100%;
+            max-width: 600px;
+            max-height: 85vh;
+            max-height: 85dvh;
 
-    /* Limita a altura à área visível do celular */
-    max-height: 85vh;
-    max-height: 85dvh;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
 
-    /* O formulário rola dentro do modal */
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+            padding: 18px 18px calc(28px + env(safe-area-inset-bottom));
 
-    padding: 18px 18px calc(28px + env(safe-area-inset-bottom));
+            border-radius: 23px;
+            background: #ffffff;
 
-    border-radius: 23px;
-    background: #ffffff;
+            box-shadow: 0 20px 60px rgba(10, 25, 35, .20);
 
-    box-shadow: 0 20px 60px rgba(10, 25, 35, .20);
+            transform: translateY(18px);
+            transition: transform .22s ease;
+        }
 
-    transform: translateY(18px);
-    transition: transform .22s ease;
-}
+        .estoque-form-acoes {
+            position: relative;
+            z-index: 2;
+            padding-bottom: 8px;
+        }
 
-      
-/* Espaço e proteção para os botões dos modais */
-.estoque-form-acoes {
-    position: relative;
-    z-index: 2;
-    padding-bottom: 8px;
-}
+        .estoque-modal {
+            padding-bottom: calc(85px + env(safe-area-inset-bottom));
+        }
 
-/* Evita que a barra inferior cubra o modal */
-.estoque-modal {
-    padding-bottom: calc(85px + env(safe-area-inset-bottom));
-}
+        @media (min-width: 600px) {
+            .estoque-modal {
+                padding: 14px;
+            }
 
-/* Em telas maiores, mantém o modal centralizado */
-@media (min-width: 600px) {
-    .estoque-modal {
-        padding: 14px;
-    }
-
-    .estoque-modal-conteudo {
-        max-height: 88vh;
-    }
-}
-
+            .estoque-modal-conteudo {
+                max-height: 88vh;
+            }
+        }
 
         .estoque-modal.aberto
         .estoque-modal-conteudo {
@@ -1520,12 +1510,6 @@
 
 
         /* =====================================================
-           NAVEGAÇÃO INFERIOR
-           Controlada pelo style.css.
-           ===================================================== */
-
-
-        /* =====================================================
            RESPONSIVO
            ===================================================== */
 
@@ -1876,6 +1860,20 @@
             id="listaProdutos"
             aria-live="polite"
         ></section>
+
+
+
+        <!-- =================================================
+             HISTÓRICO DE MOVIMENTAÇÕES (NOVO)
+             ================================================= -->
+
+        <section style="margin-top: 24px; padding: 20px; background: #fff; border-radius: 17px; box-shadow: 0 5px 17px rgba(28, 48, 62, .045); border: 1px solid rgba(39, 57, 69, .06);">
+            <h3 style="margin-top: 0; color: #2c3e4a; font-size: 15px; font-weight: 900; margin-bottom: 16px;">📋 Histórico de Movimentações</h3>
+            
+            <div id="listaHistoricoMovimentacoes" style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- As movimentações geradas aparecem aqui automaticamente -->
+            </div>
+        </section>
 
     </main>
 
@@ -2609,10 +2607,15 @@
             <span>📦</span>
             <small>Estoque</small>
         </a>
-<a href="fiado.html" class="menu-item">
-  <span>🧾</span>
-  <small>Fiado</small>
-</a>
+
+        <a
+            href="fiado.html"
+            class="menu-item"
+        >
+            <span>🧾</span>
+            <small>Fiado</small>
+        </a>
+
     </nav>
 
 
@@ -2621,13 +2624,12 @@
          SCRIPTS
          ===================================================== -->
 
-    
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
-<script src="estoque-supabase.js"></script>
-<script src="auth-guard.js"></script>
-<script src="protecao.js"></script>
-<script src="estoque.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script src="estoque-supabase.js"></script>
+    <script src="auth-guard.js"></script>
+    <script src="protecao.js"></script>
+    <script src="estoque.js"></script>
 
 </body>
 
