@@ -1,272 +1,4 @@
-/* =====================================================
-   DR. TROCO — HISTÓRICO
-   Compatível com historico.html
-   Armazenamento original preservado
-===================================================== */
-
-document.addEventListener("DOMContentLoaded", () => {
-    "use strict";
-
-    const CHAVE_VENDAS = "drTroco_vendas";
-    const CHAVE_MOVIMENTACOES = "drTroco_movimentacoes";
-    const CHAVE_SALDOS = "drTroco_saldosIniciais";
-
-    const $ = (id) => document.getElementById(id);
-
-    const elementos = {
-        filtroData: $("filtroData"),
-        btnHoje: $("btnHoje"),
-        btnExportarPDF: $("btnExportarPDF"),
-
-        listaHistorico: $("listaHistorico"),
-        relatorioHistorico: $("relatorioHistorico"),
-        dataRelatorio: $("dataRelatorio"),
-        quantidadeLancamentos: $("quantidadeLancamentos"),
-
-        saldoInicial: $("historicoSaldoInicial"),
-        saldoFinal: $("historicoSaldoFinal"),
-        dinheiro: $("historicoDinheiro"),
-        pix: $("historicoPix"),
-        debito: $("historicoDebito"),
-        credito: $("historicoCredito"),
-        total: $("historicoTotal"),
-        quantidade: $("historicoQuantidade"),
-        entradas: $("historicoEntradas"),
-        saidas: $("historicoSaidas"),
-
-        btnNovaEntrada: $("btnNovaEntrada"),
-        btnNovaSaida: $("btnNovaSaida"),
-        modalMovimentacao: $("modalMovimentacao"),
-        formMovimentacao: $("formMovimentacao"),
-        tituloModalMovimentacao: $("tituloModalMovimentacao"),
-        subtituloModalMovimentacao: $("subtituloModalMovimentacao"),
-        iconeModalMovimentacao: $("iconeModalMovimentacao"),
-        btnFecharModalMovimentacao: $("btnFecharModalMovimentacao"),
-        btnCancelarMovimentacao: $("btnCancelarMovimentacao"),
-        valorMovimentacao: $("valorMovimentacao"),
-        formaPagamentoMovimentacao: $("formaPagamentoMovimentacao"),
-        descricaoMovimentacao: $("descricaoMovimentacao"),
-
-        modalDetalhes: $("modalDetalhesMovimentacao"),
-        btnFecharDetalhes: $("btnFecharDetalhes"),
-        detalhesIcone: $("detalhesIcone"),
-        detalhesTipo: $("detalhesTipo"),
-        detalhesValor: $("detalhesValor"),
-        detalhesForma: $("detalhesForma"),
-        detalhesDescricao: $("detalhesDescricao"),
-        detalhesDataHora: $("detalhesDataHora"),
-        btnExcluirDetalhe: $("btnExcluirDetalhe"),
-        btnEditarDetalhe: $("btnEditarDetalhe")
-    };
-
-    let tipoMovimentacaoAtual = "entrada";
-    let lancamentoSelecionado = null;
-    let idMovimentacaoEmEdicao = null;
-
-    /* =========================
-       FUNÇÕES BÁSICAS
-    ========================= */
-
-    function lerJSON(chave, padrao = []) {
-        try {
-            const valor = localStorage.getItem(chave);
-
-            if (!valor) return padrao;
-
-            const resultado = JSON.parse(valor);
-
-            return resultado ?? padrao;
-        } catch (erro) {
-            console.error("Erro ao ler armazenamento:", chave, erro);
-            return padrao;
-        }
-    }
-
-    function salvarJSON(chave, valor) {
-        try {
-            localStorage.setItem(chave, JSON.stringify(valor));
-            return true;
-        } catch (erro) {
-            console.error("Erro ao salvar:", chave, erro);
-            alert("Não foi possível salvar os dados. Verifique o espaço disponível no aparelho.");
-            return false;
-        }
-    }
-
-    function lerVendas() {
-        const dados = lerJSON(CHAVE_VENDAS, []);
-        return Array.isArray(dados) ? dados : [];
-    }
-
-    function lerMovimentacoes() {
-        const dados = lerJSON(CHAVE_MOVIMENTACOES, []);
-        return Array.isArray(dados) ? dados : [];
-    }
-
-    function lerSaldos() {
-        const dados = lerJSON(CHAVE_SALDOS, {});
-        return dados && typeof dados === "object" && !Array.isArray(dados)
-            ? dados
-            : {};
-    }
-
-    function moeda(valor) {
-        const numero = Number(valor);
-
-        return (Number.isFinite(numero) ? numero : 0).toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL"
-        });
-    }
-
-    function numero(valor) {
-        if (typeof valor === "number") {
-            return Number.isFinite(valor) ? valor : 0;
-        }
-
-        if (valor === null || valor === undefined || valor === "") {
-            return 0;
-        }
-
-        if (typeof valor === "string") {
-            const texto = valor.trim();
-
-            if (texto.includes(",")) {
-                const convertido = Number(
-                    texto.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "")
-                );
-
-                return Number.isFinite(convertido) ? convertido : 0;
-            }
-        }
-
-        const convertido = Number(valor);
-        return Number.isFinite(convertido) ? convertido : 0;
-    }
-
-    function dataISOHoje() {
-        const agora = new Date();
-        const ano = agora.getFullYear();
-        const mes = String(agora.getMonth() + 1).padStart(2, "0");
-        const dia = String(agora.getDate()).padStart(2, "0");
-
-        return `${ano}-${mes}-${dia}`;
-    }
-
-    function formatarDataISO(iso) {
-        if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) {
-            return "Data não informada";
-        }
-
-        const [ano, mes, dia] = String(iso).split("-");
-        return `${dia}/${mes}/${ano}`;
-    }
-
-    function obterDataISO(registro) {
-        if (!registro || typeof registro !== "object") {
-            return "";
-        }
-
-        const candidatas = [
-            registro.dataChave,
-            registro.dataISO,
-            registro.data,
-            registro.dataVenda,
-            registro.dataMovimentacao,
-            registro.createdAt,
-            registro.timestamp
-        ];
-
-        for (const candidata of candidatas) {
-            if (!candidata) continue;
-
-            const texto = String(candidata);
-
-            if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
-                return texto;
-            }
-
-            const br = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-
-            if (br) {
-                return `${br[3]}-${br[2]}-${br[1]}`;
-            }
-
-            const data = new Date(candidata);
-
-            if (!Number.isNaN(data.getTime())) {
-                const ano = data.getFullYear();
-                const mes = String(data.getMonth() + 1).padStart(2, "0");
-                const dia = String(data.getDate()).padStart(2, "0");
-
-                return `${ano}-${mes}-${dia}`;
-            }
-        }
-
-        return "";
-    }
-
-    function obterHora(registro) {
-        if (registro.hora) return String(registro.hora);
-
-        if (registro.dataHora) {
-            const data = new Date(registro.dataHora);
-
-            if (!Number.isNaN(data.getTime())) {
-                return data.toLocaleTimeString("pt-BR", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                });
-            }
-        }
-
-        return "";
-    }
-
-    function obterValorVenda(venda) {
-        const campos = [
-            "total",
-            "valorTotal",
-            "totalVenda",
-            "valor",
-            "totalPagar",
-            "totalGeral"
-        ];
-
-        for (const campo of campos) {
-            if (venda[campo] !== undefined && venda[campo] !== null) {
-                return numero(venda[campo]);
-            }
-        }
-
-        return 0;
-    }
-
-    function obterPagamento(registro) {
-        const valor = String(
-            registro.formaPagamento ??
-            registro.pagamento ??
-            registro.tipoPagamento ??
-            registro.forma_pagamento ??
-            "dinheiro"
-        ).toLowerCase().trim();
-
-        if (valor.includes("pix")) return "pix";
-        if (valor.includes("debit")) return "debito";
-        if (valor.includes("credit")) return "credito";
-        if (valor.includes("dinheiro") || valor.includes("cash")) return "dinheiro";
-
-        return valor || "dinheiro";
-    }
-
-    function nomePagamento(forma) {
-        const nomes = {
-            dinheiro: "Dinheiro",
-            pix: "PIX",
-            debito: "Débito",
-            credito: "Crédito"
-        };
-
+```javascript
         return nomes[forma] || forma || "Não informado";
     }
 
@@ -274,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return String(
             registro.descricao ??
             registro.nome ??
+            registro.produtoNome ??
             registro.produto ??
             registro.observacao ??
             registro.itensResumo ??
@@ -289,11 +22,38 @@ document.addEventListener("DOMContentLoaded", () => {
             ""
         ).toLowerCase();
 
-        if (tipo.includes("saida") || tipo.includes("saída")) {
-            return "saida";
-        }
-
+        if (tipo.includes("saida") || tipo.includes("saída")) return "saida";
         return "entrada";
+    }
+
+    function obterTipoEstoque(movimento) {
+        const tipo = String(movimento?.tipo || "").toLowerCase().trim();
+
+        if (tipo.includes("saida") || tipo.includes("saída")) return "saida";
+        if (tipo.includes("entrada")) return "entrada";
+        if (tipo.includes("ajuste")) return "ajuste";
+        if (tipo.includes("cadastro")) return "cadastro";
+        if (tipo.includes("exclusao") || tipo.includes("exclusão")) return "exclusao";
+
+        return tipo || "movimentacao";
+    }
+
+    function ehRegistroEstoque(registro) {
+        return registro?.categoria === "estoque";
+    }
+
+    function obterQuantidadeTexto(registro) {
+        const quantidade = numero(registro.quantidade);
+        return `${quantidade} ${quantidade === 1 ? "unidade" : "unidades"}`;
+    }
+
+    function obterVariacaoEstoque(registro) {
+        const anterior = registro.quantidadeAnterior;
+        const nova = registro.quantidadeNova;
+
+        if (anterior === undefined || nova === undefined) return "";
+
+        return `Estoque: ${numero(anterior)} → ${numero(nova)} unidades`;
     }
 
     function escaparHTML(valor) {
@@ -305,7 +65,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 '"': "&quot;",
                 "'": "&#039;"
             };
-
             return mapa[caractere];
         });
     }
@@ -378,6 +137,28 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    function criarRegistroMovimentacaoEstoque(item, indice) {
+        const movimento = item.movimento;
+
+        return {
+            categoria: "estoque",
+            tipo: "estoque",
+            tipoEstoque: obterTipoEstoque(movimento),
+            id: movimento.id ?? `estoque_${indice}`,
+            original: movimento,
+            chaveOrigem: item.chave,
+            indiceOrigem: item.indice,
+            dataISO: obterDataISO(movimento),
+            hora: obterHora(movimento),
+            descricao: obterDescricao(movimento),
+            quantidade: numero(movimento.quantidade),
+            quantidadeAnterior: movimento.quantidadeAnterior,
+            quantidadeNova: movimento.quantidadeNova,
+            valor: 0,
+            forma: "estoque"
+        };
+    }
+
     function obterRegistrosDoDia(dataISO) {
         const vendas = lerVendas()
             .map(criarRegistroVenda)
@@ -387,22 +168,27 @@ document.addEventListener("DOMContentLoaded", () => {
             .map(criarRegistroMovimentacao)
             .filter(registro => registro.dataISO === dataISO);
 
-        return [...vendas, ...movimentacoes].sort((a, b) => {
+        const movimentacoesEstoque = lerMovimentacoesEstoque()
+            .map(criarRegistroMovimentacaoEstoque)
+            .filter(registro => registro.dataISO === dataISO);
+
+        return [...vendas, ...movimentacoes, ...movimentacoesEstoque].sort((a, b) => {
             const horaA = a.hora || "";
             const horaB = b.hora || "";
-
             return horaB.localeCompare(horaA);
         });
     }
 
     /* =========================
        RESUMO FINANCEIRO
+       Movimentações de estoque NÃO entram nos valores do caixa.
     ========================= */
 
     function atualizarResumo(registros, dataISO) {
-        const vendas = registros.filter(item => item.categoria === "venda");
-        const entradas = registros.filter(item => item.categoria === "entrada");
-        const saidas = registros.filter(item => item.categoria === "saida");
+        const registrosFinanceiros = registros.filter(item => !ehRegistroEstoque(item));
+        const vendas = registrosFinanceiros.filter(item => item.categoria === "venda");
+        const entradas = registrosFinanceiros.filter(item => item.categoria === "entrada");
+        const saidas = registrosFinanceiros.filter(item => item.categoria === "saida");
 
         const totalVendido = vendas.reduce((soma, item) => soma + item.valor, 0);
 
@@ -435,19 +221,22 @@ document.addEventListener("DOMContentLoaded", () => {
             .filter(item => item.forma === "dinheiro")
             .reduce((soma, item) => soma + item.valor, 0);
 
-        const saldoFinal =
-            saldoInicial + dinheiro + entradasDinheiro - saidasDinheiro;
+        const saldoFinal = saldoInicial + dinheiro + entradasDinheiro - saidasDinheiro;
 
-        elementos.saldoInicial.textContent = moeda(saldoInicial);
-        elementos.saldoFinal.textContent = moeda(saldoFinal);
-        elementos.dinheiro.textContent = moeda(dinheiro);
-        elementos.pix.textContent = moeda(pix);
-        elementos.debito.textContent = moeda(debito);
-        elementos.credito.textContent = moeda(credito);
-        elementos.total.textContent = moeda(totalVendido);
-        elementos.quantidade.textContent = `${vendas.length} venda${vendas.length === 1 ? "" : "s"}`;
-        elementos.entradas.textContent = moeda(totalEntradas);
-        elementos.saidas.textContent = moeda(totalSaidas);
+        if (elementos.saldoInicial) elementos.saldoInicial.textContent = moeda(saldoInicial);
+        if (elementos.saldoFinal) elementos.saldoFinal.textContent = moeda(saldoFinal);
+        if (elementos.dinheiro) elementos.dinheiro.textContent = moeda(dinheiro);
+        if (elementos.pix) elementos.pix.textContent = moeda(pix);
+        if (elementos.debito) elementos.debito.textContent = moeda(debito);
+        if (elementos.credito) elementos.credito.textContent = moeda(credito);
+        if (elementos.total) elementos.total.textContent = moeda(totalVendido);
+
+        if (elementos.quantidade) {
+            elementos.quantidade.textContent = `${vendas.length} venda${vendas.length === 1 ? "" : "s"}`;
+        }
+
+        if (elementos.entradas) elementos.entradas.textContent = moeda(totalEntradas);
+        if (elementos.saidas) elementos.saidas.textContent = moeda(totalSaidas);
 
         if (elementos.quantidadeLancamentos) {
             elementos.quantidadeLancamentos.textContent =
@@ -455,8 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (elementos.dataRelatorio) {
-            elementos.dataRelatorio.textContent =
-                `Relatório de ${formatarDataISO(dataISO)}`;
+            elementos.dataRelatorio.textContent = `Relatório de ${formatarDataISO(dataISO)}`;
         }
     }
 
@@ -466,12 +254,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function iconeRegistro(registro) {
         if (registro.categoria === "venda") return "🧾";
+
+        if (ehRegistroEstoque(registro)) {
+            if (registro.tipoEstoque === "entrada") return "📥";
+            if (registro.tipoEstoque === "saida") return "📤";
+            if (registro.tipoEstoque === "ajuste") return "🔧";
+            if (registro.tipoEstoque === "cadastro") return "📦";
+            if (registro.tipoEstoque === "exclusao") return "🗑️";
+            return "📦";
+        }
+
         if (registro.categoria === "entrada") return "↗";
         return "↘";
     }
 
     function nomeTipoRegistro(registro) {
         if (registro.categoria === "venda") return "Venda";
+
+        if (ehRegistroEstoque(registro)) {
+            const nomes = {
+                entrada: "Entrada no estoque",
+                saida: "Saída do estoque",
+                ajuste: "Ajuste de estoque",
+                cadastro: "Cadastro de produto",
+                exclusao: "Exclusão de produto"
+            };
+            return nomes[registro.tipoEstoque] || "Movimentação de estoque";
+        }
+
         if (registro.categoria === "entrada") return "Entrada no caixa";
         return "Saída do caixa";
     }
@@ -491,15 +301,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         elementos.listaHistorico.innerHTML = registros.map((registro, indice) => {
-            const corValor = registro.categoria === "saida" ? "#d94b4b" : "#168b53";
+            const ehEstoque = ehRegistroEstoque(registro);
+            const ehSaida = registro.categoria === "saida" ||
+                (ehEstoque && registro.tipoEstoque === "saida");
+            const corValor = ehSaida ? "#d94b4b" : "#168b53";
             const sinal = registro.categoria === "saida" ? "− " :
                 registro.categoria === "entrada" ? "+ " : "";
 
-            const detalhes = [
-                nomePagamento(registro.forma),
-                formatarDataISO(registro.dataISO),
-                registro.hora
-            ].filter(Boolean).join(" · ");
+            const detalhes = ehEstoque
+                ? ["Estoque", formatarDataISO(registro.dataISO), registro.hora].filter(Boolean).join(" · ")
+                : [nomePagamento(registro.forma), formatarDataISO(registro.dataISO), registro.hora].filter(Boolean).join(" · ");
+
+            const valorExibido = ehEstoque
+                ? obterQuantidadeTexto(registro)
+                : `${sinal}${moeda(registro.valor)}`;
 
             return `
                 <article class="item-historico"
@@ -523,17 +338,18 @@ document.addEventListener("DOMContentLoaded", () => {
                         </span>
                     </div>
 
-                    <strong class="valor-lancamento"
-                            style="color:${corValor}">
-                        ${sinal}${moeda(registro.valor)}
+                    <strong class="valor-lancamento" style="color:${corValor}">
+                        ${escaparHTML(valorExibido)}
                     </strong>
 
-                    <button type="button"
-                            class="lixeira-historico"
-                            data-indice="${indice}"
-                            aria-label="Excluir lançamento">
-                        🗑
-                    </button>
+                    ${ehEstoque ? "" : `
+                        <button type="button"
+                                class="lixeira-historico"
+                                data-indice="${indice}"
+                                aria-label="Excluir lançamento">
+                            🗑
+                        </button>
+                    `}
                 </article>
             `;
         }).join("");
@@ -541,7 +357,6 @@ document.addEventListener("DOMContentLoaded", () => {
         elementos.listaHistorico.querySelectorAll(".item-historico").forEach(item => {
             item.addEventListener("click", evento => {
                 if (evento.target.closest(".lixeira-historico")) return;
-
                 const indice = Number(item.dataset.indice);
                 abrirDetalhes(registros[indice]);
             });
@@ -560,10 +375,8 @@ document.addEventListener("DOMContentLoaded", () => {
         elementos.listaHistorico.querySelectorAll(".lixeira-historico").forEach(botao => {
             botao.addEventListener("click", evento => {
                 evento.stopPropagation();
-
                 const indice = Number(botao.dataset.indice);
                 const registro = registros[indice];
-
                 if (registro) excluirRegistro(registro);
             });
         });
@@ -572,7 +385,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function atualizarHistorico() {
         const dataISO = elementos.filtroData?.value || dataISOHoje();
         const registros = obterRegistrosDoDia(dataISO);
-
         atualizarResumo(registros, dataISO);
         renderizarHistorico(registros);
     }
@@ -583,16 +395,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (elementos.filtroData) {
         elementos.filtroData.value = dataISOHoje();
-
         elementos.filtroData.addEventListener("change", atualizarHistorico);
     }
 
     if (elementos.btnHoje) {
         elementos.btnHoje.addEventListener("click", () => {
-            if (elementos.filtroData) {
-                elementos.filtroData.value = dataISOHoje();
-            }
-
+            if (elementos.filtroData) elementos.filtroData.value = dataISOHoje();
             atualizarHistorico();
         });
     }
@@ -603,25 +411,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function abrirModalMovimentacao(tipo, movimentacaoParaEditar = null) {
         tipoMovimentacaoAtual = tipo;
-        idMovimentacaoEmEdicao = movimentacaoParaEditar ? (movimentacaoParaEditar.original?.id ?? movimentacaoParaEditar.id) : null;
+        idMovimentacaoEmEdicao = movimentacaoParaEditar
+            ? (movimentacaoParaEditar.original?.id ?? movimentacaoParaEditar.id)
+            : null;
 
-        if (elementos.formMovimentacao) {
-            elementos.formMovimentacao.reset();
-        }
+        if (elementos.formMovimentacao) elementos.formMovimentacao.reset();
 
         if (movimentacaoParaEditar) {
             if (elementos.tituloModalMovimentacao) {
-                elementos.tituloModalMovimentacao.textContent = tipo === "entrada" ? "Editar entrada" : "Editar saída";
+                elementos.tituloModalMovimentacao.textContent =
+                    tipo === "entrada" ? "Editar entrada" : "Editar saída";
             }
+
             if (elementos.subtituloModalMovimentacao) {
-                elementos.subtituloModalMovimentacao.textContent = "Altere os dados da movimentação.";
+                elementos.subtituloModalMovimentacao.textContent =
+                    "Altere os dados da movimentação.";
             }
+
             if (elementos.valorMovimentacao) {
                 elementos.valorMovimentacao.value = movimentacaoParaEditar.valor;
             }
+
             if (elementos.formaPagamentoMovimentacao) {
                 elementos.formaPagamentoMovimentacao.value = movimentacaoParaEditar.forma;
             }
+
             if (elementos.descricaoMovimentacao) {
                 elementos.descricaoMovimentacao.value = movimentacaoParaEditar.descricao;
             }
@@ -644,10 +458,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 tipo === "entrada" ? "↗" : "↘";
         }
 
-        if (elementos.modalMovimentacao) {
-            elementos.modalMovimentacao.classList.add("ativo");
-        }
-
+        elementos.modalMovimentacao?.classList.add("ativo");
         setTimeout(() => elementos.valorMovimentacao?.focus(), 100);
     }
 
@@ -664,20 +475,11 @@ document.addEventListener("DOMContentLoaded", () => {
         abrirModalMovimentacao("saida");
     });
 
-    elementos.btnFecharModalMovimentacao?.addEventListener(
-        "click",
-        fecharModalMovimentacao
-    );
-
-    elementos.btnCancelarMovimentacao?.addEventListener(
-        "click",
-        fecharModalMovimentacao
-    );
+    elementos.btnFecharModalMovimentacao?.addEventListener("click", fecharModalMovimentacao);
+    elementos.btnCancelarMovimentacao?.addEventListener("click", fecharModalMovimentacao);
 
     elementos.modalMovimentacao?.addEventListener("click", evento => {
-        if (evento.target === elementos.modalMovimentacao) {
-            fecharModalMovimentacao();
-        }
+        if (evento.target === elementos.modalMovimentacao) fecharModalMovimentacao();
     });
 
     if (elementos.formMovimentacao) {
@@ -703,7 +505,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const movimentacoes = lerMovimentacoes();
 
             if (idMovimentacaoEmEdicao) {
-                const indice = movimentacoes.findIndex(item => String(item.id) === String(idMovimentacaoEmEdicao));
+                const indice = movimentacoes.findIndex(item =>
+                    String(item.id) === String(idMovimentacaoEmEdicao)
+                );
 
                 if (indice < 0) {
                     alert("Não foi possível localizar a movimentação para editar.");
@@ -768,23 +572,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
         lancamentoSelecionado = registro;
 
-        elementos.detalhesIcone.textContent = iconeRegistro(registro);
-        elementos.detalhesTipo.textContent = nomeTipoRegistro(registro);
+        if (elementos.detalhesIcone) elementos.detalhesIcone.textContent = iconeRegistro(registro);
+        if (elementos.detalhesTipo) elementos.detalhesTipo.textContent = nomeTipoRegistro(registro);
 
         const sinal = registro.categoria === "saida" ? "− " :
             registro.categoria === "entrada" ? "+ " : "";
 
-        elementos.detalhesValor.textContent = sinal + moeda(registro.valor);
-        elementos.detalhesForma.textContent = nomePagamento(registro.forma);
-        elementos.detalhesDescricao.textContent = registro.descricao || "Sem descrição";
+        if (elementos.detalhesValor) {
+            elementos.detalhesValor.textContent = ehRegistroEstoque(registro)
+                ? obterQuantidadeTexto(registro)
+                : sinal + moeda(registro.valor);
+        }
 
-        elementos.detalhesDataHora.textContent =
-            `${formatarDataISO(registro.dataISO)}${registro.hora ? " às " + registro.hora : ""}`;
+        if (elementos.detalhesForma) {
+            elementos.detalhesForma.textContent = ehRegistroEstoque(registro)
+                ? obterVariacaoEstoque(registro) || "Movimentação de estoque"
+                : nomePagamento(registro.forma);
+        }
 
-        const ehMovimentacaoManual = registro.categoria === "entrada" || registro.categoria === "saida";
+        if (elementos.detalhesDescricao) {
+            elementos.detalhesDescricao.textContent = registro.descricao || "Sem descrição";
+        }
+
+        if (elementos.detalhesDataHora) {
+            elementos.detalhesDataHora.textContent =
+                `${formatarDataISO(registro.dataISO)}${registro.hora ? " às " + registro.hora : ""}`;
+        }
+
+        const ehMovimentacaoManual =
+            registro.categoria === "entrada" || registro.categoria === "saida";
 
         if (elementos.btnExcluirDetalhe) {
-            elementos.btnExcluirDetalhe.style.display = ""; // Disponível para todos os registros
+            elementos.btnExcluirDetalhe.style.display = ehRegistroEstoque(registro) ? "none" : "";
         }
 
         if (elementos.btnEditarDetalhe) {
@@ -802,24 +621,22 @@ document.addEventListener("DOMContentLoaded", () => {
     elementos.btnFecharDetalhes?.addEventListener("click", fecharDetalhes);
 
     elementos.modalDetalhes?.addEventListener("click", evento => {
-        if (evento.target === elementos.modalDetalhes) {
-            fecharDetalhes();
-        }
+        if (evento.target === elementos.modalDetalhes) fecharDetalhes();
     });
 
     /* =========================
-       EXCLUIR REGISTRO (VENDA OU MOVIMENTAÇÃO)
+       EXCLUIR REGISTRO (VENDA OU MOVIMENTAÇÃO FINANCEIRA)
     ========================= */
 
     function excluirRegistro(registro) {
-        if (!registro) return;
+        if (!registro || ehRegistroEstoque(registro)) return;
 
-        const nomeTipo = registro.categoria === "venda" ? "esta venda" :
-            (registro.categoria === "entrada" ? "esta entrada" : "esta saída");
+        const nomeTipo = registro.categoria === "venda"
+            ? "esta venda"
+            : (registro.categoria === "entrada" ? "esta entrada" : "esta saída");
 
         const confirmado = confirm(
-            `Deseja excluir ${nomeTipo}?\n\n` +
-            `${registro.descricao}\n${moeda(registro.valor)}`
+            `Deseja excluir ${nomeTipo}?\n\n${registro.descricao}\n${moeda(registro.valor)}`
         );
 
         if (!confirmado) return;
@@ -848,7 +665,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             vendas.splice(indice, 1);
-
             if (!salvarJSON(CHAVE_VENDAS, vendas)) return;
         } else {
             const movimentacoes = lerMovimentacoes();
@@ -874,20 +690,16 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             movimentacoes.splice(indice, 1);
-
             if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;
         }
 
         fecharDetalhes();
         atualizarHistorico();
-
         alert("Registro excluído com sucesso!");
     }
 
     elementos.btnExcluirDetalhe?.addEventListener("click", () => {
-        if (lancamentoSelecionado) {
-            excluirRegistro(lancamentoSelecionado);
-        }
+        if (lancamentoSelecionado) excluirRegistro(lancamentoSelecionado);
     });
 
     /* =========================
@@ -907,8 +719,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fecharDetalhes();
         abrirModalMovimentacao(registro.categoria, registro);
     });
-
-    /* =========================
+        /* =========================
        EXPORTAR PDF COM DADOS DO ESTABELECIMENTO
     ========================= */
 
@@ -920,7 +731,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const continuar = confirm(
                 "Não existem movimentações nesta data. Deseja gerar o relatório mesmo assim?"
             );
-
             if (!continuar) return;
         }
 
@@ -968,9 +778,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const jsPDF = window.jspdf?.jsPDF || window.jsPDF;
 
         const saldoInicial = obterSaldoInicial(dataISO);
-        const vendas = registros.filter(item => item.categoria === "venda");
-        const entradas = registros.filter(item => item.categoria === "entrada");
-        const saidas = registros.filter(item => item.categoria === "saida");
+        const registrosFinanceiros = registros.filter(item => !ehRegistroEstoque(item));
+        const vendas = registrosFinanceiros.filter(item => item.categoria === "venda");
+        const entradas = registrosFinanceiros.filter(item => item.categoria === "entrada");
+        const saidas = registrosFinanceiros.filter(item => item.categoria === "saida");
+        const movimentacoesEstoque = registros.filter(ehRegistroEstoque);
 
         const totalDinheiro = vendas
             .filter(item => item.forma === "dinheiro")
@@ -987,17 +799,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const saldoFinal =
             saldoInicial + totalDinheiro + entradasDinheiro - saidasDinheiro;
 
-        const totalVendido = vendas.reduce(
-            (soma, item) => soma + item.valor, 0
-        );
-
-        const totalEntradas = entradas.reduce(
-            (soma, item) => soma + item.valor, 0
-        );
-
-        const totalSaidas = saidas.reduce(
-            (soma, item) => soma + item.valor, 0
-        );
+        const totalVendido = vendas.reduce((soma, item) => soma + item.valor, 0);
+        const totalEntradas = entradas.reduce((soma, item) => soma + item.valor, 0);
+        const totalSaidas = saidas.reduce((soma, item) => soma + item.valor, 0);
 
         const linhasResumo = [
             `Saldo inicial: ${moeda(saldoInicial)}`,
@@ -1007,24 +811,28 @@ document.addEventListener("DOMContentLoaded", () => {
             `Saldo final físico: ${moeda(saldoFinal)}`
         ];
 
+        function descricaoRegistroPDF(registro) {
+            if (ehRegistroEstoque(registro)) {
+                return `${nomeTipoRegistro(registro)} | ${registro.descricao} | ${obterQuantidadeTexto(registro)} | ${obterVariacaoEstoque(registro)} | ${registro.hora || "Sem horário"}`;
+            }
+
+            return `${nomeTipoRegistro(registro)} | ${registro.descricao} | ${nomePagamento(registro.forma)} | ${registro.hora || "Sem horário"} | ${moeda(registro.valor)}`;
+        }
+
         // Tenta gerar o PDF diretamente com jsPDF
         if (jsPDF) {
             try {
                 const doc = new jsPDF({ unit: "mm", format: "a4" });
-                const larguraPagina =
-                    doc.internal.pageSize.getWidth();
-                const alturaPagina =
-                    doc.internal.pageSize.getHeight();
+                const larguraPagina = doc.internal.pageSize.getWidth();
+                const alturaPagina = doc.internal.pageSize.getHeight();
                 const margem = 14;
                 const larguraTexto = larguraPagina - margem * 2;
-
                 let y = 18;
 
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(19);
                 doc.setTextColor(32, 167, 103);
                 doc.text("Dr. Troco — Histórico", margem, y);
-
                 y += 9;
 
                 // Cabeçalho do estabelecimento
@@ -1034,11 +842,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     doc.setTextColor(38, 54, 64);
 
                     const nome = dadosEstabelecimento[0];
-                    const linhasNome = doc.splitTextToSize(
-                        String(nome),
-                        larguraTexto
-                    );
-
+                    const linhasNome = doc.splitTextToSize(String(nome), larguraTexto);
                     doc.text(linhasNome, margem, y);
                     y += linhasNome.length * 5 + 1;
 
@@ -1047,10 +851,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     doc.setTextColor(80, 90, 85);
 
                     dadosEstabelecimento.slice(1).forEach(informacao => {
-                        const linhas = doc.splitTextToSize(
-                            String(informacao),
-                            larguraTexto
-                        );
+                        const linhas = doc.splitTextToSize(String(informacao), larguraTexto);
 
                         if (y + linhas.length * 4 > alturaPagina - 20) {
                             doc.addPage();
@@ -1072,7 +873,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     margem,
                     y
                 );
-
                 y += 9;
 
                 // Resumo financeiro
@@ -1098,30 +898,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(13);
-                doc.text("Movimentações", margem, y);
+                doc.text("Registros do dia", margem, y);
                 y += 8;
 
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(9);
 
                 if (registros.length === 0) {
-                    doc.text(
-                        "Nenhuma movimentação nesta data.",
-                        margem,
-                        y
-                    );
+                    doc.text("Nenhuma movimentação nesta data.", margem, y);
                 }
 
                 registros.forEach(registro => {
-                    const texto =
-                        `${nomeTipoRegistro(registro)} | ` +
-                        `${registro.descricao} | ` +
-                        `${nomePagamento(registro.forma)} | ` +
-                        `${registro.hora || "Sem horário"} | ` +
-                        `${moeda(registro.valor)}`;
-
                     const linhas = doc.splitTextToSize(
-                        texto,
+                        descricaoRegistroPDF(registro),
                         larguraTexto
                     );
 
@@ -1135,6 +924,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     doc.text(linhas, margem, y);
                     y += alturaBloco;
                 });
+
+                if (movimentacoesEstoque.length > 0) {
+                    y += 3;
+
+                    if (y > alturaPagina - 20) {
+                        doc.addPage();
+                        y = 18;
+                    }
+
+                    doc.setFont("helvetica", "italic");
+                    doc.setFontSize(8);
+                    doc.text(
+                        "As movimentações de estoque são informativas e não compõem o resumo financeiro do caixa.",
+                        margem,
+                        y
+                    );
+                }
 
                 doc.save(nomeArquivo);
                 return;
@@ -1159,22 +965,31 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const linhasHTML = registros.map(registro => `
-            <tr>
-                <td>${escaparHTML(nomeTipoRegistro(registro))}</td>
-                <td>${escaparHTML(registro.descricao)}</td>
-                <td>${escaparHTML(nomePagamento(registro.forma))}</td>
-                <td>${escaparHTML(registro.hora || "—")}</td>
-                <td>${escaparHTML(moeda(registro.valor))}</td>
-            </tr>
-        `).join("");
+        const linhasHTML = registros.map(registro => {
+            const ehEstoque = ehRegistroEstoque(registro);
+
+            const detalhe = ehEstoque
+                ? `${obterQuantidadeTexto(registro)} · ${obterVariacaoEstoque(registro)}`
+                : nomePagamento(registro.forma);
+
+            const valorExibido = ehEstoque ? "—" : moeda(registro.valor);
+
+            return `
+                <tr>
+                    <td>${escaparHTML(nomeTipoRegistro(registro))}</td>
+                    <td>${escaparHTML(registro.descricao)}</td>
+                    <td>${escaparHTML(detalhe)}</td>
+                    <td>${escaparHTML(registro.hora || "—")}</td>
+                    <td>${escaparHTML(valorExibido)}</td>
+                </tr>
+            `;
+        }).join("");
 
         const dadosEstabelecimentoHTML = dadosEstabelecimento
             .map((informacao, indice) => indice === 0
                 ? `<h2>${escaparHTML(informacao)}</h2>`
                 : `<p>${escaparHTML(informacao)}</p>`
-            )
-            .join("");
+            ).join("");
 
         janela.document.write(`
             <!DOCTYPE html>
@@ -1236,6 +1051,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         background: #eaf8f1;
                     }
 
+                    .nota {
+                        margin-top: 14px;
+                        font-size: 10px;
+                        color: #667;
+                    }
+
                     @media print {
                         body {
                             padding: 0;
@@ -1270,22 +1091,24 @@ document.addEventListener("DOMContentLoaded", () => {
                     <thead>
                         <tr>
                             <th>Tipo</th>
-                            <th>Descrição</th>
-                            <th>Pagamento</th>
+                            <th>Descrição / Produto</th>
+                            <th>Pagamento / Quantidade</th>
                             <th>Hora</th>
-                            <th>Valor</th>
+                            <th>Valor financeiro</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${linhasHTML || `
                             <tr>
-                                <td colspan="5">
-                                    Nenhum registro nesta data.
-                                </td>
+                                <td colspan="5">Nenhum registro nesta data.</td>
                             </tr>
                         `}
                     </tbody>
                 </table>
+
+                ${movimentacoesEstoque.length > 0
+                    ? '<p class="nota">As movimentações de estoque são informativas e não compõem o resumo financeiro do caixa.</p>'
+                    : ''}
 
                 <script>
                     window.onload = function() {
@@ -1299,7 +1122,6 @@ document.addEventListener("DOMContentLoaded", () => {
         janela.document.close();
     }
 
-    
     elementos.btnExportarPDF?.addEventListener("click", exportarPDF);
 
     /* =========================
@@ -1318,5 +1140,5 @@ document.addEventListener("DOMContentLoaded", () => {
     ========================= */
 
     atualizarHistorico();
-
 });
+    
