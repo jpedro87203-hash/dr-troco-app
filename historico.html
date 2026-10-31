@@ -116,12 +116,6 @@
             box-shadow: 0 0 0 3px rgba(32,167,103,.10);
         }
 
-        .historico-filtros {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
         .historico-resumo {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -406,17 +400,6 @@
             overflow-wrap: anywhere;
         }
 
-        .lixeira-historico {
-            width: 34px;
-            height: 36px;
-            flex-shrink: 0;
-            border: none;
-            border-radius: 9px;
-            background: #fff0f0;
-            color: #d94b4b;
-            cursor: pointer;
-        }
-
         /* MODAIS */
 
         .modal-historico {
@@ -502,49 +485,7 @@
             margin-top: 18px;
         }
 
-        .detalhes-valor-destaque {
-            margin: 12px 0 18px;
-            padding: 20px 12px;
-            border-radius: 15px;
-            background: #eaf8f1;
-            color: #168b53;
-            text-align: center;
-            font-size: 27px;
-            font-weight: 900;
-            overflow-wrap: anywhere;
-        }
-
-        .detalhes-linha {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 11px 0;
-            border-bottom: 1px solid #edf2ef;
-            font-size: 12px;
-        }
-
-        .detalhes-linha span {
-            color: #829087;
-        }
-
-        .detalhes-linha strong {
-            max-width: 65%;
-            color: #263640;
-            text-align: right;
-            overflow-wrap: anywhere;
-        }
-
-        /* PDF */
-
-        #relatorioHistorico {
-            width: 100%;
-        }
-
-        #dataRelatorio {
-            display: none;
-        }
-
-        /* MENU INFERIOR CORRIGIDO */
+        /* MENU INFERIOR */
 
         body nav.menu-inferior {
             position: fixed;
@@ -616,57 +557,21 @@
             .historico-app {
                 padding: 0 10px 22px;
             }
-
             .historico-cabecalho {
                 padding: 16px 3px;
             }
-
             .historico-titulo {
                 font-size: 22px;
             }
-
             .historico-card {
                 padding: 12px;
                 border-radius: 14px;
             }
-
             .historico-card-valor {
                 font-size: 18px;
             }
-
             .historico-card.destaque .historico-card-valor {
                 font-size: 25px;
-            }
-
-            .historico-periodo,
-            .historico-pagamentos {
-                padding: 12px;
-            }
-
-            .conteudo-modal {
-                padding: 17px;
-            }
-        }
-
-        @media (max-width: 350px) {
-            .historico-filtros {
-                grid-template-columns: 1fr;
-            }
-
-            .historico-acoes {
-                grid-template-columns: 1fr;
-            }
-
-            .historico-card-valor {
-                font-size: 16px;
-            }
-
-            .valor-lancamento {
-                font-size: 11px;
-            }
-
-            body nav.menu-inferior > a.menu-item > small {
-                font-size: 9px;
             }
         }
     </style>
@@ -701,6 +606,28 @@
         <p style="margin:10px 0 0;color:#829087;font-size:11px;line-height:1.5">
             Selecione uma data para consultar as vendas e movimentações daquele dia.
         </p>
+    </section>
+
+    <!-- GESTÃO E FECHAMENTO DE CAIXA / HORÁRIO DE CORTE -->
+    <section class="historico-periodo" style="background:#f5fbf7; border-color:#d9eee2;">
+        <h2 class="historico-secao-titulo" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span>🔒 Gestão e Fechamento de Caixa</span>
+            <span id="statusCaixaHistorico" class="status-caixa aberto" style="font-size:10px; padding:4px 8px; border-radius:12px; background:#e5f7ed; color:#168b53; font-weight:900;">CAIXA ABERTO</span>
+        </h2>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
+            <button type="button" id="btnAbrirCaixaHistorico" class="historico-btn principal" style="min-height:40px;">＋ Abrir Caixa</button>
+            <button type="button" id="btnFecharCaixaHistorico" class="historico-btn perigo" style="min-height:40px;">🔒 Fechar Caixa</button>
+        </div>
+
+        <div style="border-top:1px solid #d9eee2; padding-top:12px;">
+            <label for="inputHorarioCorte">Horário de corte operacional (Madrugada)</label>
+            <div style="display:flex; gap:8px; margin-top:5px;">
+                <input type="time" id="inputHorarioCorte" style="flex:1;">
+                <button type="button" id="btnSalvarCorte" class="historico-btn" style="min-height:44px; padding:0 15px;">Salvar</button>
+            </div>
+            <small style="color:#7b898f; display:block; margin-top:5px; line-height:1.4;">Define até que horas da madrugada as vendas ainda pertencem ao dia anterior (ex: 04:00).</small>
+        </div>
     </section>
 
     <!-- RESUMO -->
@@ -785,18 +712,27 @@
         </button>
     </section>
 
-    <!-- EXPORTAÇÃO -->
-    <section class="historico-acoes">
-        <button type="button"
-                class="historico-btn"
-                id="btnHojeAlternativo"
-                onclick="document.getElementById('btnHoje').click()">
-            ↺ Ver hoje
-        </button>
-
-        <button type="button" class="historico-btn pdf" id="btnExportarPDF">
-            📄 Exportar PDF
-        </button>
+    <!-- EXPORTAÇÃO PERÍODO (MULTI-DIAS) E PDF -->
+    <section class="historico-periodo">
+        <h2 class="historico-secao-titulo">📄 Exportar Relatório em PDF</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+            <div>
+                <label for="pdfDataInicio">Data Inicial</label>
+                <input type="date" id="pdfDataInicio">
+            </div>
+            <div>
+                <label for="pdfDataFim">Data Final</label>
+                <input type="date" id="pdfDataFim">
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:9px;">
+            <button type="button" class="historico-btn" id="btnHojeAlternativo" onclick="document.getElementById('btnHoje').click()">
+                ↺ Ver hoje
+            </button>
+            <button type="button" class="historico-btn pdf" id="btnExportarPeriodoPDF">
+                📄 Exportar PDF
+            </button>
+        </div>
     </section>
 
     <!-- RELATÓRIO -->
@@ -891,106 +827,34 @@
     </div>
 </div>
 
-<!-- MODAL: DETALHES -->
-<div class="modal-historico" id="modalDetalhesMovimentacao">
-    <div class="conteudo-modal">
-
-        <header class="modal-cabecalho">
-            <div>
-                <h2>Detalhes do lançamento</h2>
-                <p>Confira as informações registradas.</p>
-            </div>
-
-            <button type="button"
-                    class="btn-fechar-modal"
-                    id="btnFecharDetalhes"
-                    aria-label="Fechar">
-                ×
-            </button>
-        </header>
-
-        <div style="text-align:center;font-size:35px" id="detalhesIcone">
-            🧾
-        </div>
-
-        <div id="detalhesTipo"
-             style="text-align:center;font-size:14px;font-weight:900;margin-top:8px">
-            Lançamento
-        </div>
-
-        <div class="detalhes-valor-destaque" id="detalhesValor">
-            R$ 0,00
-        </div>
-
-        <div class="detalhes-linha">
-            <span>Forma de pagamento</span>
-            <strong id="detalhesForma">—</strong>
-        </div>
-
-        <div class="detalhes-linha">
-            <span>Descrição</span>
-            <strong id="detalhesDescricao">—</strong>
-        </div>
-
-        <div class="detalhes-linha">
-            <span>Data e hora</span>
-            <strong id="detalhesDataHora">—</strong>
-        </div>
-
-        <div class="modal-acoes">
-            <button type="button"
-                    class="historico-btn"
-                    id="btnFecharDetalhesRodape"
-                    onclick="document.getElementById('btnFecharDetalhes').click()">
-                Fechar
-            </button>
-
-            <button type="button"
-                    class="historico-btn perigo"
-                    id="btnExcluirDetalhe">
-                🗑 Excluir
-            </button>
-        </div>
-
-    </div>
-</div>
-
-<!-- MENU INFERIOR: ORDEM CORRETA -->
+<!-- MENU INFERIOR -->
 <nav class="menu-inferior" aria-label="Navegação principal">
-
     <a href="index.html" class="menu-item">
-    <span>🧮</span>
-    <small>Calculadora</small>
+        <span>🧮</span>
+        <small>Calculadora</small>
     </a>
     <a href="fluxo.html" class="menu-item">
-    <span>📊</span>
-    <small>Fluxo</small>
-</a>
-
-<a href="historico.html"
-   class="menu-item ativo"
-   aria-current="page">
-    <span>📋</span>
-    <small>Histórico</small>
-</a>
-
+        <span>📊</span>
+        <small>Fluxo</small>
+    </a>
+    <a href="historico.html" class="menu-item ativo" aria-current="page">
+        <span>📋</span>
+        <small>Histórico</small>
+    </a>
     <a href="estoque.html" class="menu-item">
         <span>📦</span>
         <small>Estoque</small>
     </a>
-
-  <a href="fiado.html" class="menu-item">
-  <span>🧾</span>
-  <small>Fiado</small>
-  </a>
+    <a href="fiado.html" class="menu-item">
+        <span>🧾</span>
+        <small>Fiado</small>
+    </a>
 </nav>
-
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="auth-guard.js"></script>
 <script src="historico.js"></script>
-
 
 </body>
 </html>
