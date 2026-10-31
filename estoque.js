@@ -217,6 +217,10 @@ async function carregarProdutos() {
 
     } catch (erro) {
         console.error("Erro ao carregar estoque do Supabase:", erro);
+        alert(
+    "ERRO AO CARREGAR ESTOQUE:\n" +
+    (erro.message || String(erro))
+);
 
         // Em falha de rede, permite apenas visualizar o cache deste comércio.
         // As alterações ficam bloqueadas enquanto a nuvem não confirmar conexão.
