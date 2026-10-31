@@ -1,61 +1,161 @@
-
+// ======================================================
 // DR. TROCO — INTEGRAÇÃO DO ESTOQUE COM SUPABASE
+// ======================================================
+
+// DIAGNÓSTICO TEMPORÁRIO
+// Depois de confirmar o funcionamento, podemos remover os alertas.
+
+const DIAGNOSTICO_TEMPORARIO = true;
+
+if (
+  DIAGNOSTICO_TEMPORARIO &&
+  !window.__DR_TROCO_ESTOQUE_SUPABASE_CARREGADO__
+) {
+  window.__DR_TROCO_ESTOQUE_SUPABASE_CARREGADO__ = true;
+
+  alert("ESTOQUE-SUPABASE.JS FOI CARREGADO!");
+}
 
 window.EstoqueSupabase = (() => {
-  const client = window.supabaseClient;
 
   let comercioIdAtual = null;
+  let usuarioIdAtual = null;
+
+  // ----------------------------------------------------
+  // CLIENTE SUPABASE
+  // ----------------------------------------------------
+
+  function obterCliente() {
+    const client = window.supabaseClient;
+
+    if (!client) {
+      throw new Error(
+        "Cliente Supabase não foi inicializado. Verifique supabase.js."
+      );
+    }
+
+    return client;
+  }
+
+  // ----------------------------------------------------
+  // IDENTIFICAR USUÁRIO E ESTABELECIMENTO
+  // ----------------------------------------------------
 
   async function obterComercioId() {
-    if (!client) {
-      throw new Error("Cliente Supabase não foi inicializado.");
+    const client = obterCliente();
+
+    const {
+      data: sessaoData,
+      error: sessaoErro
+    } = await client.auth.getSession();
+
+    if (sessaoErro) {
+      throw new Error(
+        "Erro ao verificar a sessão: " + sessaoErro.message
+      );
     }
-
-    const { data: sessaoData, error: sessaoErro } =
-      await client.auth.getSession();
-
-    if (sessaoErro) throw sessaoErro;
 
     const usuario = sessaoData?.session?.user;
-    alert("ID AUTENTICADO: " + (usuario?.id || "NENHUM"));
 
     if (!usuario) {
-      throw new Error("Usuário não autenticado.");
-    }
-    console.log("USUÁRIO AUTENTICADO:", usuario.id);
+      comercioIdAtual = null;
+      usuarioIdAtual = null;
 
-    const { data, error } = await client
+      throw new Error(
+        "Usuário não autenticado. Entre novamente na sua conta."
+      );
+    }
+
+    // ALERTA TEMPORÁRIO PARA CONFERIR O ID DA CONTA
+    if (DIAGNOSTICO_TEMPORARIO) {
+      alert("ID AUTENTICADO:\n" + usuario.id);
+    }
+
+    // Reutiliza o estabelecimento já identificado
+    // enquanto a mesma conta estiver autenticada.
+    if (
+      comercioIdAtual &&
+      usuarioIdAtual === usuario.id
+    ) {
+      return comercioIdAtual;
+    }
+
+    const {
+      data,
+      error
+    } = await client
       .from("membros_comercio")
       .select("comercio_id")
       .eq("usuario_id", usuario.id)
       .eq("ativo", true);
 
-    if (error) throw error;
+    if (error) {
+      console.error(
+        "Erro ao consultar membros_comercio:",
+        error
+      );
+
+      throw new Error(
+        "Não foi possível consultar o vínculo do estabelecimento: " +
+        error.message
+      );
+    }
 
     if (!data || data.length === 0) {
-      throw new Error("Nenhum estabelecimento ativo encontrado.");
+      throw new Error(
+        "Nenhum estabelecimento ativo foi encontrado para esta sessão. " +
+        "O registro pode estar oculto por uma política de segurança RLS " +
+        "da tabela membros_comercio."
+      );
     }
 
     if (data.length > 1) {
       throw new Error(
-        "Esta conta possui mais de um estabelecimento ativo. É necessário selecionar um."
+        "Esta conta possui mais de um estabelecimento ativo. " +
+        "É necessário selecionar um."
       );
     }
 
     comercioIdAtual = data[0].comercio_id;
+    usuarioIdAtual = usuario.id;
+
+    console.log(
+      "Estabelecimento identificado:",
+      comercioIdAtual
+    );
+
     return comercioIdAtual;
   }
 
-  async function carregarProdutos() {
-    const comercioId = await obterComercioId();
+  // ----------------------------------------------------
+  // CARREGAR PRODUTOS
+  // ----------------------------------------------------
 
-    const { data, error } = await client
+  async function carregarProdutos(comercioIdInformado = null) {
+    const client = obterCliente();
+
+    const comercioId =
+      comercioIdInformado || await obterComercioId();
+
+    const {
+      data,
+      error
+    } = await client
       .from("estoque_produtos")
       .select("*")
       .eq("comercio_id", comercioId)
       .order("nome", { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error(
+        "Erro ao carregar produtos:",
+        error
+      );
+
+      throw new Error(
+        "Falha ao carregar produtos: " + error.message
+      );
+    }
 
     return (data || []).map(p => ({
       id: p.id,
@@ -72,11 +172,19 @@ window.EstoqueSupabase = (() => {
     }));
   }
 
+  // ----------------------------------------------------
+  // SALVAR OU ATUALIZAR PRODUTO
+  // ----------------------------------------------------
+
   async function salvarProduto(produto) {
+    const client = obterCliente();
     const comercioId = await obterComercioId();
 
+    if (!produto || !produto.nome) {
+      throw new Error("Os dados do produto estão incompletos.");
+    }
+
     const registro = {
-      id: produto.id,
       comercio_id: comercioId,
       nome: produto.nome,
       codigo: produto.codigo || null,
@@ -90,31 +198,78 @@ window.EstoqueSupabase = (() => {
       atualizado_em: new Date().toISOString()
     };
 
-    const { data, error } = await client
+    if (produto.id) {
+      registro.id = produto.id;
+    }
+
+    const {
+      data,
+      error
+    } = await client
       .from("estoque_produtos")
-      .upsert(registro, { onConflict: "id" })
+      .upsert(registro, {
+        onConflict: "id"
+      })
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error(
+        "Erro ao salvar produto:",
+        error
+      );
+
+      throw new Error(
+        "Não foi possível salvar o produto: " + error.message
+      );
+    }
 
     return data;
   }
 
+  // ----------------------------------------------------
+  // EXCLUIR PRODUTO
+  // ----------------------------------------------------
+
   async function excluirProduto(produtoId) {
+    const client = obterCliente();
     const comercioId = await obterComercioId();
 
-    const { error } = await client
+    if (!produtoId) {
+      throw new Error("ID do produto não informado.");
+    }
+
+    const {
+      error
+    } = await client
       .from("estoque_produtos")
       .delete()
       .eq("id", produtoId)
       .eq("comercio_id", comercioId);
 
-    if (error) throw error;
+    if (error) {
+      console.error(
+        "Erro ao excluir produto:",
+        error
+      );
+
+      throw new Error(
+        "Não foi possível excluir o produto: " + error.message
+      );
+    }
   }
 
+  // ----------------------------------------------------
+  // SALVAR MOVIMENTAÇÃO
+  // ----------------------------------------------------
+
   async function salvarMovimentacao(movimento) {
+    const client = obterCliente();
     const comercioId = await obterComercioId();
+
+    if (!movimento) {
+      throw new Error("Dados da movimentação não informados.");
+    }
 
     const registro = {
       comercio_id: comercioId,
@@ -122,25 +277,58 @@ window.EstoqueSupabase = (() => {
       produto_nome: movimento.produtoNome,
       tipo: movimento.tipo,
       quantidade: Number(movimento.quantidade) || 0,
-      quantidade_anterior: Number(movimento.quantidadeAnterior) || 0,
-      quantidade_nova: Number(movimento.quantidadeNova) || 0,
-      data: movimento.data || new Date().toISOString().slice(0, 10),
-      hora: movimento.hora || new Date().toLocaleTimeString("pt-BR"),
+      quantidade_anterior:
+        Number(movimento.quantidadeAnterior) || 0,
+      quantidade_nova:
+        Number(movimento.quantidadeNova) || 0,
+      data:
+        movimento.data ||
+        new Date().toISOString().slice(0, 10),
+      hora:
+        movimento.hora ||
+        new Date().toLocaleTimeString("pt-BR"),
       criado_em: new Date().toISOString()
     };
 
-    const { error } = await client
+    const {
+      error
+    } = await client
       .from("estoque_movimentacoes")
       .insert(registro);
 
-    if (error) throw error;
+    if (error) {
+      console.error(
+        "Erro ao salvar movimentação:",
+        error
+      );
+
+      throw new Error(
+        "Não foi possível registrar a movimentação: " +
+        error.message
+      );
+    }
   }
+
+  // ----------------------------------------------------
+  // LIMPAR ESTABELECIMENTO EM CASO DE TROCA DE CONTA
+  // ----------------------------------------------------
+
+  function limparComercioAtual() {
+    comercioIdAtual = null;
+    usuarioIdAtual = null;
+  }
+
+  // ----------------------------------------------------
+  // FUNÇÕES DISPONÍVEIS PARA estoque.js
+  // ----------------------------------------------------
 
   return {
     obterComercioId,
     carregarProdutos,
     salvarProduto,
     excluirProduto,
-    salvarMovimentacao
+    salvarMovimentacao,
+    limparComercioAtual
   };
+
 })();
