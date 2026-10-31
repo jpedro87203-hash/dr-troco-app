@@ -17,6 +17,7 @@ window.EstoqueSupabase = (() => {
     if (sessaoErro) throw sessaoErro;
 
     const usuario = sessaoData?.session?.user;
+    alert("ID AUTENTICADO: " + (usuario?.id || "NENHUM"));
 
     if (!usuario) {
       throw new Error("Usuário não autenticado.");
