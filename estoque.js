@@ -30,13 +30,8 @@ let detectorCodigoBarras = null;
 let lendoCodigoBarras = false;
 let frameLeituraCodigo = null;
 let codigoBarrasLido = "";
-let formatosSuportadosCache = null;
 
 let abrindoLeitorCodigo = false;
-let processandoCodigoBarras = false;
-let detectorEmExecucao = false;
-let ultimoCodigoDetectado = "";
-let tempoUltimaLeitura = 0;
 let sessaoLeitorCodigo = 0;
 
 /* =========================================================
@@ -267,6 +262,7 @@ async function carregarProdutos() {
         estoqueCarregando = false;
         atualizarKPIs();
         renderizarProdutos();
+        renderizarHistoricoMovimentacoes();
     }
 }
 
@@ -301,7 +297,11 @@ async function salvarMovimentacao(movimento) {
         throw new Error("Estoque ainda não está conectado ao Supabase.");
     }
 
-    await window.EstoqueSupabase.salvarMovimentacao(movimento);
+    try {
+        await window.EstoqueSupabase.salvarMovimentacao(movimento);
+    } catch (e) {
+        console.warn("Aviso ao salvar movimento no Supabase (salvo localmente):", e);
+    }
 
     const chave = chaveMovimentacoesDoComercio();
     const lista = carregarMovimentacoes();
@@ -531,7 +531,10 @@ function abrirEdicaoProduto(id) {
     if (preco) preco.value = produto.preco;
     if (tipo) tipo.value = produto.tipo;
     if (minimo) minimo.value = produto.estoqueMinimo;
-    if (quantidade) quantidade.value = produto.quantidade;
+    if (quantidade) {
+        quantidade.value = produto.quantidade;
+        quantidade.disabled = true; // Bloqueia edição direta de quantidade por aqui
+    }
     if (validade) validade.value = produto.validade || "";
     if (titulo) titulo.textContent = "Editar produto";
 
@@ -560,7 +563,8 @@ async function salvarProduto(event) {
     const preco = numeroSeguro(document.getElementById("precoProduto")?.value);
     const tipo = document.getElementById("tipoProduto")?.value || "nao_perecivel";
     const estoqueMinimo = Math.max(0, Math.floor(numeroSeguro(document.getElementById("estoqueMinimo")?.value, 5)));
-    const quantidade = Math.max(0, Math.floor(numeroSeguro(document.getElementById("quantidadeInicial")?.value)));
+    const quantidadeInput = document.getElementById("quantidadeInicial");
+    const quantidade = Math.max(0, Math.floor(numeroSeguro(quantidadeInput?.value)));
     const validade = document.getElementById("validadeProduto")?.value || "";
 
     if (!nome) {
@@ -586,7 +590,7 @@ async function salvarProduto(event) {
         }
         produtos[indice] = {
             ...produtos[indice], nome, codigo: String(codigo), preco, tipo,
-            estoqueMinimo, quantidade, validade, atualizadoEm: new Date().toISOString()
+            estoqueMinimo, validade, atualizadoEm: new Date().toISOString()
         };
         if (window._estoqueFotoSelecionada !== undefined) {
             produtos[indice].foto = window._estoqueFotoSelecionada;
@@ -603,10 +607,12 @@ async function salvarProduto(event) {
         produtos.push(produtoSalvo);
     }
 
+    if (quantidadeInput) quantidadeInput.disabled = false;
+
     try {
         await persistirProdutoNaNuvem(produtoSalvo);
 
-        if (eraNovo) {
+        if (eraNovo && produtoSalvo.quantidade > 0) {
             await salvarMovimentacao({
                 id: gerarId(), produtoId: produtoSalvo.id,
                 produtoNome: produtoSalvo.nome, tipo: "cadastro",
@@ -624,19 +630,17 @@ async function salvarProduto(event) {
         fecharModal("modalProduto");
         atualizarKPIs();
         renderizarProdutos();
+        renderizarHistoricoMovimentacoes();
 
     } catch (erro) {
         console.error("Erro ao salvar produto no Supabase:", erro);
         produtos = estadoAnterior;
 
-        if (eraNovo && produtoSalvo) {
-            try { await window.EstoqueSupabase.excluirProduto(produtoSalvo.id); } catch (e) {}
-        }
-
         salvarProdutos();
         alert("Não foi possível salvar o produto no servidor.\n\n" + (erro.message || "Erro desconhecido."));
         atualizarKPIs();
         renderizarProdutos();
+        renderizarHistoricoMovimentacoes();
     }
 }
 
@@ -860,6 +864,7 @@ async function confirmarMovimento() {
         fecharModal("modalMovimento");
         atualizarKPIs();
         renderizarProdutos();
+        renderizarHistoricoMovimentacoes();
 
         if (produtoDetalhesAtual && String(produtoDetalhesAtual.id) === String(produto.id)) {
             produtoDetalhesAtual = produto;
@@ -966,6 +971,7 @@ async function confirmarAjusteQuantidade() {
         fecharModal("modalQuantidade");
         atualizarKPIs();
         renderizarProdutos();
+        renderizarHistoricoMovimentacoes();
         setTimeout(() => abrirDetalhes(produto.id), 100);
     } catch (erro) {
         console.error("Erro ao ajustar quantidade:", erro);
@@ -1012,9 +1018,156 @@ async function confirmarExclusao() {
         fecharModal("modalExcluir");
         atualizarKPIs();
         renderizarProdutos();
+        renderizarHistoricoMovimentacoes();
     } catch (erro) {
         console.error("Erro ao excluir produto:", erro);
         alert("Não foi possível concluir a exclusão.");
+    }
+}
+
+/* =========================================================
+HISTÓRICO DE MOVIMENTAÇÕES — EXIBIÇÃO E GESTÃO (EXCLUIR / EDITAR)
+========================================================= */
+
+function renderizarHistoricoMovimentacoes() {
+    const container = document.getElementById("listaHistoricoMovimentacoes");
+    if (!container) return;
+
+    const movimentacoes = carregarMovimentacoes().slice().reverse(); // Mais recentes primeiro
+
+    if (!movimentacoes.length) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #78848b; font-size: 13px;">
+                Nenhuma movimentação registada ainda.
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = movimentacoes.map(mov => {
+        const quando = obterDataHoraRelatorio(mov);
+        const tipo = String(mov.tipo || "").toLowerCase();
+        const ehEntrada = tipo === "entrada" || tipo === "cadastro";
+        const corTipo = ehEntrada ? "#218653" : "#d9534f";
+        const icone = ehEntrada ? "📥" : "📤";
+
+        return `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #e1e8ed; border-radius: 12px; background: #f9fbfc; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 200px;">
+                    <span style="font-size: 20px;">${icone}</span>
+                    <div>
+                        <strong style="display: block; color: #253542; font-size: 14px;">${escaparHTML(mov.produtoNome || "Produto")}</strong>
+                        <small style="color: #667581;">${quando.data} às ${quando.hora} · <span style="color: ${corTipo}; font-weight: bold;">${obterRotuloTipoMovimento(mov.tipo)}</span></small>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <strong style="font-size: 14px; color: #253542;">Qtd: ${numeroSeguro(mov.quantidade)}</strong>
+                    
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" onclick="editarMovimentoEstoque('${mov.id}')" style="background: #eef4f8; border: 1px solid #ccd6dd; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12px; font-weight: bold; color: #3b5998;" title="Editar Quantidade">✏️ Editar</button>
+                        <button type="button" onclick="excluirMovimentoEstoque('${mov.id}')" style="background: #fdf2f2; border: 1px solid #f5c6cb; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12px; font-weight: bold; color: #d9534f;" title="Excluir e Estornar">🗑️ Excluir</button>
+                    </div>
+                </div>
+            </div>`;
+    }).join("");
+}
+
+async function excluirMovimentoEstoque(idMovimento) {
+    if (!exigirEstoquePronto()) return;
+    if (!confirm("Tem certeza que deseja excluir esta movimentação? O estoque do produto será revertido.")) return;
+
+    let movimentacoes = carregarMovimentacoes();
+    const mov = movimentacoes.find(m => String(m.id) === String(idMovimento));
+    if (!mov) {
+        alert("Movimentação não encontrada.");
+        return;
+    }
+
+    const produto = produtos.find(p => String(p.id) === String(mov.produtoId));
+    if (produto) {
+        const qtdMov = numeroSeguro(mov.quantidade);
+        const tipo = String(mov.tipo).toLowerCase();
+
+        if (tipo === "entrada" || tipo === "cadastro") {
+            produto.quantidade = Math.max(0, numeroSeguro(produto.quantidade) - qtdMov);
+        } else if (tipo === "saida") {
+            produto.quantidade = numeroSeguro(produto.quantidade) + qtdMov;
+        }
+        produto.atualizadoEm = new Date().toISOString();
+        
+        try {
+            await persistirProdutoNaNuvem(produto);
+        } catch (e) {
+            console.error("Erro ao atualizar estoque na nuvem ao excluir movimento:", e);
+        }
+    }
+
+    movimentacoes = movimentacoes.filter(m => String(m.id) !== String(idMovimento));
+    localStorage.setItem(chaveMovimentacoesDoComercio(), JSON.stringify(movimentacoes));
+    salvarProdutos();
+
+    atualizarKPIs();
+    renderizarProdutos();
+    renderizarHistoricoMovimentacoes();
+    alert("Movimentação excluída e estoque estornado com sucesso!");
+}
+
+async function editarMovimentoEstoque(idMovimento) {
+    if (!exigirEstoquePronto()) return;
+
+    const movimentacoes = carregarMovimentacoes();
+    const mov = movimentacoes.find(m => String(m.id) === String(idMovimento));
+    if (!mov) {
+        alert("Movimentação não encontrada.");
+        return;
+    }
+
+    const novaQtdStr = prompt(`Editar quantidade movimentada para "${mov.produtoNome}":`, mov.quantidade);
+    if (novaQtdStr === null) return;
+
+    const novaQtd = Math.floor(numeroSeguro(novaQtdStr));
+    if (novaQtd <= 0) {
+        alert("A quantidade deve ser maior que zero. Se quiser anular, utilize o botão Excluir.");
+        return;
+    }
+
+    const produto = produtos.find(p => String(p.id) === String(mov.produtoId));
+    if (!produto) {
+        alert("O produto associado a esta movimentação já não existe no estoque.");
+        return;
+    }
+
+    const qtdAntigaMov = numeroSeguro(mov.quantidade);
+    const diferenca = novaQtd - qtdAntigaMov;
+    const tipo = String(mov.tipo).toLowerCase();
+
+    if (tipo === "entrada" || tipo === "cadastro") {
+        produto.quantidade = Math.max(0, numeroSeguro(produto.quantidade) + diferenca);
+    } else if (tipo === "saida") {
+        const novoEstoque = numeroSeguro(produto.quantidade) - diferenca;
+        if (novoEstoque < 0) {
+            alert("Ajuste inválido: a quantidade de saída excede o estoque disponível.");
+            return;
+        }
+        produto.quantidade = novoEstoque;
+    }
+
+    produto.atualizadoEm = new Date().toISOString();
+    mov.quantidade = novaQtd;
+    mov.quantidadeNova = produto.quantidade;
+
+    try {
+        await persistirProdutoNaNuvem(produto);
+        localStorage.setItem(chaveMovimentacoesDoComercio(), JSON.stringify(movimentacoes));
+        salvarProdutos();
+
+        atualizarKPIs();
+        renderizarProdutos();
+        renderizarHistoricoMovimentacoes();
+        alert("Movimentação e estoque atualizados com sucesso!");
+    } catch (e) {
+        console.error("Erro ao atualizar movimentação:", e);
+        alert("Erro ao atualizar no servidor.");
     }
 }
 
@@ -1025,7 +1178,6 @@ LEITOR DE CÓDIGO DE BARRAS
 function pararLeitorCodigo() {
     sessaoLeitorCodigo++;
     lendoCodigoBarras = false;
-    detectorEmExecucao = false;
 
     if (frameLeituraCodigo !== null) {
         cancelAnimationFrame(frameLeituraCodigo);
@@ -1170,7 +1322,6 @@ function configurarBotaoExportarPDF() {
     container.style.flexWrap = "wrap";
     container.style.marginTop = "4px";
 
-    // Campo de seleção de data (padrão: hoje)
     const inputData = document.createElement("input");
     inputData.type = "date";
     inputData.id = "filtroDataRelatorioPDF";
@@ -1187,7 +1338,6 @@ function configurarBotaoExportarPDF() {
     inputData.style.fontSize = "14px";
     inputData.style.boxSizing = "border-box";
 
-    // Botão de exportação
     const botao = document.createElement("button");
     botao.id = "btnExportarEstoquePDF";
     botao.type = "button";
@@ -1214,7 +1364,7 @@ function exportarRelatorioEstoquePDF() {
     }
 
     const inputData = document.getElementById("filtroDataRelatorioPDF");
-    const dataSelecionada = inputData ? inputData.value : ""; // Formato AAAA-MM-DD
+    const dataSelecionada = inputData ? inputData.value : "";
 
     let movimentacoes = carregarMovimentacoes();
     if (dataSelecionada) {
@@ -1501,6 +1651,7 @@ async function inicializarEstoque() {
     atualizarBotaoMovimento();
 
     await carregarProdutos();
+    renderizarHistoricoMovimentacoes();
 }
 
 if (document.readyState === "loading") {
