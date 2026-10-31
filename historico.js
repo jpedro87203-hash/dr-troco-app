@@ -10,6 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
 const CHAVE_VENDAS = "drTroco_vendas";  
 const CHAVE_MOVIMENTACOES = "drTroco_movimentacoes";  
 const CHAVE_SALDOS = "drTroco_saldosIniciais";  
+const CHAVE_SESSOES = "drTroco_sessoesCaixa";
+const CHAVE_CONFIG_CAIXA = "drTroco_configCaixa";
 
 const $ = (id) => document.getElementById(id);  
 
@@ -56,12 +58,91 @@ const elementos = {
     detalhesDescricao: $("detalhesDescricao"),  
     detalhesDataHora: $("detalhesDataHora"),  
     btnExcluirDetalhe: $("btnExcluirDetalhe"),  
-    btnEditarDetalhe: $("btnEditarDetalhe")  
+    btnEditarDetalhe: $("btnEditarDetalhe"),
+
+    // Elementos adicionais para Fechamento de Caixa e PDF Multi-Dias
+    inputHorarioCorte: $("inputHorarioCorte"),
+    btnSalvarCorte: $("btnSalvarCorte"),
+    statusCaixaHistorico: $("statusCaixaHistorico"),
+    btnAbrirCaixaHistorico: $("btnAbrirCaixaHistorico"),
+    btnFecharCaixaHistorico: $("btnFecharCaixaHistorico"),
+    pdfDataInicio: $("pdfDataInicio"),
+    pdfDataFim: $("pdfDataFim"),
+    btnExportarPeriodoPDF: $("btnExportarPeriodoPDF")
 };  
 
 let tipoMovimentacaoAtual = "entrada";  
 let lancamentoSelecionado = null;  
 let idMovimentacaoEmEdicao = null;  
+
+/* ==========================================================
+   CONFIGURAÇÃO DE HORÁRIO DE CORTE E SESSÕES
+========================================================== */
+
+function obterConfigCaixa() {
+    try {
+        return JSON.parse(localStorage.getItem(CHAVE_CONFIG_CAIXA) || '{"horarioCorte": "04:00"}');
+    } catch {
+        return { horarioCorte: '04:00' };
+    }
+}
+
+function salvarConfigCaixa(config) {
+    localStorage.setItem(CHAVE_CONFIG_CAIXA, JSON.stringify(config));
+}
+
+// Retorna a data operacional considerando o horário de corte configurado
+function obterDataOperacional(dataCustomizada = new Date()) {
+    const config = obterConfigCaixa();
+    const [horaCorte, minutoCorte] = (config.horarioCorte || '04:00').split(':').map(Number);
+    
+    const d = new Date(dataCustomizada);
+    const horaAtualD = d.getHours();
+    const minutoAtualD = d.getMinutes();
+
+    if (horaAtualD < horaCorte || (horaAtualD === horaCorte && minutoAtualD < minutoCorte)) {
+        d.setDate(d.getDate() - 1);
+    }
+
+    const ano = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+
+    return `${ano}-${mes}-${dia}`;
+}
+
+function obterSessoes() {
+    try {
+        return JSON.parse(localStorage.getItem(CHAVE_SESSOES) || '[]');
+    } catch {
+        return [];
+    }
+}
+
+function salvarSessoes(sessoes) {
+    localStorage.setItem(CHAVE_SESSOES, JSON.stringify(sessoes));
+}
+
+function obterSessaoAtual() {
+    const sessoes = obterSessoes();
+    return sessoes.find(s => s.status === 'aberto') || null;
+}
+
+// Verificação de fechamento automático em segundo plano
+function verificarFechamentoAutomatico() {
+    const sessao = obterSessaoAtual();
+    if (!sessao) return;
+
+    const config = obterConfigCaixa();
+    const agora = new Date();
+    const horaAtualStr = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
+
+    if (horaAtualStr === config.horarioCorte) {
+        fecharCaixaAutomatico(sessao);
+    }
+}
+
+setInterval(verificarFechamentoAutomatico, 30000);
 
 /* =========================  
    FUNÇÕES BÁSICAS  
@@ -70,11 +151,8 @@ let idMovimentacaoEmEdicao = null;
 function lerJSON(chave, padrao = []) {  
     try {  
         const valor = localStorage.getItem(chave);  
-
         if (!valor) return padrao;  
-
         const resultado = JSON.parse(valor);  
-
         return resultado ?? padrao;  
     } catch (erro) {  
         console.error("Erro ao ler armazenamento:", chave, erro);  
@@ -111,9 +189,8 @@ function lerSaldos() {
 }  
 
 function moeda(valor) {  
-    const numero = Number(valor);  
-
-    return (Number.isFinite(numero) ? numero : 0).toLocaleString("pt-BR", {  
+    const numeroVal = Number(valor);  
+    return (Number.isFinite(numeroVal) ? numeroVal : 0).toLocaleString("pt-BR", {  
         style: "currency",  
         currency: "BRL"  
     });  
@@ -123,50 +200,48 @@ function numero(valor) {
     if (typeof valor === "number") {  
         return Number.isFinite(valor) ? valor : 0;  
     }  
-
     if (valor === null || valor === undefined || valor === "") {  
         return 0;  
     }  
-
     if (typeof valor === "string") {  
         const texto = valor.trim();  
-
         if (texto.includes(",")) {  
             const convertido = Number(  
                 texto.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "")  
             );  
-
             return Number.isFinite(convertido) ? convertido : 0;  
         }  
     }  
-
     const convertido = Number(valor);  
     return Number.isFinite(convertido) ? convertido : 0;  
 }  
 
 function dataISOHoje() {  
-    const agora = new Date();  
-    const ano = agora.getFullYear();  
-    const mes = String(agora.getMonth() + 1).padStart(2, "0");  
-    const dia = String(agora.getDate()).padStart(2, "0");  
-
-    return `${ano}-${mes}-${dia}`;  
+    return obterDataOperacional();
 }  
 
 function formatarDataISO(iso) {  
     if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) {  
         return "Data não informada";  
     }  
-
     const [ano, mes, dia] = String(iso).split("-");  
     return `${dia}/${mes}/${ano}`;  
+}  
+
+function isoParaDataBR(isoStr) {  
+    if (!isoStr) return "";  
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(isoStr)) return isoStr;  
+    const partes = isoStr.split("-");  
+    if (partes.length === 3) {  
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;  
+    }  
+    return isoStr;  
 }  
 
 function obterDataISO(registro) {  
     if (!registro || typeof registro !== "object") {  
         return "";  
     }  
-
     const candidatas = [  
         registro.dataChave,  
         registro.dataISO,  
@@ -179,39 +254,29 @@ function obterDataISO(registro) {
 
     for (const candidata of candidatas) {  
         if (!candidata) continue;  
-
         const texto = String(candidata);  
-
         if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {  
             return texto;  
         }  
-
         const br = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})/);  
-
         if (br) {  
             return `${br[3]}-${br[2]}-${br[1]}`;  
         }  
-
         const data = new Date(candidata);  
-
         if (!Number.isNaN(data.getTime())) {  
             const ano = data.getFullYear();  
             const mes = String(data.getMonth() + 1).padStart(2, "0");  
             const dia = String(data.getDate()).padStart(2, "0");  
-
             return `${ano}-${mes}-${dia}`;  
         }  
     }  
-
     return "";  
 }  
 
 function obterHora(registro) {  
     if (registro.hora) return String(registro.hora);  
-
     if (registro.dataHora) {  
         const data = new Date(registro.dataHora);  
-
         if (!Number.isNaN(data.getTime())) {  
             return data.toLocaleTimeString("pt-BR", {  
                 hour: "2-digit",  
@@ -219,26 +284,16 @@ function obterHora(registro) {
             });  
         }  
     }  
-
     return "";  
 }  
 
 function obterValorVenda(venda) {  
-    const campos = [  
-        "total",  
-        "valorTotal",  
-        "totalVenda",  
-        "valor",  
-        "totalPagar",  
-        "totalGeral"  
-    ];  
-
+    const campos = ["total", "valorTotal", "totalVenda", "valor", "totalPagar", "totalGeral"];  
     for (const campo of campos) {  
         if (venda[campo] !== undefined && venda[campo] !== null) {  
             return numero(venda[campo]);  
         }  
     }  
-
     return 0;  
 }  
 
@@ -255,7 +310,6 @@ function obterPagamento(registro) {
     if (valor.includes("debit")) return "debito";  
     if (valor.includes("credit")) return "credito";  
     if (valor.includes("dinheiro") || valor.includes("cash")) return "dinheiro";  
-
     return valor || "dinheiro";  
 }  
 
@@ -266,7 +320,6 @@ function nomePagamento(forma) {
         debito: "Débito",  
         credito: "Crédito"  
     };  
-
     return nomes[forma] || forma || "Não informado";  
 }  
 
@@ -292,7 +345,6 @@ function obterTipoMovimentacao(registro) {
     if (tipo.includes("saida") || tipo.includes("saída")) {  
         return "saida";  
     }  
-
     return "entrada";  
 }  
 
@@ -305,7 +357,6 @@ function escaparHTML(valor) {
             '"': "&quot;",  
             "'": "&#039;"  
         };  
-
         return mapa[caractere];  
     });  
 }  
@@ -313,6 +364,149 @@ function escaparHTML(valor) {
 function criarId() {  
     return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;  
 }  
+
+/* ==========================================================
+   GESTÃO DE CAIXA (ABRIR / FECHAR) NO HISTÓRICO
+========================================================== */
+
+if (elementos.btnAbrirCaixaHistorico) {
+    elementos.btnAbrirCaixaHistorico.addEventListener('click', () => {
+        const sessaoAberta = obterSessaoAtual();
+        if (sessaoAberta) {
+            alert('Já existe uma sessão de caixa aberta.');
+            return;
+        }
+
+        const valorAberturaStr = prompt('Informe o valor em dinheiro inicial no caixa:', '0.00');
+        if (valorAberturaStr === null) return;
+
+        const valorAbertura = Number(valorAberturaStr.replace(',', '.'));
+        if (isNaN(valorAbertura) || valorAbertura < 0) {
+            alert('Valor de abertura inválido.');
+            return;
+        }
+
+        const operador = prompt('Nome do operador (opcional):', '') || 'Operador';
+        const dataOp = obterDataOperacional();
+
+        const novaSessao = {
+            id: 'sessao-' + Date.now(),
+            status: 'aberto',
+            dataAbertura: new Date().toISOString(),
+            dataOperacional: dataOp,
+            valorAbertura: valorAbertura,
+            operador: operador
+        };
+
+        const sessoes = obterSessoes();
+        sessoes.push(novaSessao);
+        salvarSessoes(sessoes);
+
+        const saldos = lerSaldos();
+        saldos[dataOp] = valorAbertura;
+        salvarJSON(CHAVE_SALDOS, saldos);
+
+        alert('Caixa aberto com sucesso!');
+        atualizarInterfaceCaixa();
+        atualizarHistorico();
+    });
+}
+
+if (elementos.btnFecharCaixaHistorico) {
+    elementos.btnFecharCaixaHistorico.addEventListener('click', () => {
+        const sessao = obterSessaoAtual();
+        if (!sessao) {
+            alert('Não há nenhuma sessão de caixa aberta no momento.');
+            return;
+        }
+        fecharCaixaManual(sessao);
+    });
+}
+
+function fecharCaixaManual(sessao) {
+    const totais = calcularTotaisParaData(sessao.dataOperacional);
+    const dinheiroEsperado = sessao.valorAbertura + totais.dinheiro + totais.entradasDinheiro - totais.saidasDinheiro;
+
+    const valorContadoStr = prompt(`CAIXA ESPERADO EM DINHEIRO: R$ ${dinheiroEsperado.toFixed(2)}\n\nInforme quanto dinheiro foi contado fisicamente no caixa:`, dinheiroEsperado.toFixed(2));
+    if (valorContadoStr === null) return;
+
+    const valorContado = Number(valorContadoStr.replace(',', '.'));
+    if (isNaN(valorContado) || valorContado < 0) {
+        alert('Valor contado inválido.');
+        return;
+    }
+
+    const obs = prompt('Observação do fechamento (opcional):', '') || '';
+
+    sessao.status = 'fechado';
+    sessao.dataFechamento = new Date().toISOString();
+    sessao.dinheiroEsperado = dinheiroEsperado;
+    sessao.valorContado = valorContado;
+    sessao.diferenca = valorContado - dinheiroEsperado;
+    sessao.observacaoFechamento = obs;
+    sessao.totais = totais;
+
+    const sessoes = obterSessoes();
+    const index = sessoes.findIndex(s => s.id === sessao.id);
+    if (index >= 0) sessoes[index] = sessao;
+    salvarSessoes(sessoes);
+
+    alert(`Caixa fechado com sucesso!\nDinheiro esperado: R$ ${dinheiroEsperado.toFixed(2)}\nDinheiro contado: R$ ${valorContado.toFixed(2)}\nDiferença: R$ ${sessao.diferenca.toFixed(2)}`);
+    atualizarInterfaceCaixa();
+    atualizarHistorico();
+}
+
+function fecharCaixaAutomatico(sessao) {
+    const totais = calcularTotaisParaData(sessao.dataOperacional);
+    const dinheiroEsperado = sessao.valorAbertura + totais.dinheiro + totais.entradasDinheiro - totais.saidasDinheiro;
+
+    sessao.status = 'fechado';
+    sessao.dataFechamento = new Date().toISOString();
+    sessao.dinheiroEsperado = dinheiroEsperado;
+    sessao.valorContado = dinheiroEsperado;
+    sessao.diferenca = 0;
+    sessao.observacaoFechamento = 'Fechamento automático por horário de corte.';
+    sessao.totais = totais;
+
+    const sessoes = obterSessoes();
+    const index = sessoes.findIndex(s => s.id === sessao.id);
+    if (index >= 0) sessoes[index] = sessao;
+    salvarSessoes(sessoes);
+    atualizarInterfaceCaixa();
+}
+
+function atualizarInterfaceCaixa() {
+    const sessao = obterSessaoAtual();
+    if (elementos.statusCaixaHistorico) {
+        if (sessao) {
+            elementos.statusCaixaHistorico.textContent = 'CAIXA ABERTO';
+            elementos.statusCaixaHistorico.className = 'status-caixa aberto';
+            if (elementos.btnAbrirCaixaHistorico) elementos.btnAbrirCaixaHistorico.style.display = 'block';
+            if (elementos.btnFecharCaixaHistorico) elementos.btnFecharCaixaHistorico.style.display = 'block';
+        } else {
+            elementos.statusCaixaHistorico.textContent = 'CAIXA FECHADO';
+            elementos.statusCaixaHistorico.className = 'status-caixa fechado';
+            if (elementos.btnAbrirCaixaHistorico) elementos.btnAbrirCaixaHistorico.style.display = 'block';
+            if (elementos.btnFecharCaixaHistorico) elementos.btnFecharCaixaHistorico.style.display = 'none';
+        }
+    }
+}
+
+if (elementos.btnSalvarCorte && elementos.inputHorarioCorte) {
+    const configAtual = obterConfigCaixa();
+    elementos.inputHorarioCorte.value = configAtual.horarioCorte || "04:00";
+
+    elementos.btnSalvarCorte.addEventListener("click", () => {
+        const novoHorario = elementos.inputHorarioCorte.value;
+        if (!novoHorario) {
+            alert("Selecione um horário válido.");
+            return;
+        }
+        salvarConfigCaixa({ horarioCorte: novoHorario });
+        alert("Horário de corte atualizado com sucesso!");
+        atualizarHistorico();
+    });
+}
 
 /* =========================  
    SALDO INICIAL  
@@ -364,7 +558,6 @@ function criarRegistroVenda(venda, indice) {
 
 function criarRegistroMovimentacao(movimento, indice) {  
     const tipo = obterTipoMovimentacao(movimento);  
-
     return {  
         categoria: tipo,  
         tipo,  
@@ -390,16 +583,13 @@ function obterRegistrosDoDia(dataISO) {
     return [...vendas, ...movimentacoes].sort((a, b) => {  
         const horaA = a.hora || "";  
         const horaB = b.hora || "";  
-
         return horaB.localeCompare(horaA);  
     });  
 }  
 
-/* =========================  
-   RESUMO FINANCEIRO  
-========================= */  
-
-function atualizarResumo(registros, dataISO) {  
+// Cálculo consolidado para suporte a relatórios e PDF por data específica
+function calcularTotaisParaData(dataISO) {
+    const registros = obterRegistrosDoDia(dataISO);
     const vendas = registros.filter(item => item.categoria === "venda");  
     const entradas = registros.filter(item => item.categoria === "entrada");  
     const saidas = registros.filter(item => item.categoria === "saida");  
@@ -435,19 +625,44 @@ function atualizarResumo(registros, dataISO) {
         .filter(item => item.forma === "dinheiro")  
         .reduce((soma, item) => soma + item.valor, 0);  
 
-    const saldoFinal =  
+    const saldoFinalCaixa =  
         saldoInicial + dinheiro + entradasDinheiro - saidasDinheiro;  
 
-    elementos.saldoInicial.textContent = moeda(saldoInicial);  
-    elementos.saldoFinal.textContent = moeda(saldoFinal);  
-    elementos.dinheiro.textContent = moeda(dinheiro);  
-    elementos.pix.textContent = moeda(pix);  
-    elementos.debito.textContent = moeda(debito);  
-    elementos.credito.textContent = moeda(credito);  
-    elementos.total.textContent = moeda(totalVendido);  
-    elementos.quantidade.textContent = `${vendas.length} venda${vendas.length === 1 ? "" : "s"}`;  
-    elementos.entradas.textContent = moeda(totalEntradas);  
-    elementos.saidas.textContent = moeda(totalSaidas);  
+    return {
+        saldoInicial,
+        dinheiro,
+        pix,
+        debito,
+        credito,
+        totalVendido,
+        quantidadeVendas: vendas.length,
+        entradas: totalEntradas,
+        saidas: totalSaidas,
+        entradasDinheiro,
+        saidasDinheiro,
+        saldoFinalCaixa,
+        vendas,
+        movimentacoes: [...entradas, ...saidas]
+    };
+}
+
+/* =========================  
+   RESUMO FINANCEIRO  
+========================= */  
+
+function atualizarResumo(registros, dataISO) {  
+    const totais = calcularTotaisParaData(dataISO);
+
+    elementos.saldoInicial.textContent = moeda(totais.saldoInicial);  
+    elementos.saldoFinal.textContent = moeda(totais.saldoFinalCaixa);  
+    elementos.dinheiro.textContent = moeda(totais.dinheiro);  
+    elementos.pix.textContent = moeda(totais.pix);  
+    elementos.debito.textContent = moeda(totais.debito);  
+    elementos.credito.textContent = moeda(totais.credito);  
+    elementos.total.textContent = moeda(totais.totalVendido);  
+    elementos.quantidade.textContent = `${totais.quantidadeVendas} venda${totais.quantidadeVendas === 1 ? "" : "s"}`;  
+    elementos.entradas.textContent = moeda(totais.entradas);  
+    elementos.saidas.textContent = moeda(totais.saidas);  
 
     if (elementos.quantidadeLancamentos) {  
         elementos.quantidadeLancamentos.textContent =  
@@ -541,14 +756,12 @@ function renderizarHistorico(registros) {
     elementos.listaHistorico.querySelectorAll(".item-historico").forEach(item => {  
         item.addEventListener("click", evento => {  
             if (evento.target.closest(".lixeira-historico")) return;  
-
             const indice = Number(item.dataset.indice);  
             abrirDetalhes(registros[indice]);  
         });  
 
         item.addEventListener("keydown", evento => {  
             if (evento.target !== item) return;  
-
             if (evento.key === "Enter" || evento.key === " ") {  
                 evento.preventDefault();  
                 const indice = Number(item.dataset.indice);  
@@ -560,10 +773,8 @@ function renderizarHistorico(registros) {
     elementos.listaHistorico.querySelectorAll(".lixeira-historico").forEach(botao => {  
         botao.addEventListener("click", evento => {  
             evento.stopPropagation();  
-
             const indice = Number(botao.dataset.indice);  
             const registro = registros[indice];  
-
             if (registro) excluirRegistro(registro);  
         });  
     });  
@@ -583,7 +794,6 @@ function atualizarHistorico() {
 
 if (elementos.filtroData) {  
     elementos.filtroData.value = dataISOHoje();  
-
     elementos.filtroData.addEventListener("change", atualizarHistorico);  
 }  
 
@@ -592,13 +802,12 @@ if (elementos.btnHoje) {
         if (elementos.filtroData) {  
             elementos.filtroData.value = dataISOHoje();  
         }  
-
         atualizarHistorico();  
     });  
 }  
 
 /* =========================  
-   MODAL DE ENTRADA / SAÍDA (CRIAÇÃO E EDIÇÃO)  
+   MODAL DE ENTRADA / SAÍDA  
 ========================= */  
 
 function abrirModalMovimentacao(tipo, movimentacaoParaEditar = null) {  
@@ -630,7 +839,6 @@ function abrirModalMovimentacao(tipo, movimentacaoParaEditar = null) {
             elementos.tituloModalMovimentacao.textContent =  
                 tipo === "entrada" ? "Nova entrada" : "Nova saída";  
         }  
-
         if (elementos.subtituloModalMovimentacao) {  
             elementos.subtituloModalMovimentacao.textContent =  
                 tipo === "entrada"  
@@ -664,15 +872,8 @@ elementos.btnNovaSaida?.addEventListener("click", () => {
     abrirModalMovimentacao("saida");  
 });  
 
-elementos.btnFecharModalMovimentacao?.addEventListener(  
-    "click",  
-    fecharModalMovimentacao  
-);  
-
-elementos.btnCancelarMovimentacao?.addEventListener(  
-    "click",  
-    fecharModalMovimentacao  
-);  
+elementos.btnFecharModalMovimentacao?.addEventListener("click", fecharModalMovimentacao);  
+elementos.btnCancelarMovimentacao?.addEventListener("click", fecharModalMovimentacao);  
 
 elementos.modalMovimentacao?.addEventListener("click", evento => {  
     if (evento.target === elementos.modalMovimentacao) {  
@@ -704,7 +905,6 @@ if (elementos.formMovimentacao) {
 
         if (idMovimentacaoEmEdicao) {  
             const indice = movimentacoes.findIndex(item => String(item.id) === String(idMovimentacaoEmEdicao));  
-
             if (indice < 0) {  
                 alert("Não foi possível localizar a movimentação para editar.");  
                 return;  
@@ -742,7 +942,6 @@ if (elementos.formMovimentacao) {
             };  
 
             movimentacoes.push(movimento);  
-
             if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;  
 
             fecharModalMovimentacao();  
@@ -767,7 +966,6 @@ function abrirDetalhes(registro) {
     if (!registro || !elementos.modalDetalhes) return;  
 
     lancamentoSelecionado = registro;  
-
     elementos.detalhesIcone.textContent = iconeRegistro(registro);  
     elementos.detalhesTipo.textContent = nomeTipoRegistro(registro);  
 
@@ -777,14 +975,13 @@ function abrirDetalhes(registro) {
     elementos.detalhesValor.textContent = sinal + moeda(registro.valor);  
     elementos.detalhesForma.textContent = nomePagamento(registro.forma);  
     elementos.detalhesDescricao.textContent = registro.descricao || "Sem descrição";  
-
     elementos.detalhesDataHora.textContent =  
         `${formatarDataISO(registro.dataISO)}${registro.hora ? " às " + registro.hora : ""}`;  
 
     const ehMovimentacaoManual = registro.categoria === "entrada" || registro.categoria === "saida";  
 
     if (elementos.btnExcluirDetalhe) {  
-        elementos.btnExcluirDetalhe.style.display = ""; // Disponível para todos os registros  
+        elementos.btnExcluirDetalhe.style.display = "";  
     }  
 
     if (elementos.btnEditarDetalhe) {  
@@ -808,7 +1005,7 @@ elementos.modalDetalhes?.addEventListener("click", evento => {
 });  
 
 /* =========================  
-   EXCLUIR REGISTRO (VENDA OU MOVIMENTAÇÃO)  
+   EXCLUIR REGISTRO  
 ========================= */  
 
 function excluirRegistro(registro) {  
@@ -848,7 +1045,6 @@ function excluirRegistro(registro) {
         }  
 
         vendas.splice(indice, 1);  
-
         if (!salvarJSON(CHAVE_VENDAS, vendas)) return;  
     } else {  
         const movimentacoes = lerMovimentacoes();  
@@ -874,13 +1070,11 @@ function excluirRegistro(registro) {
         }  
 
         movimentacoes.splice(indice, 1);  
-
         if (!salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes)) return;  
     }  
 
     fecharDetalhes();  
     atualizarHistorico();  
-
     alert("Registro excluído com sucesso!");  
 }  
 
@@ -890,13 +1084,8 @@ elementos.btnExcluirDetalhe?.addEventListener("click", () => {
     }  
 });  
 
-/* =========================  
-   EDITAR MOVIMENTAÇÃO NOS DETALHES  
-========================= */  
-
 elementos.btnEditarDetalhe?.addEventListener("click", () => {  
     if (!lancamentoSelecionado) return;  
-
     const registro = lancamentoSelecionado;  
 
     if (registro.categoria !== "entrada" && registro.categoria !== "saida") {  
@@ -908,397 +1097,159 @@ elementos.btnEditarDetalhe?.addEventListener("click", () => {
     abrirModalMovimentacao(registro.categoria, registro);  
 });  
 
-/* =========================  
-   EXPORTAR PDF COM DADOS DO ESTABELECIMENTO  
-========================= */  
+/* ==========================================================
+   EXPORTAÇÃO DE PDF (PERÍODO / MULTI-DIAS) COM DADOS DA EMPRESA
+========================================================== */
 
-async function exportarPDF() {  
-    const dataISO = elementos.filtroData?.value || dataISOHoje();  
-    const registros = obterRegistrosDoDia(dataISO);  
+if (elementos.btnExportarPeriodoPDF) {
+    elementos.btnExportarPeriodoPDF.addEventListener("click", () => {
+        const inicio = elementos.pdfDataInicio ? elementos.pdfDataInicio.value : '';
+        const fim = elementos.pdfDataFim ? elementos.pdfDataFim.value : '';
 
-    if (registros.length === 0) {  
-        const continuar = confirm(  
-            "Não existem movimentações nesta data. Deseja gerar o relatório mesmo assim?"  
-        );  
+        if (!inicio || !fim) {
+            alert('Selecione a data inicial e a data final.');
+            return;
+        }
 
-        if (!continuar) return;  
-    }  
+        if (inicio > fim) {
+            alert('A data inicial não pode ser superior à data final.');
+            return;
+        }
 
-    const nomeArquivo =  
-        `Dr-Troco-Historico-${dataISO.split("-").reverse().join("-")}.pdf`;  
+        gerarPDFIntervalo(inicio, fim);
+    });
+}
 
-    // Dados cadastrados na página estabelecimento.html  
-    let estabelecimento = {};  
+function gerarPDFIntervalo(dataInicioISO, dataFimISO) {
+    let atual = new Date(dataInicioISO + 'T00:00:00');
+    const fim = new Date(dataFimISO + 'T00:00:00');
 
-    try {  
-        estabelecimento = JSON.parse(  
-            localStorage.getItem("drTroco_estabelecimento") || "{}"  
-        );  
+    let acumuladoDinheiro = 0;
+    let acumuladoPix = 0;
+    let acumuladoDebito = 0;
+    let acumuladoCredito = 0;
+    let acumuladoVendasTotal = 0;
+    let acumuladoEntradas = 0;
+    let acumuladoSaidas = 0;
+    let htmlLinhas = '';
 
-        if (  
-            !estabelecimento ||  
-            typeof estabelecimento !== "object" ||  
-            Array.isArray(estabelecimento)  
-        ) {  
-            estabelecimento = {};  
-        }  
-    } catch (erro) {  
-        console.error("Erro ao ler dados do estabelecimento:", erro);  
-        estabelecimento = {};  
-    }  
+    while (atual <= fim) {
+        const iso = atual.toISOString().slice(0, 10);
+        const totais = calcularTotaisParaData(iso);
+
+        acumuladoDinheiro += totais.dinheiro;
+        acumuladoPix += totais.pix;
+        acumuladoDebito += totais.debito;
+        acumuladoCredito += totais.credito;
+        acumuladoVendasTotal += totais.totalVendido;
+        acumuladoEntradas += totais.entradas;
+        acumuladoSaidas += totais.saidas;
+
+        htmlLinhas += `
+            <tr>
+                <td><strong>${isoParaDataBR(iso)}</strong></td>
+                <td>${moeda(totais.saldoFinalCaixa)}</td>
+                <td>${moeda(totais.totalVendido)} (${totais.quantidadeVendas}v)</td>
+                <td>${moeda(totais.dinheiro)}</td>
+                <td>${moeda(totais.pix)}</td>
+                <td>${moeda(totais.entradas)}</td>
+                <td>${moeda(totais.saidas)}</td>
+            </tr>
+        `;
+
+        atual.setDate(atual.getDate() + 1);
+    }
+
+    let estabelecimento = {};
+    try {
+        estabelecimento = JSON.parse(localStorage.getItem("drTroco_estabelecimento") || "{}");
+    } catch {
+        estabelecimento = {};
+    }
 
     const dadosEstabelecimento = [  
         estabelecimento.nomeEstabelecimento,  
-        estabelecimento.responsavelEstabelecimento  
-            ? `Responsável: ${estabelecimento.responsavelEstabelecimento}`  
-            : "",  
-        estabelecimento.telefoneEstabelecimento  
-            ? `Telefone: ${estabelecimento.telefoneEstabelecimento}`  
-            : "",  
-        estabelecimento.emailEstabelecimento  
-            ? `E-mail: ${estabelecimento.emailEstabelecimento}`  
-            : "",  
+        estabelecimento.responsavelEstabelecimento ? `Responsável: ${estabelecimento.responsavelEstabelecimento}` : "",  
+        estabelecimento.telefoneEstabelecimento ? `Telefone: ${estabelecimento.telefoneEstabelecimento}` : "",  
+        estabelecimento.emailEstabelecimento ? `E-mail: ${estabelecimento.emailEstabelecimento}` : "",  
         estabelecimento.enderecoEstabelecimento,  
-        [  
-            estabelecimento.cidadeEstabelecimento,  
-            estabelecimento.estadoEstabelecimento  
-        ].filter(Boolean).join(" - ")  
-    ].filter(valor => String(valor || "").trim());  
-
-    const jsPDF = window.jspdf?.jsPDF || window.jsPDF;  
-
-    const saldoInicial = obterSaldoInicial(dataISO);  
-    const vendas = registros.filter(item => item.categoria === "venda");  
-    const entradas = registros.filter(item => item.categoria === "entrada");  
-    const saidas = registros.filter(item => item.categoria === "saida");  
-
-    const totalDinheiro = vendas  
-        .filter(item => item.forma === "dinheiro")  
-        .reduce((soma, item) => soma + item.valor, 0);  
-
-    const entradasDinheiro = entradas  
-        .filter(item => item.forma === "dinheiro")  
-        .reduce((soma, item) => soma + item.valor, 0);  
-
-    const saidasDinheiro = saidas  
-        .filter(item => item.forma === "dinheiro")  
-        .reduce((soma, item) => soma + item.valor, 0);  
-
-    const saldoFinal =  
-        saldoInicial + totalDinheiro + entradasDinheiro - saidasDinheiro;  
-
-    const totalVendido = vendas.reduce(  
-        (soma, item) => soma + item.valor, 0  
-    );  
-
-    const totalEntradas = entradas.reduce(  
-        (soma, item) => soma + item.valor, 0  
-    );  
-
-    const totalSaidas = saidas.reduce(  
-        (soma, item) => soma + item.valor, 0  
-    );  
-
-    const linhasResumo = [  
-        `Saldo inicial: ${moeda(saldoInicial)}`,  
-        `Total vendido: ${moeda(totalVendido)}`,  
-        `Entradas: ${moeda(totalEntradas)}`,  
-        `Saídas: ${moeda(totalSaidas)}`,  
-        `Saldo final físico: ${moeda(saldoFinal)}`  
-    ];  
-
-    // Tenta gerar o PDF diretamente com jsPDF  
-    if (jsPDF) {  
-        try {  
-            const doc = new jsPDF({ unit: "mm", format: "a4" });  
-            const larguraPagina =  
-                doc.internal.pageSize.getWidth();  
-            const alturaPagina =  
-                doc.internal.pageSize.getHeight();  
-            const margem = 14;  
-            const larguraTexto = larguraPagina - margem * 2;  
-
-            let y = 18;  
-
-            doc.setFont("helvetica", "bold");  
-            doc.setFontSize(19);  
-            doc.setTextColor(32, 167, 103);  
-            doc.text("Dr. Troco — Histórico", margem, y);  
-
-            y += 9;  
-
-            // Cabeçalho do estabelecimento  
-            if (dadosEstabelecimento.length > 0) {  
-                doc.setFont("helvetica", "bold");  
-                doc.setFontSize(12);  
-                doc.setTextColor(38, 54, 64);  
-
-                const nome = dadosEstabelecimento[0];  
-                const linhasNome = doc.splitTextToSize(  
-                    String(nome),  
-                    larguraTexto  
-                );  
-
-                doc.text(linhasNome, margem, y);  
-                y += linhasNome.length * 5 + 1;  
-
-                doc.setFont("helvetica", "normal");  
-                doc.setFontSize(9);  
-                doc.setTextColor(80, 90, 85);  
-
-                dadosEstabelecimento.slice(1).forEach(informacao => {  
-                    const linhas = doc.splitTextToSize(  
-                        String(informacao),  
-                        larguraTexto  
-                    );  
-
-                    if (y + linhas.length * 4 > alturaPagina - 20) {  
-                        doc.addPage();  
-                        y = 18;  
-                    }  
-
-                    doc.text(linhas, margem, y);  
-                    y += linhas.length * 4 + 1;  
-                });  
-
-                y += 3;  
-            }  
-
-            doc.setFont("helvetica", "normal");  
-            doc.setFontSize(10);  
-            doc.setTextColor(80, 90, 85);  
-            doc.text(  
-                `Data do relatório: ${formatarDataISO(dataISO)}`,  
-                margem,  
-                y  
-            );  
-
-            y += 9;  
-
-            // Resumo financeiro  
-            doc.setFontSize(11);  
-            doc.setTextColor(38, 54, 64);  
-
-            linhasResumo.forEach(linha => {  
-                if (y > alturaPagina - 20) {  
-                    doc.addPage();  
-                    y = 18;  
-                }  
-
-                doc.text(linha, margem, y);  
-                y += 7;  
-            });  
-
-            y += 5;  
-
-            if (y > alturaPagina - 25) {  
-                doc.addPage();  
-                y = 18;  
-            }  
-
-            doc.setFont("helvetica", "bold");  
-            doc.setFontSize(13);  
-            doc.text("Movimentações", margem, y);  
-            y += 8;  
-
-            doc.setFont("helvetica", "normal");  
-            doc.setFontSize(9);  
-
-            if (registros.length === 0) {  
-                doc.text(  
-                    "Nenhuma movimentação nesta data.",  
-                    margem,  
-                    y  
-                );  
-            }  
-
-            registros.forEach(registro => {  
-                const texto =  
-                    `${nomeTipoRegistro(registro)} | ` +  
-                    `${registro.descricao} | ` +  
-                    `${nomePagamento(registro.forma)} | ` +  
-                    `${registro.hora || "Sem horário"} | ` +  
-                    `${moeda(registro.valor)}`;  
-
-                const linhas = doc.splitTextToSize(  
-                    texto,  
-                    larguraTexto  
-                );  
-
-                const alturaBloco = linhas.length * 5 + 3;  
-
-                if (y + alturaBloco > alturaPagina - 15) {  
-                    doc.addPage();  
-                    y = 18;  
-                }  
-
-                doc.text(linhas, margem, y);  
-                y += alturaBloco;  
-            });  
-
-            doc.save(nomeArquivo);  
-            return;  
-
-        } catch (erro) {  
-            console.error("Erro ao criar PDF:", erro);  
-            alert(  
-                "Não foi possível criar o PDF diretamente. " +  
-                "O navegador tentará abrir a impressão."  
-            );  
-        }  
-    }  
-
-    // Alternativa: abrir a versão para impressão  
-    const janela = window.open("", "_blank");  
-
-    if (!janela) {  
-        alert(  
-            "O navegador bloqueou a janela de impressão. " +  
-            "Permita pop-ups e tente novamente."  
-        );  
-        return;  
-    }  
-
-    const linhasHTML = registros.map(registro => `  
-        <tr>  
-            <td>${escaparHTML(nomeTipoRegistro(registro))}</td>  
-            <td>${escaparHTML(registro.descricao)}</td>  
-            <td>${escaparHTML(nomePagamento(registro.forma))}</td>  
-            <td>${escaparHTML(registro.hora || "—")}</td>  
-            <td>${escaparHTML(moeda(registro.valor))}</td>  
-        </tr>  
-    `).join("");  
+        [estabelecimento.cidadeEstabelecimento, estabelecimento.estadoEstabelecimento].filter(Boolean).join(" - ")  
+    ].filter(valor => String(valor || "").trim());
 
     const dadosEstabelecimentoHTML = dadosEstabelecimento  
-        .map((informacao, indice) => indice === 0  
-            ? `<h2>${escaparHTML(informacao)}</h2>`  
-            : `<p>${escaparHTML(informacao)}</p>`  
-        )  
-        .join("");  
+        .map((informacao, indice) => indice === 0 ? `<h2>${escaparHTML(informacao)}</h2>` : `<p>${escaparHTML(informacao)}</p>`)  
+        .join("");
+
+    const janela = window.open("", "_blank");  
+    if (!janela) {  
+        alert("O navegador bloqueou a janela pop-up. Permita pop-ups e tente novamente.");  
+        return;  
+    }  
 
     janela.document.write(`  
         <!DOCTYPE html>  
         <html lang="pt-BR">  
         <head>  
             <meta charset="UTF-8">  
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">  
-            <title>${escaparHTML(nomeArquivo)}</title>  
+            <title>Relatório Dr. Troco — Período</title>  
             <style>  
-                body {  
-                    font-family: Arial, sans-serif;  
-                    padding: 25px;  
-                    color: #263640;  
-                }  
-
-                h1 {  
-                    color: #168b53;  
-                    margin-bottom: 8px;  
-                }  
-
-                h2 {  
-                    font-size: 17px;  
-                    margin: 12px 0 6px;  
-                }  
-
-                p {  
-                    color: #52635b;  
-                    margin: 4px 0;  
-                    font-size: 12px;  
-                    overflow-wrap: anywhere;  
-                }  
-
-                .resumo {  
-                    margin-top: 18px;  
-                    padding: 12px;  
-                    background: #eaf8f1;  
-                    border-radius: 6px;  
-                }  
-
-                .resumo p {  
-                    margin: 7px 0;  
-                }  
-
-                table {  
-                    width: 100%;  
-                    border-collapse: collapse;  
-                    margin-top: 20px;  
-                }  
-
-                th, td {  
-                    padding: 9px 6px;  
-                    border-bottom: 1px solid #ddd;  
-                    text-align: left;  
-                    font-size: 11px;  
-                    overflow-wrap: anywhere;  
-                }  
-
-                th {  
-                    background: #eaf8f1;  
-                }  
-
-                @media print {  
-                    body {  
-                        padding: 0;  
-                    }  
-
-                    tr {  
-                        break-inside: avoid;  
-                    }  
-                }  
+                body { font-family: Arial, sans-serif; padding: 25px; color: #263640; font-size: 12px; }  
+                h1 { color: #168b53; margin-bottom: 5px; font-size: 20px; }  
+                h2 { font-size: 17px; margin: 12px 0 6px; }  
+                p { color: #52635b; margin: 4px 0; font-size: 12px; }  
+                .resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 18px 0; }  
+                .card { border: 1px solid #ddd; padding: 10px; border-radius: 8px; background: #f9f9f9; }  
+                .card span { display: block; font-size: 10px; color: #777; font-weight: bold; }  
+                .card strong { font-size: 14px; color: #168b53; }  
+                table { width: 100%; border-collapse: collapse; margin-top: 15px; }  
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 11px; }  
+                th { background: #eaf8f1; color: #168b53; }  
             </style>  
         </head>  
         <body>  
-            <h1>Dr. Troco — Histórico</h1>  
-
+            <h1>Dr. Troco — Relatório Consolidado de Período</h1>  
             ${dadosEstabelecimentoHTML}  
+            <p>Período de: <strong>${isoParaDataBR(dataInicioISO)}</strong> até <strong>${isoParaDataBR(dataFimISO)}</strong></p>  
 
-            <p>  
-                Data do relatório:  
-                ${escaparHTML(formatarDataISO(dataISO))}  
-            </p>  
-
-            <p>Quantidade de registros: ${registros.length}</p>  
-
-            <section class="resumo">  
-                <strong>Resumo financeiro</strong>  
-                ${linhasResumo.map(linha =>  
-                    `<p>${escaparHTML(linha)}</p>`  
-                ).join("")}  
-            </section>  
+            <div class="resumo">  
+                <div class="card"><span>TOTAL VENDIDO</span><strong>${moeda(acumuladoVendasTotal)}</strong></div>  
+                <div class="card"><span>DINHEIRO</span><strong>${moeda(acumuladoDinheiro)}</strong></div>  
+                <div class="card"><span>PIX</span><strong>${moeda(acumuladoPix)}</strong></div>  
+                <div class="card"><span>ENTRADAS / SAÍDAS</span><strong>${moeda(acumuladoEntradas - acumuladoSaidas)}</strong></div>  
+            </div>  
 
             <table>  
                 <thead>  
                     <tr>  
-                        <th>Tipo</th>  
-                        <th>Descrição</th>  
-                        <th>Pagamento</th>  
-                        <th>Hora</th>  
-                        <th>Valor</th>  
+                        <th>Data</th>  
+                        <th>Saldo Caixa</th>  
+                        <th>Vendas</th>  
+                        <th>Dinheiro</th>  
+                        <th>Pix</th>  
+                        <th>Entradas</th>  
+                        <th>Saídas</th>  
                     </tr>  
                 </thead>  
                 <tbody>  
-                    ${linhasHTML || `  
-                        <tr>  
-                            <td colspan="5">  
-                                Nenhum registro nesta data.  
-                            </td>  
-                        </tr>  
-                    `}  
+                    ${htmlLinhas}  
                 </tbody>  
             </table>  
 
             <script>  
-                window.onload = function() {  
-                    window.print();  
-                };  
-            <\/script>  
+                window.onload = () => { setTimeout(() => window.print(), 300); };  
+            </script>  
         </body>  
         </html>  
     `);  
-
     janela.document.close();  
-}  
+}
 
+// Mantido botão padrão de PDF para exportar o dia único atual
+async function exportarPDF() {  
+    const dataISO = elementos.filtroData?.value || dataISOHoje();  
+    const registros = obterRegistrosDoDia(dataISO);  
+    gerarPDFIntervalo(dataISO, dataISO);
+}  
   
 elementos.btnExportarPDF?.addEventListener("click", exportarPDF);  
 
@@ -1308,7 +1259,6 @@ elementos.btnExportarPDF?.addEventListener("click", exportarPDF);
 
 document.addEventListener("keydown", evento => {  
     if (evento.key !== "Escape") return;  
-
     fecharModalMovimentacao();  
     fecharDetalhes();  
 });  
@@ -1317,6 +1267,7 @@ document.addEventListener("keydown", evento => {
    INICIALIZAÇÃO  
 ========================= */  
 
+atualizarInterfaceCaixa();
 atualizarHistorico();
 
 });
