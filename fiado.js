@@ -827,7 +827,100 @@
 
     abrirModal(elementos.modalPagamento, elementos.valorPagamento);
   }
+  // Registra o recebimento de fiado no movimento do caixa.
+  // O ID do lançamento vincula os dois registros e evita duplicidade.
+  function registrarRecebimentoFiadoNoCaixa(cliente, movimento, forma) {
+    if (!window.DrTrocoCaixa) {
+      throw new Error('O módulo de sessões de caixa não foi carregado.');
+    }
 
+    if (!window.DrTrocoCaixa.current()) {
+      throw new Error('Não existe uma sessão de caixa aberta.');
+    }
+
+    const chave = 'drTroco_movimentacoes';
+
+    let ledger = JSON.parse(localStorage.getItem(chave) || '[]');
+
+    if (!Array.isArray(ledger)) {
+      throw new Error('O histórico de movimentações do caixa está inválido.');
+    }
+
+    const existente = ledger.find(item =>
+      item.fiadoMovimentoId === movimento.id
+    );
+
+    if (existente) {
+      throw new Error('Este recebimento já foi registrado no caixa.');
+    }
+
+    const agora = new Date();
+
+    const movimentoCaixa = {
+      id: 'fiado-pg-' + movimento.id,
+      tipo: 'entrada',
+      valor: movimento.valorCentavos / 100,
+      formaPagamento: forma,
+      descricao: 'Pagamento de fiado — ' + cliente.nome,
+      data: dataLocalISO(),
+      dataChave: dataLocalISO(),
+      hora: agora.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      origem: 'pagamento_fiado',
+      fiadoMovimentoId: movimento.id,
+      clienteId: cliente.id
+    };
+
+    window.DrTrocoCaixa.attachMovement(movimentoCaixa);
+
+    ledger.push(movimentoCaixa);
+
+    localStorage.setItem(chave, JSON.stringify(ledger));
+
+    return movimentoCaixa;
+  }
+
+  function removerRecebimentoFiadoDoCaixa(movimentoId) {
+    const chave = 'drTroco_movimentacoes';
+
+    const ledger = JSON.parse(localStorage.getItem(chave) || '[]');
+
+    if (!Array.isArray(ledger)) {
+      throw new Error('O histórico de movimentações do caixa está inválido.');
+    }
+
+    const vinculado = ledger.find(item =>
+      item.fiadoMovimentoId === movimentoId
+    );
+
+    if (!vinculado) return null;
+
+    const sessoes = window.DrTrocoCaixa?.sessions?.() || [];
+
+    const sessao = sessoes.find(item =>
+      item.id === vinculado.caixaSessaoId
+    );
+
+    if (sessao && sessao.status === 'fechado') {
+      throw new Error(
+        'Este pagamento pertence a uma sessão de caixa já fechada. ' +
+        'O lançamento não pode ser excluído para preservar o histórico.'
+      );
+    }
+
+    localStorage.setItem(
+      chave,
+      JSON.stringify(
+        ledger.filter(item =>
+          item.fiadoMovimentoId !== movimentoId
+        )
+      )
+    );
+
+    return vinculado;
+  }
   function registrarPagamento(evento) {
     evento.preventDefault();
 
