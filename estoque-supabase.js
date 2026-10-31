@@ -1,20 +1,7 @@
+
 // ======================================================
 // DR. TROCO — INTEGRAÇÃO DO ESTOQUE COM SUPABASE
 // ======================================================
-
-// DIAGNÓSTICO TEMPORÁRIO
-// Depois de confirmar o funcionamento, podemos remover os alertas.
-
-const DIAGNOSTICO_TEMPORARIO = true;
-
-if (
-  DIAGNOSTICO_TEMPORARIO &&
-  !window.__DR_TROCO_ESTOQUE_SUPABASE_CARREGADO__
-) {
-  window.__DR_TROCO_ESTOQUE_SUPABASE_CARREGADO__ = true;
-
-  alert("ESTOQUE-SUPABASE.JS FOI CARREGADO!");
-}
 
 window.EstoqueSupabase = (() => {
 
@@ -66,13 +53,7 @@ window.EstoqueSupabase = (() => {
       );
     }
 
-    // ALERTA TEMPORÁRIO PARA CONFERIR O ID DA CONTA
-    if (DIAGNOSTICO_TEMPORARIO) {
-      alert("ID AUTENTICADO:\n" + usuario.id);
-    }
-
-    // Reutiliza o estabelecimento já identificado
-    // enquanto a mesma conta estiver autenticada.
+    // Reutiliza o estabelecimento se a conta for a mesma.
     if (
       comercioIdAtual &&
       usuarioIdAtual === usuario.id
@@ -103,9 +84,7 @@ window.EstoqueSupabase = (() => {
 
     if (!data || data.length === 0) {
       throw new Error(
-        "Nenhum estabelecimento ativo foi encontrado para esta sessão. " +
-        "O registro pode estar oculto por uma política de segurança RLS " +
-        "da tabela membros_comercio."
+        "Nenhum estabelecimento ativo foi encontrado para esta sessão."
       );
     }
 
@@ -181,7 +160,9 @@ window.EstoqueSupabase = (() => {
     const comercioId = await obterComercioId();
 
     if (!produto || !produto.nome) {
-      throw new Error("Os dados do produto estão incompletos.");
+      throw new Error(
+        "Os dados do produto estão incompletos."
+      );
     }
 
     const registro = {
@@ -268,7 +249,9 @@ window.EstoqueSupabase = (() => {
     const comercioId = await obterComercioId();
 
     if (!movimento) {
-      throw new Error("Dados da movimentação não informados.");
+      throw new Error(
+        "Dados da movimentação não informados."
+      );
     }
 
     const registro = {
@@ -310,6 +293,112 @@ window.EstoqueSupabase = (() => {
   }
 
   // ----------------------------------------------------
+  // CARREGAR HISTÓRICO DE MOVIMENTAÇÕES
+  // Aceita filtro por data inicial e data final.
+  // Carrega em páginas para não limitar o histórico.
+  // ----------------------------------------------------
+
+  async function carregarMovimentacoes(opcoes = {}) {
+    const client = obterCliente();
+    const comercioId = await obterComercioId();
+
+    const dataInicial = opcoes.dataInicial || null;
+    const dataFinal = opcoes.dataFinal || null;
+
+    const formatoData = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (
+      dataInicial &&
+      !formatoData.test(dataInicial)
+    ) {
+      throw new Error("Data inicial inválida.");
+    }
+
+    if (
+      dataFinal &&
+      !formatoData.test(dataFinal)
+    ) {
+      throw new Error("Data final inválida.");
+    }
+
+    if (
+      dataInicial &&
+      dataFinal &&
+      dataInicial > dataFinal
+    ) {
+      throw new Error(
+        "A data inicial não pode ser posterior à data final."
+      );
+    }
+
+    const tamanhoPagina = 1000;
+    let inicio = 0;
+    let registros = [];
+
+    while (true) {
+      let consulta = client
+        .from("estoque_movimentacoes")
+        .select("*")
+        .eq("comercio_id", comercioId);
+
+      if (dataInicial) {
+        consulta = consulta.gte("data", dataInicial);
+      }
+
+      if (dataFinal) {
+        consulta = consulta.lte("data", dataFinal);
+      }
+
+      consulta = consulta
+        .order("criado_em", { ascending: false })
+        .range(inicio, inicio + tamanhoPagina - 1);
+
+      const {
+        data,
+        error
+      } = await consulta;
+
+      if (error) {
+        console.error(
+          "Erro ao carregar movimentações:",
+          error
+        );
+
+        throw new Error(
+          "Não foi possível carregar o histórico: " +
+          error.message
+        );
+      }
+
+      const pagina = data || [];
+
+      registros = registros.concat(pagina);
+
+      if (pagina.length < tamanhoPagina) {
+        break;
+      }
+
+      inicio += tamanhoPagina;
+    }
+
+    return registros.map(m => ({
+      id: m.id,
+      comercioId: m.comercio_id,
+      produtoId: m.produto_id,
+      produtoNome: m.produto_nome,
+      tipo: m.tipo,
+      quantidade: Number(m.quantidade) || 0,
+      quantidadeAnterior:
+        Number(m.quantidade_anterior) || 0,
+      quantidadeNova:
+        Number(m.quantidade_nova) || 0,
+      data: m.data,
+      hora: m.hora,
+      criadoEm: m.criado_em
+    }));
+  }
+
+  // ----------------------------------------------------
   // LIMPAR ESTABELECIMENTO EM CASO DE TROCA DE CONTA
   // ----------------------------------------------------
 
@@ -328,6 +417,7 @@ window.EstoqueSupabase = (() => {
     salvarProduto,
     excluirProduto,
     salvarMovimentacao,
+    carregarMovimentacoes,
     limparComercioAtual
   };
 
