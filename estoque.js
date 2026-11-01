@@ -533,7 +533,7 @@ function abrirEdicaoProduto(id) {
     if (minimo) minimo.value = produto.estoqueMinimo;
     if (quantidade) {
         quantidade.value = produto.quantidade;
-        quantidade.disabled = true; // Bloqueia edição direta de quantidade por aqui
+        quantidade.disabled = true;
     }
     if (validade) validade.value = produto.validade || "";
     if (titulo) titulo.textContent = "Editar produto";
@@ -1026,19 +1026,40 @@ async function confirmarExclusao() {
 }
 
 /* =========================================================
-HISTÓRICO DE MOVIMENTAÇÕES — EXIBIÇÃO E GESTÃO (EXCLUIR / EDITAR)
+HISTÓRICO DE MOVIMENTAÇÕES — APENAS ENTRADAS E SAÍDAS (COLAPSÁVEL)
 ========================================================= */
+
+function alternarHistoricoMovimentacoes() {
+    const container = document.getElementById("containerHistoricoMovimentacoes");
+    const botao = document.getElementById("btnToggleHistorico");
+    if (!container || !botao) return;
+
+    if (container.style.display === "none") {
+        container.style.display = "flex";
+        botao.textContent = "Ocultar ▲";
+        renderizarHistoricoMovimentacoes();
+    } else {
+        container.style.display = "none";
+        botao.textContent = "Ver histórico ▼";
+    }
+}
 
 function renderizarHistoricoMovimentacoes() {
     const container = document.getElementById("listaHistoricoMovimentacoes");
     if (!container) return;
 
-    const movimentacoes = carregarMovimentacoes().slice().reverse(); // Mais recentes primeiro
+    const todasMovimentacoes = carregarMovimentacoes();
+
+    // Filtra para mostrar APENAS "entrada" e "saida"
+    const movimentacoes = todasMovimentacoes.filter(mov => {
+        const tipo = String(mov.tipo || "").toLowerCase();
+        return tipo === "entrada" || tipo === "saida";
+    }).slice().reverse(); // Mais recentes primeiro
 
     if (!movimentacoes.length) {
         container.innerHTML = `
             <div style="text-align: center; padding: 20px; color: #78848b; font-size: 13px;">
-                Nenhuma movimentação registada ainda.
+                Nenhuma entrada ou saída registada ainda.
             </div>`;
         return;
     }
@@ -1046,7 +1067,7 @@ function renderizarHistoricoMovimentacoes() {
     container.innerHTML = movimentacoes.map(mov => {
         const quando = obterDataHoraRelatorio(mov);
         const tipo = String(mov.tipo || "").toLowerCase();
-        const ehEntrada = tipo === "entrada" || tipo === "cadastro";
+        const ehEntrada = tipo === "entrada";
         const corTipo = ehEntrada ? "#218653" : "#d9534f";
         const icone = ehEntrada ? "📥" : "📤";
 
