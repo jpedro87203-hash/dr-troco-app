@@ -214,6 +214,22 @@ async function carregarProdutos() {
     estoquePronto = false;
     preservarEstoqueLegado();
 
+    // 1. Carrega do cache local primeiro para exibir imediatamente (evita tela vazia)
+    try {
+        const chaveLocal = chaveEstoqueDoComercio();
+        const dadosLocais = chaveLocal ? localStorage.getItem(chaveLocal) : null;
+        if (dadosLocais) {
+            const listaLocal = JSON.parse(dadosLocais);
+            if (Array.isArray(listaLocal) && listaLocal.length > 0) {
+                produtos = listaLocal.map(normalizarProduto);
+                atualizarKPIs();
+                renderizarProdutos();
+            }
+        }
+    } catch (e) {
+        console.warn("Aviso ao carregar cache local prévio:", e);
+    }
+
     try {
         if (!window.EstoqueSupabase) {
             throw new Error("estoque-supabase.js não foi carregado.");
@@ -225,11 +241,16 @@ async function carregarProdutos() {
         }
 
         const listaRemota = await window.EstoqueSupabase.carregarProdutos();
-        produtos = Array.isArray(listaRemota)
-            ? listaRemota.map(normalizarProduto)
-            : [];
+        
+        // Proteção: Só substitui se a nuvem retornar dados válidos ou se o cache local estiver vazio
+        if (Array.isArray(listaRemota) && listaRemota.length > 0) {
+            produtos = listaRemota.map(normalizarProduto);
+            salvarProdutos();
+        } else if (!produtos.length && Array.isArray(listaRemota)) {
+            produtos = [];
+            salvarProdutos();
+        }
 
-        salvarProdutos();
         estoquePronto = true;
         return true;
 
@@ -240,20 +261,21 @@ async function carregarProdutos() {
             const chave = chaveEstoqueDoComercio();
             const dados = chave ? localStorage.getItem(chave) : null;
             const lista = dados ? JSON.parse(dados) : [];
-            produtos = Array.isArray(lista) ? lista.map(normalizarProduto) : [];
+            if (lista.length > 0) {
+                produtos = lista.map(normalizarProduto);
+            }
         } catch (erroCache) {
             console.error("Erro ao carregar cache local:", erroCache);
-            produtos = [];
         }
 
-        estoquePronto = false;
+        estoquePronto = produtos.length > 0;
         const listaElemento = document.getElementById("listaProdutos");
         if (listaElemento && !produtos.length) {
             listaElemento.innerHTML = `
                 <div class="estoque-vazio">
                     <div class="estoque-vazio-icone">☁️</div>
-                    <strong>Não foi possível carregar o estoque</strong>
-                    <span>Verifique a conexão e atualize a página.</span>
+                    <strong>Não foi possível carregar o estoque da nuvem</strong>
+                    <span>Verifique sua conexão ou cadastre seu primeiro produto.</span>
                 </div>`;
         }
         return false;
@@ -492,7 +514,10 @@ function abrirCadastroProduto() {
 
     if (produtoId) produtoId.value = "";
     if (titulo) titulo.textContent = "Cadastrar produto";
-    if (quantidade) quantidade.value = "0";
+    if (quantidade) {
+        quantidade.value = "0";
+        quantidade.disabled = false;
+    }
     if (estoqueMinimo) estoqueMinimo.value = "5";
     if (campoValidade) campoValidade.style.display = "";
     if (validade) validade.value = "";
@@ -1378,81 +1403,6 @@ function configurarBotaoExportarPDF() {
     acoes.appendChild(container);
 }
 
-">${formatarReal(preco)}</td>
-                <td class="numero">${formatarReal(preco * quantidade)}</td>
-                <td>${escaparHTML(status.texto)}</td>
-                <td>${produto.validade ? formatarDataBR(produto.validade) : "—"}</td>
-            </tr>`;
-    }).join("");
-
-    const linhasMovimentacoes = movimentacoes.map(movimento => {
-        const quando = obterDataHoraRelatorio(movimento);
-        return `
-            <tr>
-                <td>${escaparHTML(quando.data)}</td>
-                <td>${escaparHTML(quando.hora)}</td>
-                <td>${escaparHTML(obterRotuloTipoMovimento(movimento.tipo))}</td>
-                <td>${escaparHTML(movimento.produtoNome || movimento.nomeProduto || "Produto não informado")}</td>
-                <td class="numero">${numeroSeguro(movimento.quantidade)}</td>
-                <td class="numero">${movimento.quantidadeAnterior === undefined ? "—" : numeroSeguro(movimento.quantidadeAnterior)}</td>
-                <td class="numero">${movimento.quantidadeNova === undefined ? "—" : numeroSeguro(movimento.quantidadeNova)}</td>
-            </tr>`;
-    }).join("");
-
-    const geradoEm = new Date().toLocaleString("pt-BR");
-    const rotuloPeriodoFiltro = dataSelecionada ? `Data selecionada: ${formatarDataBR(dataSelecionada)}` : "Todas as datas";
-
-    const janela = window.open("", "_blank");
-    if (!janela) {
-        alert("O navegador bloqueou a janela do relatório. Permita pop-ups para este aplicativo e tente novamente.");
-        return;
-    }
-
-    const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Relatório de Estoque - Dr. Troco</title>
-<style>
-    @page { size: A4 landscape; margin: 12mm; }
-    * { box-sizing: border-box; }
-    body { font-family: Arial, Helvetica, sans-serif; color: #253542; margin: 0; font-size: 10px; }
-    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 3px solid #218653; padding-bottom: 12px; margin-bottom: 14px; }
-    h1 { margin: 0 0 4px; color: #176b45; font-size: 22px; }
-    h2 { margin: 22px 0 9px; color: #176b45; font-size: 15px; page-break-after: avoid; }
-    p { margin: 3px 0; color: #667581; }
-    .gerado { text-align: right; white-space: nowrap; }
-    .resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0; }
-    .kpi { border: 1px solid #dce8e1; background: #f4faf6; border-radius: 7px; padding: 10px; }
-    .kpi span { display: block; color: #64756c; font-size: 9px; font-weight: bold; }
-    .kpi strong { display: block; margin-top: 5px; color: #176b45; font-size: 16px; }
-    .mov-resumo { display: flex; flex-wrap: wrap; gap: 7px; margin: 8px 0 12px; }
-    .mov-resumo span { padding: 6px 9px; border: 1px solid #dfe7e3; border-radius: 5px; background: #f8faf9; }
-    table { width: 100%; border-collapse: collapse; table-layout: auto; }
-    thead { display: table-header-group; }
-    th { background: #176b45; color: #fff; text-align: left; font-weight: bold; }
-    th, td { border: 1px solid #dbe2e6; padding: 6px 7px; vertical-align: top; }
-    tbody tr:nth-child(even) { background: #f6f8f7; }
-    .numero { text-align: right; white-space: nowrap; }
-    .vazio { padding: 14px; text-align: center; border: 1px dashed #cbd5d0; color: #697781; }
-    .nota { margin-top: 14px; padding: 9px; background: #fff8e8; border: 1px solid #eedeb1; color: #725c28; border-radius: 5px; }
-    footer { margin-top: 18px; border-top: 1px solid #dbe2e6; padding-top: 7px; color: #78848b; font-size: 8px; }
-    .acoes { margin: 0 0 14px; }
-    .acoes button { background: #176b45; color: #fff; border: 0; border-radius: 6px; padding: 9px 14px; font-weight: bold; }
-    @media print { .acoes { display: none; } h2 { page-break-after: avoid; } tr { page-break-inside: avoid; } }
-</style>
-</head>
-<body>
-<div class="acoes"><button onclick="window.print()">Imprimir / Salvar como PDF</button></div>
-<header>
-    <div>
-        <h1>Dr. Troco — Relatório de Estoque</h1>
-        <p>Posição atual do estoque e histórico de movimentações (${escaparHTML(rotuloPeriodoFiltro)})</p>
-        <p>Estabelecimento: ${escaparHTML(String(comercioIdEstoque))}</p>
-    </div>
-    <div class="gerado"><strong>Relatório gerado em</strong><p>${escaparHTML(geradoEm)}</p></div>
-
 function exportarRelatorioEstoquePDF() {
     if (!estoquePronto || !comercioIdEstoque) {
         alert("O estoque precisa estar conectado para gerar o relatório. Verifique a conexão e atualize a página.");
@@ -1486,7 +1436,6 @@ function exportarRelatorioEstoquePDF() {
         return status.classe === "baixo" || status.classe === "zero" || status.classe === "vencido" || status.classe === "a-vencer";
     }).length;
 
-    // Contagem apenas para o resumo do PDF
     const contagemMovimentos = {
         entrada: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "entrada").length,
         saida: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "saida").length,
@@ -1729,7 +1678,7 @@ function configurarFechamentoModais() {
 async function inicializarEstoque() {
     estoqueCarregando = true;
     const lista = document.getElementById("listaProdutos");
-    if (lista) {
+    if (lista && !produtos.length) {
         lista.innerHTML = `
             <div class="estoque-vazio">
                 <div class="estoque-vazio-icone">☁️</div>
