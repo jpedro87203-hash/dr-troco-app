@@ -1,15 +1,10 @@
 // ============================================================
-// DR. TROCO — CALCULADORA DE VENDAS + PDV + FIADO
+// DR. TROCO — CALCULADORA DE VENDAS + PDV + FIADO (OTIMIZADO)
 // ============================================================
 
 'use strict';
 
 let formaPagamento = 'dinheiro';
-
-const CHAVE_VENDAS = 'drTroco_vendas';
-const CHAVE_ESTOQUE = 'drTroco_estoque';
-const CHAVE_MOVIMENTACOES = 'drTroco_movimentacoes';
-
 let produtosVenda = [];
 let streamLeitorVenda = null;
 let detectorLeitorVenda = null;
@@ -23,58 +18,60 @@ let modalProdutosEstavaAbertoAntesLeitor = false;
 let eventosConfigurados = false;
 let vendaEmProcessamento = false;
 
-// Elementos principais
-const valorContaInput = document.getElementById('valorConta');
-const valorRecebidoInput = document.getElementById('valorRecebido');
-const totalCobrar = document.getElementById('totalCobrar');
-const quantidadeItensVenda = document.getElementById('quantidadeItensVenda');
-const valorTroco = document.getElementById('valorTroco');
-const rowTroco = document.getElementById('rowTroco');
-const groupRecebido = document.getElementById('groupRecebido');
-const btnLimparVenda = document.getElementById('btnLimparVenda');
-const btnRegistrarVenda = document.getElementById('btnRegistrarVenda');
-const btnCancelarVenda = document.getElementById('btnCancelarVenda');
-const btnAdicionarProduto = document.getElementById('btnAdicionarProduto');
-const listaProdutosVenda = document.getElementById('listaProdutosVenda');
-const produtosVendaVazio = document.getElementById('produtosVendaVazio');
-const secaoCedulas = document.getElementById('secaoCedulas');
-const listaCedulas = document.getElementById('listaCedulas');
+const CHAVE_VENDAS = 'drTroco_vendas';
+const CHAVE_ESTOQUE = 'drTroco_estoque';
+const CHAVE_MOVIMENTACOES = 'drTroco_movimentacoes';
+
+// Elementos do DOM principais
+const $ = (id) => document.getElementById(id);
+const valorContaInput = $('valorConta');
+const valorRecebidoInput = $('valorRecebido');
+const totalCobrar = $('totalCobrar');
+const quantidadeItensVenda = $('quantidadeItensVenda');
+const valorTroco = $('valorTroco');
+const rowTroco = $('rowTroco');
+const groupRecebido = $('groupRecebido');
+const btnLimparVenda = $('btnLimparVenda');
+const btnRegistrarVenda = $('btnRegistrarVenda');
+const btnCancelarVenda = $('btnCancelarVenda');
+const btnAdicionarProduto = $('btnAdicionarProduto');
+const listaProdutosVenda = $('listaProdutosVenda');
+const produtosVendaVazio = $('produtosVendaVazio');
+const secaoCedulas = $('secaoCedulas');
+const listaCedulas = $('listaCedulas');
 
 // Campos do fiado
-const groupFiado = document.getElementById('groupFiado');
-const nomeClienteFiado = document.getElementById('nomeClienteFiado');
-const valorPagoInicialFiado = document.getElementById('valorPagoInicialFiado');
-const formaPagamentoInicialFiado = document.getElementById('formaPagamentoInicialFiado');
-const rowSaldoDevedorFiado = document.getElementById('rowSaldoDevedorFiado');
-const saldoDevedorVenda = document.getElementById('saldoDevedorVenda');
+const groupFiado = $('groupFiado');
+const nomeClienteFiado = $('nomeClienteFiado');
+const valorPagoInicialFiado = $('valorPagoInicialFiado');
+const formaPagamentoInicialFiado = $('formaPagamentoInicialFiado');
+const rowSaldoDevedorFiado = $('rowSaldoDevedorFiado');
+const saldoDevedorVenda = $('saldoDevedorVenda');
 
-// Modal de produtos
-const modalProdutosVenda = document.getElementById('modalProdutosVenda');
-const btnFecharProdutosVenda = document.getElementById('btnFecharProdutosVenda');
-const btnConcluirProdutosVenda = document.getElementById('btnConcluirProdutosVenda');
-const btnAbrirLeitorVenda = document.getElementById('btnAbrirLeitorVenda');
-const buscaProdutoVenda = document.getElementById('buscaProdutoVenda');
-const listaProdutosEstoqueVenda = document.getElementById('listaProdutosEstoqueVenda');
+// Modais
+const modalProdutosVenda = $('modalProdutosVenda');
+const btnFecharProdutosVenda = $('btnFecharProdutosVenda');
+const btnConcluirProdutosVenda = $('btnConcluirProdutosVenda');
+const btnAbrirLeitorVenda = $('btnAbrirLeitorVenda');
+const buscaProdutoVenda = $('buscaProdutoVenda');
+const listaProdutosEstoqueVenda = $('listaProdutosEstoqueVenda');
 
-// Modal do leitor
-const modalLeitorVenda = document.getElementById('modalLeitorVenda');
-const btnFecharLeitorVenda = document.getElementById('btnFecharLeitorVenda');
-const btnFecharLeitorVenda2 = document.getElementById('btnFecharLeitorVenda2');
-const areaLeitorVenda = document.getElementById('areaLeitorVenda');
-const videoLeitorVenda = document.getElementById('videoLeitorVenda');
-const molduraLeitorVenda = document.getElementById('molduraLeitorVenda');
-const mensagemLeitorVenda = document.getElementById('mensagemLeitorVenda');
-const statusLeitorVenda = document.getElementById('statusLeitorVenda');
+const modalLeitorVenda = $('modalLeitorVenda');
+const btnFecharLeitorVenda = $('btnFecharLeitorVenda');
+const btnFecharLeitorVenda2 = $('btnFecharLeitorVenda2');
+const videoLeitorVenda = $('videoLeitorVenda');
+const molduraLeitorVenda = $('molduraLeitorVenda');
+const mensagemLeitorVenda = $('mensagemLeitorVenda');
+const statusLeitorVenda = $('statusLeitorVenda');
 
-// Modal de confirmação
-const modalConfirmarVenda = document.getElementById('modalConfirmarVenda');
-const resumoConfirmacaoVenda = document.getElementById('resumoConfirmacaoVenda');
-const btnFecharConfirmacao = document.getElementById('btnFecharConfirmacao');
-const btnCancelarConfirmacao = document.getElementById('btnCancelarConfirmacao');
-const btnConfirmarVenda = document.getElementById('btnConfirmarVenda');
+const modalConfirmarVenda = $('modalConfirmarVenda');
+const resumoConfirmacaoVenda = $('resumoConfirmacaoVenda');
+const btnFecharConfirmacao = $('btnFecharConfirmacao');
+const btnCancelarConfirmacao = $('btnCancelarConfirmacao');
+const btnConfirmarVenda = $('btnConfirmarVenda');
 
 // ------------------------------------------------------------
-// Suporte Multiestabelecimento (Chaves Dinâmicas)
+// Multiestabelecimento & LocalStorage
 // ------------------------------------------------------------
 function obterComercioIdLocal() {
     try {
@@ -101,113 +98,10 @@ function obterChaveMovimentacoesEstoqueComercio() {
     return comercioId ? `${base}_${comercioId}` : base;
 }
 
-// ------------------------------------------------------------
-// Funções básicas
-// ------------------------------------------------------------
-function numeroSeguro(valor) {
-    const numero = typeof valor === 'number'
-        ? valor
-        : parseFloat(String(valor ?? '').replace(',', '.'));
-
-    return Number.isFinite(numero) ? Math.max(0, numero) : 0;
-}
-
-function centavos(valor) {
-    return Math.round((Number(valor) || 0) * 100);
-}
-
-function normalizar(texto) {
-    return String(texto || '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .trim();
-}
-
-function formatarReal(valor) {
-    const numero = Number.isFinite(Number(valor)) ? Number(valor) : 0;
-
-    return numero.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-    });
-}
-
-function escaparHTML(texto) {
-    return String(texto ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-function escaparAtributo(texto) {
-    return escaparHTML(texto);
-}
-
-function mostrarElemento(elemento, mostrar, display = 'block') {
-    if (!elemento) return;
-
-    elemento.classList.toggle('hidden', !mostrar);
-    elemento.style.setProperty(
-        'display',
-        mostrar ? display : 'none',
-        'important'
-    );
-}
-
-// ------------------------------------------------------------
-// CONTROLE DOS MODAIS
-// Corrige problemas de corte, sobreposição e visibilidade.
-// ------------------------------------------------------------
-function abrirModalOverlay(modal, camada = 9999) {
-    if (!modal) {
-        console.error('Não foi possível abrir o modal: elemento inexistente.');
-        return false;
-    }
-
-    if (modal.parentElement !== document.body) {
-        document.body.appendChild(modal);
-    }
-
-    modal.classList.remove('hidden');
-    modal.classList.add('aberto');
-    modal.setAttribute('aria-hidden', 'false');
-
-    modal.style.setProperty('position', 'fixed', 'important');
-    modal.style.setProperty('inset', '0', 'important');
-    modal.style.setProperty('width', '100%', 'important');
-    modal.style.setProperty('height', '100%', 'important');
-    modal.style.setProperty('display', 'flex', 'important');
-    modal.style.setProperty('z-index', String(camada), 'important');
-
-    document.body.classList.add('modal-aberto');
-    document.body.style.overflow = 'hidden';
-
-    return true;
-}
-
-function fecharModalOverlay(modal) {
-    if (!modal) return;
-
-    modal.classList.remove('aberto');
-    modal.classList.add('hidden');
-    modal.setAttribute('aria-hidden', 'true');
-    modal.style.setProperty('display', 'none', 'important');
-
-    verificarModaisAbertos();
-}
-
-// ------------------------------------------------------------
-// LocalStorage
-// ------------------------------------------------------------
 function lerListaLocalStorage(chave) {
     try {
         const valor = localStorage.getItem(chave);
-
         if (!valor) return [];
-
         const dados = JSON.parse(valor);
         return Array.isArray(dados) ? dados : [];
     } catch (erro) {
@@ -226,31 +120,78 @@ function salvarListaLocalStorage(chave, dados) {
     }
 }
 
-function obterEstoque() {
-    return lerListaLocalStorage(obterChaveEstoqueComercio());
-}
+const obterEstoque = () => lerListaLocalStorage(obterChaveEstoqueComercio());
+const salvarEstoque = (estoque) => salvarListaLocalStorage(obterChaveEstoqueComercio(), estoque);
 
-function salvarEstoque(estoque) {
-    return salvarListaLocalStorage(obterChaveEstoqueComercio(), estoque);
+// ------------------------------------------------------------
+// Utilitários
+// ------------------------------------------------------------
+const numeroSeguro = (valor) => {
+    const num = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '').replace(',', '.'));
+    return Number.isFinite(num) ? Math.max(0, num) : 0;
+};
+
+const centavos = (valor) => Math.round((Number(valor) || 0) * 100);
+
+const normalizar = (texto) => String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+const formatarReal = (valor) => (Number.isFinite(Number(valor)) ? Number(valor) : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+const escaparHTML = (texto) => String(texto ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+const escaparAtributo = (texto) => escaparHTML(texto);
+
+function mostrarElemento(elemento, mostrar, display = 'block') {
+    if (!elemento) return;
+    elemento.classList.toggle('hidden', !mostrar);
+    elemento.style.setProperty('display', mostrar ? display : 'none', 'important');
 }
 
 // ------------------------------------------------------------
-// Data e hora (Com suporte a turno noturno até às 06:00)
+// Modais
+// ------------------------------------------------------------
+function abrirModalOverlay(modal, camada = 9999) {
+    if (!modal) return false;
+    if (modal.parentElement !== document.body) document.body.appendChild(modal);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('aberto');
+    modal.setAttribute('aria-hidden', 'false');
+    modal.style.setProperty('position', 'fixed', 'important');
+    modal.style.setProperty('inset', '0', 'important');
+    modal.style.setProperty('width', '100%', 'important');
+    modal.style.setProperty('height', '100%', 'important');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('z-index', String(camada), 'important');
+
+    document.body.classList.add('modal-aberto');
+    document.body.style.overflow = 'hidden';
+    return true;
+}
+
+function fecharModalOverlay(modal) {
+    if (!modal) return;
+    modal.classList.remove('aberto');
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.style.setProperty('display', 'none', 'important');
+    
+    const algumAberto = [modalProdutosVenda, modalLeitorVenda, modalConfirmarVenda].some(m => m && m.classList.contains('aberto') && !m.classList.contains('hidden'));
+    document.body.classList.toggle('modal-aberto', algumAberto);
+    document.body.style.overflow = algumAberto ? 'hidden' : '';
+}
+
+// ------------------------------------------------------------
+// Datas e Turno
 // ------------------------------------------------------------
 function obterDataHoraAtual() {
     const agora = new Date();
-    const horaAtual = agora.getHours();
-
-    // Se forem entre 00:00 e 06:00 da manhã, consideramos comercialmente 
-    // que ainda pertencem ao dia anterior (turnos das 18h às 02h/04h)
-    if (horaAtual >= 0 && horaAtual < 6) {
+    if (agora.getHours() >= 0 && agora.getHours() < 6) {
         agora.setDate(agora.getDate() - 1);
     }
-
     const dia = String(agora.getDate()).padStart(2, '0');
     const mes = String(agora.getMonth() + 1).padStart(2, '0');
     const ano = agora.getFullYear();
-
     const hora = String(new Date().getHours()).padStart(2, '0');
     const minuto = String(new Date().getMinutes()).padStart(2, '0');
     const segundo = String(new Date().getSeconds()).padStart(2, '0');
@@ -263,339 +204,160 @@ function obterDataHoraAtual() {
 }
 
 // ------------------------------------------------------------
-// ESTORNO AUTOMÁTICO AO EXCLUIR VENDA
+// Estorno de Estoque
 // ------------------------------------------------------------
 function reverterEstoquePorVenda(venda) {
-    if (!venda || !venda.produtos || !Array.isArray(venda.produtos)) return;
-
-    // 1. Devolve os produtos ao estoque
+    if (!venda?.produtos || !Array.isArray(venda.produtos)) return;
     const estoque = obterEstoque();
-    for (const itemVendido of venda.produtos) {
-        const produtoEstoque = estoque.find(p => String(p.id) === String(itemVendido.id));
-        if (produtoEstoque) {
-            produtoEstoque.quantidade = numeroSeguro(produtoEstoque.quantidade) + numeroSeguro(itemVendido.quantidade);
-            produtoEstoque.atualizadoEm = new Date().toISOString();
+    
+    venda.produtos.forEach(itemVendido => {
+        const prod = estoque.find(p => String(p.id) === String(itemVendido.id));
+        if (prod) {
+            prod.quantidade = numeroSeguro(prod.quantidade) + numeroSeguro(itemVendido.quantidade);
+            prod.atualizadoEm = new Date().toISOString();
         }
-    }
+    });
     salvarEstoque(estoque);
 
-    // 2. Apaga o histórico de saída do estoque para que não conste no PDF
     const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
-    let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque);
-    movimentacoesEstoque = movimentacoesEstoque.filter(mov => mov.vendaId !== venda.id);
+    let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque).filter(mov => mov.vendaId !== venda.id);
     localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
 }
 window.reverterEstoquePorVenda = reverterEstoquePorVenda;
 
-function nomeFormaPagamento(metodo) {
-    const nomes = {
-        dinheiro: 'Dinheiro',
-        pix: 'Pix',
-        debito: 'Débito',
-        credito: 'Crédito',
-        fiado: 'Fiado'
-    };
-
-    return nomes[String(metodo || '').toLowerCase()] || 'Dinheiro';
-}
-
-function corrigirCamposRecebido() {
-    const secaoValorConta = valorContaInput?.closest('.valor-avulso');
-
-    if (secaoValorConta) {
-        mostrarElemento(secaoValorConta, true, 'block');
-    }
-
-    if (valorContaInput) {
-        valorContaInput.disabled = false;
-    }
-}
+const nomeFormaPagamento = (metodo) => ({ dinheiro: 'Dinheiro', pix: 'Pix', debito: 'Débito', credito: 'Crédito', fiado: 'Fiado' })[String(metodo || '').toLowerCase()] || 'Dinheiro';
 
 // ------------------------------------------------------------
-// Inicialização
+// Inicialização e Eventos
 // ------------------------------------------------------------
 function iniciarCalculadora() {
-    if (!totalCobrar) {
-        console.error(
-            'O elemento totalCobrar não foi encontrado. Confira o calculadora.html.'
-        );
-        return;
-    }
-
-    fecharConfirmacao();
-    fecharModalProdutos();
-    fecharLeitorVenda(false);
-
+    if (!totalCobrar) return;
+    fecharModalOverlay(modalConfirmarVenda);
+    fecharModalOverlay(modalProdutosVenda);
+    pararLeitorVenda();
     configurarEventos();
-    corrigirCamposRecebido();
-
+    
+    if (valorContaInput) valorContaInput.disabled = false;
     formaPagamento = 'dinheiro';
-
     atualizarBotoesPagamento();
     renderizarProdutosVenda();
     atualizarTela();
 }
 
-// ------------------------------------------------------------
-// Eventos
-// ------------------------------------------------------------
 function configurarEventos() {
     if (eventosConfigurados) return;
-
     eventosConfigurados = true;
 
-    valorContaInput?.addEventListener('input', atualizarTela);
-    valorRecebidoInput?.addEventListener('input', atualizarTela);
-    nomeClienteFiado?.addEventListener('input', atualizarTela);
-    valorPagoInicialFiado?.addEventListener('input', atualizarTela);
+    [valorContaInput, valorRecebidoInput, nomeClienteFiado, valorPagoInicialFiado].forEach(el => el?.addEventListener('input', atualizarTela));
     formaPagamentoInicialFiado?.addEventListener('change', atualizarTela);
 
     document.querySelectorAll('.btn-payment').forEach(botao => {
-        botao.addEventListener('click', event => {
-            event.preventDefault();
-
+        botao.addEventListener('click', (e) => {
+            e.preventDefault();
             const metodo = String(botao.dataset.method || '').toLowerCase();
-
-            if (![
-                'dinheiro',
-                'pix',
-                'debito',
-                'credito',
-                'fiado'
-            ].includes(metodo)) {
-                return;
+            if (['dinheiro', 'pix', 'debito', 'credito', 'fiado'].includes(metodo)) {
+                formaPagamento = metodo;
+                atualizarBotoesPagamento();
+                atualizarTela();
             }
-
-            formaPagamento = metodo;
-
-            atualizarBotoesPagamento();
-            atualizarTela();
         });
     });
 
-    btnAdicionarProduto?.addEventListener('click', event => {
-        event.preventDefault();
-        abrirModalProdutos();
-    });
+    btnAdicionarProduto?.addEventListener('click', (e) => { e.preventDefault(); abrirModalProdutos(); });
+    btnFecharProdutosVenda?.addEventListener('click', () => fecharModalOverlay(modalProdutosVenda));
+    btnConcluirProdutosVenda?.addEventListener('click', () => fecharModalOverlay(modalProdutosVenda));
+    btnAbrirLeitorVenda?.addEventListener('click', abrirLeitorVenda);
 
-    btnFecharProdutosVenda?.addEventListener(
-        'click',
-        fecharModalProdutos
-    );
+    btnFecharLeitorVenda?.addEventListener('click', () => fecharLeitorVenda(true));
+    btnFecharLeitorVenda2?.addEventListener('click', () => fecharLeitorVenda(true));
 
-    btnConcluirProdutosVenda?.addEventListener(
-        'click',
-        fecharModalProdutos
-    );
+    buscaProdutoVenda?.addEventListener('input', (e) => renderizarProdutosEstoqueVenda(e.target.value));
 
-    btnAbrirLeitorVenda?.addEventListener(
-        'click',
-        abrirLeitorVenda
-    );
-
-    btnFecharLeitorVenda?.addEventListener(
-        'click',
-        () => fecharLeitorVenda(true)
-    );
-
-    btnFecharLeitorVenda2?.addEventListener(
-        'click',
-        () => fecharLeitorVenda(true)
-    );
-
-    buscaProdutoVenda?.addEventListener('input', function () {
-        renderizarProdutosEstoqueVenda(this.value);
-    });
-
-    listaProdutosEstoqueVenda?.addEventListener('click', event => {
-        const botao = event.target.closest('[data-acao-produto]');
+    listaProdutosEstoqueVenda?.addEventListener('click', (e) => {
+        const botao = e.target.closest('[data-acao-produto]');
         if (!botao) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-
+        e.preventDefault();
+        e.stopPropagation();
         const id = botao.dataset.produtoEstoqueId;
-        const acao = botao.dataset.acaoProduto;
-
-        if (acao === 'adicionar') adicionarProdutoVenda(id);
-        if (acao === 'diminuir') diminuirProdutoModal(id);
+        if (botao.dataset.acaoProduto === 'adicionar') adicionarProdutoVenda(id);
+        if (botao.dataset.acaoProduto === 'diminuir') diminuirProdutoModal(id);
     });
 
     btnLimparVenda?.addEventListener('click', limparVenda);
     btnRegistrarVenda?.addEventListener('click', abrirConfirmacaoVenda);
     btnCancelarVenda?.addEventListener('click', limparVenda);
-    btnFecharConfirmacao?.addEventListener('click', fecharConfirmacao);
-    btnCancelarConfirmacao?.addEventListener('click', fecharConfirmacao);
+    btnFecharConfirmacao?.addEventListener('click', () => fecharModalOverlay(modalConfirmarVenda));
+    btnCancelarConfirmacao?.addEventListener('click', () => fecharModalOverlay(modalConfirmarVenda));
     btnConfirmarVenda?.addEventListener('click', confirmarVenda);
 
-    modalProdutosVenda?.addEventListener('click', event => {
-        if (event.target === modalProdutosVenda) {
-            fecharModalProdutos();
-        }
-    });
+    modalProdutosVenda?.addEventListener('click', (e) => { if (e.target === modalProdutosVenda) fecharModalOverlay(modalProdutosVenda); });
+    modalLeitorVenda?.addEventListener('click', (e) => { if (e.target === modalLeitorVenda) fecharLeitorVenda(true); });
+    modalConfirmarVenda?.addEventListener('click', (e) => { if (e.target === modalConfirmarVenda) fecharModalOverlay(modalConfirmarVenda); });
 
-    modalLeitorVenda?.addEventListener('click', event => {
-        if (event.target === modalLeitorVenda) {
-            fecharLeitorVenda(true);
-        }
-    });
-
-    modalConfirmarVenda?.addEventListener('click', event => {
-        if (event.target === modalConfirmarVenda) {
-            fecharConfirmacao();
-        }
-    });
-
-    listaProdutosVenda?.addEventListener('click', event => {
-        const botao = event.target.closest('[data-acao]');
+    listaProdutosVenda?.addEventListener('click', (e) => {
+        const botao = e.target.closest('[data-acao]');
         if (!botao) return;
-
-        const id = botao.dataset.id;
-
-        if (id) {
-            alterarQuantidadeProduto(id, botao.dataset.acao);
-        }
+        alterarQuantidadeProduto(botao.dataset.id, botao.dataset.acao);
     });
 
-    document.addEventListener('keydown', event => {
-        if (event.key !== 'Escape') return;
-
-        if (modalLeitorVenda?.classList.contains('aberto')) {
-            fecharLeitorVenda(true);
-            return;
-        }
-
-        if (modalConfirmarVenda?.classList.contains('aberto')) {
-            fecharConfirmacao();
-            return;
-        }
-
-        if (modalProdutosVenda?.classList.contains('aberto')) {
-            fecharModalProdutos();
-        }
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (modalLeitorVenda?.classList.contains('aberto')) fecharLeitorVenda(true);
+        else if (modalConfirmarVenda?.classList.contains('aberto')) fecharModalOverlay(modalConfirmarVenda);
+        else if (modalProdutosVenda?.classList.contains('aberto')) fecharModalOverlay(modalProdutosVenda);
     });
 }
 
 // ------------------------------------------------------------
-// Botões e resumo visual de pagamento
+// Pagamentos e Interface
 // ------------------------------------------------------------
 function atualizarBotoesPagamento() {
     document.querySelectorAll('.btn-payment').forEach(botao => {
-        const selecionado =
-            String(botao.dataset.method || '').toLowerCase() === formaPagamento;
-
+        const selecionado = String(botao.dataset.method || '').toLowerCase() === formaPagamento;
         botao.classList.toggle('ativo', selecionado);
         botao.classList.toggle('selected', selecionado);
         botao.setAttribute('aria-pressed', selecionado ? 'true' : 'false');
-        botao.setAttribute('aria-selected', selecionado ? 'true' : 'false');
-
-        botao.style.setProperty(
-            'background-color',
-            selecionado ? '#20a66a' : '#ffffff',
-            'important'
-        );
-        botao.style.setProperty(
-            'color',
-            selecionado ? '#ffffff' : '#5f6972',
-            'important'
-        );
-        botao.style.setProperty(
-            'border-color',
-            selecionado ? '#20a66a' : '#dfe4e7',
-            'important'
-        );
-        botao.style.setProperty(
-            'box-shadow',
-            selecionado ? '0 6px 15px rgba(32,166,106,0.25)' : 'none',
-            'important'
-        );
+        botao.style.setProperty('background-color', selecionado ? '#20a66a' : '#ffffff', 'important');
+        botao.style.setProperty('color', selecionado ? '#ffffff' : '#5f6972', 'important');
+        botao.style.setProperty('border-color', selecionado ? '#20a66a' : '#dfe4e7', 'important');
+        botao.style.setProperty('box-shadow', selecionado ? '0 6px 15px rgba(32,166,106,0.25)' : 'none', 'important');
     });
 }
 
-function calcularTotaisProdutos() {
-    return produtosVenda.reduce((soma, produto) => {
-        return soma + centavos(
-            numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade)
-        );
-    }, 0) / 100;
-}
-
-function obterTotalVenda() {
-    return calcularTotaisProdutos() + numeroSeguro(valorContaInput?.value);
-}
-
-function obterResumoFiado(total) {
-    const pago = numeroSeguro(valorPagoInicialFiado?.value);
-
-    return {
-        pago,
-        saldo: Math.max(0, Math.round((total - pago) * 100) / 100)
-    };
-}
+const calcularTotaisProdutos = () => produtosVenda.reduce((soma, p) => soma + centavos(numeroSeguro(p.preco) * numeroSeguro(p.quantidade)), 0) / 100;
 
 function atualizarTela() {
     const totalProdutos = calcularTotaisProdutos();
     const valorAvulso = numeroSeguro(valorContaInput?.value);
     const total = Math.round((totalProdutos + valorAvulso) * 100) / 100;
 
-    if (totalCobrar) {
-        totalCobrar.textContent = formatarReal(total);
-    }
+    if (totalCobrar) totalCobrar.textContent = formatarReal(total);
 
-    const quantidadeProdutos = produtosVenda.reduce(
-        (soma, produto) => soma + numeroSeguro(produto.quantidade),
-        0
-    );
-
-    const quantidadeTotal = quantidadeProdutos + (valorAvulso > 0 ? 1 : 0);
-
-    if (quantidadeItensVenda) {
-        quantidadeItensVenda.textContent =
-            `${quantidadeTotal} ${quantidadeTotal === 1 ? 'item' : 'itens'}`;
-    }
+    const qtdProdutos = produtosVenda.reduce((soma, p) => soma + numeroSeguro(p.quantidade), 0);
+    const qtdTotal = qtdProdutos + (valorAvulso > 0 ? 1 : 0);
+    if (quantidadeItensVenda) quantidadeItensVenda.textContent = `${qtdTotal} ${qtdTotal === 1 ? 'item' : 'itens'}`;
 
     const ehDinheiro = formaPagamento === 'dinheiro';
     const ehFiado = formaPagamento === 'fiado';
 
     mostrarElemento(groupRecebido, ehDinheiro, 'block');
-
-    if (valorRecebidoInput) {
-        valorRecebidoInput.disabled = !ehDinheiro;
-    }
+    if (valorRecebidoInput) valorRecebidoInput.disabled = !ehDinheiro;
 
     mostrarElemento(groupFiado, ehFiado, 'block');
     mostrarElemento(rowSaldoDevedorFiado, ehFiado, 'flex');
 
     if (ehFiado) {
-        const dados = obterResumoFiado(total);
-
-        if (saldoDevedorVenda) {
-            saldoDevedorVenda.textContent = formatarReal(dados.saldo);
-        }
-
-        if (valorTroco) {
-            valorTroco.textContent = formatarReal(0);
-        }
-
+        const pago = numeroSeguro(valorPagoInicialFiado?.value);
+        const saldo = Math.max(0, Math.round((total - pago) * 100) / 100);
+        if (saldoDevedorVenda) saldoDevedorVenda.textContent = formatarReal(saldo);
+        if (valorTroco) valorTroco.textContent = formatarReal(0);
         mostrarElemento(rowTroco, false);
         mostrarElemento(secaoCedulas, false);
-
     } else if (ehDinheiro) {
         const recebido = numeroSeguro(valorRecebidoInput?.value);
-        const troco = Math.max(
-            0,
-            Math.round((recebido - total) * 100) / 100
-        );
-
-        mostrarElemento(
-            rowTroco,
-            total > 0 && recebido >= total,
-            'flex'
-        );
-
-        if (valorTroco) {
-            valorTroco.textContent = formatarReal(troco);
-        }
+        const troco = Math.max(0, Math.round((recebido - total) * 100) / 100);
+        mostrarElemento(rowTroco, total > 0 && recebido >= total, 'flex');
+        if (valorTroco) valorTroco.textContent = formatarReal(troco);
 
         if (troco > 0) {
             mostrarElemento(secaoCedulas, true, 'block');
@@ -603,171 +365,83 @@ function atualizarTela() {
         } else {
             mostrarElemento(secaoCedulas, false);
         }
-
     } else {
         mostrarElemento(rowTroco, false);
         mostrarElemento(secaoCedulas, false);
     }
 
-    if (btnRegistrarVenda) {
-        btnRegistrarVenda.disabled = total <= 0 || vendaEmProcessamento;
-    }
+    if (btnRegistrarVenda) btnRegistrarVenda.disabled = total <= 0 || vendaEmProcessamento;
 }
 
 // ------------------------------------------------------------
-// Modal e lista de produtos do estoque
+// Produtos e Estoque na Venda
 // ------------------------------------------------------------
 function abrirModalProdutos() {
-    if (!modalProdutosVenda) {
-        console.error(
-            'Modal de produtos não encontrado. Confira id="modalProdutosVenda" no calculadora.html.'
-        );
-
-        alert('Não foi possível abrir os produtos. Confira o modal no calculadora.html.');
-        return;
-    }
-
-    if (modalLeitorVenda?.classList.contains('aberto')) {
-        fecharLeitorVenda(false);
-    }
-
-    if (buscaProdutoVenda) {
-        buscaProdutoVenda.value = '';
-    }
-
+    if (!modalProdutosVenda) return;
+    if (modalLeitorVenda?.classList.contains('aberto')) fecharLeitorVenda(false);
+    if (buscaProdutoVenda) buscaProdutoVenda.value = '';
     renderizarProdutosEstoqueVenda();
-
-    if (!abrirModalOverlay(modalProdutosVenda, 9999)) {
-        return;
+    if (abrirModalOverlay(modalProdutosVenda, 9999)) {
+        setTimeout(() => buscaProdutoVenda?.focus(), 100);
     }
-
-    setTimeout(() => buscaProdutoVenda?.focus(), 100);
-}
-
-function fecharModalProdutos() {
-    fecharModalOverlay(modalProdutosVenda);
 }
 
 function renderizarProdutosEstoqueVenda(termoBusca = '') {
     if (!listaProdutosEstoqueVenda) return;
-
     const estoque = obterEstoque();
     const termo = normalizar(termoBusca);
 
-    const disponiveis = estoque.filter(produto => {
-        const temEstoque = numeroSeguro(produto.quantidade) > 0;
-
-        const corresponde =
-            !termo ||
-            normalizar(produto.nome).includes(termo) ||
-            normalizar(produto.codigo).includes(termo);
-
-        return temEstoque && corresponde;
-    });
+    const disponiveis = estoque.filter(p => numeroSeguro(p.quantidade) > 0 && (!termo || normalizar(p.nome).includes(termo) || normalizar(p.codigo).includes(termo)));
 
     if (!disponiveis.length) {
         listaProdutosEstoqueVenda.innerHTML = `
             <div class="produtos-venda-vazio">
                 <div class="icone-vazio">📦</div>
                 <strong>Nenhum produto encontrado</strong>
-                <p>${estoque.length === 0
-                    ? 'Cadastre produtos no estoque primeiro.'
-                    : 'Não há produtos disponíveis para venda.'}</p>
-            </div>
-        `;
+                <p>${estoque.length === 0 ? 'Cadastre produtos no estoque primeiro.' : 'Não há produtos disponíveis para venda.'}</p>
+            </div>`;
         return;
     }
 
     listaProdutosEstoqueVenda.innerHTML = disponiveis.map(produto => {
         const id = String(produto.id);
-
-        const naVenda = produtosVenda.find(
-            item => String(item.id) === id
-        );
-
-        const quantidadeNaVenda = naVenda
-            ? numeroSeguro(naVenda.quantidade)
-            : 0;
-
-        const foto = produto.foto
-            ? `<img src="${escaparAtributo(produto.foto)}" alt="${escaparAtributo(produto.nome || 'Produto')}">`
-            : '<span aria-hidden="true">📦</span>';
+        const naVenda = produtosVenda.find(item => String(item.id) === id);
+        const qtdNaVenda = naVenda ? numeroSeguro(naVenda.quantidade) : 0;
+        const foto = produto.foto ? `<img src="${escaparAtributo(produto.foto)}" alt="${escaparAtributo(produto.nome)}">` : '<span>📦</span>';
 
         return `
             <div class="produto-estoque-venda-item produto-card">
-                <div class="produto-estoque-venda-foto produto-foto">
-                    ${foto}
-                </div>
-
+                <div class="produto-estoque-venda-foto produto-foto">${foto}</div>
                 <div class="produto-estoque-venda-info produto-info">
-                    <strong>${escaparHTML(produto.nome || 'Produto sem nome')}</strong>
-
-                    <small>
-                        Código: ${escaparHTML(produto.codigo || '—')}
-                        · Estoque: ${numeroSeguro(produto.quantidade)}
-                    </small>
-
-                    <strong class="produto-estoque-venda-preco produto-preco">
-                        ${formatarReal(produto.preco)}
-                    </strong>
+                    <strong>${escaparHTML(produto.nome)}</strong>
+                    <small>Estoque: ${numeroSeguro(produto.quantidade)}</small>
+                    <strong class="produto-estoque-venda-preco produto-preco">${formatarReal(produto.preco)}</strong>
                 </div>
-
                 <div class="produto-estoque-venda-acoes controle-quantidade">
-                    <button
-                        type="button"
-                        class="btn-produto-menos"
-                        data-acao-produto="diminuir"
-                        data-produto-estoque-id="${escaparAtributo(id)}"
-                        ${quantidadeNaVenda <= 0 ? 'disabled' : ''}
-                    >−</button>
-
-                    <span class="quantidade-produto-modal">
-                        ${quantidadeNaVenda}
-                    </span>
-
-                    <button
-                        type="button"
-                        class="btn-produto-mais"
-                        data-acao-produto="adicionar"
-                        data-produto-estoque-id="${escaparAtributo(id)}"
-                    >+</button>
+                    <button type="button" class="btn-produto-menos" data-acao-produto="diminuir" data-produto-estoque-id="${escaparAtributo(id)}" ${qtdNaVenda <= 0 ? 'disabled' : ''}>−</button>
+                    <span class="quantidade-produto-modal">${qtdNaVenda}</span>
+                    <button type="button" class="btn-produto-mais" data-acao-produto="adicionar" data-produto-estoque-id="${escaparAtributo(id)}">+</button>
                 </div>
-            </div>
-        `;
+            </div>`;
     }).join('');
 }
 
 function adicionarProdutoVenda(id) {
-    const estoque = obterEstoque();
-
-    const itemEstoque = estoque.find(
-        produto => String(produto.id) === String(id)
-    );
-
-    if (!itemEstoque) {
-        alert('Produto não encontrado no estoque.');
+    const itemEstoque = obterEstoque().find(p => String(p.id) === String(id));
+    if (!itemEstoque || numeroSeguro(itemEstoque.quantidade) <= 0) {
+        alert('Produto sem estoque ou não encontrado.');
         return false;
     }
 
     const disponivel = numeroSeguro(itemEstoque.quantidade);
-
-    if (disponivel <= 0) {
-        alert('Esse produto está sem estoque.');
-        return false;
-    }
-
-    const existente = produtosVenda.find(
-        produto => String(produto.id) === String(id)
-    );
+    const existente = produtosVenda.find(p => String(p.id) === String(id));
 
     if (existente) {
         if (existente.quantidade >= disponivel) {
-            alert('A quantidade selecionada já atingiu o estoque disponível.');
+            alert('A quantidade selecionada atingiu o limite do estoque.');
             return false;
         }
-
         existente.quantidade++;
-
     } else {
         produtosVenda.push({
             id: itemEstoque.id,
@@ -783,25 +457,16 @@ function adicionarProdutoVenda(id) {
     renderizarProdutosVenda();
     renderizarProdutosEstoqueVenda(buscaProdutoVenda?.value || '');
     atualizarTela();
-
     return true;
 }
 
 function diminuirProdutoModal(id) {
-    const produto = produtosVenda.find(
-        item => String(item.id) === String(id)
-    );
-
+    const produto = produtosVenda.find(item => String(item.id) === String(id));
     if (!produto) return;
-
     produto.quantidade--;
-
     if (produto.quantidade <= 0) {
-        produtosVenda = produtosVenda.filter(
-            item => String(item.id) !== String(id)
-        );
+        produtosVenda = produtosVenda.filter(item => String(item.id) !== String(id));
     }
-
     renderizarProdutosVenda();
     renderizarProdutosEstoqueVenda(buscaProdutoVenda?.value || '');
     atualizarTela();
@@ -809,119 +474,58 @@ function diminuirProdutoModal(id) {
 
 function renderizarProdutosVenda() {
     if (!listaProdutosVenda) return;
-
     if (!produtosVenda.length) {
         listaProdutosVenda.innerHTML = '';
-
         if (produtosVendaVazio) {
             listaProdutosVenda.appendChild(produtosVendaVazio);
             mostrarElemento(produtosVendaVazio, true, 'block');
-        } else {
-            listaProdutosVenda.innerHTML = `
-                <div class="produtos-venda-vazio">
-                    <div class="icone-carrinho">🛒</div>
-                    <strong>Nenhum produto adicionado</strong>
-                    <p>Adicione produtos pelo código de barras ou pela busca.</p>
-                </div>
-            `;
         }
-
         return;
     }
 
-    if (produtosVendaVazio) {
-        mostrarElemento(produtosVendaVazio, false);
-    }
+    if (produtosVendaVazio) mostrarElemento(produtosVendaVazio, false);
 
     listaProdutosVenda.innerHTML = produtosVenda.map(produto => {
-        const subtotal =
-            numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade);
-
-        const imagem = produto.foto
-            ? `<img src="${escaparAtributo(produto.foto)}" alt="${escaparAtributo(produto.nome)}">`
-            : '<span>📦</span>';
+        const subtotal = numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade);
+        const imagem = produto.foto ? `<img src="${escaparAtributo(produto.foto)}" alt="${escaparAtributo(produto.nome)}">` : '<span>📦</span>';
 
         return `
             <div class="item-produto-venda">
                 <div class="item-produto-imagem">${imagem}</div>
-
                 <div class="item-produto-info">
                     <strong>${escaparHTML(produto.nome)}</strong>
-                    ${produto.codigo
-                        ? `<small>Código: ${escaparHTML(produto.codigo)}</small>`
-                        : ''}
+                    ${produto.codigo ? `<small>Código: ${escaparHTML(produto.codigo)}</small>` : ''}
                     <span>${formatarReal(produto.preco)}</span>
                 </div>
-
                 <div class="item-produto-controles">
-                    <button
-                        type="button"
-                        class="btn-quantidade"
-                        data-acao="diminuir"
-                        data-id="${escaparAtributo(produto.id)}"
-                    >−</button>
-
+                    <button type="button" class="btn-quantidade" data-acao="diminuir" data-id="${escaparAtributo(produto.id)}">−</button>
                     <strong>${produto.quantidade}</strong>
-
-                    <button
-                        type="button"
-                        class="btn-quantidade"
-                        data-acao="aumentar"
-                        data-id="${escaparAtributo(produto.id)}"
-                    >+</button>
+                    <button type="button" class="btn-quantidade" data-acao="aumentar" data-id="${escaparAtributo(produto.id)}">+</button>
                 </div>
-
                 <div class="item-produto-subtotal">
                     <strong>${formatarReal(subtotal)}</strong>
-
-                    <button
-                        type="button"
-                        class="btn-remover-produto"
-                        data-acao="remover"
-                        data-id="${escaparAtributo(produto.id)}"
-                        aria-label="Remover produto"
-                    >🗑️</button>
+                    <button type="button" class="btn-remover-produto" data-acao="remover" data-id="${escaparAtributo(produto.id)}" aria-label="Remover">🗑️</button>
                 </div>
-            </div>
-        `;
+            </div>`;
     }).join('');
 }
 
 function alterarQuantidadeProduto(id, acao) {
-    const produto = produtosVenda.find(
-        item => String(item.id) === String(id)
-    );
-
+    const produto = produtosVenda.find(item => String(item.id) === String(id));
     if (!produto) return;
 
     if (acao === 'aumentar') {
-        const doEstoque = obterEstoque().find(
-            item => String(item.id) === String(id)
-        );
-
-        if (
-            !doEstoque ||
-            produto.quantidade >= numeroSeguro(doEstoque.quantidade)
-        ) {
+        const doEstoque = obterEstoque().find(item => String(item.id) === String(id));
+        if (!doEstoque || produto.quantidade >= numeroSeguro(doEstoque.quantidade)) {
             alert('Não há mais unidades disponíveis no estoque.');
             return;
         }
-
         produto.quantidade++;
-
     } else if (acao === 'diminuir') {
         produto.quantidade--;
-
-        if (produto.quantidade <= 0) {
-            produtosVenda = produtosVenda.filter(
-                item => String(item.id) !== String(id)
-            );
-        }
-
+        if (produto.quantidade <= 0) produtosVenda = produtosVenda.filter(item => String(item.id) !== String(id));
     } else if (acao === 'remover') {
-        produtosVenda = produtosVenda.filter(
-            item => String(item.id) !== String(id)
-        );
+        produtosVenda = produtosVenda.filter(item => String(item.id) !== String(id));
     }
 
     renderizarProdutosVenda();
@@ -929,763 +533,329 @@ function alterarQuantidadeProduto(id, acao) {
     atualizarTela();
 }
 
-function encontrarProdutoPorCodigo(codigo) {
+const encontrarProdutoPorCodigo = (codigo) => {
     const alvo = String(codigo || '').trim();
-
-    if (!alvo) return null;
-
-    return obterEstoque().find(
-        item => String(item.codigo || '').trim() === alvo
-    ) || null;
-}
+    return alvo ? obterEstoque().find(item => String(item.codigo || '').trim() === alvo) || null : null;
+};
 
 // ------------------------------------------------------------
-// Leitor de código de barras
+// Leitor de Código de Barras
 // ------------------------------------------------------------
 async function abrirLeitorVenda() {
     if (abrindoLeitorVenda || lendoCodigoVenda) return;
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-        alert('A câmera não está disponível neste navegador.');
-        return;
-    }
-
-    if (!('BarcodeDetector' in window)) {
-        alert('Este navegador não oferece suporte ao leitor automático de código de barras.');
+    if (!navigator.mediaDevices?.getUserMedia || !('BarcodeDetector' in window)) {
+        alert('Leitor de código de barras não suportado neste navegador.');
         return;
     }
 
     abrindoLeitorVenda = true;
-
     try {
-        modalProdutosEstavaAbertoAntesLeitor =
-            !!modalProdutosVenda &&
-            modalProdutosVenda.classList.contains('aberto') &&
-            !modalProdutosVenda.classList.contains('hidden');
-
-        if (modalProdutosEstavaAbertoAntesLeitor) {
-            fecharModalProdutos();
-        }
-
+        modalProdutosEstavaAbertoAntesLeitor = modalProdutosVenda?.classList.contains('aberto') && !modalProdutosVenda.classList.contains('hidden');
+        if (modalProdutosEstavaAbertoAntesLeitor) fecharModalOverlay(modalProdutosVenda);
         pararLeitorVenda();
 
-        if (!modalLeitorVenda) {
-            throw new Error('Modal do leitor não encontrado no calculadora.html.');
-        }
-
         abrirModalOverlay(modalLeitorVenda, 10002);
-
-        if (mensagemLeitorVenda) {
-            mensagemLeitorVenda.textContent = 'Iniciando câmera...';
-            mensagemLeitorVenda.style.display = 'flex';
-        }
-
-        if (videoLeitorVenda) {
-            videoLeitorVenda.style.display = 'none';
-        }
-
-        if (molduraLeitorVenda) {
-            molduraLeitorVenda.style.display = 'none';
-        }
+        if (mensagemLeitorVenda) { mensagemLeitorVenda.textContent = 'Iniciando câmera...'; mensagemLeitorVenda.style.display = 'flex'; }
+        if (videoLeitorVenda) videoLeitorVenda.style.display = 'none';
+        if (molduraLeitorVenda) molduraLeitorVenda.style.display = 'none';
 
         prepararSomLeitor();
-
-        detectorLeitorVenda = new BarcodeDetector({
-            formats: [
-                'ean_13',
-                'ean_8',
-                'upc_a',
-                'upc_e',
-                'code_128',
-                'code_39',
-                'code_93'
-            ]
-        });
+        detectorLeitorVenda = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'code_93'] });
 
         streamLeitorVenda = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: { ideal: 'environment' },
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            },
+            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
             audio: false
         });
-
-        if (!videoLeitorVenda) {
-            throw new Error('Elemento de vídeo não encontrado.');
-        }
 
         videoLeitorVenda.setAttribute('playsinline', '');
         videoLeitorVenda.muted = true;
         videoLeitorVenda.srcObject = streamLeitorVenda;
 
         await new Promise(resolve => {
-            if (videoLeitorVenda.readyState >= 1) {
-                resolve();
-                return;
-            }
-
-            videoLeitorVenda.addEventListener(
-                'loadedmetadata',
-                resolve,
-                { once: true }
-            );
+            if (videoLeitorVenda.readyState >= 1) return resolve();
+            videoLeitorVenda.addEventListener('loadedmetadata', resolve, { once: true });
         });
 
         await videoLeitorVenda.play();
-
         videoLeitorVenda.style.setProperty('display', 'block', 'important');
-        videoLeitorVenda.style.setProperty('visibility', 'visible', 'important');
         videoLeitorVenda.style.setProperty('width', '100%', 'important');
         videoLeitorVenda.style.setProperty('height', '280px', 'important');
         videoLeitorVenda.style.setProperty('object-fit', 'cover', 'important');
 
-        if (mensagemLeitorVenda) {
-            mensagemLeitorVenda.style.display = 'none';
-        }
-
-        if (molduraLeitorVenda) {
-            molduraLeitorVenda.style.display = 'block';
-        }
-
-        if (statusLeitorVenda) {
-            statusLeitorVenda.textContent = 'Aponte a câmera para o código';
-        }
+        if (mensagemLeitorVenda) mensagemLeitorVenda.style.display = 'none';
+        if (molduraLeitorVenda) molduraLeitorVenda.style.display = 'block';
+        if (statusLeitorVenda) statusLeitorVenda.textContent = 'Aponte a câmera para o código';
 
         lendoCodigoVenda = true;
         detectarCodigoVenda();
-
     } catch (erro) {
         console.error('Erro ao abrir leitor:', erro);
-
         pararLeitorVenda();
-
         if (mensagemLeitorVenda) {
-            mensagemLeitorVenda.textContent = obterMensagemErroCamera(erro);
+            mensagemLeitorVenda.textContent = 'Permita o acesso à câmera para usar o leitor.';
             mensagemLeitorVenda.style.display = 'flex';
         }
-
-        if (statusLeitorVenda) {
-            statusLeitorVenda.textContent = 'Não foi possível iniciar a câmera';
-        }
-
-        if (modalLeitorVenda) {
-            abrirModalOverlay(modalLeitorVenda, 10002);
-        }
-
     } finally {
         abrindoLeitorVenda = false;
     }
 }
 
-function obterMensagemErroCamera(erro) {
-    if (erro?.name === 'NotAllowedError') {
-        return 'Permita o acesso à câmera para usar o leitor.';
-    }
-
-    if (erro?.name === 'NotFoundError') {
-        return 'Nenhuma câmera foi encontrada neste aparelho.';
-    }
-
-    if (erro?.name === 'NotReadableError') {
-        return 'A câmera está sendo usada por outro aplicativo.';
-    }
-
-    return 'Não foi possível iniciar a câmera. Verifique a permissão e tente novamente.';
-}
-
 async function detectarCodigoVenda() {
-    if (!lendoCodigoVenda || !detectorLeitorVenda || !videoLeitorVenda) {
-        return;
-    }
-
-    if (videoLeitorVenda.readyState < 2) {
-        frameLeituraVenda = requestAnimationFrame(detectarCodigoVenda);
+    if (!lendoCodigoVenda || !detectorLeitorVenda || !videoLeitorVenda || videoLeitorVenda.readyState < 2) {
+        if (lendoCodigoVenda) frameLeituraVenda = requestAnimationFrame(detectarCodigoVenda);
         return;
     }
 
     try {
         const resultados = await detectorLeitorVenda.detect(videoLeitorVenda);
-
         if (resultados?.length) {
             const codigo = String(resultados[0].rawValue || '').trim();
-
-            if (codigo) {
-                processarCodigoLidoVenda(codigo);
-            }
+            if (codigo) processarCodigoLidoVenda(codigo);
         }
+    } catch (e) {}
 
-    } catch (erro) {
-        console.warn('Erro na leitura do código:', erro);
-    }
-
-    if (lendoCodigoVenda) {
-        frameLeituraVenda = requestAnimationFrame(detectarCodigoVenda);
-    }
+    if (lendoCodigoVenda) frameLeituraVenda = requestAnimationFrame(detectarCodigoVenda);
 }
 
 function processarCodigoLidoVenda(codigo) {
     const agora = Date.now();
-
-    if (
-        codigo === codigoUltimoLidoVenda &&
-        agora - tempoUltimoCodigoVenda < 1000
-    ) {
-        return;
-    }
-
+    if (codigo === codigoUltimoLidoVenda && agora - tempoUltimoCodigoVenda < 1000) return;
     codigoUltimoLidoVenda = codigo;
     tempoUltimoCodigoVenda = agora;
 
     const produto = encontrarProdutoPorCodigo(codigo);
-
-    if (!produto) {
+    if (!produto || !adicionarProdutoVenda(produto.id)) {
         emitirSomErroVenda();
-
-        if (statusLeitorVenda) {
-            statusLeitorVenda.textContent =
-                `Código ${codigo} não encontrado no estoque`;
-        }
-
-        setTimeout(() => {
-            if (lendoCodigoVenda && statusLeitorVenda) {
-                statusLeitorVenda.textContent =
-                    'Aponte a câmera para o próximo produto';
-            }
-        }, 1600);
-
-        return;
-    }
-
-    if (!adicionarProdutoVenda(produto.id)) {
-        emitirSomErroVenda();
+        if (statusLeitorVenda) statusLeitorVenda.textContent = `Código ${codigo} não encontrado`;
         return;
     }
 
     emitirSomLeitor();
-
-    if (statusLeitorVenda) {
-        statusLeitorVenda.textContent =
-            `${produto.nome} — ${formatarReal(produto.preco)}`;
-    }
-
-    setTimeout(() => {
-        if (lendoCodigoVenda && statusLeitorVenda) {
-            statusLeitorVenda.textContent =
-                'Aponte para o próximo código';
-        }
-    }, 900);
+    if (statusLeitorVenda) statusLeitorVenda.textContent = `${produto.nome} — ${formatarReal(produto.preco)}`;
 }
 
 function prepararSomLeitor() {
     try {
-        const AudioCtx =
-            window.AudioContext || window.webkitAudioContext;
-
-        if (!AudioCtx) return;
-
-        if (!audioContextVenda) {
-            audioContextVenda = new AudioCtx();
-        }
-
-        if (audioContextVenda.state === 'suspended') {
-            audioContextVenda.resume();
-        }
-
-    } catch (erro) {
-        console.warn('Som do leitor indisponível:', erro);
-    }
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx && !audioContextVenda) audioContextVenda = new AudioCtx();
+        if (audioContextVenda?.state === 'suspended') audioContextVenda.resume();
+    } catch (e) {}
 }
 
-function emitirTom(
-    frequencia,
-    frequenciaFinal,
-    duracao,
-    volume = 0.15
-) {
+function emitirTom(frequencia, frequenciaFinal, duracao, volume = 0.15) {
     try {
         prepararSomLeitor();
-
         if (!audioContextVenda) return;
-
         const agora = audioContextVenda.currentTime;
-        const oscilador = audioContextVenda.createOscillator();
+        const osc = audioContextVenda.createOscillator();
         const ganho = audioContextVenda.createGain();
 
-        oscilador.type = 'sine';
-        oscilador.frequency.setValueAtTime(frequencia, agora);
-
-        if (frequenciaFinal) {
-            oscilador.frequency.exponentialRampToValueAtTime(
-                frequenciaFinal,
-                agora + duracao * 0.8
-            );
-        }
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(frequencia, agora);
+        if (frequenciaFinal) osc.frequency.exponentialRampToValueAtTime(frequenciaFinal, agora + duracao * 0.8);
 
         ganho.gain.setValueAtTime(0.0001, agora);
-        ganho.gain.exponentialRampToValueAtTime(
-            volume,
-            agora + 0.01
-        );
-        ganho.gain.exponentialRampToValueAtTime(
-            0.0001,
-            agora + duracao
-        );
+        ganho.gain.exponentialRampToValueAtTime(volume, agora + 0.01);
+        ganho.gain.exponentialRampToValueAtTime(0.0001, agora + duracao);
 
-        oscilador.connect(ganho);
+        osc.connect(ganho);
         ganho.connect(audioContextVenda.destination);
-
-        oscilador.start(agora);
-        oscilador.stop(agora + duracao + 0.01);
-
-    } catch (erro) {
-        console.warn('Não foi possível emitir som:', erro);
-    }
+        osc.start(agora);
+        osc.stop(agora + duracao + 0.01);
+    } catch (e) {}
 }
 
-function emitirSomLeitor() {
-    emitirTom(1250, 850, 0.085, 0.18);
-}
-
-function emitirSomErroVenda() {
-    emitirTom(300, 220, 0.18, 0.12);
-}
+const emitirSomLeitor = () => emitirTom(1250, 850, 0.085, 0.18);
+const emitirSomErroVenda = () => emitirTom(300, 220, 0.18, 0.12);
 
 function pararLeitorVenda() {
     lendoCodigoVenda = false;
-
-    if (frameLeituraVenda) {
-        cancelAnimationFrame(frameLeituraVenda);
-    }
-
+    if (frameLeituraVenda) cancelAnimationFrame(frameLeituraVenda);
     frameLeituraVenda = null;
 
     if (streamLeitorVenda) {
-        streamLeitorVenda.getTracks().forEach(track => {
-            try {
-                track.stop();
-            } catch (_) {}
-        });
+        streamLeitorVenda.getTracks().forEach(t => { try { t.stop(); } catch(e){} });
+        streamLeitorVenda = null;
     }
-
-    streamLeitorVenda = null;
 
     if (videoLeitorVenda) {
-        try {
-            videoLeitorVenda.pause();
-        } catch (_) {}
-
+        try { videoLeitorVenda.pause(); } catch(e){}
         videoLeitorVenda.srcObject = null;
         videoLeitorVenda.style.setProperty('display', 'none', 'important');
-        videoLeitorVenda.style.setProperty('visibility', 'hidden', 'important');
     }
-
-    if (molduraLeitorVenda) {
-        molduraLeitorVenda.style.display = 'none';
-    }
-
     detectorLeitorVenda = null;
     codigoUltimoLidoVenda = '';
-    tempoUltimoCodigoVenda = 0;
 }
 
 function fecharLeitorVenda(reabrirProdutos = false) {
-    const estavaAberto =
-        !!modalLeitorVenda &&
-        modalLeitorVenda.classList.contains('aberto') &&
-        !modalLeitorVenda.classList.contains('hidden');
-
+    const estavaAberto = modalLeitorVenda?.classList.contains('aberto');
     pararLeitorVenda();
     fecharModalOverlay(modalLeitorVenda);
 
-    if (
-        reabrirProdutos &&
-        estavaAberto &&
-        modalProdutosEstavaAbertoAntesLeitor &&
-        modalProdutosVenda
-    ) {
+    if (reabrirProdutos && estavaAberto && modalProdutosEstavaAbertoAntesLeitor && modalProdutosVenda) {
         abrirModalOverlay(modalProdutosVenda, 9999);
         setTimeout(() => buscaProdutoVenda?.focus(), 100);
     }
-
     modalProdutosEstavaAbertoAntesLeitor = false;
 }
 
 // ------------------------------------------------------------
-// Resumo e confirmação da venda
+// Registro e Confirmação de Venda
 // ------------------------------------------------------------
 function calcularResumoVenda() {
     const totalProdutos = calcularTotaisProdutos();
     const valorAvulso = numeroSeguro(valorContaInput?.value);
     const total = Math.round((totalProdutos + valorAvulso) * 100) / 100;
 
-    let recebido = total;
-    let troco = 0;
-    let clienteNome = '';
-    let pagamentoInicial = 0;
-    let saldoDevedor = 0;
-    let formaPagamentoRecebido = '';
+    let recebido = total, troco = 0, clienteNome = '', pagamentoInicial = 0, saldoDevedor = 0, formaPagamentoRecebido = '';
 
     if (formaPagamento === 'dinheiro') {
         recebido = numeroSeguro(valorRecebidoInput?.value);
-
-        troco = Math.max(
-            0,
-            Math.round((recebido - total) * 100) / 100
-        );
-
+        troco = Math.max(0, Math.round((recebido - total) * 100) / 100);
     } else if (formaPagamento === 'fiado') {
         clienteNome = String(nomeClienteFiado?.value || '').trim();
         pagamentoInicial = numeroSeguro(valorPagoInicialFiado?.value);
-
-        formaPagamentoRecebido = String(
-            formaPagamentoInicialFiado?.value || 'dinheiro'
-        ).toLowerCase();
-
+        formaPagamentoRecebido = String(formaPagamentoInicialFiado?.value || 'dinheiro').toLowerCase();
         recebido = pagamentoInicial;
-
-        saldoDevedor = Math.max(
-            0,
-            Math.round((total - pagamentoInicial) * 100) / 100
-        );
+        saldoDevedor = Math.max(0, Math.round((total - pagamentoInicial) * 100) / 100);
     }
 
-    return {
-        valorConta: valorAvulso,
-        valorAvulso,
-        totalProdutos,
-        valorBase: total,
-        taxa: 0,
-        total,
-        recebido,
-        troco,
-        formaPagamento,
-        clienteNome,
-        pagamentoInicial,
-        saldoDevedor,
-        formaPagamentoRecebido
-    };
-}
-
-function validarEstoqueVenda() {
-    const estoque = obterEstoque();
-
-    for (const item of produtosVenda) {
-        const produto = estoque.find(
-            registro => String(registro.id) === String(item.id)
-        );
-
-        if (!produto) {
-            alert(`O produto "${item.nome}" não está mais no estoque.`);
-            return false;
-        }
-
-        if (
-            numeroSeguro(produto.quantidade) <
-            numeroSeguro(item.quantidade)
-        ) {
-            alert(`Estoque insuficiente para "${item.nome}".`);
-            return false;
-        }
-    }
-
-    return true;
+    return { valorConta: valorAvulso, valorAvulso, totalProdutos, total, recebido, troco, formaPagamento, clienteNome, pagamentoInicial, saldoDevedor, formaPagamentoRecebido };
 }
 
 function validarResumoVenda(resumo) {
     if (resumo.total <= 0) {
-        alert('Informe o valor da compra ou adicione pelo menos um produto.');
+        alert('Informe o valor da compra ou adicione produtos.');
         return false;
     }
-
-    if (
-        resumo.formaPagamento === 'dinheiro' &&
-        resumo.recebido < resumo.total
-    ) {
-        alert('O valor recebido é menor que o total da venda.');
+    if (resumo.formaPagamento === 'dinheiro' && resumo.recebido < resumo.total) {
+        alert('O valor recebido é menor que o total.');
         return false;
     }
-
     if (resumo.formaPagamento === 'fiado') {
         if (!resumo.clienteNome) {
-            alert('Informe o nome do cliente para registrar uma venda fiada.');
+            alert('Informe o nome do cliente.');
             nomeClienteFiado?.focus();
             return false;
         }
-
         if (resumo.pagamentoInicial > resumo.total) {
-            alert('O valor pago na hora não pode ser maior que o total da venda fiada.');
+            alert('O pagamento inicial não pode ser maior que o total.');
             valorPagoInicialFiado?.focus();
-            return false;
-        }
-
-        if (![
-            'dinheiro',
-            'pix',
-            'debito',
-            'credito'
-        ].includes(resumo.formaPagamentoRecebido)) {
-            alert('Selecione uma forma válida para o pagamento inicial.');
             return false;
         }
     }
 
-    return validarEstoqueVenda();
+    // Validação de estoque
+    const estoque = obterEstoque();
+    for (const item of produtosVenda) {
+        const prod = estoque.find(r => String(r.id) === String(item.id));
+        if (!prod || numeroSeguro(prod.quantidade) < numeroSeguro(item.quantidade)) {
+            alert(`Estoque insuficiente para "${item.nome}".`);
+            return false;
+        }
+    }
+    return true;
 }
 
 function abrirConfirmacaoVenda() {
     const resumo = calcularResumoVenda();
-
     if (!validarResumoVenda(resumo)) return;
-
-    if (!modalConfirmarVenda || !resumoConfirmacaoVenda) {
-        console.error(
-            'Modal/resumo da confirmação não encontrado. Confira os IDs modalConfirmarVenda e resumoConfirmacaoVenda no calculadora.html.'
-        );
-
-        alert('A confirmação não abriu. Confira o modal de confirmação no calculadora.html.');
-        return;
-    }
+    if (!modalConfirmarVenda || !resumoConfirmacaoVenda) return;
 
     resumoConfirmacaoVenda.innerHTML = criarResumoConfirmacao(resumo);
-
     abrirModalOverlay(modalConfirmarVenda, 10001);
 }
 
-function linhaResumo(rotulo, valor, extraClasse = '') {
-    return `
-        <div class="resumo-confirmacao-linha ${extraClasse}">
-            <span>${escaparHTML(rotulo)}</span>
-            <strong>${escaparHTML(valor)}</strong>
-        </div>
-    `;
-}
-
 function criarResumoConfirmacao(resumo) {
-    let html = linhaResumo(
-        'Pagamento',
-        nomeFormaPagamento(resumo.formaPagamento)
-    );
-
-    if (resumo.formaPagamento === 'fiado') {
-        html += linhaResumo('Cliente', resumo.clienteNome);
-    }
-
-    if (resumo.valorAvulso > 0) {
-        html += linhaResumo(
-            'Valor adicional / venda avulsa',
-            formatarReal(resumo.valorAvulso)
-        );
-    }
+    let html = `<div class="resumo-confirmacao-linha"><span>Pagamento</span><strong>${nomeFormaPagamento(resumo.formaPagamento)}</strong></div>`;
+    if (resumo.formaPagamento === 'fiado') html += `<div class="resumo-confirmacao-linha"><span>Cliente</span><strong>${escaparHTML(resumo.clienteNome)}</strong></div>`;
+    if (resumo.valorAvulso > 0) html += `<div class="resumo-confirmacao-linha"><span>Valor avulso</span><strong>${formatarReal(resumo.valorAvulso)}</strong></div>`;
 
     if (produtosVenda.length) {
         html += '<div class="resumo-confirmacao-produtos"><strong>Produtos</strong>';
-
-        produtosVenda.forEach(produto => {
-            const subtotal =
-                numeroSeguro(produto.preco) *
-                numeroSeguro(produto.quantidade);
-
-            html += `
-                <div class="resumo-produto">
-                    <span>${escaparHTML(produto.nome)} × ${numeroSeguro(produto.quantidade)}</span>
-                    <strong>${formatarReal(subtotal)}</strong>
-                </div>
-            `;
+        produtosVenda.forEach(p => {
+            html += `<div class="resumo-produto"><span>${escaparHTML(p.nome)} × ${p.quantidade}</span><strong>${formatarReal(p.preco * p.quantidade)}</strong></div>`;
         });
-
         html += '</div>';
     }
 
-    html += `
-        <div class="resumo-confirmacao-total">
-            <span>Total da venda</span>
-            <strong>${formatarReal(resumo.total)}</strong>
-        </div>
-    `;
-
+    html += `<div class="resumo-confirmacao-total"><span>Total</span><strong>${formatarReal(resumo.total)}</strong></div>`;
     if (resumo.formaPagamento === 'dinheiro') {
-        html += linhaResumo(
-            'Dinheiro recebido',
-            formatarReal(resumo.recebido)
-        );
-
-        html += linhaResumo(
-            'Troco',
-            formatarReal(resumo.troco),
-            'troco'
-        );
-
+        html += `<div class="resumo-confirmacao-linha"><span>Recebido</span><strong>${formatarReal(resumo.recebido)}</strong></div>`;
+        html += `<div class="resumo-confirmacao-linha troco"><span>Troco</span><strong>${formatarReal(resumo.troco)}</strong></div>`;
     } else if (resumo.formaPagamento === 'fiado') {
-        html += linhaResumo(
-            'Pago na hora',
-            `${formatarReal(resumo.pagamentoInicial)} (${nomeFormaPagamento(resumo.formaPagamentoRecebido)})`
-        );
-
-        html += linhaResumo(
-            'Saldo devedor',
-            formatarReal(resumo.saldoDevedor),
-            'saldo-devedor'
-        );
-
-        html += `
-            <p class="aviso-fiado">
-                Sem juros. O saldo será atualizado conforme os pagamentos do cliente.
-            </p>
-        `;
+        html += `<div class="resumo-confirmacao-linha"><span>Pago na hora</span><strong>${formatarReal(resumo.pagamentoInicial)}</strong></div>`;
+        html += `<div class="resumo-confirmacao-linha saldo-devedor"><span>Saldo Devedor</span><strong>${formatarReal(resumo.saldoDevedor)}</strong></div>`;
     }
-
     return html;
 }
 
-function fecharConfirmacao() {
-    fecharModalOverlay(modalConfirmarVenda);
-}
-
-// ------------------------------------------------------------
-// Movimentações de pagamentos de fiado
-// ------------------------------------------------------------
-function criarMovimentacaoPagamentoFiado(
-    venda,
-    valor,
-    forma,
-    descricao,
-    dataHora,
-    origem
-) {
-    return {
-        id: `fiado-${venda.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        tipo: 'entrada',
-        valor: Math.round(valor * 100) / 100,
-        formaPagamento: forma,
-        formaPagamentoNome: nomeFormaPagamento(forma),
-        descricao,
-        data: dataHora.data,
-        dataChave: dataHora.dataChave,
-        hora: dataHora.hora,
-        origem: origem || 'pagamento_fiado',
-        fiadoId: venda.id,
-        vendaId: venda.id
-    };
-}
-
-// ------------------------------------------------------------
-// Confirmar e registrar venda
-// ------------------------------------------------------------
 function confirmarVenda() {
     if (vendaEmProcessamento) return;
-
     const resumo = calcularResumoVenda();
-
     if (!validarResumoVenda(resumo)) return;
 
     vendaEmProcessamento = true;
-
-    if (btnConfirmarVenda) {
-        btnConfirmarVenda.disabled = true;
-    }
+    if (btnConfirmarVenda) btnConfirmarVenda.disabled = true;
 
     const estoqueOriginal = obterEstoque();
     const estoqueAtualizado = JSON.parse(JSON.stringify(estoqueOriginal));
 
-    // Confere e atualiza o estoque antes de concluir a venda.
     for (const item of produtosVenda) {
-        const produto = estoqueAtualizado.find(
-            registro => String(registro.id) === String(item.id)
-        );
-
-        if (
-            !produto ||
-            numeroSeguro(produto.quantidade) < numeroSeguro(item.quantidade)
-        ) {
-            alert(`Estoque insuficiente para "${item.nome}". Confira a venda novamente.`);
-
+        const prod = estoqueAtualizado.find(r => String(r.id) === String(item.id));
+        if (!prod || numeroSeguro(prod.quantidade) < numeroSeguro(item.quantidade)) {
+            alert(`Estoque insuficiente para "${item.nome}".`);
             vendaEmProcessamento = false;
-
-            if (btnConfirmarVenda) {
-                btnConfirmarVenda.disabled = false;
-            }
-
+            if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
             return;
         }
-
-        produto.quantidade = Math.max(
-            0,
-            numeroSeguro(produto.quantidade) -
-            numeroSeguro(item.quantidade)
-        );
-
-        produto.atualizadoEm = new Date().toISOString();
+        prod.quantidade = Math.max(0, numeroSeguro(prod.quantidade) - numeroSeguro(item.quantidade));
+        prod.atualizadoEm = new Date().toISOString();
     }
 
     const dataHora = obterDataHoraAtual();
     const idVenda = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-    // ============================================================
-    // Registo automático da saída com vendaId vinculado
-    // ============================================================
+    // Registro das movimentações de estoque
     const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
     let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque);
 
-    for (const item of produtosVenda) {
-        const produtoOriginal = estoqueOriginal.find(
-            registro => String(registro.id) === String(item.id)
-        );
-        const qtdAnterior = produtoOriginal ? numeroSeguro(produtoOriginal.quantidade) : 0;
-        const qtdNova = Math.max(0, qtdAnterior - numeroSeguro(item.quantidade));
-
+    produtosVenda.forEach(item => {
+        const pOrig = estoqueOriginal.find(r => String(r.id) === String(item.id));
+        const qtdAnt = pOrig ? numeroSeguro(pOrig.quantidade) : 0;
         movimentacoesEstoque.push({
             id: `mov_venda_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-            vendaId: idVenda, // Vínculo essencial para permitir o estorno na exclusão
+            vendaId: idVenda,
             produtoId: item.id,
             produtoNome: item.nome,
             tipo: "saida",
             quantidade: numeroSeguro(item.quantidade),
-            quantidadeAnterior: qtdAnterior,
-            quantidadeNova: qtdNova,
+            quantidadeAnterior: qtdAnt,
+            quantidadeNova: Math.max(0, qtdAnt - numeroSeguro(item.quantidade)),
             data: dataHora.dataChave,
             hora: dataHora.hora
         });
-    }
-
+    });
     localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
-    // ============================================================
 
     const isFiado = resumo.formaPagamento === 'fiado';
-
     const venda = {
         id: idVenda,
         data: dataHora.data,
         dataChave: dataHora.dataChave,
         hora: dataHora.hora,
-
         formaPagamento: resumo.formaPagamento,
         formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamento),
-
         valorConta: resumo.valorConta,
         valorAvulso: resumo.valorAvulso,
         totalProdutos: resumo.totalProdutos,
-        valorBase: resumo.valorBase,
-        taxaCredito: 0,
+        valorBase: resumo.total,
         total: resumo.total,
-
-        valorRecebido: isFiado
-            ? resumo.pagamentoInicial
-            : resumo.recebido,
-
+        valorRecebido: isFiado ? resumo.pagamentoInicial : resumo.recebido,
         troco: isFiado ? 0 : resumo.troco,
-
-        produtos: produtosVenda.map(produto => ({
-            id: produto.id,
-            nome: produto.nome,
-            codigo: produto.codigo,
-            preco: produto.preco,
-            quantidade: produto.quantidade,
-            subtotal: Math.round(
-                numeroSeguro(produto.preco) *
-                numeroSeguro(produto.quantidade) *
-                100
-            ) / 100
+        produtos: produtosVenda.map(p => ({
+            id: p.id, nome: p.nome, codigo: p.codigo, preco: p.preco, quantidade: p.quantidade,
+            subtotal: Math.round(numeroSeguro(p.preco) * numeroSeguro(p.quantidade) * 100) / 100
         }))
     };
 
@@ -1694,14 +864,8 @@ function confirmarVenda() {
 
     if (isFiado) {
         const pago = Math.round(resumo.pagamentoInicial * 100) / 100;
-
-        const saldo = Math.max(
-            0,
-            Math.round((resumo.total - pago) * 100) / 100
-        );
-
+        const saldo = Math.max(0, Math.round((resumo.total - pago) * 100) / 100);
         venda.clienteNome = resumo.clienteNome;
-
         venda.fiado = {
             clienteNome: resumo.clienteNome,
             valorOriginal: resumo.total,
@@ -1713,172 +877,62 @@ function confirmarVenda() {
 
         if (pago > 0) {
             venda.fiado.pagamentos.push({
-                id: `pg-${idVenda}-inicial`,
-                valor: pago,
-                formaPagamento: resumo.formaPagamentoRecebido,
-                formaPagamentoNome: nomeFormaPagamento(
-                    resumo.formaPagamentoRecebido
-                ),
-                data: dataHora.data,
-                dataChave: dataHora.dataChave,
-                hora: dataHora.hora,
-                tipo: 'pagamento_inicial'
+                id: `pg-${idVenda}-inicial`, valor: pago, formaPagamento: resumo.formaPagamentoRecebido,
+                formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
+                data: dataHora.data, dataChave: dataHora.dataChave, hora: dataHora.hora, tipo: 'pagamento_inicial'
             });
 
-            movimentacaoInicial = criarMovimentacaoPagamentoFiado(
-                venda,
-                pago,
-                resumo.formaPagamentoRecebido,
-                `Pagamento inicial do fiado — ${resumo.clienteNome}`,
-                dataHora,
-                'pagamento_fiado_inicial'
-            );
-
+            movimentacaoInicial = {
+                id: `fiado-${idVenda}-${Date.now()}`, tipo: 'entrada', valor: pago,
+                formaPagamento: resumo.formaPagamentoRecebido, formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
+                descricao: `Pagamento inicial do fiado — ${resumo.clienteNome}`,
+                data: dataHora.data, dataChave: dataHora.dataChave, hora: dataHora.hora,
+                origem: 'pagamento_fiado_inicial', fiadoId: idVenda, vendaId: idVenda
+            };
             movimentacoes.push(movimentacaoInicial);
         }
     }
 
     const vendas = lerListaLocalStorage(CHAVE_VENDAS);
-    const vendasNovas = [...vendas, venda];
-
-    const vendasAntes = localStorage.getItem(CHAVE_VENDAS);
-    const estoqueAntes = localStorage.getItem(CHAVE_ESTOQUE);
-    const movimentosAntes = localStorage.getItem(CHAVE_MOVIMENTACOES);
-
     try {
-        localStorage.setItem(
-            CHAVE_VENDAS,
-            JSON.stringify(vendasNovas)
-        );
-
-        if (isFiado && movimentacaoInicial) {
-            localStorage.setItem(
-                CHAVE_MOVIMENTACOES,
-                JSON.stringify(movimentacoes)
-            );
-        }
-
-        if (!salvarEstoque(estoqueAtualizado)) {
-            throw new Error('Não foi possível salvar o estoque.');
-        }
-
-    } catch (erro) {
-        try {
-            restaurarChaveLocalStorage(CHAVE_VENDAS, vendasAntes);
-            restaurarChaveLocalStorage(CHAVE_MOVIMENTACOES, movimentosAntes);
-            restaurarChaveLocalStorage(CHAVE_ESTOQUE, estoqueAntes);
-
-        } catch (erroRollback) {
-            console.error(
-                'Falha ao restaurar dados após erro:',
-                erroRollback
-            );
-        }
-
-        console.error('Erro ao registrar venda:', erro);
-
-        alert(
-            'Não foi possível salvar a venda e atualizar os dados. ' +
-            'Confira o estoque antes de tentar novamente.'
-        );
-
+        localStorage.setItem(CHAVE_VENDAS, JSON.stringify([...vendas, venda]));
+        if (isFiado && movimentacaoInicial) localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(movimentacoes));
+        if (!salvarEstoque(estoqueAtualizado)) throw new Error('Erro ao salvar estoque.');
+    } catch (err) {
+        console.error('Erro ao salvar venda:', err);
+        alert('Erro ao registrar a venda.');
         vendaEmProcessamento = false;
-
-        if (btnConfirmarVenda) {
-            btnConfirmarVenda.disabled = false;
-        }
-
+        if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
         return;
     }
 
-    fecharConfirmacao();
-
-    if (isFiado) {
-        alert(
-            `Venda fiada registrada para ${resumo.clienteNome}.\n` +
-            `Total: ${formatarReal(resumo.total)}\n` +
-            `Pago: ${formatarReal(resumo.pagamentoInicial)}\n` +
-            `Saldo devedor: ${formatarReal(resumo.saldoDevedor)}`
-        );
-    } else {
-        alert('Venda registrada com sucesso!');
-    }
-
+    fecharModalOverlay(modalConfirmarVenda);
+    alert(isFiado ? `Venda fiada registrada para ${resumo.clienteNome}!` : 'Venda registrada com sucesso!');
     vendaEmProcessamento = false;
-
-    if (btnConfirmarVenda) {
-        btnConfirmarVenda.disabled = false;
-    }
-
+    if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
     limparVenda();
 }
 
-// ------------------------------------------------------------
-// Restauração de dados
-// ------------------------------------------------------------
-function restaurarChaveLocalStorage(chave, valorAnterior) {
-    if (valorAnterior === null || valorAnterior === undefined) {
-        localStorage.removeItem(chave);
-    } else {
-        localStorage.setItem(chave, valorAnterior);
-    }
-}
-
-// ------------------------------------------------------------
-// Limpar venda atual
-// ------------------------------------------------------------
 function limparVenda() {
     produtosVenda = [];
-
     if (valorContaInput) valorContaInput.value = '';
     if (valorRecebidoInput) valorRecebidoInput.value = '';
     if (nomeClienteFiado) nomeClienteFiado.value = '';
-
-    if (valorPagoInicialFiado) {
-        valorPagoInicialFiado.value = '0';
-    }
-
-    if (formaPagamentoInicialFiado) {
-        formaPagamentoInicialFiado.value = 'dinheiro';
-    }
+    if (valorPagoInicialFiado) valorPagoInicialFiado.value = '0';
+    if (formaPagamentoInicialFiado) formaPagamentoInicialFiado.value = 'dinheiro';
 
     formaPagamento = 'dinheiro';
-
     atualizarBotoesPagamento();
     renderizarProdutosVenda();
     renderizarProdutosEstoqueVenda();
-
-    fecharModalProdutos();
-    fecharLeitorVenda(false);
-    fecharConfirmacao();
-
+    fecharModalOverlay(modalProdutosVenda);
+    pararLeitorVenda();
+    fecharModalOverlay(modalConfirmarVenda);
     atualizarTela();
 }
 
 // ------------------------------------------------------------
-// Estado dos modais e rolagem da página
-// ------------------------------------------------------------
-function verificarModaisAbertos() {
-    const modais = [
-        modalProdutosVenda,
-        modalLeitorVenda,
-        modalConfirmarVenda
-    ];
-
-    const algumAberto = modais.some(modal =>
-        modal &&
-        modal.classList.contains('aberto') &&
-        !modal.classList.contains('hidden')
-    );
-
-    document.body.classList.toggle('modal-aberto', algumAberto);
-    document.body.style.overflow = algumAberto ? 'hidden' : '';
-}
-
-// ------------------------------------------------------------
-// Denominações e sugestões de troco
-// As imagens ficam na pasta "cedulas" do projeto.
-// Moedas sem imagem (25c, 10c, 5c, 1c) usam um círculo simples.
+// Sugestões de Troco com Imagens
 // ------------------------------------------------------------
 const denominacoesTroco = [
     { valor: 200, nome: 'R$ 200', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-200.jpg' },
@@ -1897,36 +951,19 @@ const denominacoesTroco = [
 ];
 
 function calcularMelhorTroco(valorCentavos, bloqueadas = []) {
-    if (
-        !Number.isInteger(valorCentavos) ||
-        valorCentavos < 0 ||
-        valorCentavos > 200000
-    ) {
-        return null;
-    }
-
+    if (!Number.isInteger(valorCentavos) || valorCentavos < 0 || valorCentavos > 200000) return null;
     const bloqueadasSet = new Set(bloqueadas);
     const infinito = 999999;
-
     const dp = new Array(valorCentavos + 1).fill(infinito);
     const anterior = new Array(valorCentavos + 1).fill(null);
-
     dp[0] = 0;
 
     for (let valor = 1; valor <= valorCentavos; valor++) {
         for (let i = 0; i < denominacoesTroco.length; i++) {
             if (bloqueadasSet.has(i)) continue;
-
-            const denom = Math.round(
-                denominacoesTroco[i].valor * 100
-            );
-
-            if (denom > valor || dp[valor - denom] === infinito) {
-                continue;
-            }
-
+            const denom = Math.round(denominacoesTroco[i].valor * 100);
+            if (denom > valor || dp[valor - denom] === infinito) continue;
             const qtd = dp[valor - denom] + 1;
-
             if (qtd < dp[valor]) {
                 dp[valor] = qtd;
                 anterior[valor] = i;
@@ -1934,284 +971,97 @@ function calcularMelhorTroco(valorCentavos, bloqueadas = []) {
         }
     }
 
-    if (dp[valorCentavos] === infinito) {
-        return null;
-    }
+    if (dp[valorCentavos] === infinito) return null;
 
     const quantidades = new Array(denominacoesTroco.length).fill(0);
     let restante = valorCentavos;
-
     while (restante > 0) {
         const indice = anterior[restante];
-
-        if (indice === null || indice === undefined) {
-            return null;
-        }
-
-        const denom = Math.round(
-            denominacoesTroco[indice].valor * 100
-        );
-
+        if (indice === null) return null;
         quantidades[indice]++;
-        restante -= denom;
+        restante -= Math.round(denominacoesTroco[indice].valor * 100);
     }
 
-    return denominacoesTroco
-        .map((item, index) =>
-            quantidades[index] > 0
-                ? { ...item, quantidade: quantidades[index] }
-                : null
-        )
-        .filter(Boolean);
+    return denominacoesTroco.map((item, idx) => quantidades[idx] > 0 ? { ...item, quantidade: quantidades[idx] } : null).filter(Boolean);
 }
 
 function gerarSugestoesTroco(valor) {
     if (!listaCedulas) return;
-
     const valorCentavos = centavos(numeroSeguro(valor));
-
-    if (valorCentavos <= 0) {
-        listaCedulas.innerHTML = '';
-        return;
-    }
+    if (valorCentavos <= 0) { listaCedulas.innerHTML = ''; return; }
 
     const sugestoes = [];
     const primeira = calcularMelhorTroco(valorCentavos);
+    if (primeira) sugestoes.push(primeira);
 
-    if (primeira) {
-        sugestoes.push(primeira);
-    }
-
-    for (
-        let i = 0;
-        i < denominacoesTroco.length && sugestoes.length < 3;
-        i++
-    ) {
+    for (let i = 0; i < denominacoesTroco.length && sugestoes.length < 3; i++) {
         const alternativa = calcularMelhorTroco(valorCentavos, [i]);
-
         if (!alternativa) continue;
-
-        const assinatura = alternativa
-            .map(item => `${item.nome}x${item.quantidade}`)
-            .join('|');
-
-        const jaExiste = sugestoes.some(lista =>
-            lista
-                .map(item => `${item.nome}x${item.quantidade}`)
-                .join('|') === assinatura
-        );
-
-        if (!jaExiste) {
+        const assinatura = alternativa.map(item => `${item.nome}x${item.quantidade}`).join('|');
+        if (!sugestoes.some(s => s.map(item => `${item.nome}x${item.quantidade}`).join('|') === assinatura)) {
             sugestoes.push(alternativa);
         }
     }
-
     renderizarSugestoesTroco(sugestoes);
 }
 
-const ERRO_IMAGEM_TROCO =
-    "this.style.display='none';" +
-    "this.nextElementSibling.style.display='flex';";
+const ERRO_IMAGEM_TROCO = "this.style.display='none';this.nextElementSibling.style.display='flex';";
 
 function criarPecaTroco(item) {
     const ehMoeda = item.tipo === 'moeda';
     const nome = escaparHTML(item.nome);
     const empilhada = !ehMoeda && item.quantidade > 1;
-
     let visual = '';
 
     if (!ehMoeda) {
-        const sombra = empilhada
-            ? '5px 5px 0 -1px #c5ccd1, 10px 10px 0 -2px #dde2e6, 0 3px 8px rgba(0,0,0,0.2)'
-            : '0 3px 8px rgba(0,0,0,0.25)';
-
+        const sombra = empilhada ? '5px 5px 0 -1px #c5ccd1, 10px 10px 0 -2px #dde2e6, 0 3px 8px rgba(0,0,0,0.2)' : '0 3px 8px rgba(0,0,0,0.25)';
         visual = `
-            <div style="
-                position:relative;
-                width:100%;
-                box-sizing:border-box;
-                padding:0 ${empilhada ? 10 : 0}px ${empilhada ? 10 : 0}px 0;
-            ">
-                <img
-                    src="${escaparAtributo(item.imagem)}"
-                    alt="${escaparAtributo(item.nome)}"
-                    onerror="${ERRO_IMAGEM_TROCO}"
-                    style="
-                        display:block;
-                        width:100%;
-                        height:auto;
-                        border-radius:8px;
-                        box-shadow:${sombra};
-                    "
-                >
-                <div style="
-                    display:none;
-                    align-items:center;
-                    justify-content:center;
-                    aspect-ratio:2 / 1;
-                    border-radius:8px;
-                    background:#e8efe9;
-                    color:#27343d;
-                    font-weight:700;
-                ">${item.simbolo} ${nome}</div>
-            </div>
-        `;
+            <div style="position:relative;width:100%;box-sizing:border-box;padding:0 ${empilhada ? 10 : 0}px ${empilhada ? 10 : 0}px 0;">
+                <img src="${escaparAtributo(item.imagem)}" alt="${escaparAtributo(item.nome)}" onerror="${ERRO_IMAGEM_TROCO}" style="display:block;width:100%;height:auto;border-radius:8px;box-shadow:${sombra};">
+                <div style="display:none;align-items:center;justify-content:center;aspect-ratio:2/1;border-radius:8px;background:#e8efe9;color:#27343d;font-weight:700;">${item.simbolo} ${nome}</div>
+            </div>`;
     } else if (item.imagem) {
         visual = `
             <div style="position:relative;width:64px;height:64px;">
-                <img
-                    src="${escaparAtributo(item.imagem)}"
-                    alt="${escaparAtributo(item.nome)}"
-                    onerror="${ERRO_IMAGEM_TROCO}"
-                    style="
-                        display:block;
-                        width:64px;
-                        height:64px;
-                        border-radius:50%;
-                        object-fit:cover;
-                        box-shadow:0 3px 8px rgba(0,0,0,0.25);
-                    "
-                >
-                <div style="
-                    display:none;
-                    width:64px;
-                    height:64px;
-                    border-radius:50%;
-                    align-items:center;
-                    justify-content:center;
-                    background:#e8efe9;
-                    font-size:26px;
-                ">${item.simbolo}</div>
-            </div>
-        `;
+                <img src="${escaparAtributo(item.imagem)}" alt="${escaparAtributo(item.nome)}" onerror="${ERRO_IMAGEM_TROCO}" style="display:block;width:64px;height:64px;border-radius:50%;object-fit:cover;box-shadow:0 3px 8px rgba(0,0,0,0.25);">
+                <div style="display:none;width:64px;height:64px;border-radius:50%;align-items:center;justify-content:center;background:#e8efe9;font-size:26px;">${item.simbolo}</div>
+            </div>`;
     } else {
-        visual = `
-            <div style="
-                width:64px;
-                height:64px;
-                border-radius:50%;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                background:radial-gradient(circle at 30% 30%, #e0a86a, #a8692f);
-                border:3px solid #c98a4b;
-                box-sizing:border-box;
-                box-shadow:0 3px 8px rgba(0,0,0,0.25);
-                color:#ffffff;
-                font-weight:800;
-                font-size:16px;
-            ">${escaparHTML(item.rotulo || '')}</div>
-        `;
+        visual = `<div style="width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%, #e0a86a, #a8692f);border:3px solid #c98a4b;box-sizing:border-box;box-shadow:0 3px 8px rgba(0,0,0,0.25);color:#fff;font-weight:800;font-size:16px;">${escaparHTML(item.rotulo || '')}</div>`;
     }
 
     return `
-        <div style="
-            position:relative;
-            width:${ehMoeda ? '72px' : 'calc(50% - 6px)'};
-            box-sizing:border-box;
-            display:flex;
-            flex-direction:column;
-            align-items:${ehMoeda ? 'center' : 'stretch'};
-            gap:6px;
-        ">
+        <div style="position:relative;width:${ehMoeda ? '72px' : 'calc(50% - 6px)'};box-sizing:border-box;display:flex;flex-direction:column;align-items:${ehMoeda ? 'center' : 'stretch'};gap:6px;">
             <div style="position:relative;">
                 ${visual}
-
-                <span style="
-                    position:absolute;
-                    top:-8px;
-                    right:-6px;
-                    min-width:28px;
-                    height:28px;
-                    padding:0 6px;
-                    box-sizing:border-box;
-                    border-radius:14px;
-                    border:2px solid #ffffff;
-                    background:#20a66a;
-                    color:#ffffff;
-                    font-size:14px;
-                    font-weight:800;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    box-shadow:0 2px 6px rgba(0,0,0,0.25);
-                ">${item.quantidade}×</span>
+                <span style="position:absolute;top:-8px;right:-6px;min-width:28px;height:28px;padding:0 6px;border-radius:14px;border:2px solid #fff;background:#20a66a;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.25);">${item.quantidade}×</span>
             </div>
-
-            <strong style="
-                font-size:13px;
-                color:#27343d;
-                text-align:center;
-            ">${nome}</strong>
-        </div>
-    `;
+            <strong style="font-size:13px;color:#27343d;text-align:center;">${nome}</strong>
+        </div>`;
 }
 
 function renderizarSugestoesTroco(sugestoes) {
     if (!listaCedulas) return;
+    if (!sugestoes.length) { listaCedulas.innerHTML = '<p>Não foi possível montar sugestões de troco.</p>'; return; }
 
-    if (!sugestoes.length) {
-        listaCedulas.innerHTML =
-            '<p>Não foi possível montar uma sugestão de troco.</p>';
-        return;
-    }
-
-    listaCedulas.innerHTML = sugestoes.map((sugestao, index) => {
-        const totalPecas = sugestao.reduce(
-            (soma, item) => soma + item.quantidade,
-            0
-        );
-
+    listaCedulas.innerHTML = sugestoes.map((sugestao, idx) => {
+        const totalPecas = sugestao.reduce((s, i) => s + i.quantidade, 0);
         return `
-            <div
-                class="sugestao-troco${index === 0 ? ' destaque' : ''}"
-                style="
-                    margin-bottom:14px;
-                    padding:14px;
-                    border-radius:16px;
-                    border:${index === 0
-                        ? '2px solid #20a66a'
-                        : '1px solid #dfe4e7'};
-                    background:${index === 0 ? '#effaf5' : '#fff'};
-                "
-            >
-                <div style="
-                    display:flex;
-                    align-items:center;
-                    justify-content:space-between;
-                    margin-bottom:14px;
-                ">
-                    <strong style="font-size:18px;color:#27343d">
-                        ${index === 0 ? '⭐ Opção 1' : `Opção ${index + 1}`}
-                    </strong>
-
-                    <small>
-                        ${totalPecas} ${totalPecas === 1 ? 'peça' : 'peças'}
-                    </small>
+            <div class="sugestao-troco${idx === 0 ? ' destaque' : ''}" style="margin-bottom:14px;padding:14px;border-radius:16px;border:${idx === 0 ? '2px solid #20a66a' : '1px solid #dfe4e7'};background:${idx === 0 ? '#effaf5' : '#fff'};">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <strong style="font-size:18px;color:#27343d">${idx === 0 ? '⭐ Opção 1' : `Opção ${idx + 1}`}</strong>
+                    <small>${totalPecas} ${totalPecas === 1 ? 'peça' : 'peças'}</small>
                 </div>
-
-                <div style="
-                    display:flex;
-                    flex-wrap:wrap;
-                    align-items:flex-start;
-                    gap:18px 12px;
-                ">
+                <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:18px 12px;">
                     ${sugestao.map(criarPecaTroco).join('')}
                 </div>
-            </div>
-        `;
+            </div>`;
     }).join('');
 }
 
-// ------------------------------------------------------------
-// Iniciar calculadora
-// ------------------------------------------------------------
+// Inicializador automático
 if (document.readyState === 'loading') {
-    document.addEventListener(
-        'DOMContentLoaded',
-        iniciarCalculadora,
-        { once: true }
-    );
+    document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
 }
