@@ -59,17 +59,17 @@
     }
 
     /* =========================================================
-       ESTILOS ESPECÍFICOS — MODAL DE PRODUTOS (GRADE E CONTROLES)
+       ESTILOS ESPECÍFICOS — MODAL DE PRODUTOS (3 COLUNAS)
        ========================================================= */
     .modal-produtos-venda {
       width: 100%;
-      max-width: 720px;
+      max-width: 760px;
       max-height: 85vh;
       max-height: 85dvh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+      padding: 16px 14px calc(24px + env(safe-area-inset-bottom));
       box-sizing: border-box;
     }
 
@@ -123,32 +123,26 @@
       box-shadow: 0 0 0 3px rgba(32, 169, 93, 0.1);
     }
 
-    /* Grade de Produtos em 3 colunas */
+    /* Grade de Produtos estrita em 3 colunas */
     .lista-produtos-estoque-venda {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
+      gap: 6px;
       margin-bottom: 16px;
     }
 
-    @media (max-width: 600px) {
-      .lista-produtos-estoque-venda {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    /* Cartão do Produto */
+    /* Cartão do Produto Compacto */
     .cartao-produto-grade {
       background: #ffffff;
       border: 1px solid rgba(39, 57, 69, 0.08);
-      border-radius: 14px;
-      padding: 10px;
+      border-radius: 12px;
+      padding: 6px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      box-shadow: 0 4px 14px rgba(28, 48, 62, 0.04);
+      box-shadow: 0 2px 8px rgba(28, 48, 62, 0.04);
       box-sizing: border-box;
-      min-height: 170px;
+      min-height: 155px;
     }
 
     .cartao-produto-topo {
@@ -156,21 +150,23 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
+      width: 100%;
     }
 
+    /* Imagem maior ocupando mais espaço */
     .cartao-produto-foto {
-      width: 56px;
-      height: 56px;
-      border-radius: 12px;
+      width: 100%;
+      height: 70px;
+      border-radius: 10px;
       overflow: hidden;
       background: linear-gradient(135deg, #edf7f1, #e4f1ea);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #16834d;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 900;
-      margin-bottom: 8px;
+      margin-bottom: 5px;
       flex-shrink: 0;
     }
 
@@ -182,51 +178,66 @@
 
     .cartao-produto-info {
       width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
+    /* Nome centralizado embaixo da imagem */
     .cartao-produto-info strong {
       display: block;
       color: #2c3e4a;
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 900;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
-      line-height: 1.3;
-      height: 31px;
+      line-height: 1.2;
+      height: 24px;
+      margin-bottom: 3px;
+      text-align: center;
+      width: 100%;
+    }
+
+    /* Estoque em cima */
+    .cartao-produto-info small {
+      display: block;
+      color: #52636e;
+      font-size: 9px;
+      font-weight: 800;
       margin-bottom: 2px;
     }
 
-    .cartao-produto-info small {
-      display: block;
+    /* Preço embaixo */
+    .cartao-produto-preco {
       color: #16834d;
       font-size: 11px;
       font-weight: 900;
     }
 
     .cartao-produto-acoes {
-      margin-top: 8px;
+      margin-top: 6px;
       width: 100%;
     }
 
     /* Botão Adicionar Inicial */
     .btn-card-adicionar {
       width: 100%;
-      height: 34px;
+      height: 30px;
       border: 0;
-      border-radius: 10px;
+      border-radius: 8px;
       background: #eaf8f0;
       color: #147844;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 900;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      transition: transform 0.1s ease;
+      gap: 3px;
     }
 
     .btn-card-adicionar:active {
@@ -240,27 +251,27 @@
       justify-content: space-between;
       background: #f4f8fa;
       border: 1px solid #dbe4e8;
-      border-radius: 10px;
-      height: 34px;
-      padding: 0 4px;
+      border-radius: 8px;
+      height: 30px;
+      padding: 0 3px;
       width: 100%;
       box-sizing: border-box;
     }
 
     .controle-qtd-card button {
-      width: 26px;
-      height: 26px;
+      width: 24px;
+      height: 24px;
       border: 0;
-      border-radius: 8px;
+      border-radius: 6px;
       background: #ffffff;
       color: #2864ad;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 900;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
     .controle-qtd-card button:active {
@@ -268,12 +279,12 @@
     }
 
     .controle-qtd-card span {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 900;
       color: #263746;
     }
 
-    /* Botão Adicionar Manualmente e Concluir */
+    /* Ações do Modal */
     .modal-acoes-venda {
       flex-shrink: 0;
       display: flex;
@@ -286,12 +297,12 @@
 
     .btn-manual-venda {
       width: 100%;
-      height: 42px;
+      height: 40px;
       border: 1px dashed #cbd5d0;
       border-radius: 12px;
       background: #fafcfd;
       color: #52636e;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 900;
       cursor: pointer;
       display: flex;
@@ -653,7 +664,7 @@
 
   </div>
 
-  <!-- MODAL DE PRODUTOS REFORMULADO -->
+  <!-- MODAL DE PRODUTOS REFORMULADO (3 COLUNAS) -->
   <div id="modalProdutosVenda"
     class="modal-overlay estoque-modal hidden">
     <div class="modal-box modal-produtos-venda">
@@ -812,6 +823,34 @@
   <script src="fiado.js"></script>
   <script src="script.js"></script>
   <script src="backup.js"></script>
+
+  <!-- SCRIPT DE LIMPEZA DO CÓDIGO NOS CARDS -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const observer = new MutationObserver(() => {
+        removerCodigosDosCards();
+      });
+
+      const listaEstoque = document.getElementById('listaProdutosEstoqueVenda');
+      if (listaEstoque) {
+        observer.observe(listaEstoque, { childList: true, subtree: true });
+      }
+
+      function removerCodigosDosCards() {
+        const cards = document.querySelectorAll('.cartao-produto-grade');
+        cards.forEach(card => {
+          const elementosSmall = card.querySelectorAll('small, span, div');
+          elementosSmall.forEach(el => {
+            if (el.innerHTML.includes('Código') || el.innerHTML.includes('código')) {
+              let html = el.innerHTML;
+              html = html.replace(/Código:[^·•\<\s]*/gi, '').replace(/[·•]\s*Código:[^<]*/gi, '').replace(/Código:[^<]*/gi, '');
+              el.innerHTML = html;
+            }
+          });
+        });
+      }
+    });
+  </script>
 
   <!-- CONEXÃO DOS BOTÕES DE BACKUP -->
   <script>
