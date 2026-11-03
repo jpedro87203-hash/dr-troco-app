@@ -1,1160 +1,2146 @@
 /* =========================================================
-DR. TROCO — CSS COMPLETO, CONSOLIDADO E CORRIGIDO
+   DR. TROCO — NOVA VENDA
+   ESTILO COMPLETO CORRIGIDO
 ========================================================= */
-​:root {
---verde: #20a767;
---verde-escuro: #168b53;
---verde-claro: #eaf8f1;
---verde-suave: #f3fbf7;
-​--texto: #263640;
---texto-2: #56656e;
---texto-3: #7b898f;
-​--fundo: #f3f7f5;
---branco: #ffffff;
-​--borda: #e1e9e5;
---vermelho: #d94b4b;
-​--sombra: 0 6px 22px rgba(34, 55, 46, .08);
---sombra-forte: 0 15px 40px rgba(25, 45, 37, .14);
+
+:root {
+    --verde: #20a767;
+    --verde-escuro: #168b53;
+    --verde-claro: #eaf8f1;
+    --verde-suave: #f3fbf7;
+
+    --texto: #263640;
+    --texto-2: #56656e;
+    --texto-3: #7b898f;
+
+    --fundo: #f3f7f5;
+    --branco: #ffffff;
+
+    --borda: #e1e9e5;
+    --vermelho: #d94b4b;
+
+    --sombra: 0 6px 22px rgba(34, 55, 46, .08);
+    --sombra-forte: 0 15px 40px rgba(25, 45, 37, .14);
 }
-​/* =========================================================
-RESET E BASE
+
+/* =========================================================
+   RESET — CORRIGIDO
 ========================================================= */
-​*,
+
+*,
 *::before,
 *::after {
-box-sizing: border-box;
+    box-sizing: border-box;
 }
-​html {
-min-height: 100%;
+
+html {
+    min-height: 100%;
 }
-​body {
-margin: 0;
-min-height: 100vh;
-min-height: 100dvh;
-background: linear-gradient(180deg, #f7faf8 0%, #eef5f1 100%);
-color: var(--texto);
-font-family: Arial, Helvetica, sans-serif;
--webkit-font-smoothing: antialiased;
-padding-bottom: calc(105px + env(safe-area-inset-bottom)) !important;
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: linear-gradient(180deg, #f7faf8 0%, #eef5f1 100%);
+    color: var(--texto);
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 78px;
 }
-​button,
-input,
-select,
-textarea {
-font: inherit;
+
+button,
+input {
+    font: inherit;
 }
-​button {
--webkit-tap-highlight-color: transparent;
-touch-action: manipulation;
+
+button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
-​a {
-color: inherit;
-text-decoration: none;
+
+a {
+    color: inherit;
+    text-decoration: none;
 }
-​img {
-max-width: 100%;
+
+img {
+    max-width: 100%;
 }
-​/* =========================================================
-CONTAINER PRINCIPAL
+
+/* =========================================================
+   CONTAINER PRINCIPAL
 ========================================================= */
-​.app-container {
-width: 100%;
-max-width: 760px;
-margin: 0 auto;
-padding: 0 14px calc(30px + env(safe-area-inset-bottom));
+
+.app-container {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 14px 25px;
 }
-​/* =========================================================
-CABEÇALHO
+
+/* =========================================================
+   CABEÇALHO
 ========================================================= */
-​.app-header {
-width: 100%;
-display: flex;
-align-items: center;
-gap: 13px;
-padding: 20px 4px 16px;
+
+.app-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 20px 4px 16px;
 }
-​.header-logo {
-width: 48px;
-height: 48px;
-flex: 0 0 48px;
-display: flex;
-align-items: center;
-justify-content: center;
-border-radius: 15px;
-background: linear-gradient(135deg, #25ad6d, #168b53);
-color: #fff;
-font-size: 25px;
-box-shadow: 0 7px 17px rgba(32, 167, 103, .20);
+
+.header-logo {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #25ad6d, #168b53);
+    color: #fff;
+    font-size: 25px;
+    box-shadow: 0 7px 17px rgba(32, 167, 103, .20);
 }
-​.app-header h1 {
-margin: 0;
-color: #263640;
-font-size: 22px;
-line-height: 1.1;
-font-weight: 900;
+
+.app-header h1 {
+    margin: 0;
+    color: #263640;
+    font-size: 22px;
+    line-height: 1.1;
+    font-weight: 900;
 }
-​.app-header p {
-margin: 4px 0 0;
-color: #7a888d;
-font-size: 12px;
-font-weight: 600;
+
+.app-header p {
+    margin: 4px 0 0;
+    color: #7a888d;
+    font-size: 12px;
+    font-weight: 600;
 }
-​.botao-estabelecimento {
-margin-left: auto;
-flex-shrink: 0;
-width: 44px;
-height: 44px;
-border-radius: 50%;
-border: 2px solid #d8eee1;
-background: #eaf7ef;
-color: #168b53;
-display: flex;
-align-items: center;
-justify-content: center;
-text-decoration: none;
-font-size: 23px;
-box-sizing: border-box;
-cursor: pointer;
-}
-​.botao-estabelecimento:active {
-transform: scale(0.96);
-}
-​/* =========================================================
-ÁREA PRINCIPAL DA VENDA
+
+/* =========================================================
+   ÁREA PRINCIPAL
 ========================================================= */
-​.calculadora-app {
-width: 100%;
+
+.calculadora-app {
+    width: 100%;
 }
-​.card.calculadora-card {
-width: 100%;
-padding: 17px;
-border: 1px solid rgba(222, 232, 227, .9);
-border-radius: 22px;
-background: #fff;
-box-shadow: var(--sombra-forte);
-min-width: 0;
-max-width: 100%;
+
+.card.calculadora-card {
+    width: 100%;
+    padding: 17px;
+    border: 1px solid rgba(222, 232, 227, .9);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: var(--sombra-forte);
 }
-​.cabecalho-calculadora {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 15px;
-margin-bottom: 18px;
-padding-bottom: 15px;
-border-bottom: 1px solid #edf2ef;
-}
-​.cabecalho-calculadora .texto-pequeno {
-display: block;
-margin-bottom: 4px;
-color: var(--verde);
-font-size: 10px;
-font-weight: 900;
-letter-spacing: 1px;
-}
-​.cabecalho-calculadora h2 {
-margin: 0;
-color: var(--texto);
-font-size: 23px;
-line-height: 1.15;
-font-weight: 900;
-}
-​.icone-venda {
-width: 45px;
-height: 45px;
-flex: 0 0 45px;
-display: flex;
-align-items: center;
-justify-content: center;
-border-radius: 13px;
-background: var(--verde-claro);
-font-size: 22px;
-}
-​/* =========================================================
-SEÇÕES DA VENDA
+
+/* =========================================================
+   CABEÇALHO DA VENDA
 ========================================================= */
-​.secao-venda,
+
+.cabecalho-calculadora {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 18px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #edf2ef;
+}
+
+.cabecalho-calculadora .texto-pequeno {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--verde);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.cabecalho-calculadora h2 {
+    margin: 0;
+    color: var(--texto);
+    font-size: 23px;
+    line-height: 1.15;
+    font-weight: 900;
+}
+
+.icone-venda {
+    width: 45px;
+    height: 45px;
+    flex: 0 0 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    background: var(--verde-claro);
+    font-size: 22px;
+}
+
+/* =========================================================
+   SEÇÕES
+========================================================= */
+
+.secao-venda,
 .secao-troco {
-width: 100%;
-margin-top: 17px;
-padding: 15px;
-border: 1px solid #e7eeea;
-border-radius: 17px;
-background: #fff;
-min-width: 0;
-max-width: 100%;
+    width: 100%;
+    margin-top: 17px;
+    padding: 15px;
+    border: 1px solid #e7eeea;
+    border-radius: 17px;
+    background: #fff;
 }
-​.produtos-venda {
-margin-top: 0;
+
+.produtos-venda {
+    margin-top: 0;
 }
-​.titulo-secao {
-width: 100%;
-margin-bottom: 12px;
+
+.titulo-secao {
+    width: 100%;
+    margin-bottom: 12px;
 }
-​.titulo-secao > div {
-display: flex;
-align-items: center;
-gap: 10px;
-min-width: 0;
+
+.titulo-secao > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
 }
-​.titulo-icone {
-width: 36px;
-height: 36px;
-flex: 0 0 36px;
-display: flex;
-align-items: center;
-justify-content: center;
-border-radius: 10px;
-background: var(--verde-suave);
-font-size: 17px;
+
+.titulo-icone {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--verde-suave);
+    font-size: 17px;
 }
-​.titulo-secao h3 {
-margin: 0;
-color: var(--texto);
-font-size: 15px;
-line-height: 1.2;
-font-weight: 900;
+
+.titulo-secao h3 {
+    margin: 0;
+    color: var(--texto);
+    font-size: 15px;
+    line-height: 1.2;
+    font-weight: 900;
 }
-​.titulo-secao p {
-margin: 3px 0 0;
-color: var(--texto-3);
-font-size: 10px;
-line-height: 1.3;
+
+.titulo-secao p {
+    margin: 3px 0 0;
+    color: var(--texto-3);
+    font-size: 10px;
+    line-height: 1.3;
 }
-​/* =========================================================
-BOTÃO ADICIONAR PRODUTO
+
+/* =========================================================
+   BOTÃO ADICIONAR PRODUTO
 ========================================================= */
-​.btn-adicionar-produto {
-width: 100%;
-min-height: 64px;
-display: flex;
-align-items: center;
-gap: 12px;
-padding: 10px 13px;
-border: 1px dashed #8bcdae;
-border-radius: 15px;
-background: linear-gradient(135deg, #f2fcf7, #eaf8f1);
-color: #227a55;
-text-align: left;
-cursor: pointer;
-touch-action: manipulation;
-transition: transform .12s ease, border-color .12s ease;
+
+.btn-adicionar-produto {
+    width: 100%;
+    min-height: 68px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 13px;
+    border: 1px dashed #8bcdae;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #f2fcf7, #eaf8f1);
+    color: #227a55;
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
 }
-​.btn-adicionar-produto:active {
-transform: scale(.985);
-border-color: var(--verde);
+
+.btn-adicionar-produto:active {
+    transform: scale(.985);
+    border-color: var(--verde);
 }
-​.btn-adicionar-produto .icone-plus {
-width: 40px;
-height: 40px;
-min-width: 40px;
-display: flex;
-align-items: center;
-justify-content: center;
-border-radius: 12px;
-background: var(--verde);
-color: #fff;
-font-size: 22px;
-font-weight: 900;
-box-shadow: 0 4px 10px rgba(32, 167, 103, .18);
+
+.btn-adicionar-produto .icone-plus {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    background: var(--verde);
+    color: #fff;
+    font-size: 25px;
+    font-weight: 900;
+    box-shadow: 0 5px 12px rgba(32, 167, 103, .18);
 }
-​.btn-adicionar-produto strong {
-display: block;
-color: #227a55;
-font-size: 14px;
-line-height: 1.2;
-font-weight: 900;
+
+.btn-adicionar-produto strong {
+    display: block;
+    color: #227a55;
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 900;
 }
-​.btn-adicionar-produto small {
-display: block;
-margin-top: 3px;
-color: #71817a;
-font-size: 10px;
-line-height: 1.2;
-font-weight: 600;
+
+.btn-adicionar-produto small {
+    display: block;
+    margin-top: 4px;
+    color: #71817a;
+    font-size: 10px;
+    line-height: 1.25;
+    font-weight: 600;
 }
-​/* =========================================================
-LISTA DE PRODUTOS SELECIONADOS NA VENDA
+
+/* =========================================================
+   LISTA DE PRODUTOS DA VENDA
 ========================================================= */
-​.lista-produtos-venda {
-width: 100%;
-display: flex;
-flex-direction: column;
-gap: 12px;
-margin-top: 10px;
+
+.lista-produtos-venda {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
 }
-​.lista-produtos-venda > * {
-min-width: 0;
+
+/* Impede que fotos dos produtos já adicionados ocupem a tela inteira */
+.lista-produtos-venda img {
+    width: 72px !important;
+    height: 72px !important;
+    min-width: 72px !important;
+    min-height: 72px !important;
+    max-width: 72px !important;
+    max-height: 72px !important;
+    object-fit: cover !important;
+    display: block;
+    border-radius: 12px;
+    background: #f3f6f4;
 }
-​.lista-produtos-venda .produto-venda,
-.lista-produtos-venda .item-produto-venda,
-.lista-produtos-venda .produto-item {
-display: flex;
-align-items: center;
-gap: 12px;
-padding: 12px;
-border: 1px solid #e1e9e5;
-border-radius: 16px;
-background: #fff;
-box-shadow: 0 3px 12px rgba(30, 50, 42, .06);
-}
-​.lista-produtos-venda img,
+
 .lista-produtos-venda .produto-foto {
-flex: 0 0 64px !important;
-width: 64px !important;
-height: 64px !important;
-min-width: 64px !important;
-max-width: 64px !important;
-overflow: hidden;
-border-radius: 12px;
-background: #f1f6f3;
+    width: 72px !important;
+    height: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #f3f6f4;
+    flex-shrink: 0;
 }
-​.lista-produtos-venda .produto-foto img {
-display: block;
-width: 100% !important;
-height: 100% !important;
-object-fit: contain !important;
+
+.lista-produtos-venda .produto-foto img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: cover !important;
 }
-​.lista-produtos-venda .produto-nome {
-color: var(--texto);
-font-size: 13px;
-font-weight: 800;
-line-height: 1.35;
+
+.lista-produtos-venda .produto-venda-item,
+.lista-produtos-venda .produto-item,
+.lista-produtos-venda > div {
+    min-width: 0;
 }
-​.lista-produtos-venda .produto-preco {
-color: var(--verde-escuro);
-font-size: 14px;
-font-weight: 900;
-}
-​.lista-produtos-venda button {
-cursor: pointer;
-touch-action: manipulation;
-}
-​.produtos-vazio {
-width: 100%;
-padding: 20px 12px;
-display: flex;
-flex-direction: column;
-align-items: center;
-text-align: center;
-border: 1px dashed #dce7e1;
-border-radius: 15px;
-background: #fafcfb;
-}
-​.produtos-vazio-icone {
-margin-bottom: 6px;
-font-size: 26px;
-}
-​.produtos-vazio strong {
-color: #53635d;
-font-size: 12px;
-font-weight: 900;
-}
-​.produtos-vazio span {
-margin-top: 3px;
-color: #899590;
-font-size: 10px;
-}
-​/* =========================================================
-VALOR AVULSO / CAMPO DINHEIRO
+
+/* =========================================================
+   ESTADO VAZIO
 ========================================================= */
-​.valor-avulso {
-background: #fbfdfc;
+
+.produtos-vazio {
+    width: 100%;
+    padding: 23px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: 1px dashed #dce7e1;
+    border-radius: 15px;
+    background: #fafcfb;
 }
-​.campo-dinheiro {
-width: 100%;
-height: 52px;
-display: flex;
-align-items: center;
-gap: 8px;
-padding: 0 12px;
-border: 1px solid #dce6e1;
-border-radius: 13px;
-background: #f8faf9;
-transition: border-color .15s ease, box-shadow .15s ease;
+
+.produtos-vazio-icone {
+    margin-bottom: 7px;
+    font-size: 29px;
 }
-​.campo-dinheiro:focus-within {
-border-color: var(--verde);
-background: #fff;
-box-shadow: 0 0 0 3px rgba(32, 167, 103, .09);
+
+.produtos-vazio strong {
+    color: #53635d;
+    font-size: 12px;
+    font-weight: 900;
 }
-​.simbolo-moeda {
-color: #697873;
-font-size: 13px;
-font-weight: 900;
+
+.produtos-vazio span {
+    margin-top: 4px;
+    color: #899590;
+    font-size: 10px;
 }
-​.campo-dinheiro input {
-width: 100%;
-min-width: 0;
-height: 100%;
-padding: 0;
-border: 0;
-outline: 0;
-background: transparent;
-color: var(--texto);
-font-size: 19px;
-font-weight: 900;
-}
-​.campo-dinheiro input::placeholder {
-color: #a3afaa;
-}
-​/* =========================================================
-RESUMO DA VENDA
+
+/* =========================================================
+   VALOR AVULSO
 ========================================================= */
-​.resumo-venda-card {
-width: 100%;
-margin-top: 17px;
-padding: 16px;
-border-radius: 17px;
-background: linear-gradient(135deg, #173c2b, #176642);
-color: #fff;
-box-shadow: 0 8px 20px rgba(24, 91, 61, .17);
+
+.valor-avulso {
+    background: #fbfdfc;
 }
-​.resumo-venda-topo {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 12px;
+
+.campo-dinheiro {
+    width: 100%;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 13px;
+    border: 1px solid #dce6e1;
+    border-radius: 14px;
+    background: #f8faf9;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
-​.resumo-venda-topo span {
-color: rgba(255, 255, 255, .78);
-font-size: 11px;
-font-weight: 700;
+
+.campo-dinheiro:focus-within {
+    border-color: var(--verde);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(32, 167, 103, .09);
 }
-​.resumo-venda-topo strong {
-color: #fff;
-font-size: 22px;
-font-weight: 900;
+
+.simbolo-moeda {
+    color: #697873;
+    font-size: 13px;
+    font-weight: 900;
 }
-​.resumo-venda-info {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 10px;
-margin-top: 10px;
-padding-top: 9px;
-border-top: 1px solid rgba(255, 255, 255, .13);
+
+.campo-dinheiro input {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--texto);
+    font-size: 20px;
+    font-weight: 900;
 }
-​.btn-limpar-venda {
-min-height: 28px;
-padding: 4px 8px;
-border: 1px solid rgba(255, 255, 255, .22);
-border-radius: 7px;
-background: rgba(255, 255, 255, .08);
-color: #fff;
-font-size: 9px;
-font-weight: 800;
-cursor: pointer;
+
+.campo-dinheiro input::placeholder {
+    color: #a3afaa;
 }
-​/* =========================================================
-FORMAS DE PAGAMENTO
+
+/* =========================================================
+   RESUMO DA VENDA
 ========================================================= */
-​.payment-options {
-display: grid;
-grid-template-columns: repeat(2, minmax(0, 1fr));
-gap: 10px;
-width: 100%;
+
+.resumo-venda-card {
+    width: 100%;
+    margin-top: 17px;
+    padding: 16px;
+    border-radius: 17px;
+    background: linear-gradient(135deg, #173c2b, #176642);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(24, 91, 61, .17);
 }
-​.payment-options .btn-payment {
-min-width: 0;
-min-height: 70px;
-padding: 8px 6px;
-border: 1px solid #dfe8e3;
-border-radius: 15px;
-background: #fafcfb;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-gap: 4px;
-cursor: pointer;
-transition: background .15s ease, border-color .15s ease;
+
+.resumo-venda-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
-​.payment-options .btn-payment span {
-font-size: 21px;
+
+.resumo-venda-topo span {
+    color: rgba(255, 255, 255, .78);
+    font-size: 11px;
+    font-weight: 700;
 }
-​.payment-options .btn-payment strong {
-font-size: 11px;
-font-weight: 800;
+
+.resumo-venda-topo strong {
+    color: #fff;
+    font-size: 23px;
+    font-weight: 900;
+    white-space: nowrap;
 }
-​.payment-options .btn-payment.active {
-border: 2px solid var(--verde);
-background: var(--verde-claro);
-color: var(--verde-escuro);
+
+.resumo-venda-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 11px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, .13);
 }
-​.payment-options .btn-payment-fiado {
-grid-column: 1 / -1;
-min-height: 56px;
-flex-direction: row;
-gap: 10px;
-border-color: #d9c9a6;
-background: #fffaf0;
-color: #826126;
+
+.resumo-venda-info > span {
+    color: rgba(255, 255, 255, .68);
+    font-size: 10px;
+    font-weight: 700;
 }
-​.payment-options .btn-payment-fiado.active {
-border-color: #b78b35;
-background: #fff1d1;
-color: #75531a;
+
+.btn-limpar-venda {
+    min-height: 30px;
+    padding: 5px 9px;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    cursor: pointer;
 }
-​/* Campos do Fiado na Nova Venda */
-.grupo-fiado .label-campo {
-display: block;
-margin: 13px 0 6px;
-color: var(--texto-2);
-font-size: 12px;
-font-weight: 800;
-}
-​.campo-texto-fiado {
-width: 100%;
-min-height: 48px;
-padding: 11px 12px;
-border: 1px solid var(--borda);
-border-radius: 12px;
-background: #fbfcfb;
-color: var(--texto);
-font-size: 14px;
-}
-​.campo-texto-fiado:focus {
-outline: 2px solid rgba(32, 167, 103, .2);
-border-color: var(--verde);
-}
-​.resumo-fiado {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 10px;
-margin-top: 14px;
-padding: 13px;
-border-radius: 12px;
-background: #fff5df;
-color: #75531a;
-font-size: 12px;
-}
-​.resumo-fiado strong {
-font-size: 17px;
-}
-​/* =========================================================
-TROCO E RESULTADOS
+
+/* =========================================================
+   FORMAS DE PAGAMENTO
 ========================================================= */
-​.resultado-troco {
-width: 100%;
-margin-top: 14px;
-padding: 15px;
-border-radius: 16px;
-background: linear-gradient(135deg, #effaf4, #e6f7ed);
-border: 1px solid #cfeadb;
+
+.payment-options {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
 }
-​.resultado-troco-topo {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 12px;
+
+.btn-payment {
+    min-width: 0;
+    min-height: 65px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 7px 4px;
+    border: 1px solid #dfe8e3;
+    border-radius: 12px;
+    background: #fafcfb;
+    color: #64726c;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, transform .12s ease;
 }
-​.resultado-troco-topo span {
-display: block;
-color: #3e5d4d;
-font-size: 13px;
-font-weight: 900;
+
+.btn-payment span {
+    font-size: 19px;
 }
-​.resultado-troco-topo small {
-display: block;
-margin-top: 3px;
-color: #789086;
-font-size: 9px;
+
+.btn-payment strong {
+    font-size: 9px;
+    font-weight: 800;
 }
-​.resultado-troco-topo strong {
-color: #15945b;
-font-size: 22px;
-font-weight: 900;
+
+.btn-payment.active {
+    border-color: #75c99d;
+    background: #eaf8f1;
+    color: #148751;
+    box-shadow: inset 0 0 0 1px rgba(32, 167, 103, .05);
 }
-​.lista-combinacoes-troco {
-width: 100%;
+
+.btn-payment:active {
+    transform: scale(.96);
 }
-​.troco-vazio {
-padding: 22px 12px;
-display: flex;
-flex-direction: column;
-align-items: center;
-text-align: center;
-border: 1px dashed #dce6e1;
-border-radius: 14px;
-background: #fafcfb;
-}
-​.troco-vazio > div {
-margin-bottom: 7px;
-font-size: 28px;
-}
-​.troco-vazio strong {
-color: #53645d;
-font-size: 12px;
-}
-​.troco-vazio span {
-margin-top: 4px;
-color: #8b9692;
-font-size: 10px;
-}
-​/* =========================================================
-BOTÕES PRINCIPAIS
+
+/* =========================================================
+   VALOR RECEBIDO
 ========================================================= */
-​.btn-primary,
+
+.secao-recebido {
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+.info-taxa {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-radius: 11px;
+    background: #fff8e7;
+    color: #8a6b20;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.info-taxa strong {
+    color: #9b7318;
+}
+
+/* =========================================================
+   TROCO
+========================================================= */
+
+.resultado-troco {
+    width: 100%;
+    margin-top: 14px;
+    padding: 15px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #effaf4, #e6f7ed);
+    border: 1px solid #cfeadb;
+}
+
+.resultado-troco-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.resultado-troco-topo span {
+    display: block;
+    color: #3e5d4d;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.resultado-troco-topo small {
+    display: block;
+    margin-top: 3px;
+    color: #789086;
+    font-size: 9px;
+}
+
+.resultado-troco-topo strong {
+    color: #15945b;
+    font-size: 22px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   COMBINAÇÕES DE TROCO
+========================================================= */
+
+.lista-combinacoes-troco {
+    width: 100%;
+}
+
+.troco-vazio {
+    padding: 22px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: 1px dashed #dce6e1;
+    border-radius: 14px;
+    background: #fafcfb;
+}
+
+.troco-vazio > div {
+    margin-bottom: 7px;
+    font-size: 28px;
+}
+
+.troco-vazio strong {
+    color: #53645d;
+    font-size: 12px;
+}
+
+.troco-vazio span {
+    margin-top: 4px;
+    color: #8b9692;
+    font-size: 10px;
+}
+
+/* =========================================================
+   BOTÕES PRINCIPAIS
+========================================================= */
+
+.btn-primary,
 .btn-registrar-venda {
-width: 100%;
-min-height: 54px;
-margin-top: 16px;
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 8px;
-border: 0;
-border-radius: 15px;
-background: linear-gradient(135deg, #25aa6a, #168d54);
-color: #fff;
-font-size: 15px;
-font-weight: 900;
-cursor: pointer;
-box-shadow: 0 8px 18px rgba(32, 167, 103, .20);
-touch-action: manipulation;
-transition: transform .12s ease;
+    width: 100%;
+    min-height: 56px;
+    margin-top: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #25aa6a, #168d54);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(32, 167, 103, .20);
+    touch-action: manipulation;
+    transition: transform .12s ease, box-shadow .12s ease;
 }
-​.btn-primary:active,
+
+.btn-primary:active,
 .btn-registrar-venda:active {
-transform: scale(.985);
+    transform: scale(.985);
 }
-​.btn-cancelar-venda {
-width: 100%;
-min-height: 44px;
-margin-top: 8px;
-border: 1px solid #eadede;
-border-radius: 12px;
-background: #fff7f7;
-color: #a65353;
-font-size: 11px;
-font-weight: 800;
-cursor: pointer;
+
+.btn-cancelar-venda {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 8px;
+    border: 1px solid #eadede;
+    border-radius: 12px;
+    background: #fff7f7;
+    color: #a65353;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
 }
-​/* =========================================================
-MODAL DE PRODUTOS — ESTRUTURA & ROLAGEM 3 COLUNAS
+
+/* =========================================================
+   MODAIS — BASE
 ========================================================= */
-​.modal-overlay {
-position: fixed;
-inset: 0;
-width: 100%;
-height: 100%;
-display: none;
-align-items: center;
-justify-content: center;
-padding: 10px;
-box-sizing: border-box;
-background: rgba(12, 26, 35, .68);
-z-index: 9999;
-overflow: hidden;
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    box-sizing: border-box;
+    background: rgba(12, 26, 35, .68);
+    z-index: 9999;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
 }
-​.modal-overlay.hidden {
-display: none !important;
+
+.modal-overlay.hidden {
+    display: none !important;
 }
-​.modal-overlay.aberto {
-display: flex !important;
+
+.modal-overlay.aberto {
+    display: flex !important;
 }
-​.modal-box {
-width: min(100%, 620px);
-max-height: calc(100dvh - 16px);
-box-sizing: border-box;
-padding: 16px;
-border-radius: 22px;
-background: #fff;
-box-shadow: 0 25px 70px rgba(0, 0, 0, .28);
+
+.modal-box {
+    width: min(100%, 620px);
+    max-height: calc(100dvh - 16px);
+    box-sizing: border-box;
+    padding: 17px;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, .28);
 }
-​/* Caixa Específica do Modal de Produtos */
+
+/* =========================================================
+   CABEÇALHO DOS MODAIS
+========================================================= */
+
+.modal-cabecalho {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.modal-cabecalho > div {
+    min-width: 0;
+}
+
+.modal-cabecalho .texto-pequeno {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--verde);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .8px;
+}
+
+.modal-cabecalho h3 {
+    margin: 0;
+    color: var(--texto);
+    font-size: 20px;
+    line-height: 1.15;
+    font-weight: 900;
+}
+
+.btn-fechar-modal {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    flex: 0 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 11px;
+    background: #f1f5f3;
+    color: #56656d;
+    font-size: 25px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* =========================================================
+   MODAL ADICIONAR PRODUTO
+========================================================= */
+
 .modal-produtos-venda {
-width: min(100%, 640px);
-height: calc(100dvh - 16px);
-max-height: calc(100dvh - 16px);
-display: flex;
-flex-direction: column;
-overflow: hidden;
-padding: 14px;
-border-radius: 20px;
-background: #ffffff;
-box-sizing: border-box;
+    width: min(100%, 640px);
+    height: min(760px, calc(100dvh - 16px));
+    max-height: calc(100dvh - 16px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 16px;
 }
-​.modal-produtos-venda .modal-cabecalho {
-flex: 0 0 auto;
-margin-bottom: 10px;
-}
-​.modal-produtos-venda .btn-leitor-venda {
-flex: 0 0 auto;
-margin: 0 0 8px;
-min-height: 48px;
-}
-​.campo-busca-produto {
-flex: 0 0 auto;
-width: 100%;
-min-height: 42px;
-display: flex;
-align-items: center;
-gap: 8px;
-margin: 0 0 10px;
-padding: 0 11px;
-border: 1px solid #dfe7e3;
-border-radius: 12px;
-background: #f8faf9;
-box-sizing: border-box;
-}
-​.campo-busca-produto input {
-width: 100%;
-height: 40px;
-border: 0;
-outline: 0;
-background: transparent;
-color: var(--texto);
-font-size: 13px;
-}
-​/* Área de Rolagem Exclusiva da Grade */
-.modal-produtos-scroll-area {
-flex: 1 1 auto;
-min-height: 0;
-width: 100%;
-overflow-y: auto;
-overflow-x: hidden;
-overscroll-behavior: contain;
--webkit-overflow-scrolling: touch;
-padding: 2px 2px 10px;
-}
-​.lista-produtos-estoque-venda {
-width: 100%;
-display: grid;
-grid-template-columns: repeat(3, minmax(0, 1fr));
-gap: 6px;
-margin: 0;
-padding: 0;
-}
-​/* Cartão Individual de Produto em 3 Colunas */
-.cartao-produto-grade {
-width: 100%;
-min-width: 0;
-background: #ffffff;
-border: 1px solid #e1e9e5;
-border-radius: 12px;
-padding: 6px;
-display: flex;
-flex-direction: column;
-justify-content: space-between;
-box-shadow: 0 2px 6px rgba(32, 48, 60, .04);
-box-sizing: border-box;
-min-height: 148px;
-}
-​.cartao-produto-topo {
-display: flex;
-flex-direction: column;
-align-items: center;
-text-align: center;
-width: 100%;
-}
-​.cartao-produto-foto {
-width: 100%;
-height: 52px;
-min-height: 52px;
-max-height: 52px;
-border-radius: 8px;
-overflow: hidden;
-background: #f2f7f5;
-display: flex;
-align-items: center;
-justify-content: center;
-color: var(--verde);
-font-size: 18px;
-font-weight: 900;
-margin-bottom: 4px;
-flex-shrink: 0;
-}
-​.cartao-produto-foto img {
-width: 100%;
-height: 100%;
-object-fit: contain;
-display: block;
-}
-​.cartao-produto-info {
-width: 100%;
-text-align: center;
-display: flex;
-flex-direction: column;
-align-items: center;
-}
-​.cartao-produto-info strong {
-display: -webkit-box;
--webkit-line-clamp: 2;
--webkit-box-orient: vertical;
-overflow: hidden;
-color: #2c3e4a;
-font-size: 10px;
-font-weight: 800;
-line-height: 1.2;
-height: 24px;
-margin-bottom: 2px;
-text-align: center;
-width: 100%;
-}
-​.cartao-produto-info small {
-display: block;
-color: #6a7982;
-font-size: 8px;
-font-weight: 700;
-margin-bottom: 1px;
-}
-​.cartao-produto-preco {
-color: var(--verde-escuro);
-font-size: 11px;
-font-weight: 900;
-}
-​.cartao-produto-acoes {
-margin-top: 5px;
-width: 100%;
-}
-​.btn-card-adicionar {
-width: 100%;
-height: 28px;
-border: 0;
-border-radius: 7px;
-background: #eaf8f0;
-color: #147844;
-font-size: 10px;
-font-weight: 900;
-cursor: pointer;
-display: flex;
-align-items: center;
-justify-content: center;
-}
-​.controle-qtd-card {
-display: flex;
-align-items: center;
-justify-content: space-between;
-background: #f4f8fa;
-border: 1px solid #dbe4e8;
-border-radius: 7px;
-height: 28px;
-padding: 0 2px;
-width: 100%;
-}
-​.controle-qtd-card button {
-width: 22px;
-height: 22px;
-border: 0;
-border-radius: 5px;
-background: #ffffff;
-color: #20a767;
-font-size: 12px;
-font-weight: 900;
-cursor: pointer;
-display: flex;
-align-items: center;
-justify-content: center;
-}
-​.controle-qtd-card span {
-font-size: 10px;
-font-weight: 900;
-color: #263746;
-}
-​.modal-produtos-venda .modal-acoes-venda {
-flex: 0 0 auto;
-width: 100%;
-margin: 0;
-padding-top: 8px;
-border-top: 1px solid #edf1ef;
-background: #fff;
-display: flex;
-flex-direction: column;
-gap: 6px;
-}
-​.btn-manual-venda {
-width: 100%;
-height: 38px;
-border: 1px dashed #cbd5d0;
-border-radius: 10px;
-background: #fafcfd;
-color: #52636e;
-font-size: 11px;
-font-weight: 800;
-cursor: pointer;
-}
-​#btnConcluirProdutosVenda {
-width: 100%;
-height: 46px;
-border: 0;
-border-radius: 12px;
-background: linear-gradient(135deg, #25aa6a, #168d54);
-color: #fff;
-font-size: 13.5px;
-font-weight: 900;
-cursor: pointer;
-}
-​/* =========================================================
-MODAIS AUXILIARES (LEITOR & CONFIRMAÇÃO)
+
+/* =========================================================
+   BOTÃO LEITOR
 ========================================================= */
-​#modalLeitorVenda {
-position: fixed !important;
-inset: 0 !important;
-z-index: 10000 !important;
+
+.modal-produtos-venda .btn-leitor-venda {
+    flex: 0 0 auto;
+    margin: 0 0 8px;
+    border-style: solid;
+    border-color: #cbe9d9;
+    background: linear-gradient(135deg, #eefaf4, #e4f7ed);
 }
-​.modal-leitor-venda {
-width: min(100%, 620px);
-max-height: calc(100dvh - 16px);
-overflow-y: auto;
-padding: 16px;
+
+.modal-produtos-venda .btn-leitor-venda .icone-plus {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    flex-basis: 36px;
+    border-radius: 10px;
+    font-size: 17px;
 }
-​.area-leitor-venda {
-position: relative;
-width: 100%;
-height: min(58vh, 390px);
-min-height: 250px;
-overflow: hidden;
-border-radius: 18px;
-background: #101820;
-}
-​.video-leitor-venda {
-position: absolute !important;
-inset: 0 !important;
-width: 100% !important;
-height: 100% !important;
-display: block !important;
-object-fit: cover !important;
-}
-​.moldura-leitor-venda {
-position: absolute;
-left: 50%;
-top: 50%;
-width: min(78%, 380px);
-height: 130px;
-transform: translate(-50%, -50%);
-border: 3px solid #43e88b;
-border-radius: 16px;
-z-index: 5;
-pointer-events: none;
-box-shadow: 0 0 0 9999px rgba(0, 0, 0, .30);
-}
-​.linha-leitor-venda {
-position: absolute;
-left: 7px;
-right: 7px;
-top: 50%;
-height: 2px;
-transform: translateY(-50%);
-background: #50ee92;
-}
-​.mensagem-leitor-venda {
-margin-top: 10px;
-padding: 10px;
-border-radius: 11px;
-background: #f3f6f7;
-color: #344653;
-font-size: 12px;
-text-align: center;
-}
-​.status-leitor-venda {
-min-height: 18px;
-margin-top: 6px;
-color: #72808a;
-font-size: 10px;
-text-align: center;
-}
-​.btn-cancel {
-width: 100%;
-min-height: 46px;
-border: 1px solid #dfe7e3;
-border-radius: 12px;
-background: #f6f8f7;
-color: #586761;
-font-size: 13px;
-font-weight: 800;
-cursor: pointer;
-}
-​#modalConfirmarVenda .modal-box {
-width: min(100%, 520px);
-max-height: calc(100dvh - 16px);
-overflow-y: auto;
-}
-​.resumo-confirmacao-venda {
-width: 100%;
-padding: 14px;
-border: 1px solid #e2eae5;
-border-radius: 14px;
-background: #f8faf9;
-color: var(--texto);
-font-size: 12px;
-line-height: 1.5;
-}
-​#modalConfirmarVenda .modal-acoes-venda {
-display: grid;
-grid-template-columns: 1fr 1.3fr;
-gap: 8px;
-margin-top: 14px;
-}
-​#modalConfirmarVenda .btn-confirmar {
-min-height: 48px;
-border: 0;
-border-radius: 13px;
-background: var(--verde);
-color: #fff;
-font-size: 12px;
-font-weight: 900;
-cursor: pointer;
-}
-​/* =========================================================
-VISUAL DA TELA DE FIADO (EXTRATO E CLIENTES)
+
+/* =========================================================
+   BUSCA DO MODAL
 ========================================================= */
-​body:has(.fiado-resumo),
-body.pagina-fiado {
-background: #f1f5f9;
-color: #1e293b;
-padding-bottom: 90px;
+
+.campo-busca-produto {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 9px;
+    padding: 0 11px;
+    border: 1px solid #dfe7e3;
+    border-radius: 12px;
+    background: #f8faf9;
+    box-sizing: border-box;
+    flex: 0 0 auto;
 }
-​.fiado-resumo {
-display: grid;
-grid-template-columns: repeat(2, minmax(0, 1fr));
-gap: 12px;
-margin-bottom: 22px;
+
+.campo-busca-produto:focus-within {
+    border-color: var(--verde);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(32, 167, 103, .08);
 }
-​.fiado-card {
-min-width: 0;
-padding: 17px;
-background: #ffffff;
-border: 1px solid #e2e8f0;
-border-radius: 16px;
-box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+
+.campo-busca-produto > span {
+    flex: 0 0 auto;
+    font-size: 15px;
 }
-​.fiado-card span {
-display: block;
-margin-bottom: 10px;
-color: #64748b;
-font-size: 13px;
-font-weight: 600;
+
+.campo-busca-produto input {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--texto);
+    font-size: 13px;
+    font-weight: 600;
 }
-​.fiado-card strong {
-display: block;
-color: #0f172a;
-font-size: clamp(18px, 4.5vw, 25px);
-overflow-wrap: anywhere;
+
+.campo-busca-produto input::placeholder {
+    color: #8b9894;
 }
-​#fiadoTotalDividas { color: #d97706; }
-#fiadoTotalRecebido { color: #059669; }
-#fiadoTotalAberto { color: #dc2626; }
-​.pagina-fiado #modalDetalhesFiado {
-color: #26352e;
-}
-​.pagina-fiado #btnFecharDetalhesFiado2,
-.pagina-fiado #fiadoResumoMensal,
-.pagina-fiado #modalDetalhesFiado :is(.fiado-sem-juros, .aviso-sem-juros, .mensagem-sem-juros) {
-display: none !important;
-}
-​.pagina-fiado #btnExportarFiadoPDF {
-display: flex !important;
-align-items: center;
-justify-content: center;
-width: 100% !important;
-max-width: 360px;
-min-height: 54px;
-margin: 16px auto !important;
-padding: 12px 20px;
-color: #fff !important;
-background: linear-gradient(135deg, #25ad70, #168b53) !important;
-border: 1px solid #168b53 !important;
-border-radius: 16px !important;
-font-size: 16px;
-font-weight: 750;
-}
-​.pagina-fiado #btnExcluirClienteFiado {
-display: block;
-width: auto !important;
-min-width: 140px;
-min-height: 40px;
-margin: 10px auto 16px !important;
-padding: 8px 14px !important;
-color: #b42318 !important;
-background: #fff4f2 !important;
-border: 1px solid #f0d2ce !important;
-border-radius: 12px !important;
-font-size: 12.5px !important;
-}
-​.pagina-fiado #btnFecharDetalhesFiado {
-display: flex;
-align-items: center;
-justify-content: center;
-width: 44px;
-height: 44px;
-min-width: 44px;
-margin-left: auto;
-padding: 0;
-color: #53645a;
-background: #f1f5f2;
-border: 1px solid #e0e8e3;
-border-radius: 14px;
-font-size: 0;
-}
-​.pagina-fiado #btnFecharDetalhesFiado::before {
-content: "×";
-font-size: 26px;
-line-height: 1;
-}
-​/* =========================================================
-BARRA DE NAVEGAÇÃO INFERIOR UNIFICADA (5 ABAS)
+
+/* =========================================================
+   GRID DOS PRODUTOS — 3 COLUNAS
 ========================================================= */
-​body nav.menu-inferior,
-.bottom-nav {
-position: fixed !important;
-left: 50% !important;
-bottom: 0 !important;
-transform: translateX(-50%) !important;
-display: grid !important;
-grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-width: 100% !important;
-max-width: 760px !important;
-min-height: 60px;
-padding: 6px 4px calc(6px + env(safe-area-inset-bottom)) !important;
-box-sizing: border-box !important;
-border-top: 1px solid #dfe8e3;
-background: rgba(255, 255, 255, .97);
-box-shadow: 0 -5px 20px rgba(30, 50, 42, .08);
-z-index: 99999 !important;
-backdrop-filter: blur(12px);
--webkit-backdrop-filter: blur(12px);
+
+.lista-produtos-estoque-venda {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-content: start;
+    gap: 7px;
+    margin: 0;
+    padding: 2px 1px 9px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
 }
-​body nav.menu-inferior > a.menu-item,
-.bottom-nav .nav-item {
-display: flex !important;
-flex-direction: column !important;
-align-items: center !important;
-justify-content: center !important;
-gap: 3px;
-width: 100% !important;
-min-width: 0 !important;
-margin: 0 !important;
-padding: 3px 0 !important;
-border-radius: 11px;
-color: #7c8985;
-font-size: 19px;
-text-decoration: none !important;
+
+.lista-produtos-estoque-venda::-webkit-scrollbar {
+    width: 5px;
 }
-​body nav.menu-inferior > a.menu-item small,
-.bottom-nav .nav-item span {
-font-size: 10px !important;
-font-weight: 800;
-line-height: 1.2;
-white-space: nowrap;
+
+.lista-produtos-estoque-venda::-webkit-scrollbar-track {
+    background: transparent;
 }
-​body nav.menu-inferior > a.menu-item.ativo,
-.bottom-nav .nav-item.ativo {
-color: var(--verde) !important;
-background: #eef9f4 !important;
+
+.lista-produtos-estoque-venda::-webkit-scrollbar-thumb {
+    background: #cbd8d2;
+    border-radius: 20px;
 }
-​/* =========================================================
-CLASSES UTILITÁRIAS
+
+/* =========================================================
+   CARD DO PRODUTO DO MODAL
 ========================================================= */
-​.hidden {
-display: none !important;
+
+.lista-produtos-estoque-venda .produto-card {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    display: block;
+    box-sizing: border-box;
+    border: 1px solid #e1e9e5;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(32, 48, 60, .055);
 }
-​@media (prefers-reduced-motion: reduce) {
-*, *::before, *::after {
-scroll-behavior: auto !important;
-transition: none !important;
-animation: none !important;
+
+.lista-produtos-estoque-venda .produto-card-conteudo {
+    width: 100%;
+    min-width: 0;
+    min-height: 162px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    box-sizing: border-box;
 }
+
+/* =========================================================
+   IMAGEM DOS CARDS
+========================================================= */
+
+.lista-produtos-estoque-venda .produto-foto,
+.lista-produtos-estoque-venda .produto-imagem,
+.lista-produtos-estoque-venda .produto-inicial {
+    width: 100%;
+    height: 55px;
+    min-height: 55px;
+    max-height: 55px;
+    flex: 0 0 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 9px;
+    background: #f2f7f5;
+}
+
+.lista-produtos-estoque-venda .produto-foto img,
+.lista-produtos-estoque-venda .produto-imagem img {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    object-fit: contain;
+    border-radius: 9px;
+}
+
+.lista-produtos-estoque-venda .produto-inicial {
+    color: var(--verde);
+    font-size: 23px;
+}
+
+/* =========================================================
+   INFORMAÇÕES DOS PRODUTOS
+========================================================= */
+
+.lista-produtos-estoque-venda .produto-info {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lista-produtos-estoque-venda .produto-nome,
+.lista-produtos-estoque-venda .produto-info h3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    min-height: 27px;
+    max-height: 27px;
+    margin: 0;
+    color: #30404b;
+    font-size: 10.5px;
+    line-height: 1.28;
+    font-weight: 800;
+}
+
+.lista-produtos-estoque-venda .produto-codigo {
+    display: none;
+}
+
+.lista-produtos-estoque-venda .produto-estoque {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #74827f;
+    font-size: 8.5px;
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.lista-produtos-estoque-venda .produto-preco,
+.lista-produtos-estoque-venda .produto-valor {
+    display: block;
+    margin-top: 1px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #15945b;
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 900;
+}
+
+/* =========================================================
+   QUANTIDADE
+========================================================= */
+
+.lista-produtos-estoque-venda .produto-lado {
+    width: 100%;
+    min-width: 0;
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3px;
+}
+
+.lista-produtos-estoque-venda .produto-quantidade {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #738088;
+    font-size: 8px;
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.lista-produtos-estoque-venda .produto-quantidade strong {
+    color: #30404b;
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.lista-produtos-estoque-venda .controle-quantidade {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.lista-produtos-estoque-venda .controle-quantidade button {
+    width: 27px;
+    height: 27px;
+    min-width: 27px;
+    min-height: 27px;
+    flex: 0 0 27px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: #e9f7ef;
+    color: #15945b;
+    font-size: 16px;
+    line-height: 1;
+    font-weight: 900;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.lista-produtos-estoque-venda .controle-quantidade button:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+}
+
+.lista-produtos-estoque-venda .controle-quantidade span {
+    min-width: 16px;
+    text-align: center;
+    color: #374651;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+/* =========================================================
+   ESTADO VAZIO DO MODAL
+========================================================= */
+
+.lista-produtos-estoque-venda .estado-produtos-venda,
+.lista-produtos-estoque-venda .produtos-venda-vazio {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    border: 1px dashed #d6e1db;
+    border-radius: 15px;
+    background: #f8faf9;
+    text-align: center;
+}
+
+.lista-produtos-estoque-venda .estado-produtos-venda > div,
+.lista-produtos-estoque-venda .icone-vazio {
+    margin-bottom: 7px;
+    font-size: 28px;
+}
+
+.lista-produtos-estoque-venda .estado-produtos-venda strong,
+.lista-produtos-estoque-venda .produtos-venda-vazio strong {
+    color: #42534b;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.lista-produtos-estoque-venda .produtos-venda-vazio p {
+    max-width: 270px;
+    margin: 5px 0 0;
+    color: #87938e;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+/* =========================================================
+   CONCLUIR ADIÇÃO DE PRODUTOS
+========================================================= */
+
+.modal-produtos-venda .modal-acoes-venda {
+    flex: 0 0 auto;
+    width: 100%;
+    margin: 0;
+    padding: 8px 0 0;
+    border-top: 1px solid #edf1ef;
+    background: #fff;
+    z-index: 5;
+}
+
+#btnConcluirProdutosVenda {
+    width: 100%;
+    min-height: 50px;
+    display: block;
+    padding: 12px;
+    border: 0;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #25aa6a, #168d54);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(32, 167, 103, .17);
+}
+
+/* =========================================================
+   MODAL LEITOR
+========================================================= */
+
+#modalLeitorVenda {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 10000 !important;
+}
+
+.modal-leitor-venda {
+    width: min(100%, 620px);
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+    padding: 17px;
+}
+
+.area-leitor-venda {
+    position: relative;
+    width: 100%;
+    height: min(62vh, 440px);
+    min-height: 280px;
+    overflow: hidden;
+    border-radius: 18px;
+    background: #101820;
+    isolation: isolate;
+}
+
+.video-leitor-venda {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    object-fit: cover !important;
+    background: #101820;
+    z-index: 1;
+}
+
+.moldura-leitor-venda {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(76%, 390px);
+    height: 150px;
+    transform: translate(-50%, -50%);
+    border: 3px solid #43e88b;
+    border-radius: 17px;
+    z-index: 5;
+    pointer-events: none;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, .30), 0 0 22px rgba(39, 216, 121, .55);
+}
+
+.linha-leitor-venda {
+    position: absolute;
+    left: 7px;
+    right: 7px;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: #50ee92;
+    box-shadow: 0 0 10px rgba(80, 238, 146, .9);
+}
+
+.mensagem-leitor-venda {
+    margin-top: 11px;
+    padding: 11px;
+    border-radius: 12px;
+    background: #f3f6f7;
+    color: #344653;
+    font-size: 12px;
+    text-align: center;
+}
+
+.status-leitor-venda {
+    min-height: 18px;
+    margin-top: 7px;
+    color: #72808a;
+    font-size: 10px;
+    text-align: center;
+}
+
+.modal-leitor-venda .modal-acoes-venda {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.btn-cancel {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid #dfe7e3;
+    border-radius: 13px;
+    background: #f6f8f7;
+    color: #586761;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* =========================================================
+   MODAL DE CONFIRMAÇÃO
+========================================================= */
+
+#modalConfirmarVenda .modal-box {
+    width: min(100%, 520px);
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+}
+
+.resumo-confirmacao-venda {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #e2eae5;
+    border-radius: 14px;
+    background: #f8faf9;
+    color: var(--texto);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#modalConfirmarVenda .modal-acoes-venda {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+#modalConfirmarVenda .btn-confirmar {
+    min-height: 48px;
+    border: 0;
+    border-radius: 13px;
+    background: var(--verde);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+/* =========================================================
+   CLASSE HIDDEN
+========================================================= */
+
+.hidden {
+    display: none !important;
+}
+
+/* =========================================================
+   CELULAR — RESPONSIVIDADE
+========================================================= */
+
+@media (max-width: 600px) {
+    body {
+        padding-bottom: 72px;
     }
+
+    .app-container {
+        padding: 0 10px 20px;
+    }
+
+    .app-header {
+        padding: 14px 3px 12px;
+    }
+
+    .header-logo {
+        width: 43px;
+        height: 43px;
+        flex-basis: 43px;
+        border-radius: 13px;
+        font-size: 22px;
+    }
+
+    .app-header h1 {
+        font-size: 20px;
+    }
+
+    .app-header p {
+        font-size: 10px;
+    }
+
+    .card.calculadora-card {
+        padding: 12px;
+        border-radius: 19px;
+    }
+
+    .cabecalho-calculadora {
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+    }
+
+    .cabecalho-calculadora h2 {
+        font-size: 20px;
+    }
+
+    .icone-venda {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+    }
+
+    .secao-venda,
+    .secao-troco {
+        padding: 12px;
+        border-radius: 15px;
+    }
+
+    .titulo-secao h3 {
+        font-size: 14px;
+    }
+
+    .titulo-secao p {
+        font-size: 9px;
+    }
+
+    .titulo-icone {
+        width: 33px;
+        height: 33px;
+        flex-basis: 33px;
+        font-size: 15px;
+    }
+
+    .btn-adicionar-produto {
+        min-height: 62px;
+        padding: 9px 11px;
+        border-radius: 14px;
+    }
+
+    .btn-adicionar-produto .icone-plus {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        flex-basis: 40px;
+        border-radius: 11px;
+        font-size: 22px;
+    }
+
+    .btn-adicionar-produto strong {
+        font-size: 13px;
+    }
+
+    .btn-adicionar-produto small {
+        font-size: 9px;
+    }
+
+    .campo-dinheiro {
+        height: 51px;
+        border-radius: 13px;
+    }
+
+    .campo-dinheiro input {
+        font-size: 18px;
+    }
+
+    .resumo-venda-card {
+        padding: 13px;
+        border-radius: 15px;
+    }
+
+    .resumo-venda-topo strong {
+        font-size: 20px;
+    }
+
+    .payment-options {
+        gap: 5px;
+    }
+
+    .btn-payment {
+        min-height: 59px;
+        border-radius: 10px;
+    }
+
+    .btn-payment span {
+        font-size: 17px;
+    }
+
+    .btn-payment strong {
+        font-size: 8px;
+    }
+
+    .resultado-troco {
+        padding: 13px;
+        border-radius: 14px;
+    }
+
+    .resultado-troco-topo strong {
+        font-size: 19px;
+    }
+
+    .btn-primary,
+    .btn-registrar-venda {
+        min-height: 53px;
+        margin-top: 14px;
+        border-radius: 14px;
+    }
+
+    .btn-cancelar-venda {
+        min-height: 42px;
+    }
+
+    /* Modais */
+    .modal-overlay {
+        padding: 6px;
+    }
+
+    .modal-box {
+        border-radius: 20px;
+        padding: 13px;
+    }
+
+    .modal-produtos-venda {
+        width: 100%;
+        height: calc(100dvh - 12px);
+        max-height: calc(100dvh - 12px);
+        padding: 13px;
+        border-radius: 20px;
+    }
+
+    .modal-cabecalho h3 {
+        font-size: 18px;
+    }
+
+    .btn-fechar-modal {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        flex-basis: 38px;
+        border-radius: 10px;
+        font-size: 23px;
+    }
+
+    .modal-produtos-venda .btn-leitor-venda {
+        min-height: 52px;
+        padding: 8px 10px;
+    }
+
+    .modal-produtos-venda .btn-leitor-venda .icone-plus {
+        width: 33px;
+        height: 33px;
+        min-width: 33px;
+        flex-basis: 33px;
+    }
+
+    .campo-busca-produto {
+        min-height: 42px;
+        border-radius: 11px;
+    }
+
+    .campo-busca-produto input {
+        height: 40px;
+        font-size: 12px;
+    }
+
+    /* Mantém os produtos em 3 colunas no celular */
+    .lista-produtos-estoque-venda {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .lista-produtos-estoque-venda .produto-card-conteudo {
+        min-height: 155px;
+        padding: 5px;
+    }
+
+    .lista-produtos-estoque-venda .produto-foto,
+    .lista-produtos-estoque-venda .produto-imagem,
+    .lista-produtos-estoque-venda .produto-inicial {
+        height: 52px;
+        min-height: 52px;
+        max-height: 52px;
+        flex-basis: 52px;
+    }
+
+    .lista-produtos-estoque-venda .produto-nome,
+    .lista-produtos-estoque-venda .produto-info h3 {
+        min-height: 25px;
+        max-height: 25px;
+        font-size: 10px;
+    }
+
+    .lista-produtos-estoque-venda .produto-estoque {
+        font-size: 8px;
+    }
+
+    .lista-produtos-estoque-venda .produto-preco {
+        font-size: 11px;
+    }
+
+    .lista-produtos-estoque-venda .controle-quantidade button {
+        width: 25px;
+        height: 25px;
+        min-width: 25px;
+        min-height: 25px;
+        flex-basis: 25px;
+        font-size: 15px;
+    }
+
+    .lista-produtos-estoque-venda .controle-quantidade span {
+        min-width: 15px;
+        font-size: 10px;
+    }
+
+    .modal-produtos-venda .modal-acoes-venda {
+        padding-top: 7px;
+    }
+
+    #btnConcluirProdutosVenda {
+        min-height: 48px;
+        border-radius: 12px;
+        font-size: 13px;
+    }
+
+    /* Leitor */
+    .modal-leitor-venda {
+        padding: 13px;
+    }
+
+    .area-leitor-venda {
+        height: min(58vh, 390px);
+        min-height: 250px;
+        border-radius: 16px;
+    }
+
+    .moldura-leitor-venda {
+        width: 78%;
+        height: 120px;
+    }
+
+    #modalConfirmarVenda .modal-acoes-venda {
+        grid-template-columns: 1fr;
+    }
+
+    /* Fotos dos produtos já adicionados à venda */
+    .lista-produtos-venda img {
+        width: 64px !important;
+        height: 64px !important;
+        min-width: 64px !important;
+        min-height: 64px !important;
+        max-width: 64px !important;
+        max-height: 64px !important;
+    }
+
+    .lista-produtos-venda .produto-foto {
+        width: 64px !important;
+        height: 64px !important;
+        min-width: 64px !important;
+        max-width: 64px !important;
+    }
+}
+
+/* =========================================================
+   CELULARES MUITO PEQUENOS
+========================================================= */
+
+@media (max-width: 360px) {
+    .app-container {
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+
+    .card.calculadora-card {
+        padding: 9px;
+        border-radius: 17px;
+    }
+
+    .secao-venda,
+    .secao-troco {
+        padding: 10px;
+    }
+
+    .payment-options {
+        gap: 4px;
+    }
+
+    .btn-payment {
+        min-height: 55px;
+    }
+
+    .btn-payment strong {
+        font-size: 7px;
+    }
+
+    .modal-produtos-venda {
+        padding: 10px;
+        border-radius: 18px;
+    }
+
+    .lista-produtos-estoque-venda {
+        gap: 5px;
+    }
+
+    .lista-produtos-estoque-venda .produto-card-conteudo {
+        min-height: 148px;
+        padding: 4px;
+    }
+
+    .lista-produtos-estoque-venda .produto-foto,
+    .lista-produtos-estoque-venda .produto-imagem,
+    .lista-produtos-estoque-venda .produto-inicial {
+        height: 48px;
+        min-height: 48px;
+        max-height: 48px;
+        flex-basis: 48px;
+    }
+
+    .lista-produtos-estoque-venda .produto-nome,
+    .lista-produtos-estoque-venda .produto-info h3 {
+        font-size: 9px;
+        min-height: 23px;
+        max-height: 23px;
+    }
+
+    .lista-produtos-estoque-venda .produto-preco {
+        font-size: 10px;
+    }
+
+    .lista-produtos-estoque-venda .produto-estoque {
+        font-size: 7px;
+    }
+
+    .lista-produtos-estoque-venda .controle-quantidade {
+        gap: 1px;
+    }
+
+    .lista-produtos-estoque-venda .controle-quantidade button {
+        width: 23px;
+        height: 23px;
+        min-width: 23px;
+        min-height: 23px;
+        flex-basis: 23px;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .lista-produtos-estoque-venda .controle-quantidade span {
+        min-width: 13px;
+        font-size: 9px;
+    }
+
+    .area-leitor-venda {
+        min-height: 230px;
+    }
+}
+
+/* =========================================================
+   NAVEGAÇÃO INFERIOR — BLOCO ÚNICO CONSOLIDADO
+========================================================= */
+
+body nav.menu-inferior {
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: 0 !important;
+    transform: translateX(-50%) !important;
+
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: stretch;
+    justify-content: initial;
+
+    width: 100% !important;
+    max-width: 760px !important;
+    min-height: 64px;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
+
+    box-sizing: border-box !important;
+    border-top: 1px solid #dfe8e3;
+    background: rgba(255, 255, 255, .97);
+    box-shadow: 0 -5px 20px rgba(30, 50, 42, .08);
+    overflow: visible !important;
+    z-index: 99999 !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+body nav.menu-inferior > a.menu-item {
+    display: flex !important;
+    flex: none !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px;
+
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 4px 0 !important;
+
+    border-radius: 11px;
+    color: #7c8985;
+    font-size: 19px;
+    visibility: visible !important;
+    opacity: 1 !important;
+    text-decoration: none !important;
+    transition: background .12s ease, color .12s ease;
+}
+
+body nav.menu-inferior > a.menu-item > span,
+body nav.menu-inferior > a.menu-item > small {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+body nav.menu-inferior > a.menu-item > small {
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap !important;
+    color: inherit;
+    font-size: 10px !important;
+    font-weight: 800;
+}
+
+body nav.menu-inferior > a.menu-item.ativo {
+    color: var(--verde);
+    background: #eef9f4;
+}
+
+body nav.menu-inferior > a.menu-item:active {
+    transform: scale(.96);
+}
+
+/* =========================================================
+   REDUÇÃO DE MOVIMENTO
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+
+/* =========================================================
+   DR. TROCO — MODAL DE SELEÇÃO DE PRODUTOS
+   Ajuste visual isolado. Usa as classes realmente geradas
+   por renderizarProdutosEstoqueVenda() em script.js.
+   ========================================================= */
+
+body.pagina-calculadora #modalProdutosVenda .modal-produtos-venda {
+    width: min(100%, 640px);
+    height: auto;
+    max-height: calc(100dvh - 16px);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+/* Cabeçalho: permanece fora da área rolável. */
+body.pagina-calculadora #modalProdutosVenda .modal-cabecalho {
+    flex: 0 0 auto;
+    margin-bottom: 8px;
+}
+
+body.pagina-calculadora #modalProdutosVenda .modal-cabecalho h3 {
+    font-size: 19px;
+}
+
+/* Leitor: compacto, sem perder a área de toque. */
+body.pagina-calculadora #modalProdutosVenda .btn-leitor-venda {
+    flex: 0 0 auto;
+    min-height: 48px;
+    margin: 0 0 8px;
+    padding: 6px 10px;
+    border: 1px solid #cbe9d9;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #eefaf4, #e4f7ed);
+}
+
+body.pagina-calculadora #modalProdutosVenda .btn-leitor-venda .icone-plus {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    flex: 0 0 32px;
+    border-radius: 9px;
+    font-size: 16px;
+}
+
+body.pagina-calculadora #modalProdutosVenda .btn-leitor-venda strong {
+    font-size: 12px;
+}
+
+body.pagina-calculadora #modalProdutosVenda .btn-leitor-venda small {
+    margin-top: 2px;
+    font-size: 9px;
+}
+
+/* Pesquisa: permanece fixa acima da grade. */
+body.pagina-calculadora #modalProdutosVenda .campo-busca-produto {
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 42px;
+    margin: 0 0 8px;
+    padding: 0 10px;
+    border-radius: 11px;
+}
+
+body.pagina-calculadora #modalProdutosVenda .campo-busca-produto input {
+    height: 40px;
+    font-size: 12px;
+}
+
+/*
+   A grade tem altura para três linhas. Em aparelhos muito baixos,
+   o flex permite reduzir a área, mantendo a rolagem dentro da grade.
+*/
+body.pagina-calculadora #modalProdutosVenda .lista-produtos-estoque-venda {
+    flex: 0 1 356px;
+    height: 356px;
+    max-height: 356px;
+    min-height: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, 114px);
+    grid-auto-rows: 114px;
+    align-content: start;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    box-sizing: border-box;
+}
+
+body.pagina-calculadora #modalProdutosVenda .lista-produtos-estoque-venda::-webkit-scrollbar {
+    width: 4px;
+}
+
+body.pagina-calculadora #modalProdutosVenda .lista-produtos-estoque-venda::-webkit-scrollbar-thumb {
+    border-radius: 20px;
+    background: #cbd8d2;
+}
+
+/* Cartão real gerado pelo JavaScript: .produto-estoque-venda-item. */
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-item {
+    width: 100%;
+    min-width: 0;
+    min-height: 114px;
+    height: 114px;
+    max-height: 114px;
+    margin: 0;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 1px solid #e1e9e5;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 7px rgba(32, 48, 60, .055);
+}
+
+/* Imagem pequena, centralizada e sem corte. */
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-foto {
+    flex: 0 0 30px;
+    width: 100%;
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #f3f8f5;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-foto img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+    padding: 1px;
+    box-sizing: border-box;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-foto > span {
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* Nome, estoque/código e preço usam os elementos reais do template. */
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-info {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    overflow: hidden;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-info > strong:first-child {
+    display: -webkit-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 20px;
+    max-height: 20px;
+    margin: 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: #30404b;
+    font-size: 9.5px;
+    line-height: 1.05;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-info > small {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-height: 9px;
+    overflow: hidden;
+    color: #74827f;
+    font-size: 7.5px;
+    line-height: 9px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-info .produto-estoque-venda-preco {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: #15945b;
+    font-size: 11px;
+    line-height: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Controles: o + adiciona; − e quantidade continuam disponíveis após adicionar. */
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-acoes {
+    flex: 0 0 28px;
+    width: 100%;
+    min-width: 0;
+    min-height: 28px;
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-acoes button {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 7px;
+    background: #e9f7ef;
+    color: #168b53;
+    font-size: 17px;
+    line-height: 1;
+    font-weight: 900;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-acoes .btn-produto-mais {
+    background: #20a767;
+    color: #fff;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-acoes .btn-produto-menos:disabled {
+    display: none;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-acoes .btn-produto-menos:disabled ~ .quantidade-produto-modal {
+    display: none;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-acoes .btn-produto-menos:disabled ~ .btn-produto-mais {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+}
+
+body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-acoes .btn-produto-menos:disabled ~ .btn-produto-mais::after {
+    content: " Adicionar";
+    font-size: 9px;
+    font-weight: 800;
+}
+
+body.pagina-calculadora #modalProdutosVenda .quantidade-produto-modal {
+    flex: 0 0 14px;
+    min-width: 14px;
+    color: #374651;
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 900;
+    text-align: center;
+}
+
+/* Rodapé fixo dentro do modal: não participa da rolagem da grade. */
+body.pagina-calculadora #modalProdutosVenda .modal-acoes-venda {
+    flex: 0 0 auto;
+    width: 100%;
+    margin: 0;
+    padding: 8px 0 0;
+    border-top: 1px solid #edf1ef;
+    background: #fff;
+    z-index: 5;
+}
+
+body.pagina-calculadora #modalProdutosVenda #btnConcluirProdutosVenda {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #25aa6a, #168d54);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+/* Mensagem vazia ocupa a largura total sem quebrar a grade. */
+body.pagina-calculadora #modalProdutosVenda .lista-produtos-estoque-venda .produtos-venda-vazio {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 150px;
+}
+
+@media (max-width: 600px) {
+    body.pagina-calculadora #modalProdutosVenda .modal-produtos-venda {
+        width: 100%;
+        max-height: calc(100dvh - 12px);
+        padding: 10px;
+        border-radius: 18px;
+    }
+
+    body.pagina-calculadora #modalProdutosVenda .lista-produtos-estoque-venda {
+        flex-basis: 356px;
+        height: 356px;
+        max-height: 356px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: repeat(3, 114px);
+        grid-auto-rows: 114px;
+        gap: 7px;
+        padding: 0;
+    }
+}
+
+@media (max-width: 360px) {
+    body.pagina-calculadora #modalProdutosVenda .modal-produtos-venda {
+        padding: 8px;
+    }
+
+    body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-item {
+        padding: 3px;
+        border-radius: 10px;
+    }
+
+    body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-info > strong:first-child {
+        font-size: 9px;
+    }
+
+    body.pagina-calculadora #modalProdutosVenda .produto-estoque-venda-info > small {
+        font-size: 7px;
+    }
+}
