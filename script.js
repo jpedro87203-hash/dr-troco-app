@@ -1,937 +1,1067 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="icons/icon-192.png">
-
-  <meta name="theme-color" content="#168b53">
-  <meta name="description" content="Dr. Troco - Controle de vendas, troco e estoque.">
-
-  <title>Dr. Troco - Nova Venda</title>
-
-  <link rel="stylesheet" href="style.css">
-
-  <style>
-    #botao-controle-licencas,
-    #botao-sair-conta {
-      box-sizing: border-box;
-      flex: 0 0 44px;
-      width: 44px;
-      min-width: 44px;
-      height: 44px;
-      margin-left: 8px;
-      padding: 0;
-      border-radius: 12px;
-      font-size: 22px;
-      line-height: 1;
-      text-align: center;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    #botao-controle-licencas {
-      border: 1px solid #d7eee2;
-      background: #e7f5ee;
-      color: #16794b;
-    }
-
-    #botao-controle-licencas[hidden] {
-      display: none !important;
-    }
-
-    #botao-controle-licencas:not([hidden]) {
-      display: inline-flex;
-    }
-
-    #botao-sair-conta {
-      border: 1px solid #f0d8d8;
-      background: #fff0f0;
-      color: #b42318;
-    }
-
-    #botao-sair-conta:disabled {
-      opacity: 0.6;
-      cursor: wait;
-    }
-
-    /* =========================================================
-       ESTILOS ESPECÍFICOS — MODAL DE PRODUTOS (3 COLUNAS)
-       ========================================================= */
-    .modal-produtos-venda {
-      width: 100%;
-      max-width: 760px;
-      max-height: 85vh;
-      max-height: 85dvh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      padding: 16px 14px calc(24px + env(safe-area-inset-bottom));
-      box-sizing: border-box;
-    }
-
-    .modal-produtos-venda .modal-cabecalho {
-      flex-shrink: 0;
-      margin-bottom: 12px;
-    }
-
-    /* Correção crucial: min-height: 0 permite que o scroll funcione dentro do flexbox */
-    .modal-produtos-scroll-area {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 20px;
-    }
-
-    .btn-leitor-venda {
-      margin-bottom: 10px;
-    }
-
-    .campo-busca-produto {
-      position: relative;
-      margin-bottom: 14px;
-    }
-
-    .campo-busca-produto span {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 18px;
-      color: #8a979e;
-      pointer-events: none;
-    }
-
-    .campo-busca-produto input {
-      width: 100%;
-      height: 46px;
-      padding: 0 14px 0 42px;
-      border: 1px solid #e2e8ec;
-      border-radius: 14px;
-      background: #ffffff;
-      color: #30414d;
-      outline: none;
-      box-sizing: border-box;
-      font-size: 14px;
-    }
-
-    .campo-busca-produto input:focus {
-      border-color: #56a97b;
-      box-shadow: 0 0 0 3px rgba(32, 169, 93, 0.1);
-    }
-
-    /* Grade de Produtos estrita em 3 colunas */
-    .lista-produtos-estoque-venda {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 6px;
-      margin-bottom: 16px;
-    }
-
-    /* Cartão do Produto Compacto */
-    .cartao-produto-grade {
-      background: #ffffff;
-      border: 1px solid rgba(39, 57, 69, 0.08);
-      border-radius: 12px;
-      padding: 6px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(28, 48, 62, 0.04);
-      box-sizing: border-box;
-    }
-
-    .cartao-produto-topo {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      width: 100%;
-    }
-
-    /* Imagem maior ocupando mais espaço */
-    .cartao-produto-foto {
-      width: 100%;
-      height: 64px;
-      border-radius: 10px;
-      overflow: hidden;
-      background: linear-gradient(135deg, #edf7f1, #e4f1ea);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #16834d;
-      font-size: 18px;
-      font-weight: 900;
-      margin-bottom: 5px;
-      flex-shrink: 0;
-    }
-
-    .cartao-produto-foto img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .cartao-produto-info {
-      width: 100%;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* Nome centralizado embaixo da imagem */
-    .cartao-produto-info strong {
-      display: block;
-      color: #2c3e4a;
-      font-size: 10px;
-      font-weight: 900;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      line-height: 1.2;
-      height: 24px;
-      margin-bottom: 3px;
-      text-align: center;
-      width: 100%;
-    }
-
-    /* Estoque em cima */
-    .cartao-produto-info small {
-      display: block;
-      color: #52636e;
-      font-size: 9px;
-      font-weight: 800;
-      margin-bottom: 2px;
-    }
-
-    /* Preço embaixo */
-    .cartao-produto-preco {
-      color: #16834d;
-      font-size: 11px;
-      font-weight: 900;
-    }
-
-    .cartao-produto-acoes {
-      margin-top: 6px;
-      width: 100%;
-    }
-
-    /* Botão Adicionar Inicial */
-    .btn-card-adicionar {
-      width: 100%;
-      height: 30px;
-      border: 0;
-      border-radius: 8px;
-      background: #eaf8f0;
-      color: #147844;
-      font-size: 10px;
-      font-weight: 900;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-    }
-
-    .btn-card-adicionar:active {
-      transform: scale(0.96);
-    }
-
-    /* Controle de Quantidade [ - ] 1 [ + ] */
-    .controle-qtd-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #f4f8fa;
-      border: 1px solid #dbe4e8;
-      border-radius: 8px;
-      height: 30px;
-      padding: 0 3px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .controle-qtd-card button {
-      width: 24px;
-      height: 24px;
-      border: 0;
-      border-radius: 6px;
-      background: #ffffff;
-      color: #2864ad;
-      font-size: 12px;
-      font-weight: 900;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .controle-qtd-card button:active {
-      transform: scale(0.92);
-    }
-
-    .controle-qtd-card span {
-      font-size: 11px;
-      font-weight: 900;
-      color: #263746;
-    }
-
-    /* Ações do Modal */
-    .modal-acoes-venda {
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #edf2f5;
-    }
-
-    .btn-manual-venda {
-      width: 100%;
-      height: 40px;
-      border: 1px dashed #cbd5d0;
-      border-radius: 12px;
-      background: #fafcfd;
-      color: #52636e;
-      font-size: 11px;
-      font-weight: 900;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .estado-produtos-venda {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 30px 20px;
-      color: #8f9aa1;
-    }
-  </style>
-</head>
-
-<body class="pagina-calculadora">
-
-  <div class="app-container">
-
-    <!-- CABEÇALHO -->
-    <header class="app-header">
-      <div class="header-logo">🧮</div>
-
-      <div>
-        <h1>Dr. Troco</h1>
-        <p>Nova venda</p>
-      </div>
-
-      <a
-        href="estabelecimento.html"
-        class="botao-estabelecimento"
-        aria-label="Meu estabelecimento"
-        title="Meu estabelecimento"
-      >👤</a>
-
-      <!-- BOTÃO SAIR DA CONTA -->
-      <button
-        id="botao-sair-conta"
-        type="button"
-        aria-label="Sair da conta"
-        title="Sair da conta"
-      >🚪</button>
-
-      <!-- Visível somente para o administrador -->
-      <button
-        id="botao-controle-licencas"
-        type="button"
-        hidden
-        onclick="window.location.href='admin.html'"
-        aria-label="Controle de Licenças"
-        title="Controle de Licenças"
-      >⚙️</button>
-    </header>
-
-    <main class="calculadora-app">
-      <section class="card calculadora-card">
-
-        <div class="cabecalho-calculadora">
-          <div>
-            <span class="texto-pequeno">VENDA</span>
-            <h2>Nova Venda</h2>
-          </div>
-          <div class="icone-venda">🛒</div>
-        </div>
-
-        <!-- PRODUTOS -->
-        <section class="secao-venda produtos-venda">
-          <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">📦</div>
-              <div>
-                <h3>Produtos</h3>
-                <p>Adicione produtos do seu estoque</p>
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            id="btnAdicionarProduto"
-            class="btn-adicionar-produto"
-          >
-            <span class="icone-plus">＋</span>
-            <span>
-              <strong>Adicionar produto</strong>
-              <small>Pesquisar no estoque ou ler código</small>
-            </span>
-          </button>
-
-          <div id="listaProdutosVenda" class="lista-produtos-venda">
-            <div id="produtosVendaVazio" class="produtos-vazio">
-              <div class="produtos-vazio-icone">🛍️</div>
-              <strong>Nenhum produto adicionado</strong>
-              <span>Toque em “Adicionar produto” para começar.</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- VALOR AVULSO -->
-        <section class="secao-venda valor-avulso">
-          <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">💰</div>
-              <div>
-                <h3>Valor avulso</h3>
-                <p>Para vendas sem produto cadastrado</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="campo-dinheiro">
-            <span class="simbolo-moeda">R$</span>
-            <input
-              type="number"
-              id="valorConta"
-              step="0.01"
-              min="0"
-              inputmode="decimal"
-              autocomplete="off"
-              placeholder="0,00"
-              aria-label="Valor avulso da venda"
-            >
-          </div>
-        </section>
-
-        <!-- RESUMO -->
-        <section class="resumo-venda-card">
-          <div class="resumo-venda-topo">
-            <span>Total da venda</span>
-            <strong id="totalCobrar">R$ 0,00</strong>
-          </div>
-
-          <div class="resumo-venda-info">
-            <span id="quantidadeItensVenda">0 itens</span>
-            <button
-              type="button"
-              id="btnLimparVenda"
-              class="btn-limpar-venda"
-            >
-              Limpar venda
-            </button>
-          </div>
-        </section>
-
-        <!-- PAGAMENTO -->
-        <section class="secao-venda secao-pagamento">
-          <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">💳</div>
-              <div>
-                <h3>Forma de pagamento</h3>
-                <p>Selecione como o cliente vai pagar</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="payment-options">
-            <button type="button" class="btn-payment active"
-              data-method="dinheiro" aria-pressed="true">
-              <span>💵</span>
-              <strong>Dinheiro</strong>
-            </button>
-
-            <button type="button" class="btn-payment"
-              data-method="pix" aria-pressed="false">
-              <span>📱</span>
-              <strong>Pix</strong>
-            </button>
-
-            <button type="button" class="btn-payment"
-              data-method="debito" aria-pressed="false">
-              <span>💳</span>
-              <strong>Débito</strong>
-            </button>
-
-            <button type="button" class="btn-payment"
-              data-method="credito" aria-pressed="false">
-              <span>💳</span>
-              <strong>Crédito</strong>
-            </button>
-
-            <button type="button" id="btnPagamentoFiado"
-              class="btn-payment btn-payment-fiado"
-              data-method="fiado" aria-pressed="false">
-              <span>🧾</span>
-              <strong>Fiado</strong>
-            </button>
-          </div>
-        </section>
-
-        <!-- DADOS DO FIADO -->
-        <section
-          id="groupFiado"
-          class="secao-venda grupo-fiado hidden"
-          aria-label="Dados da venda fiada"
-        >
-          <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">🧾</div>
-              <div>
-                <h3>Venda fiada</h3>
-                <p>Informe o cliente e o pagamento inicial</p>
-              </div>
-            </div>
-          </div>
-
-          <label class="label-campo" for="nomeClienteFiado">
-            Nome do cliente
-          </label>
-
-          <input type="text" id="nomeClienteFiado"
-            class="campo-texto-fiado"
-            placeholder="Digite o nome do cliente"
-            autocomplete="name">
-
-          <label class="label-campo" for="valorEntradaFiado">
-            Entrada (opcional)
-          </label>
-
-          <div class="campo-dinheiro">
-            <span class="simbolo-moeda">R$</span>
-            <input type="number" id="valorEntradaFiado"
-              step="0.01" min="0" inputmode="decimal"
-              placeholder="0,00"
-              aria-label="Valor da entrada do fiado">
-          </div>
-
-          <label class="label-campo" for="metodoEntradaFiado">
-            Forma de pagamento da entrada
-          </label>
-
-          <select id="metodoEntradaFiado" class="campo-texto-fiado">
-            <option value="dinheiro">Dinheiro</option>
-            <option value="pix">Pix</option>
-            <option value="debito">Débito</option>
-            <option value="credito">Crédito</option>
-          </select>
-
-          <div class="resumo-fiado">
-            <span>Saldo que ficará pendente</span>
-            <strong id="saldoPendenteFiado">R$ 0,00</strong>
-          </div>
-        </section>
-
-        <!-- VALOR RECEBIDO -->
-        <section id="groupRecebido"
-          class="secao-venda secao-recebido">
-          <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">💵</div>
-              <div>
-                <h3>Valor recebido</h3>
-                <p>Informe quanto o cliente entregou</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="campo-dinheiro campo-recebido">
-            <span class="simbolo-moeda">R$</span>
-            <input type="number" id="valorRecebido"
-              step="0.01" min="0" inputmode="decimal"
-              autocomplete="off" placeholder="0,00"
-              aria-label="Valor recebido">
-          </div>
-        </section>
-
-        <!-- TAXA -->
-        <div id="avisoTaxa" class="info-taxa hidden">
-          <span>🏷️ Taxa da maquininha</span>
-          <strong>+ R$ 1,00</strong>
-        </div>
-
-        <!-- TROCO -->
-        <section id="rowTroco" class="resultado-troco">
-          <div class="resultado-troco-topo">
-            <div>
-              <span>Troco</span>
-              <small>Valor a devolver ao cliente</small>
-            </div>
-            <strong id="valorTroco">R$ 0,00</strong>
-          </div>
-        </section>
-
-        <!-- CÉDULAS -->
-        <section id="secaoCedulas" class="secao-troco">
-          <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">🪙</div>
-              <div>
-                <h3>Combinações de troco</h3>
-                <p>Veja opções para devolver o troco</p>
-              </div>
-            </div>
-          </div>
-
-          <div id="listaCedulas" class="lista-combinacoes-troco">
-            <div class="troco-vazio">
-              <div>💰</div>
-              <strong>Informe o valor recebido</strong>
-              <span>As combinações aparecerão aqui.</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- AÇÕES -->
-        <button type="button" id="btnRegistrarVenda"
-          class="btn-primary btn-registrar-venda">
-          <span>✓</span>
-          <span>Registrar Venda</span>
-        </button>
-
-        <button type="button" id="btnCancelarVenda"
-          class="btn-cancelar-venda">
-          Cancelar / Limpar venda
-        </button>
-
-      </section>
-    </main>
-
-    <!-- BACKUP -->
-    <section id="secaoBackup" class="card"
-      style="
-        box-sizing: border-box;
-        width: calc(100% - 24px);
-        max-width: 600px;
-        margin: 24px auto 120px;
-        padding: 18px;
-      ">
-      <h3 style="margin: 0 0 8px;">
-        🛡️ Backup e restauração
-      </h3>
-
-      <p style="font-size: 14px; line-height: 1.5;">
-        Guarde uma cópia das vendas, do caixa, do estoque,
-        do fiado e das contas a pagar.
-      </p>
-
-      <button type="button" id="btnExportarBackup"
-        class="btn-primary"
-        style="display:block; box-sizing:border-box; width:100%;
-          min-height:48px; margin:12px 0;">
-        📥 Fazer backup
-      </button>
-
-      <button type="button" id="btnRestaurarBackup"
-        class="btn-cancelar-venda"
-        style="display:block; box-sizing:border-box; width:100%;
-          min-height:48px;">
-        📂 Restaurar backup
-      </button>
-
-      <p style="font-size:12px; line-height:1.5; opacity:.75;">
-        Restaurar um backup substitui os dados atuais.
-        Guarde seu arquivo em local seguro.
-      </p>
-    </section>
-
-  </div>
-
-  <!-- MODAL DE PRODUTOS REFORMULADO (3 COLUNAS COM SCROLL CORRIGIDO) -->
-  <div id="modalProdutosVenda"
-    class="modal-overlay estoque-modal hidden">
-    <div class="modal-box modal-produtos-venda">
-      
-      <div class="modal-cabecalho">
-        <div>
-          <span class="texto-pequeno">ESTOQUE</span>
-          <h3>Adicionar produto</h3>
-        </div>
-
-        <button type="button" id="btnFecharProdutosVenda"
-          class="btn-fechar-modal" aria-label="Fechar">×</button>
-      </div>
-
-      <div class="modal-produtos-scroll-area">
-        <button type="button" id="btnAbrirLeitorVenda"
-          class="btn-adicionar-produto btn-leitor-venda">
-          <span class="icone-plus">📷</span>
-          <span>
-            <strong>Ler código de barras</strong>
-            <small>Usar a câmera do celular</small>
-          </span>
-        </button>
-
-        <div class="campo-busca-produto">
-          <span>🔎</span>
-          <input type="search" id="buscaProdutoVenda"
-            placeholder="Buscar por nome ou código..."
-            autocomplete="off" aria-label="Buscar produto">
-        </div>
-
-        <div id="listaProdutosEstoqueVenda"
-          class="lista-produtos-estoque-venda">
-          <div class="estado-produtos-venda">
-            <div>📦</div>
-            <strong>Carregando produtos...</strong>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-acoes-venda">
-        <button type="button" id="btnAdicionarManualVenda" class="btn-manual-venda">
-          <span>＋</span> Adicionar manualmente (valor avulso)
-        </button>
-        <button type="button" id="btnConcluirProdutosVenda"
-          class="btn-confirmar">Concluir</button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MODAL DO LEITOR -->
-  <div id="modalLeitorVenda"
-    class="modal-overlay leitor-modal hidden">
-    <div class="modal-box modal-leitor-venda">
-      <div class="modal-cabecalho">
-        <div>
-          <span class="texto-pequeno">LEITOR</span>
-          <h3>Ler código de barras</h3>
-        </div>
-
-        <button type="button" id="btnFecharLeitorVenda"
-          class="btn-fechar-modal"
-          aria-label="Fechar leitor">×</button>
-      </div>
-
-      <div id="areaLeitorVenda" class="area-leitor-venda">
-        <video id="videoLeitorVenda"
-          class="video-leitor-venda"
-          autoplay muted playsinline></video>
-
-        <div id="molduraLeitorVenda"
-          class="moldura-leitor-venda">
-          <div class="linha-leitor-venda"></div>
-        </div>
-      </div>
-
-      <div id="mensagemLeitorVenda"
-        class="mensagem-leitor-venda">
-        Aponte a câmera para o código de barras.
-      </div>
-
-      <div id="statusLeitorVenda"
-        class="status-leitor-venda">
-        Preparando câmera...
-      </div>
-
-      <div class="modal-acoes-venda">
-        <button type="button" id="btnFecharLeitorVenda2"
-          class="btn-cancel">Fechar leitor</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL DE CONFIRMAÇÃO -->
-  <div id="modalConfirmarVenda"
-    class="modal-overlay estoque-modal hidden">
-    <div class="modal-box">
-      <div class="modal-cabecalho">
-        <div>
-          <span class="texto-pequeno">CONFIRMAÇÃO</span>
-          <h3>Confirmar venda</h3>
-        </div>
-
-        <button type="button" id="btnFecharConfirmacao"
-          class="btn-fechar-modal"
-          aria-label="Fechar">×</button>
-      </div>
-
-      <div id="resumoConfirmacaoVenda"
-        class="resumo-confirmacao-venda"></div>
-
-      <div class="modal-acoes-venda">
-        <button type="button" id="btnCancelarConfirmacao"
-          class="btn-cancel">Voltar</button>
-
-        <button type="button" id="btnConfirmarVenda"
-          class="btn-confirmar">Confirmar venda</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- NAVEGAÇÃO INFERIOR -->
-  <nav class="menu-inferior">
-    <a href="index.html" class="menu-item ativo">
-      <span>🧮</span>
-      <small>Calculadora</small>
-    </a>
-
-    <a href="fluxo.html" class="menu-item">
-      <span>📊</span>
-      <small>Fluxo</small>
-    </a>
-
-    <a href="historico.html" class="menu-item">
-      <span>📋</span>
-      <small>Histórico</small>
-    </a>
-
-    <a href="estoque.html" class="menu-item">
-      <span>📦</span>
-      <small>Estoque</small>
-    </a>
-
-    <a href="fiado.html" class="menu-item">
-      <span>🧾</span>
-      <small>Fiado</small>
-    </a>
-  </nav>
-
-  <!-- SCRIPTS EXISTENTES -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
-  <script src="auth-guard.js"></script>
-  <script src="protecao.js"></script>
-  <script src="fiado.js"></script>
-  <script src="script.js"></script>
-  <script src="backup.js"></script>
-
-  <!-- SCRIPT DE LIMPEZA DO CÓDIGO NOS CARDS -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const observer = new MutationObserver(() => {
-        removerCodigosDosCards();
-      });
-
-      const listaEstoque = document.getElementById('listaProdutosEstoqueVenda');
-      if (listaEstoque) {
-        observer.observe(listaEstoque, { childList: true, subtree: true });
-      }
-
-      function removerCodigosDosCards() {
-        const cards = document.querySelectorAll('.cartao-produto-grade');
-        cards.forEach(card => {
-          const elementosSmall = card.querySelectorAll('small, span, div');
-          elementosSmall.forEach(el => {
-            if (el.innerHTML.includes('Código') || el.innerHTML.includes('código')) {
-              let html = el.innerHTML;
-              html = html.replace(/Código:[^·•\<\s]*/gi, '').replace(/[·•]\s*Código:[^<]*/gi, '').replace(/Código:[^<]*/gi, '');
-              el.innerHTML = html;
+// ============================================================
+// DR. TROCO — CALCULADORA DE VENDAS + PDV + FIADO (OTIMIZADO)
+// ============================================================
+
+'use strict';
+
+let formaPagamento = 'dinheiro';
+let produtosVenda = [];
+let streamLeitorVenda = null;
+let detectorLeitorVenda = null;
+let lendoCodigoVenda = false;
+let frameLeituraVenda = null;
+let abrindoLeitorVenda = false;
+let codigoUltimoLidoVenda = '';
+let tempoUltimoCodigoVenda = 0;
+let audioContextVenda = null;
+let modalProdutosEstavaAbertoAntesLeitor = false;
+let eventosConfigurados = false;
+let vendaEmProcessamento = false;
+
+const CHAVE_VENDAS = 'drTroco_vendas';
+const CHAVE_ESTOQUE = 'drTroco_estoque';
+const CHAVE_MOVIMENTACOES = 'drTroco_movimentacoes';
+
+// Elementos do DOM principais
+const $ = (id) => document.getElementById(id);
+const valorContaInput = $('valorConta');
+const valorRecebidoInput = $('valorRecebido');
+const totalCobrar = $('totalCobrar');
+const quantidadeItensVenda = $('quantidadeItensVenda');
+const valorTroco = $('valorTroco');
+const rowTroco = $('rowTroco');
+const groupRecebido = $('groupRecebido');
+const btnLimparVenda = $('btnLimparVenda');
+const btnRegistrarVenda = $('btnRegistrarVenda');
+const btnCancelarVenda = $('btnCancelarVenda');
+const btnAdicionarProduto = $('btnAdicionarProduto');
+const listaProdutosVenda = $('listaProdutosVenda');
+const produtosVendaVazio = $('produtosVendaVazio');
+const secaoCedulas = $('secaoCedulas');
+const listaCedulas = $('listaCedulas');
+
+// Campos do fiado
+const groupFiado = $('groupFiado');
+const nomeClienteFiado = $('nomeClienteFiado');
+const valorPagoInicialFiado = $('valorPagoInicialFiado');
+const formaPagamentoInicialFiado = $('formaPagamentoInicialFiado');
+const rowSaldoDevedorFiado = $('rowSaldoDevedorFiado');
+const saldoDevedorVenda = $('saldoDevedorVenda');
+
+// Modais
+const modalProdutosVenda = $('modalProdutosVenda');
+const btnFecharProdutosVenda = $('btnFecharProdutosVenda');
+const btnConcluirProdutosVenda = $('btnConcluirProdutosVenda');
+const btnAbrirLeitorVenda = $('btnAbrirLeitorVenda');
+const buscaProdutoVenda = $('buscaProdutoVenda');
+const listaProdutosEstoqueVenda = $('listaProdutosEstoqueVenda');
+
+const modalLeitorVenda = $('modalLeitorVenda');
+const btnFecharLeitorVenda = $('btnFecharLeitorVenda');
+const btnFecharLeitorVenda2 = $('btnFecharLeitorVenda2');
+const videoLeitorVenda = $('videoLeitorVenda');
+const molduraLeitorVenda = $('molduraLeitorVenda');
+const mensagemLeitorVenda = $('mensagemLeitorVenda');
+const statusLeitorVenda = $('statusLeitorVenda');
+
+const modalConfirmarVenda = $('modalConfirmarVenda');
+const resumoConfirmacaoVenda = $('resumoConfirmacaoVenda');
+const btnFecharConfirmacao = $('btnFecharConfirmacao');
+const btnCancelarConfirmacao = $('btnCancelarConfirmacao');
+const btnConfirmarVenda = $('btnConfirmarVenda');
+
+// ------------------------------------------------------------
+// Multiestabelecimento & LocalStorage
+// ------------------------------------------------------------
+function obterComercioIdLocal() {
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const chave = localStorage.key(i);
+            if (chave && chave.startsWith("drTroco_estoque_") && chave !== "drTroco_estoque_legado") {
+                return chave.replace("drTroco_estoque_", "");
             }
-          });
-        });
-      }
-    });
-  </script>
-
-  <!-- CONEXÃO DOS BOTÕES DE BACKUP -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const btnExportar = document.getElementById('btnExportarBackup');
-      const btnRestaurar = document.getElementById('btnRestaurarBackup');
-
-      if (btnExportar) {
-        btnExportar.addEventListener('click', function () {
-          if (
-            window.DrTrocoBackup &&
-            typeof window.DrTrocoBackup.exportar === 'function'
-          ) {
-            window.DrTrocoBackup.exportar();
-          } else {
-            alert(
-              'O módulo de backup não foi carregado. Confira o arquivo backup.js.'
-            );
-          }
-        });
-      }
-
-      if (btnRestaurar) {
-        btnRestaurar.addEventListener('click', function () {
-          if (
-            window.DrTrocoBackup &&
-            typeof window.DrTrocoBackup.selecionarArquivoEImportar === 'function'
-          ) {
-            window.DrTrocoBackup.selecionarArquivoEImportar();
-          } else {
-            alert(
-              'O módulo de backup não foi carregado. Confira o arquivo backup.js.'
-            );
-          }
-        });
-      }
-    });
-  </script>
-
-  <!-- SAIR DA CONTA -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const botaoSair = document.getElementById('botao-sair-conta');
-
-      if (!botaoSair) return;
-
-      botaoSair.addEventListener('click', async function () {
-        const confirmar = confirm(
-          'Deseja realmente sair da sua conta?'
-        );
-
-        if (!confirmar) return;
-
-        botaoSair.disabled = true;
-
-        try {
-          const cliente = window.supabaseClient;
-
-          if (!cliente) {
-            throw new Error('Cliente Supabase não encontrado.');
-          }
-
-          const { error } = await cliente.auth.signOut();
-
-          if (error) throw error;
-
-          window.location.replace('login.html');
-
-        } catch (erro) {
-          console.error('Erro ao sair:', erro);
-
-          alert(
-            'Não foi possível sair da conta. Tente novamente.'
-          );
-
-          botaoSair.disabled = false;
         }
-      });
-    });
-  </script>
+    } catch (e) {
+        console.warn("Erro ao buscar comércio ID:", e);
+    }
+    return null;
+}
 
-</body>
-</html>
+function obterChaveEstoqueComercio() {
+    const comercioId = obterComercioIdLocal();
+    return comercioId ? `${CHAVE_ESTOQUE}_${comercioId}` : CHAVE_ESTOQUE;
+}
+
+function obterChaveMovimentacoesEstoqueComercio() {
+    const comercioId = obterComercioIdLocal();
+    const base = "drTroco_movimentacoesEstoque";
+    return comercioId ? `${base}_${comercioId}` : base;
+}
+
+function lerListaLocalStorage(chave) {
+    try {
+        const valor = localStorage.getItem(chave);
+        if (!valor) return [];
+        const dados = JSON.parse(valor);
+        return Array.isArray(dados) ? dados : [];
+    } catch (erro) {
+        console.error(`Erro ao ler ${chave}:`, erro);
+        return [];
+    }
+}
+
+function salvarListaLocalStorage(chave, dados) {
+    try {
+        localStorage.setItem(chave, JSON.stringify(dados));
+        return true;
+    } catch (erro) {
+        console.error(`Erro ao salvar ${chave}:`, erro);
+        return false;
+    }
+}
+
+const obterEstoque = () => lerListaLocalStorage(obterChaveEstoqueComercio());
+const salvarEstoque = (estoque) => salvarListaLocalStorage(obterChaveEstoqueComercio(), estoque);
+
+// ------------------------------------------------------------
+// Utilitários
+// ------------------------------------------------------------
+const numeroSeguro = (valor) => {
+    const num = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '').replace(',', '.'));
+    return Number.isFinite(num) ? Math.max(0, num) : 0;
+};
+
+const centavos = (valor) => Math.round((Number(valor) || 0) * 100);
+
+const normalizar = (texto) => String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+const formatarReal = (valor) => (Number.isFinite(Number(valor)) ? Number(valor) : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+const escaparHTML = (texto) => String(texto ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+const escaparAtributo = (texto) => escaparHTML(texto);
+
+function mostrarElemento(elemento, mostrar, display = 'block') {
+    if (!elemento) return;
+    elemento.classList.toggle('hidden', !mostrar);
+    elemento.style.setProperty('display', mostrar ? display : 'none', 'important');
+}
+
+// ------------------------------------------------------------
+// Modais
+// ------------------------------------------------------------
+function abrirModalOverlay(modal, camada = 9999) {
+    if (!modal) return false;
+    if (modal.parentElement !== document.body) document.body.appendChild(modal);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('aberto');
+    modal.setAttribute('aria-hidden', 'false');
+    modal.style.setProperty('position', 'fixed', 'important');
+    modal.style.setProperty('inset', '0', 'important');
+    modal.style.setProperty('width', '100%', 'important');
+    modal.style.setProperty('height', '100%', 'important');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('z-index', String(camada), 'important');
+
+    document.body.classList.add('modal-aberto');
+    document.body.style.overflow = 'hidden';
+    return true;
+}
+
+function fecharModalOverlay(modal) {
+    if (!modal) return;
+    modal.classList.remove('aberto');
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.style.setProperty('display', 'none', 'important');
+    
+    const algumAberto = [modalProdutosVenda, modalLeitorVenda, modalConfirmarVenda].some(m => m && m.classList.contains('aberto') && !m.classList.contains('hidden'));
+    document.body.classList.toggle('modal-aberto', algumAberto);
+    document.body.style.overflow = algumAberto ? 'hidden' : '';
+}
+
+// ------------------------------------------------------------
+// Datas e Turno
+// ------------------------------------------------------------
+function obterDataHoraAtual() {
+    const agora = new Date();
+    if (agora.getHours() >= 0 && agora.getHours() < 6) {
+        agora.setDate(agora.getDate() - 1);
+    }
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const ano = agora.getFullYear();
+    const hora = String(new Date().getHours()).padStart(2, '0');
+    const minuto = String(new Date().getMinutes()).padStart(2, '0');
+    const segundo = String(new Date().getSeconds()).padStart(2, '0');
+
+    return {
+        data: `${dia}/${mes}/${ano}`,
+        dataChave: `${ano}-${mes}-${dia}`,
+        hora: `${hora}:${minuto}:${segundo}`
+    };
+}
+
+// ------------------------------------------------------------
+// Estorno de Estoque
+// ------------------------------------------------------------
+function reverterEstoquePorVenda(venda) {
+    if (!venda?.produtos || !Array.isArray(venda.produtos)) return;
+    const estoque = obterEstoque();
+    
+    venda.produtos.forEach(itemVendido => {
+        const prod = estoque.find(p => String(p.id) === String(itemVendido.id));
+        if (prod) {
+            prod.quantidade = numeroSeguro(prod.quantidade) + numeroSeguro(itemVendido.quantidade);
+            prod.atualizadoEm = new Date().toISOString();
+        }
+    });
+    salvarEstoque(estoque);
+
+    const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
+    let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque).filter(mov => mov.vendaId !== venda.id);
+    localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
+}
+window.reverterEstoquePorVenda = reverterEstoquePorVenda;
+
+const nomeFormaPagamento = (metodo) => ({ dinheiro: 'Dinheiro', pix: 'Pix', debito: 'Débito', credito: 'Crédito', fiado: 'Fiado' })[String(metodo || '').toLowerCase()] || 'Dinheiro';
+
+// ------------------------------------------------------------
+// Inicialização e Eventos
+// ------------------------------------------------------------
+function iniciarCalculadora() {
+    if (!totalCobrar) return;
+    fecharModalOverlay(modalConfirmarVenda);
+    fecharModalOverlay(modalProdutosVenda);
+    pararLeitorVenda();
+    configurarEventos();
+    
+    if (valorContaInput) valorContaInput.disabled = false;
+    formaPagamento = 'dinheiro';
+    atualizarBotoesPagamento();
+    renderizarProdutosVenda();
+    atualizarTela();
+}
+
+function configurarEventos() {
+    if (eventosConfigurados) return;
+    eventosConfigurados = true;
+
+    [valorContaInput, valorRecebidoInput, nomeClienteFiado, valorPagoInicialFiado].forEach(el => el?.addEventListener('input', atualizarTela));
+    formaPagamentoInicialFiado?.addEventListener('change', atualizarTela);
+
+    document.querySelectorAll('.btn-payment').forEach(botao => {
+        botao.addEventListener('click', (e) => {
+            e.preventDefault();
+            const metodo = String(botao.dataset.method || '').toLowerCase();
+            if (['dinheiro', 'pix', 'debito', 'credito', 'fiado'].includes(metodo)) {
+                formaPagamento = metodo;
+                atualizarBotoesPagamento();
+                atualizarTela();
+            }
+        });
+    });
+
+    btnAdicionarProduto?.addEventListener('click', (e) => { e.preventDefault(); abrirModalProdutos(); });
+    btnFecharProdutosVenda?.addEventListener('click', () => fecharModalOverlay(modalProdutosVenda));
+    btnConcluirProdutosVenda?.addEventListener('click', () => fecharModalOverlay(modalProdutosVenda));
+    btnAbrirLeitorVenda?.addEventListener('click', abrirLeitorVenda);
+
+    btnFecharLeitorVenda?.addEventListener('click', () => fecharLeitorVenda(true));
+    btnFecharLeitorVenda2?.addEventListener('click', () => fecharLeitorVenda(true));
+
+    buscaProdutoVenda?.addEventListener('input', (e) => renderizarProdutosEstoqueVenda(e.target.value));
+
+    listaProdutosEstoqueVenda?.addEventListener('click', (e) => {
+        const botao = e.target.closest('[data-acao-produto]');
+        if (!botao) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const id = botao.dataset.produtoEstoqueId;
+        if (botao.dataset.acaoProduto === 'adicionar') adicionarProdutoVenda(id);
+        if (botao.dataset.acaoProduto === 'diminuir') diminuirProdutoModal(id);
+    });
+
+    btnLimparVenda?.addEventListener('click', limparVenda);
+    btnRegistrarVenda?.addEventListener('click', abrirConfirmacaoVenda);
+    btnCancelarVenda?.addEventListener('click', limparVenda);
+    btnFecharConfirmacao?.addEventListener('click', () => fecharModalOverlay(modalConfirmarVenda));
+    btnCancelarConfirmacao?.addEventListener('click', () => fecharModalOverlay(modalConfirmarVenda));
+    btnConfirmarVenda?.addEventListener('click', confirmarVenda);
+
+    modalProdutosVenda?.addEventListener('click', (e) => { if (e.target === modalProdutosVenda) fecharModalOverlay(modalProdutosVenda); });
+    modalLeitorVenda?.addEventListener('click', (e) => { if (e.target === modalLeitorVenda) fecharLeitorVenda(true); });
+    modalConfirmarVenda?.addEventListener('click', (e) => { if (e.target === modalConfirmarVenda) fecharModalOverlay(modalConfirmarVenda); });
+
+    listaProdutosVenda?.addEventListener('click', (e) => {
+        const botao = e.target.closest('[data-acao]');
+        if (!botao) return;
+        alterarQuantidadeProduto(botao.dataset.id, botao.dataset.acao);
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (modalLeitorVenda?.classList.contains('aberto')) fecharLeitorVenda(true);
+        else if (modalConfirmarVenda?.classList.contains('aberto')) fecharModalOverlay(modalConfirmarVenda);
+        else if (modalProdutosVenda?.classList.contains('aberto')) fecharModalOverlay(modalProdutosVenda);
+    });
+}
+
+// ------------------------------------------------------------
+// Pagamentos e Interface
+// ------------------------------------------------------------
+function atualizarBotoesPagamento() {
+    document.querySelectorAll('.btn-payment').forEach(botao => {
+        const selecionado = String(botao.dataset.method || '').toLowerCase() === formaPagamento;
+        botao.classList.toggle('ativo', selecionado);
+        botao.classList.toggle('selected', selecionado);
+        botao.setAttribute('aria-pressed', selecionado ? 'true' : 'false');
+        botao.style.setProperty('background-color', selecionado ? '#20a66a' : '#ffffff', 'important');
+        botao.style.setProperty('color', selecionado ? '#ffffff' : '#5f6972', 'important');
+        botao.style.setProperty('border-color', selecionado ? '#20a66a' : '#dfe4e7', 'important');
+        botao.style.setProperty('box-shadow', selecionado ? '0 6px 15px rgba(32,166,106,0.25)' : 'none', 'important');
+    });
+}
+
+const calcularTotaisProdutos = () => produtosVenda.reduce((soma, p) => soma + centavos(numeroSeguro(p.preco) * numeroSeguro(p.quantidade)), 0) / 100;
+
+function atualizarTela() {
+    const totalProdutos = calcularTotaisProdutos();
+    const valorAvulso = numeroSeguro(valorContaInput?.value);
+    const total = Math.round((totalProdutos + valorAvulso) * 100) / 100;
+
+    if (totalCobrar) totalCobrar.textContent = formatarReal(total);
+
+    const qtdProdutos = produtosVenda.reduce((soma, p) => soma + numeroSeguro(p.quantidade), 0);
+    const qtdTotal = qtdProdutos + (valorAvulso > 0 ? 1 : 0);
+    if (quantidadeItensVenda) quantidadeItensVenda.textContent = `${qtdTotal} ${qtdTotal === 1 ? 'item' : 'itens'}`;
+
+    const ehDinheiro = formaPagamento === 'dinheiro';
+    const ehFiado = formaPagamento === 'fiado';
+
+    mostrarElemento(groupRecebido, ehDinheiro, 'block');
+    if (valorRecebidoInput) valorRecebidoInput.disabled = !ehDinheiro;
+
+    mostrarElemento(groupFiado, ehFiado, 'block');
+    mostrarElemento(rowSaldoDevedorFiado, ehFiado, 'flex');
+
+    if (ehFiado) {
+        const pago = numeroSeguro(valorPagoInicialFiado?.value);
+        const saldo = Math.max(0, Math.round((total - pago) * 100) / 100);
+        if (saldoDevedorVenda) saldoDevedorVenda.textContent = formatarReal(saldo);
+        if (valorTroco) valorTroco.textContent = formatarReal(0);
+        mostrarElemento(rowTroco, false);
+        mostrarElemento(secaoCedulas, false);
+    } else if (ehDinheiro) {
+        const recebido = numeroSeguro(valorRecebidoInput?.value);
+        const troco = Math.max(0, Math.round((recebido - total) * 100) / 100);
+        mostrarElemento(rowTroco, total > 0 && recebido >= total, 'flex');
+        if (valorTroco) valorTroco.textContent = formatarReal(troco);
+
+        if (troco > 0) {
+            mostrarElemento(secaoCedulas, true, 'block');
+            gerarSugestoesTroco(troco);
+        } else {
+            mostrarElemento(secaoCedulas, false);
+        }
+    } else {
+        mostrarElemento(rowTroco, false);
+        mostrarElemento(secaoCedulas, false);
+    }
+
+    if (btnRegistrarVenda) btnRegistrarVenda.disabled = total <= 0 || vendaEmProcessamento;
+}
+
+// ------------------------------------------------------------
+// Produtos e Estoque na Venda
+// ------------------------------------------------------------
+function abrirModalProdutos() {
+    if (!modalProdutosVenda) return;
+    if (modalLeitorVenda?.classList.contains('aberto')) fecharLeitorVenda(false);
+    if (buscaProdutoVenda) buscaProdutoVenda.value = '';
+    renderizarProdutosEstoqueVenda();
+    if (abrirModalOverlay(modalProdutosVenda, 9999)) {
+        setTimeout(() => buscaProdutoVenda?.focus(), 100);
+    }
+}
+
+function renderizarProdutosEstoqueVenda(termoBusca = '') {
+    if (!listaProdutosEstoqueVenda) return;
+    const estoque = obterEstoque();
+    const termo = normalizar(termoBusca);
+
+    const disponiveis = estoque.filter(p => numeroSeguro(p.quantidade) > 0 && (!termo || normalizar(p.nome).includes(termo) || normalizar(p.codigo).includes(termo)));
+
+    if (!disponiveis.length) {
+        listaProdutosEstoqueVenda.innerHTML = `
+            <div class="produtos-venda-vazio">
+                <div class="icone-vazio">📦</div>
+                <strong>Nenhum produto encontrado</strong>
+                <p>${estoque.length === 0 ? 'Cadastre produtos no estoque primeiro.' : 'Não há produtos disponíveis para venda.'}</p>
+            </div>`;
+        return;
+    }
+
+    listaProdutosEstoqueVenda.innerHTML = disponiveis.map(produto => {
+        const id = String(produto.id);
+        const naVenda = produtosVenda.find(item => String(item.id) === id);
+        const qtdNaVenda = naVenda ? numeroSeguro(naVenda.quantidade) : 0;
+        const foto = produto.foto ? `<img src="${escaparAtributo(produto.foto)}" alt="${escaparAtributo(produto.nome)}">` : '<span>📦</span>';
+
+        return `
+            <div class="produto-estoque-venda-item produto-card">
+                <div class="produto-estoque-venda-foto produto-foto">${foto}</div>
+                <div class="produto-estoque-venda-info produto-info">
+                    <strong>${escaparHTML(produto.nome)}</strong>
+                    <small>Estoque: ${numeroSeguro(produto.quantidade)}</small>
+                    <strong class="produto-estoque-venda-preco produto-preco">${formatarReal(produto.preco)}</strong>
+                </div>
+                <div class="produto-estoque-venda-acoes controle-quantidade">
+                    <button type="button" class="btn-produto-menos" data-acao-produto="diminuir" data-produto-estoque-id="${escaparAtributo(id)}" ${qtdNaVenda <= 0 ? 'disabled' : ''}>−</button>
+                    <span class="quantidade-produto-modal">${qtdNaVenda}</span>
+                    <button type="button" class="btn-produto-mais" data-acao-produto="adicionar" data-produto-estoque-id="${escaparAtributo(id)}">+</button>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function adicionarProdutoVenda(id) {
+    const itemEstoque = obterEstoque().find(p => String(p.id) === String(id));
+    if (!itemEstoque || numeroSeguro(itemEstoque.quantidade) <= 0) {
+        alert('Produto sem estoque ou não encontrado.');
+        return false;
+    }
+
+    const disponivel = numeroSeguro(itemEstoque.quantidade);
+    const existente = produtosVenda.find(p => String(p.id) === String(id));
+
+    if (existente) {
+        if (existente.quantidade >= disponivel) {
+            alert('A quantidade selecionada atingiu o limite do estoque.');
+            return false;
+        }
+        existente.quantidade++;
+    } else {
+        produtosVenda.push({
+            id: itemEstoque.id,
+            nome: itemEstoque.nome || 'Produto',
+            codigo: itemEstoque.codigo || '',
+            preco: numeroSeguro(itemEstoque.preco),
+            foto: itemEstoque.foto || '',
+            quantidade: 1,
+            estoqueDisponivel: disponivel
+        });
+    }
+
+    renderizarProdutosVenda();
+    renderizarProdutosEstoqueVenda(buscaProdutoVenda?.value || '');
+    atualizarTela();
+    return true;
+}
+
+function diminuirProdutoModal(id) {
+    const produto = produtosVenda.find(item => String(item.id) === String(id));
+    if (!produto) return;
+    produto.quantidade--;
+    if (produto.quantidade <= 0) {
+        produtosVenda = produtosVenda.filter(item => String(item.id) !== String(id));
+    }
+    renderizarProdutosVenda();
+    renderizarProdutosEstoqueVenda(buscaProdutoVenda?.value || '');
+    atualizarTela();
+}
+
+function renderizarProdutosVenda() {
+    if (!listaProdutosVenda) return;
+    if (!produtosVenda.length) {
+        listaProdutosVenda.innerHTML = '';
+        if (produtosVendaVazio) {
+            listaProdutosVenda.appendChild(produtosVendaVazio);
+            mostrarElemento(produtosVendaVazio, true, 'block');
+        }
+        return;
+    }
+
+    if (produtosVendaVazio) mostrarElemento(produtosVendaVazio, false);
+
+    listaProdutosVenda.innerHTML = produtosVenda.map(produto => {
+        const subtotal = numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade);
+        const imagem = produto.foto ? `<img src="${escaparAtributo(produto.foto)}" alt="${escaparAtributo(produto.nome)}">` : '<span>📦</span>';
+
+        return `
+            <div class="item-produto-venda">
+                <div class="item-produto-imagem">${imagem}</div>
+                <div class="item-produto-info">
+                    <strong>${escaparHTML(produto.nome)}</strong>
+                    ${produto.codigo ? `<small>Código: ${escaparHTML(produto.codigo)}</small>` : ''}
+                    <span>${formatarReal(produto.preco)}</span>
+                </div>
+                <div class="item-produto-controles">
+                    <button type="button" class="btn-quantidade" data-acao="diminuir" data-id="${escaparAtributo(produto.id)}">−</button>
+                    <strong>${produto.quantidade}</strong>
+                    <button type="button" class="btn-quantidade" data-acao="aumentar" data-id="${escaparAtributo(produto.id)}">+</button>
+                </div>
+                <div class="item-produto-subtotal">
+                    <strong>${formatarReal(subtotal)}</strong>
+                    <button type="button" class="btn-remover-produto" data-acao="remover" data-id="${escaparAtributo(produto.id)}" aria-label="Remover">🗑️</button>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function alterarQuantidadeProduto(id, acao) {
+    const produto = produtosVenda.find(item => String(item.id) === String(id));
+    if (!produto) return;
+
+    if (acao === 'aumentar') {
+        const doEstoque = obterEstoque().find(item => String(item.id) === String(id));
+        if (!doEstoque || produto.quantidade >= numeroSeguro(doEstoque.quantidade)) {
+            alert('Não há mais unidades disponíveis no estoque.');
+            return;
+        }
+        produto.quantidade++;
+    } else if (acao === 'diminuir') {
+        produto.quantidade--;
+        if (produto.quantidade <= 0) produtosVenda = produtosVenda.filter(item => String(item.id) !== String(id));
+    } else if (acao === 'remover') {
+        produtosVenda = produtosVenda.filter(item => String(item.id) !== String(id));
+    }
+
+    renderizarProdutosVenda();
+    renderizarProdutosEstoqueVenda(buscaProdutoVenda?.value || '');
+    atualizarTela();
+}
+
+const encontrarProdutoPorCodigo = (codigo) => {
+    const alvo = String(codigo || '').trim();
+    return alvo ? obterEstoque().find(item => String(item.codigo || '').trim() === alvo) || null : null;
+};
+
+// ------------------------------------------------------------
+// Leitor de Código de Barras
+// ------------------------------------------------------------
+async function abrirLeitorVenda() {
+    if (abrindoLeitorVenda || lendoCodigoVenda) return;
+    if (!navigator.mediaDevices?.getUserMedia || !('BarcodeDetector' in window)) {
+        alert('Leitor de código de barras não suportado neste navegador.');
+        return;
+    }
+
+    abrindoLeitorVenda = true;
+    try {
+        modalProdutosEstavaAbertoAntesLeitor = modalProdutosVenda?.classList.contains('aberto') && !modalProdutosVenda.classList.contains('hidden');
+        if (modalProdutosEstavaAbertoAntesLeitor) fecharModalOverlay(modalProdutosVenda);
+        pararLeitorVenda();
+
+        abrirModalOverlay(modalLeitorVenda, 10002);
+        if (mensagemLeitorVenda) { mensagemLeitorVenda.textContent = 'Iniciando câmera...'; mensagemLeitorVenda.style.display = 'flex'; }
+        if (videoLeitorVenda) videoLeitorVenda.style.display = 'none';
+        if (molduraLeitorVenda) molduraLeitorVenda.style.display = 'none';
+
+        prepararSomLeitor();
+        detectorLeitorVenda = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'code_93'] });
+
+        streamLeitorVenda = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false
+        });
+
+        videoLeitorVenda.setAttribute('playsinline', '');
+        videoLeitorVenda.muted = true;
+        videoLeitorVenda.srcObject = streamLeitorVenda;
+
+        await new Promise(resolve => {
+            if (videoLeitorVenda.readyState >= 1) return resolve();
+            videoLeitorVenda.addEventListener('loadedmetadata', resolve, { once: true });
+        });
+
+        await videoLeitorVenda.play();
+        videoLeitorVenda.style.setProperty('display', 'block', 'important');
+        videoLeitorVenda.style.setProperty('width', '100%', 'important');
+        videoLeitorVenda.style.setProperty('height', '280px', 'important');
+        videoLeitorVenda.style.setProperty('object-fit', 'cover', 'important');
+
+        if (mensagemLeitorVenda) mensagemLeitorVenda.style.display = 'none';
+        if (molduraLeitorVenda) molduraLeitorVenda.style.display = 'block';
+        if (statusLeitorVenda) statusLeitorVenda.textContent = 'Aponte a câmera para o código';
+
+        lendoCodigoVenda = true;
+        detectarCodigoVenda();
+    } catch (erro) {
+        console.error('Erro ao abrir leitor:', erro);
+        pararLeitorVenda();
+        if (mensagemLeitorVenda) {
+            mensagemLeitorVenda.textContent = 'Permita o acesso à câmera para usar o leitor.';
+            mensagemLeitorVenda.style.display = 'flex';
+        }
+    } finally {
+        abrindoLeitorVenda = false;
+    }
+}
+
+async function detectarCodigoVenda() {
+    if (!lendoCodigoVenda || !detectorLeitorVenda || !videoLeitorVenda || videoLeitorVenda.readyState < 2) {
+        if (lendoCodigoVenda) frameLeituraVenda = requestAnimationFrame(detectarCodigoVenda);
+        return;
+    }
+
+    try {
+        const resultados = await detectorLeitorVenda.detect(videoLeitorVenda);
+        if (resultados?.length) {
+            const codigo = String(resultados[0].rawValue || '').trim();
+            if (codigo) processarCodigoLidoVenda(codigo);
+        }
+    } catch (e) {}
+
+    if (lendoCodigoVenda) frameLeituraVenda = requestAnimationFrame(detectarCodigoVenda);
+}
+
+function processarCodigoLidoVenda(codigo) {
+    const agora = Date.now();
+    if (codigo === codigoUltimoLidoVenda && agora - tempoUltimoCodigoVenda < 1000) return;
+    codigoUltimoLidoVenda = codigo;
+    tempoUltimoCodigoVenda = agora;
+
+    const produto = encontrarProdutoPorCodigo(codigo);
+    if (!produto || !adicionarProdutoVenda(produto.id)) {
+        emitirSomErroVenda();
+        if (statusLeitorVenda) statusLeitorVenda.textContent = `Código ${codigo} não encontrado`;
+        return;
+    }
+
+    emitirSomLeitor();
+    if (statusLeitorVenda) statusLeitorVenda.textContent = `${produto.nome} — ${formatarReal(produto.preco)}`;
+}
+
+function prepararSomLeitor() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx && !audioContextVenda) audioContextVenda = new AudioCtx();
+        if (audioContextVenda?.state === 'suspended') audioContextVenda.resume();
+    } catch (e) {}
+}
+
+function emitirTom(frequencia, frequenciaFinal, duracao, volume = 0.15) {
+    try {
+        prepararSomLeitor();
+        if (!audioContextVenda) return;
+        const agora = audioContextVenda.currentTime;
+        const osc = audioContextVenda.createOscillator();
+        const ganho = audioContextVenda.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(frequencia, agora);
+        if (frequenciaFinal) osc.frequency.exponentialRampToValueAtTime(frequenciaFinal, agora + duracao * 0.8);
+
+        ganho.gain.setValueAtTime(0.0001, agora);
+        ganho.gain.exponentialRampToValueAtTime(volume, agora + 0.01);
+        ganho.gain.exponentialRampToValueAtTime(0.0001, agora + duracao);
+
+        osc.connect(ganho);
+        ganho.connect(audioContextVenda.destination);
+        osc.start(agora);
+        osc.stop(agora + duracao + 0.01);
+    } catch (e) {}
+}
+
+const emitirSomLeitor = () => emitirTom(1250, 850, 0.085, 0.18);
+const emitirSomErroVenda = () => emitirTom(300, 220, 0.18, 0.12);
+
+function pararLeitorVenda() {
+    lendoCodigoVenda = false;
+    if (frameLeituraVenda) cancelAnimationFrame(frameLeituraVenda);
+    frameLeituraVenda = null;
+
+    if (streamLeitorVenda) {
+        streamLeitorVenda.getTracks().forEach(t => { try { t.stop(); } catch(e){} });
+        streamLeitorVenda = null;
+    }
+
+    if (videoLeitorVenda) {
+        try { videoLeitorVenda.pause(); } catch(e){}
+        videoLeitorVenda.srcObject = null;
+        videoLeitorVenda.style.setProperty('display', 'none', 'important');
+    }
+    detectorLeitorVenda = null;
+    codigoUltimoLidoVenda = '';
+}
+
+function fecharLeitorVenda(reabrirProdutos = false) {
+    const estavaAberto = modalLeitorVenda?.classList.contains('aberto');
+    pararLeitorVenda();
+    fecharModalOverlay(modalLeitorVenda);
+
+    if (reabrirProdutos && estavaAberto && modalProdutosEstavaAbertoAntesLeitor && modalProdutosVenda) {
+        abrirModalOverlay(modalProdutosVenda, 9999);
+        setTimeout(() => buscaProdutoVenda?.focus(), 100);
+    }
+    modalProdutosEstavaAbertoAntesLeitor = false;
+}
+
+// ------------------------------------------------------------
+// Registro e Confirmação de Venda
+// ------------------------------------------------------------
+function calcularResumoVenda() {
+    const totalProdutos = calcularTotaisProdutos();
+    const valorAvulso = numeroSeguro(valorContaInput?.value);
+    const total = Math.round((totalProdutos + valorAvulso) * 100) / 100;
+
+    let recebido = total, troco = 0, clienteNome = '', pagamentoInicial = 0, saldoDevedor = 0, formaPagamentoRecebido = '';
+
+    if (formaPagamento === 'dinheiro') {
+        recebido = numeroSeguro(valorRecebidoInput?.value);
+        troco = Math.max(0, Math.round((recebido - total) * 100) / 100);
+    } else if (formaPagamento === 'fiado') {
+        clienteNome = String(nomeClienteFiado?.value || '').trim();
+        pagamentoInicial = numeroSeguro(valorPagoInicialFiado?.value);
+        formaPagamentoRecebido = String(formaPagamentoInicialFiado?.value || 'dinheiro').toLowerCase();
+        recebido = pagamentoInicial;
+        saldoDevedor = Math.max(0, Math.round((total - pagamentoInicial) * 100) / 100);
+    }
+
+    return { valorConta: valorAvulso, valorAvulso, totalProdutos, total, recebido, troco, formaPagamento, clienteNome, pagamentoInicial, saldoDevedor, formaPagamentoRecebido };
+}
+
+function validarResumoVenda(resumo) {
+    if (resumo.total <= 0) {
+        alert('Informe o valor da compra ou adicione produtos.');
+        return false;
+    }
+    if (resumo.formaPagamento === 'dinheiro' && resumo.recebido < resumo.total) {
+        alert('O valor recebido é menor que o total.');
+        return false;
+    }
+    if (resumo.formaPagamento === 'fiado') {
+        if (!resumo.clienteNome) {
+            alert('Informe o nome do cliente.');
+            nomeClienteFiado?.focus();
+            return false;
+        }
+        if (resumo.pagamentoInicial > resumo.total) {
+            alert('O pagamento inicial não pode ser maior que o total.');
+            valorPagoInicialFiado?.focus();
+            return false;
+        }
+    }
+
+    // Validação de estoque
+    const estoque = obterEstoque();
+    for (const item of produtosVenda) {
+        const prod = estoque.find(r => String(r.id) === String(item.id));
+        if (!prod || numeroSeguro(prod.quantidade) < numeroSeguro(item.quantidade)) {
+            alert(`Estoque insuficiente para "${item.nome}".`);
+            return false;
+        }
+    }
+    return true;
+}
+
+function abrirConfirmacaoVenda() {
+    const resumo = calcularResumoVenda();
+    if (!validarResumoVenda(resumo)) return;
+    if (!modalConfirmarVenda || !resumoConfirmacaoVenda) return;
+
+    resumoConfirmacaoVenda.innerHTML = criarResumoConfirmacao(resumo);
+    abrirModalOverlay(modalConfirmarVenda, 10001);
+}
+
+function criarResumoConfirmacao(resumo) {
+    let html = `<div class="resumo-confirmacao-linha"><span>Pagamento</span><strong>${nomeFormaPagamento(resumo.formaPagamento)}</strong></div>`;
+    if (resumo.formaPagamento === 'fiado') html += `<div class="resumo-confirmacao-linha"><span>Cliente</span><strong>${escaparHTML(resumo.clienteNome)}</strong></div>`;
+    if (resumo.valorAvulso > 0) html += `<div class="resumo-confirmacao-linha"><span>Valor avulso</span><strong>${formatarReal(resumo.valorAvulso)}</strong></div>`;
+
+    if (produtosVenda.length) {
+        html += '<div class="resumo-confirmacao-produtos"><strong>Produtos</strong>';
+        produtosVenda.forEach(p => {
+            html += `<div class="resumo-produto"><span>${escaparHTML(p.nome)} × ${p.quantidade}</span><strong>${formatarReal(p.preco * p.quantidade)}</strong></div>`;
+        });
+        html += '</div>';
+    }
+
+    html += `<div class="resumo-confirmacao-total"><span>Total</span><strong>${formatarReal(resumo.total)}</strong></div>`;
+    if (resumo.formaPagamento === 'dinheiro') {
+        html += `<div class="resumo-confirmacao-linha"><span>Recebido</span><strong>${formatarReal(resumo.recebido)}</strong></div>`;
+        html += `<div class="resumo-confirmacao-linha troco"><span>Troco</span><strong>${formatarReal(resumo.troco)}</strong></div>`;
+    } else if (resumo.formaPagamento === 'fiado') {
+        html += `<div class="resumo-confirmacao-linha"><span>Pago na hora</span><strong>${formatarReal(resumo.pagamentoInicial)}</strong></div>`;
+        html += `<div class="resumo-confirmacao-linha saldo-devedor"><span>Saldo Devedor</span><strong>${formatarReal(resumo.saldoDevedor)}</strong></div>`;
+    }
+    return html;
+}
+
+function confirmarVenda() {
+    if (vendaEmProcessamento) return;
+    const resumo = calcularResumoVenda();
+    if (!validarResumoVenda(resumo)) return;
+
+    vendaEmProcessamento = true;
+    if (btnConfirmarVenda) btnConfirmarVenda.disabled = true;
+
+    const estoqueOriginal = obterEstoque();
+    const estoqueAtualizado = JSON.parse(JSON.stringify(estoqueOriginal));
+
+    for (const item of produtosVenda) {
+        const prod = estoqueAtualizado.find(r => String(r.id) === String(item.id));
+        if (!prod || numeroSeguro(prod.quantidade) < numeroSeguro(item.quantidade)) {
+            alert(`Estoque insuficiente para "${item.nome}".`);
+            vendaEmProcessamento = false;
+            if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
+            return;
+        }
+        prod.quantidade = Math.max(0, numeroSeguro(prod.quantidade) - numeroSeguro(item.quantidade));
+        prod.atualizadoEm = new Date().toISOString();
+    }
+
+    const dataHora = obterDataHoraAtual();
+    const idVenda = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+    // Registro das movimentações de estoque
+    const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
+    let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque);
+
+    produtosVenda.forEach(item => {
+        const pOrig = estoqueOriginal.find(r => String(r.id) === String(item.id));
+        const qtdAnt = pOrig ? numeroSeguro(pOrig.quantidade) : 0;
+        movimentacoesEstoque.push({
+            id: `mov_venda_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            vendaId: idVenda,
+            produtoId: item.id,
+            produtoNome: item.nome,
+            tipo: "saida",
+            quantidade: numeroSeguro(item.quantidade),
+            quantidadeAnterior: qtdAnt,
+            quantidadeNova: Math.max(0, qtdAnt - numeroSeguro(item.quantidade)),
+            data: dataHora.dataChave,
+            hora: dataHora.hora
+        });
+    });
+    localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
+
+    const isFiado = resumo.formaPagamento === 'fiado';
+    const venda = {
+        id: idVenda,
+        data: dataHora.data,
+        dataChave: dataHora.dataChave,
+        hora: dataHora.hora,
+        formaPagamento: resumo.formaPagamento,
+        formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamento),
+        valorConta: resumo.valorConta,
+        valorAvulso: resumo.valorAvulso,
+        totalProdutos: resumo.totalProdutos,
+        valorBase: resumo.total,
+        total: resumo.total,
+        valorRecebido: isFiado ? resumo.pagamentoInicial : resumo.recebido,
+        troco: isFiado ? 0 : resumo.troco,
+        produtos: produtosVenda.map(p => ({
+            id: p.id, nome: p.nome, codigo: p.codigo, preco: p.preco, quantidade: p.quantidade,
+            subtotal: Math.round(numeroSeguro(p.preco) * numeroSeguro(p.quantidade) * 100) / 100
+        }))
+    };
+
+    let movimentacoes = lerListaLocalStorage(CHAVE_MOVIMENTACOES);
+    let movimentacaoInicial = null;
+
+    if (isFiado) {
+        const pago = Math.round(resumo.pagamentoInicial * 100) / 100;
+        const saldo = Math.max(0, Math.round((resumo.total - pago) * 100) / 100);
+        venda.clienteNome = resumo.clienteNome;
+        venda.fiado = {
+            clienteNome: resumo.clienteNome,
+            valorOriginal: resumo.total,
+            totalPago: pago,
+            saldoDevedor: saldo,
+            status: saldo <= 0 ? 'pago' : 'pendente',
+            pagamentos: []
+        };
+
+        if (pago > 0) {
+            venda.fiado.pagamentos.push({
+                id: `pg-${idVenda}-inicial`, valor: pago, formaPagamento: resumo.formaPagamentoRecebido,
+                formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
+                data: dataHora.data, dataChave: dataHora.dataChave, hora: dataHora.hora, tipo: 'pagamento_inicial'
+            });
+
+            movimentacaoInicial = {
+                id: `fiado-${idVenda}-${Date.now()}`, tipo: 'entrada', valor: pago,
+                formaPagamento: resumo.formaPagamentoRecebido, formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
+                descricao: `Pagamento inicial do fiado — ${resumo.clienteNome}`,
+                data: dataHora.data, dataChave: dataHora.dataChave, hora: dataHora.hora,
+                origem: 'pagamento_fiado_inicial', fiadoId: idVenda, vendaId: idVenda
+            };
+            movimentacoes.push(movimentacaoInicial);
+        }
+    }
+
+    const vendas = lerListaLocalStorage(CHAVE_VENDAS);
+    try {
+        localStorage.setItem(CHAVE_VENDAS, JSON.stringify([...vendas, venda]));
+        if (isFiado && movimentacaoInicial) localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(movimentacoes));
+        if (!salvarEstoque(estoqueAtualizado)) throw new Error('Erro ao salvar estoque.');
+    } catch (err) {
+        console.error('Erro ao salvar venda:', err);
+        alert('Erro ao registrar a venda.');
+        vendaEmProcessamento = false;
+        if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
+        return;
+    }
+
+    fecharModalOverlay(modalConfirmarVenda);
+    alert(isFiado ? `Venda fiada registrada para ${resumo.clienteNome}!` : 'Venda registrada com sucesso!');
+    vendaEmProcessamento = false;
+    if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
+    limparVenda();
+}
+
+function limparVenda() {
+    produtosVenda = [];
+    if (valorContaInput) valorContaInput.value = '';
+    if (valorRecebidoInput) valorRecebidoInput.value = '';
+    if (nomeClienteFiado) nomeClienteFiado.value = '';
+    if (valorPagoInicialFiado) valorPagoInicialFiado.value = '0';
+    if (formaPagamentoInicialFiado) formaPagamentoInicialFiado.value = 'dinheiro';
+
+    formaPagamento = 'dinheiro';
+    atualizarBotoesPagamento();
+    renderizarProdutosVenda();
+    renderizarProdutosEstoqueVenda();
+    fecharModalOverlay(modalProdutosVenda);
+    pararLeitorVenda();
+    fecharModalOverlay(modalConfirmarVenda);
+    atualizarTela();
+}
+
+// ------------------------------------------------------------
+// Sugestões de Troco com Imagens
+// ------------------------------------------------------------
+const denominacoesTroco = [
+    { valor: 200, nome: 'R$ 200', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-200.jpg' },
+    { valor: 100, nome: 'R$ 100', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-100.jpg' },
+    { valor: 50, nome: 'R$ 50', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-50.jpg' },
+    { valor: 20, nome: 'R$ 20', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-20.jpg' },
+    { valor: 10, nome: 'R$ 10', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-10.jpg' },
+    { valor: 5, nome: 'R$ 5', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-5.jpg' },
+    { valor: 2, nome: 'R$ 2', tipo: 'cédula', simbolo: '💵', imagem: 'cedulas/cedula-2.jpg' },
+    { valor: 1, nome: 'R$ 1', tipo: 'moeda', simbolo: '🪙', imagem: 'cedulas/moeda-100c.jpg' },
+    { valor: 0.50, nome: 'R$ 0,50', tipo: 'moeda', simbolo: '🪙', imagem: 'cedulas/moeda-50c.jpg' },
+    { valor: 0.25, nome: 'R$ 0,25', tipo: 'moeda', simbolo: '🪙', imagem: '', rotulo: '25c' },
+    { valor: 0.10, nome: 'R$ 0,10', tipo: 'moeda', simbolo: '🪙', imagem: '', rotulo: '10c' },
+    { valor: 0.05, nome: 'R$ 0,05', tipo: 'moeda', simbolo: '🪙', imagem: '', rotulo: '5c' },
+    { valor: 0.01, nome: 'R$ 0,01', tipo: 'moeda', simbolo: '🪙', imagem: '', rotulo: '1c' }
+];
+
+function calcularMelhorTroco(valorCentavos, bloqueadas = []) {
+    if (!Number.isInteger(valorCentavos) || valorCentavos < 0 || valorCentavos > 200000) return null;
+    const bloqueadasSet = new Set(bloqueadas);
+    const infinito = 999999;
+    const dp = new Array(valorCentavos + 1).fill(infinito);
+    const anterior = new Array(valorCentavos + 1).fill(null);
+    dp[0] = 0;
+
+    for (let valor = 1; valor <= valorCentavos; valor++) {
+        for (let i = 0; i < denominacoesTroco.length; i++) {
+            if (bloqueadasSet.has(i)) continue;
+            const denom = Math.round(denominacoesTroco[i].valor * 100);
+            if (denom > valor || dp[valor - denom] === infinito) continue;
+            const qtd = dp[valor - denom] + 1;
+            if (qtd < dp[valor]) {
+                dp[valor] = qtd;
+                anterior[valor] = i;
+            }
+        }
+    }
+
+    if (dp[valorCentavos] === infinito) return null;
+
+    const quantidades = new Array(denominacoesTroco.length).fill(0);
+    let restante = valorCentavos;
+    while (restante > 0) {
+        const indice = anterior[restante];
+        if (indice === null) return null;
+        quantidades[indice]++;
+        restante -= Math.round(denominacoesTroco[indice].valor * 100);
+    }
+
+    return denominacoesTroco.map((item, idx) => quantidades[idx] > 0 ? { ...item, quantidade: quantidades[idx] } : null).filter(Boolean);
+}
+
+function gerarSugestoesTroco(valor) {
+    if (!listaCedulas) return;
+    const valorCentavos = centavos(numeroSeguro(valor));
+    if (valorCentavos <= 0) { listaCedulas.innerHTML = ''; return; }
+
+    const sugestoes = [];
+    const primeira = calcularMelhorTroco(valorCentavos);
+    if (primeira) sugestoes.push(primeira);
+
+    for (let i = 0; i < denominacoesTroco.length && sugestoes.length < 3; i++) {
+        const alternativa = calcularMelhorTroco(valorCentavos, [i]);
+        if (!alternativa) continue;
+        const assinatura = alternativa.map(item => `${item.nome}x${item.quantidade}`).join('|');
+        if (!sugestoes.some(s => s.map(item => `${item.nome}x${item.quantidade}`).join('|') === assinatura)) {
+            sugestoes.push(alternativa);
+        }
+    }
+    renderizarSugestoesTroco(sugestoes);
+}
+
+const ERRO_IMAGEM_TROCO = "this.style.display='none';this.nextElementSibling.style.display='flex';";
+
+function criarPecaTroco(item) {
+    const ehMoeda = item.tipo === 'moeda';
+    const nome = escaparHTML(item.nome);
+    const empilhada = !ehMoeda && item.quantidade > 1;
+    let visual = '';
+
+    if (!ehMoeda) {
+        const sombra = empilhada ? '5px 5px 0 -1px #c5ccd1, 10px 10px 0 -2px #dde2e6, 0 3px 8px rgba(0,0,0,0.2)' : '0 3px 8px rgba(0,0,0,0.25)';
+        visual = `
+            <div style="position:relative;width:100%;box-sizing:border-box;padding:0 ${empilhada ? 10 : 0}px ${empilhada ? 10 : 0}px 0;">
+                <img src="${escaparAtributo(item.imagem)}" alt="${escaparAtributo(item.nome)}" onerror="${ERRO_IMAGEM_TROCO}" style="display:block;width:100%;height:auto;border-radius:8px;box-shadow:${sombra};">
+                <div style="display:none;align-items:center;justify-content:center;aspect-ratio:2/1;border-radius:8px;background:#e8efe9;color:#27343d;font-weight:700;">${item.simbolo} ${nome}</div>
+            </div>`;
+    } else if (item.imagem) {
+        visual = `
+            <div style="position:relative;width:64px;height:64px;">
+                <img src="${escaparAtributo(item.imagem)}" alt="${escaparAtributo(item.nome)}" onerror="${ERRO_IMAGEM_TROCO}" style="display:block;width:64px;height:64px;border-radius:50%;object-fit:cover;box-shadow:0 3px 8px rgba(0,0,0,0.25);">
+                <div style="display:none;width:64px;height:64px;border-radius:50%;align-items:center;justify-content:center;background:#e8efe9;font-size:26px;">${item.simbolo}</div>
+            </div>`;
+    } else {
+        visual = `<div style="width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%, #e0a86a, #a8692f);border:3px solid #c98a4b;box-sizing:border-box;box-shadow:0 3px 8px rgba(0,0,0,0.25);color:#fff;font-weight:800;font-size:16px;">${escaparHTML(item.rotulo || '')}</div>`;
+    }
+
+    return `
+        <div style="position:relative;width:${ehMoeda ? '72px' : 'calc(50% - 6px)'};box-sizing:border-box;display:flex;flex-direction:column;align-items:${ehMoeda ? 'center' : 'stretch'};gap:6px;">
+            <div style="position:relative;">
+                ${visual}
+                <span style="position:absolute;top:-8px;right:-6px;min-width:28px;height:28px;padding:0 6px;border-radius:14px;border:2px solid #fff;background:#20a66a;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.25);">${item.quantidade}×</span>
+            </div>
+            <strong style="font-size:13px;color:#27343d;text-align:center;">${nome}</strong>
+        </div>`;
+}
+
+function renderizarSugestoesTroco(sugestoes) {
+    if (!listaCedulas) return;
+    if (!sugestoes.length) { listaCedulas.innerHTML = '<p>Não foi possível montar sugestões de troco.</p>'; return; }
+
+    listaCedulas.innerHTML = sugestoes.map((sugestao, idx) => {
+        const totalPecas = sugestao.reduce((s, i) => s + i.quantidade, 0);
+        return `
+            <div class="sugestao-troco${idx === 0 ? ' destaque' : ''}" style="margin-bottom:14px;padding:14px;border-radius:16px;border:${idx === 0 ? '2px solid #20a66a' : '1px solid #dfe4e7'};background:${idx === 0 ? '#effaf5' : '#fff'};">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <strong style="font-size:18px;color:#27343d">${idx === 0 ? '⭐ Opção 1' : `Opção ${idx + 1}`}</strong>
+                    <small>${totalPecas} ${totalPecas === 1 ? 'peça' : 'peças'}</small>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:18px 12px;">
+                    ${sugestao.map(criarPecaTroco).join('')}
+                </div>
+            </div>`;
+    }).join('');
+}
+
+// Inicializador automático
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
+} else {
+    iniciarCalculadora();
+}
