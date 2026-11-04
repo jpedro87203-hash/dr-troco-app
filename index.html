@@ -823,35 +823,7 @@
   <script src="fiado.js"></script>
   <script src="script.js"></script>
   <script src="backup.js"></script>
-
-  <!-- SCRIPT DE LIMPEZA DO CÓDIGO NOS CARDS -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const observer = new MutationObserver(() => {
-        removerCodigosDosCards();
-      });
-
-      const listaEstoque = document.getElementById('listaProdutosEstoqueVenda');
-      if (listaEstoque) {
-        observer.observe(listaEstoque, { childList: true, subtree: true });
-      }
-
-      function removerCodigosDosCards() {
-        const cards = document.querySelectorAll('.cartao-produto-grade');
-        cards.forEach(card => {
-          const elementosSmall = card.querySelectorAll('small, span, div');
-          elementosSmall.forEach(el => {
-            if (el.innerHTML.includes('Código') || el.innerHTML.includes('código')) {
-              let html = el.innerHTML;
-              html = html.replace(/Código:[^·•\<\s]*/gi, '').replace(/[·•]\s*Código:[^<]*/gi, '').replace(/Código:[^<]*/gi, '');
-              el.innerHTML = html;
-            }
-          });
-        });
-      }
-    });
-  </script>
-
+  
   <!-- CONEXÃO DOS BOTÕES DE BACKUP -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
