@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", () => {
   "use strict";
 
@@ -55,6 +54,28 @@ document.addEventListener("DOMContentLoaded", () => {
       cidadeEstabelecimento: detalhes?.cidade || "",
       estadoEstabelecimento: detalhes?.estado || ""
     };
+  }
+
+  // NOVO: detecta se o usuário veio pelo botão "Editar dados" do painel.
+  // O painel precisa apontar para estabelecimento.html?editar=1
+  function estaEmModoEdicao() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("editar") === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // NOVO: um cadastro só é considerado válido se os campos
+  // obrigatórios estiverem preenchidos.
+  function dadosValidos(dados) {
+    if (!dados) return false;
+    const nome = String(dados.nomeEstabelecimento || "").trim();
+    const responsavel = String(
+      dados.responsavelEstabelecimento || ""
+    ).trim();
+    return Boolean(nome && responsavel);
   }
 
   async function obterComercio(client, usuarioId) {
@@ -136,7 +157,20 @@ document.addEventListener("DOMContentLoaded", () => {
       preencherCampos(dados);
       localStorage.setItem(CHAVE, JSON.stringify(dados));
 
-      mostrarMensagem("Dados carregados do Supabase.");
+      // CORREÇÃO PRINCIPAL:
+      // Se os dados já existem e são válidos, e o usuário NÃO veio
+      // pelo botão "Editar dados" do painel, vai direto para o painel.
+      // Se veio em modo edição, permanece no formulário preenchido.
+      if (!estaEmModoEdicao() && dadosValidos(dados)) {
+        window.location.replace("painel-lojista.html");
+        return;
+      }
+
+      mostrarMensagem(
+        estaEmModoEdicao()
+          ? "Editando os dados do estabelecimento."
+          : "Dados carregados do Supabase."
+      );
     } catch (erro) {
       console.error("Erro ao carregar estabelecimento:", erro);
       mostrarMensagem(
@@ -216,6 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Salva os demais dados vinculados ao mesmo comércio.
+      // upsert com onConflict garante que NÃO duplica cadastro.
       const { error: detalhesErro } = await client
         .from("dados_estabelecimento")
         .upsert(
@@ -253,4 +288,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
   carregarDados();
 });
-
