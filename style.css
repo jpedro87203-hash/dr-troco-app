@@ -1,3300 +1,3097 @@
-/* =========================================================
 DR. TROCO — NOVA VENDA
 ESTILO COMPLETO CORRIGIDO
 ========================================================= */
 
-
 :root {
-
---verde: #20a767;
-
+--verde: #20ª767;
 --verde-escuro: #168b53;
-
 --verde-claro: #eaf8f1;
-
 --verde-suave: #f3fbf7;
 
-
 --texto: #263640;
-
 --texto-2: #56656e;
-
 --texto-3: #7b898f;
 
-
 --fundo: #f3f7f5;
-
 --branco: #ffffff;
 
-
 --borda: #e1e9e5;
-
 --vermelho: #d94b4b;
 
-
 --sombra: 0 6px 22px rgba(34, 55, 46, .08);
-
 --sombra-forte: 0 15px 40px rgba(25, 45, 37, .14);
 
-
 }
-
 
 /* =========================================================
-
 RESET — CORRIGIDO
-
 ========================================================= */
 
-
 *,
-
 *::before,
-
 *::after {
-
 Box-sizing: border-box;
-
 }
-
 
 Html {
-
 Min-height: 100%;
-
 }
-
 
 Body {
-
 Margin: 0;
-
 Min-height: 100vh;
-
 Min-height: 100dvh;
-
 Background: linear-gradient(180deg, #f7faf8 0%, #eef5f1 100%);
-
 Color: var(--texto);
-
 Font-family: Arial, Helvetica, sans-serif;
-
 -webkit-font-smoothing: antialiased;
-
 Padding-bottom: 78px;
-
 }
 
-
 Button,
-
 Input {
-
 Font: inherit;
-
 }
 
 Button {
-
 -webkit-tap-highlight-color: transparent;
-
 Touch-action: manipulation;
-
 }
 
-
-A{
-
+A {
 Color: inherit;
-
 Text-decoration: none;
-
 }
-
 
 Img {
-
 Max-width: 100%;
-
 }
 
-
 /* =========================================================
-
 CONTAINER PRINCIPAL
-
 ========================================================= */
 
-
 .app-container {
-
 Width: 100%;
-
 Max-width: 760px;
-
 Margin: 0 auto;
-
 Padding: 0 14px 25px;
-
 }
 
-
 /* =========================================================
-
 CABEÇALHO
-
 ========================================================= */
 
 .app-header {
-
 Width: 100%;
-
 Display: flex;
-
 Align-items: center;
-
 Gap: 13px;
-
 Padding: 20px 4px 16px;
-
 }
-
 
 .header-logo {
-
 Width: 48px;
-
 Height: 48px;
-
 Flex: 0 0 48px;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: center;
-
 Border-radius: 15px;
-
 Background: linear-gradient(135deg, #25ad6d, #168b53);
-
 Color: #fff;
-
 Font-size: 25px;
-
 Box-shadow: 0 7px 17px rgba(32, 167, 103, .20);
-
 }
-
 
 .app-header h1 {
-
 Margin: 0;
-
 Color: #263640;
-
 Font-size: 22px;
-
 Line-height: 1.1;
-
 Font-weight: 900;
-
 }
-
 
 .app-header p {
-
 Margin: 4px 0 0;
-
-Color: #7a888d;
-
+Color: #7ª888d;
 Font-size: 12px;
-
 Font-weight: 600;
-
 }
 
-
 /* =========================================================
-
 ÁREA PRINCIPAL
-
 ========================================================= */
-
 
 .calculadora-app {
-
 Width: 100%;
-
 }
-
 
 .card.calculadora-card {
-
 Width: 100%;
-
 Padding: 17px;
-
 Border: 1px solid rgba(222, 232, 227, .9);
-
 Border-radius: 22px;
-
 Background: #fff;
-
 Box-shadow: var(--sombra-forte);
-
 }
 
-
 /* =========================================================
-
 CABEÇALHO DA VENDA
-
 ========================================================= */
-
 
 .cabecalho-calculadora {
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: space-between;
-
 Gap: 15px;
-
 Margin-bottom: 18px;
-
 Padding-bottom: 15px;
-
 Border-bottom: 1px solid #edf2ef;
-
 }
-
 
 .cabecalho-calculadora .texto-pequeno {
-
 Display: block;
-
 Margin-bottom: 4px;
-
 Color: var(--verde);
-
 Font-size: 10px;
-
 Font-weight: 900;
-
 Letter-spacing: 1px;
-
 }
-
 
 .cabecalho-calculadora h2 {
-
 Margin: 0;
-
 Color: var(--texto);
-
 Font-size: 23px;
-
 Line-height: 1.15;
-
 Font-weight: 900;
-
 }
-
 
 .icone-venda {
-
 Width: 45px;
-
 Height: 45px;
-
 Flex: 0 0 45px;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: center;
-
 Border-radius: 13px;
-
 Background: var(--verde-claro);
-
 Font-size: 22px;
-
 }
 
-
 /* =========================================================
-
 SEÇÕES
-
 ========================================================= */
 
-
 .secao-venda,
-
 .secao-troco {
-
 Width: 100%;
-
 Margin-top: 17px;
-
 Padding: 15px;
-
 Border: 1px solid #e7eeea;
-
 Border-radius: 17px;
-
 Background: #fff;
-
 }
 
 .produtos-venda {
-
 Margin-top: 0;
-
 }
-
 
 .titulo-secao {
-
 Width: 100%;
-
 Margin-bottom: 12px;
-
 }
-
 
 .titulo-secao > div {
-
 Display: flex;
-
 Align-items: center;
-
 Gap: 10px;
-
 Min-width: 0;
-
 }
 
-
 .titulo-icone {
-
 Width: 36px;
-
 Height: 36px;
-
 Flex: 0 0 36px;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: center;
-
 Border-radius: 10px;
-
 Background: var(--verde-suave);
-
 Font-size: 17px;
-
 }
 
 .titulo-secao h3 {
-
 Margin: 0;
-
 Color: var(--texto);
-
 Font-size: 15px;
-
 Line-height: 1.2;
-
 Font-weight: 900;
-
 }
-
 
 .titulo-secao p {
-
 Margin: 3px 0 0;
-
 Color: var(--texto-3);
-
 Font-size: 10px;
-
 Line-height: 1.3;
-
 }
-
 
 /* =========================================================
-
 BOTÃO ADICIONAR PRODUTO
-
 ========================================================= */
 
-
 .btn-adicionar-produto {
-
 Width: 100%;
-
 Min-height: 68px;
-
 Display: flex;
-
 Align-items: center;
-
 Gap: 12px;
-
 Padding: 11px 13px;
-
 Border: 1px dashed #8bcdae;
-
 Border-radius: 15px;
-
 Background: linear-gradient(135deg, #f2fcf7, #eaf8f1);
-
-Color: #227a55;
-
+Color: #227ª55;
 Text-align: left;
-
 Cursor: pointer;
-
 Touch-action: manipulation;
-
 Transition: transform .12s ease, border-color .12s ease, background .12s ease;
-
 }
-
 
 .btn-adicionar-produto:active {
-
 Transform: scale(.985);
-
 Border-color: var(--verde);
-
 }
 
-
 .btn-adicionar-produto .icone-plus {
-
 Width: 44px;
-
 Height: 44px;
-
 Min-width: 44px;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: center;
-
 Border-radius: 13px;
-
 Background: var(--verde);
-
 Color: #fff;
-
 Font-size: 25px;
-
 Font-weight: 900;
-
 Box-shadow: 0 5px 12px rgba(32, 167, 103, .18);
-
 }
 
 .btn-adicionar-produto strong {
-
 Display: block;
-
-Color: #227a55;
-
+Color: #227ª55;
 Font-size: 14px;
-
 Line-height: 1.2;
-
 Font-weight: 900;
-
 }
-
 
 .btn-adicionar-produto small {
-
 Display: block;
-
 Margin-top: 4px;
-
-Color: #71817a;
-
+Color: #71817ª;
 Font-size: 10px;
-
 Line-height: 1.25;
-
 Font-weight: 600;
-
 }
 
-
 /* =========================================================
-
 LISTA DE PRODUTOS DA VENDA
-
 ========================================================= */
 
-
 .lista-produtos-venda {
-
 Width: 100%;
-
 Display: flex;
-
 Flex-direction: column;
-
 Gap: 10px;
-
 Margin-top: 10px;
-
 }
 
 /* Impede que fotos dos produtos já adicionados ocupem a tela inteira */
-
 .lista-produtos-venda img {
-
 Width: 72px !important;
-
 Height: 72px !important;
-
 Min-width: 72px !important;
-
 Min-height: 72px !important;
-
 Max-width: 72px !important;
-
 Max-height: 72px !important;
-
 Object-fit: cover !important;
-
 Display: block;
-
 Border-radius: 12px;
-
 Background: #f3f6f4;
-
 }
-
 
 .lista-produtos-venda .produto-foto {
-
 Width: 72px !important;
-
 Height: 72px !important;
-
 Min-width: 72px !important;
-
 Max-width: 72px !important;
-
 Overflow: hidden;
-
 Border-radius: 12px;
-
 Background: #f3f6f4;
-
 Flex-shrink: 0;
-
 }
-
 
 .lista-produtos-venda .produto-foto img {
-
 Width: 100% !important;
-
 Height: 100% !important;
-
 Max-width: none !important;
-
 Max-height: none !important;
-
 Object-fit: cover !important;
-
 }
-
 
 .lista-produtos-venda .produto-venda-item,
-
 .lista-produtos-venda .produto-item,
-
 .lista-produtos-venda > div {
-
 Min-width: 0;
-
 }
 
-
 /* =========================================================
-
 ESTADO VAZIO
-
 ========================================================= */
 
-
 .produtos-vazio {
-
 Width: 100%;
-
 Padding: 23px 12px;
-
 Display: flex;
-
 Flex-direction: column;
-
 Align-items: center;
-
 Text-align: center;
-
 Border: 1px dashed #dce7e1;
-
 Border-radius: 15px;
-
 Background: #fafcfb;
-
 }
 
 .produtos-vazio-icone {
-
 Margin-bottom: 7px;
-
 Font-size: 29px;
-
 }
-
 
 .produtos-vazio strong {
-
 Color: #53635d;
-
 Font-size: 12px;
-
 Font-weight: 900;
-
 }
-
 
 .produtos-vazio span {
-
 Margin-top: 4px;
-
 Color: #899590;
-
 Font-size: 10px;
-
 }
 
-
 /* =========================================================
-
 VALOR AVULSO
-
 ========================================================= */
-
 
 .valor-avulso {
-
 Background: #fbfdfc;
-
 }
-
 
 .campo-dinheiro {
-
 Width: 100%;
-
 Height: 55px;
-
 Display: flex;
-
 Align-items: center;
-
 Gap: 9px;
-
 Padding: 0 13px;
-
 Border: 1px solid #dce6e1;
-
 Border-radius: 14px;
-
 Background: #f8faf9;
-
 Transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-
 }
-
 
 .campo-dinheiro:focus-within {
-
 Border-color: var(--verde);
-
 Background: #fff;
-
 Box-shadow: 0 0 0 3px rgba(32, 167, 103, .09);
-
 }
-
 
 .simbolo-moeda {
-
 Color: #697873;
-
 Font-size: 13px;
-
 Font-weight: 900;
-
 }
-
 
 .campo-dinheiro input {
-
 Width: 100%;
-
 Min-width: 0;
-
 Height: 100%;
-
 Padding: 0;
-
 Border: 0;
-
 Outline: 0;
-
 Background: transparent;
-
 Color: var(--texto);
-
 Font-size: 20px;
-
 Font-weight: 900;
-
 }
-
 
 .campo-dinheiro input::placeholder {
-
 Color: #a3afaa;
-
 }
 
-
 /* =========================================================
-
 RESUMO DA VENDA
-
 ========================================================= */
-
 
 .resumo-venda-card {
-
 Width: 100%;
-
 Margin-top: 17px;
-
 Padding: 16px;
-
 Border-radius: 17px;
-
 Background: linear-gradient(135deg, #173c2b, #176642);
-
 Color: #fff;
-
 Box-shadow: 0 8px 20px rgba(24, 91, 61, .17);
-
 }
-
 
 .resumo-venda-topo {
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: space-between;
-
 Gap: 12px;
-
 }
-
 
 .resumo-venda-topo span {
-
 Color: rgba(255, 255, 255, .78);
-
 Font-size: 11px;
-
 Font-weight: 700;
-
 }
-
 
 .resumo-venda-topo strong {
-
 Color: #fff;
-
 Font-size: 23px;
-
 Font-weight: 900;
-
 White-space: nowrap;
-
 }
-
 
 .resumo-venda-info {
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: space-between;
-
 Gap: 10px;
-
 Margin-top: 11px;
-
 Padding-top: 10px;
-
 Border-top: 1px solid rgba(255, 255, 255, .13);
-
 }
-
 
 .resumo-venda-info > span {
-
 Color: rgba(255, 255, 255, .68);
-
 Font-size: 10px;
-
 Font-weight: 700;
-
 }
-
 
 .btn-limpar-venda {
-
 Min-height: 30px;
-
 Padding: 5px 9px;
-
 Border: 1px solid rgba(255, 255, 255, .22);
-
 Border-radius: 8px;
-
 Background: rgba(255, 255, 255, .08);
-
 Color: #fff;
-
 Font-size: 9px;
-
 Font-weight: 800;
-
 Cursor: pointer;
-
 }
 
-
 /* =========================================================
-
 FORMAS DE PAGAMENTO
-
 ========================================================= */
 
-
 .payment-options {
-
 Width: 100%;
-
 Display: grid;
-
 Grid-template-columns: repeat(4, minmax(0, 1fr));
-
 Gap: 7px;
-
 }
 
 .btn-payment {
-
 Min-width: 0;
-
 Min-height: 65px;
-
 Display: flex;
-
 Flex-direction: column;
-
 Align-items: center;
-
 Justify-content: center;
-
 Gap: 5px;
-
 Padding: 7px 4px;
-
 Border: 1px solid #dfe8e3;
-
 Border-radius: 12px;
-
 Background: #fafcfb;
-
 Color: #64726c;
-
 Cursor: pointer;
-
 Transition: background .12s ease, border-color .12s ease, transform .12s ease;
-
 }
-
 
 .btn-payment span {
-
 Font-size: 19px;
-
 }
-
 
 .btn-payment strong {
-
 Font-size: 9px;
-
 Font-weight: 800;
-
 }
-
 
 .btn-payment.active {
-
 Border-color: #75c99d;
-
 Background: #eaf8f1;
-
 Color: #148751;
-
 Box-shadow: inset 0 0 0 1px rgba(32, 167, 103, .05);
-
 }
-
 
 .btn-payment:active {
-
 Transform: scale(.96);
-
 }
 
-
 /* =========================================================
-
 VALOR RECEBIDO
-
 ========================================================= */
-
 
 .secao-recebido {
-
 Transition: opacity .2s ease, transform .2s ease;
-
 }
-
 
 .info-taxa {
-
 Width: 100%;
-
 Margin-top: 12px;
-
 Padding: 10px 12px;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: space-between;
-
 Gap: 10px;
-
 Border-radius: 11px;
-
 Background: #fff8e7;
-
-Color: #8a6b20;
-
+Color: #8ª6b20;
 Font-size: 10px;
-
 Font-weight: 700;
-
 }
-
 
 .info-taxa strong {
-
 Color: #9b7318;
-
 }
-
 
 /* =========================================================
-
 TROCO
-
 ========================================================= */
 
-
 .resultado-troco {
-
 Width: 100%;
-
 Margin-top: 14px;
-
 Padding: 15px;
-
 Border-radius: 16px;
-
 Background: linear-gradient(135deg, #effaf4, #e6f7ed);
-
 Border: 1px solid #cfeadb;
-
 }
 
-
 .resultado-troco-topo {
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: space-between;
-
 Gap: 12px;
-
 }
 
 .resultado-troco-topo span {
-
 Display: block;
-
 Color: #3e5d4d;
-
 Font-size: 13px;
-
 Font-weight: 900;
-
 }
-
 
 .resultado-troco-topo small {
-
 Display: block;
-
 Margin-top: 3px;
-
 Color: #789086;
-
 Font-size: 9px;
-
 }
-
 
 .resultado-troco-topo strong {
-
 Color: #15945b;
-
 Font-size: 22px;
-
 Font-weight: 900;
-
 White-space: nowrap;
-
 }
 
-
 /* =========================================================
-
 COMBINAÇÕES DE TROCO
-
 ========================================================= */
 
-
 .lista-combinacoes-troco {
-
 Width: 100%;
-
 }
 
 .troco-vazio {
-
 Padding: 22px 12px;
-
 Display: flex;
-
 Flex-direction: column;
-
 Align-items: center;
-
 Text-align: center;
-
 Border: 1px dashed #dce6e1;
-
 Border-radius: 14px;
-
 Background: #fafcfb;
-
 }
-
 
 .troco-vazio > div {
-
 Margin-bottom: 7px;
-
 Font-size: 28px;
-
 }
-
 
 .troco-vazio strong {
-
 Color: #53645d;
-
 Font-size: 12px;
-
 }
-
 
 .troco-vazio span {
-
 Margin-top: 4px;
-
 Color: #8b9692;
-
 Font-size: 10px;
-
 }
 
 /* =========================================================
-
 BOTÕES PRINCIPAIS
-
 ========================================================= */
-
 
 .btn-primary,
-
 .btn-registrar-venda {
-
 Width: 100%;
-
 Min-height: 56px;
-
 Margin-top: 17px;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: center;
-
 Gap: 8px;
-
 Border: 0;
-
 Border-radius: 15px;
-
 Background: linear-gradient(135deg, #25aa6a, #168d54);
-
 Color: #fff;
-
 Font-size: 15px;
-
 Font-weight: 900;
-
 Cursor: pointer;
-
 Box-shadow: 0 8px 18px rgba(32, 167, 103, .20);
-
 Touch-action: manipulation;
-
 Transition: transform .12s ease, box-shadow .12s ease;
-
 }
-
 
 .btn-primary:active,
-
 .btn-registrar-venda:active {
-
 Transform: scale(.985);
-
 }
-
 
 .btn-cancelar-venda {
-
 Width: 100%;
-
 Min-height: 44px;
-
 Margin-top: 8px;
-
 Border: 1px solid #eadede;
-
 Border-radius: 12px;
-
 Background: #fff7f7;
-
 Color: #a65353;
-
 Font-size: 11px;
-
 Font-weight: 800;
-
 Cursor: pointer;
-
 }
 
-
 /* =========================================================
-
 MODAIS — BASE
-
 ========================================================= */
 
-
 .modal-overlay {
-
 Position: fixed;
-
 Inset: 0;
-
 Width: 100%;
-
 Height: 100%;
-
 Display: none;
-
 Align-items: center;
-
 Justify-content: center;
-
 Padding: 8px;
-
 Box-sizing: border-box;
-
 Background: rgba(12, 26, 35, .68);
-
 z-index: 9999;
-
 overflow: hidden;
-
 -webkit-overflow-scrolling: touch;
-
 }
-
 
 .modal-overlay.hidden {
-
 Display: none !important;
-
 }
-
 
 .modal-overlay.aberto {
-
 Display: flex !important;
-
 }
-
 
 .modal-box {
-
 Width: min(100%, 620px);
-
-Max-height: calc(100dvh - 16px);
-
+Max-height: calc(100dvh – 16px);
 Box-sizing: border-box;
-
 Padding: 17px;
-
 Border-radius: 22px;
-
 Background: #fff;
-
 Box-shadow: 0 25px 70px rgba(0, 0, 0, .28);
-
 }
 
-
 /* =========================================================
-
 CABEÇALHO DOS MODAIS
-
 ========================================================= */
 
 .modal-cabecalho {
-
 Width: 100%;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: space-between;
-
 Gap: 12px;
-
 Margin-bottom: 12px;
-
 }
-
 
 .modal-cabecalho > div {
-
 Min-width: 0;
-
 }
-
 
 .modal-cabecalho .texto-pequeno {
-
 Display: block;
-
 Margin-bottom: 3px;
-
 Color: var(--verde);
-
 Font-size: 9px;
-
 Font-weight: 900;
-
 Letter-spacing: .8px;
-
 }
-
 
 .modal-cabecalho h3 {
-
 Margin: 0;
-
 Color: var(--texto);
-
 Font-size: 20px;
-
 Line-height: 1.15;
-
 Font-weight: 900;
-
 }
-
 
 .btn-fechar-modal {
-
 Width: 40px;
-
 Height: 40px;
-
 Min-width: 40px;
-
 Flex: 0 0 40px;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: center;
-
 Padding: 0;
-
 Border: 0;
-
 Border-radius: 11px;
-
 Background: #f1f5f3;
-
 Color: #56656d;
-
 Font-size: 25px;
-
 Line-height: 1;
-
 Cursor: pointer;
-
 }
 
-
 /* =========================================================
-
 MODAL ADICIONAR PRODUTO
-
 ========================================================= */
-
 
 .modal-produtos-venda {
-
 Width: min(100%, 640px);
-
-Height: min(760px, calc(100dvh - 16px));
-
-Max-height: calc(100dvh - 16px);
-
+Height: min(760px, calc(100dvh – 16px));
+Max-height: calc(100dvh – 16px);
 Display: flex;
-
 Flex-direction: column;
-
 Overflow: hidden;
-
 Padding: 16px;
-
 }
 
-
 /* =========================================================
-
 BOTÃO LEITOR
-
 ========================================================= */
-
 
 .modal-produtos-venda .btn-leitor-venda {
-
 Flex: 0 0 auto;
-
 Margin: 0 0 8px;
-
 Border-style: solid;
-
 Border-color: #cbe9d9;
-
 Background: linear-gradient(135deg, #eefaf4, #e4f7ed);
-
 }
-
 
 .modal-produtos-venda .btn-leitor-venda .icone-plus {
-
 Width: 36px;
-
 Height: 36px;
-
 Min-width: 36px;
-
 Flex-basis: 36px;
-
 Border-radius: 10px;
-
 Font-size: 17px;
-
 }
 
 /* =========================================================
-
 BUSCA DO MODAL
-
 ========================================================= */
-
 
 .campo-busca-produto {
-
 Width: 100%;
-
 Min-height: 44px;
-
 Display: flex;
-
 Align-items: center;
-
 Gap: 8px;
-
 Margin: 0 0 9px;
-
 Padding: 0 11px;
-
 Border: 1px solid #dfe7e3;
-
 Border-radius: 12px;
-
 Background: #f8faf9;
-
 Box-sizing: border-box;
-
 Flex: 0 0 auto;
-
 }
-
 
 .campo-busca-produto:focus-within {
-
 Border-color: var(--verde);
-
 Background: #fff;
-
 Box-shadow: 0 0 0 3px rgba(32, 167, 103, .08);
-
 }
-
 
 .campo-busca-produto > span {
-
 Flex: 0 0 auto;
-
 Font-size: 15px;
-
 }
-
 
 .campo-busca-produto input {
-
 Width: 100%;
-
 Min-width: 0;
-
 Height: 42px;
-
 Padding: 0;
-
 Border: 0;
-
 Outline: 0;
-
 Background: transparent;
-
 Color: var(--texto);
-
 Font-size: 13px;
-
 Font-weight: 600;
-
 }
-
 
 .campo-busca-produto input::placeholder {
-
 Color: #8b9894;
-
 }
 
-
 /* =========================================================
-
 GRID DOS PRODUTOS — 3 COLUNAS
-
 ========================================================= */
 
-
 .lista-produtos-estoque-venda {
-
 Flex: 1 1 auto;
-
 Min-height: 0;
-
 Width: 100%;
-
 Display: grid;
-
 Grid-template-columns: repeat(3, minmax(0, 1fr));
-
 Align-content: start;
-
 Gap: 7px;
-
 Margin: 0;
-
 Padding: 2px 1px 9px;
-
 Overflow-y: auto;
-
 Overflow-x: hidden;
-
 Box-sizing: border-box;
-
 -webkit-overflow-scrolling: touch;
-
 }
-
 
 .lista-produtos-estoque-venda::-webkit-scrollbar {
-
 Width: 5px;
-
 }
-
 
 .lista-produtos-estoque-venda::-webkit-scrollbar-track {
-
 Background: transparent;
-
 }
-
 
 .lista-produtos-estoque-venda::-webkit-scrollbar-thumb {
-
 Background: #cbd8d2;
-
 Border-radius: 20px;
-
 }
 
-
 /* =========================================================
-
 CARD DO PRODUTO DO MODAL
-
 ========================================================= */
 
 .lista-produtos-estoque-venda .produto-card {
-
 Width: 100%;
-
 Min-width: 0;
-
 Margin: 0;
-
 Overflow: hidden;
-
 Display: block;
-
 Box-sizing: border-box;
-
 Border: 1px solid #e1e9e5;
-
 Border-radius: 14px;
-
 Background: #fff;
-
 Box-shadow: 0 2px 8px rgba(32, 48, 60, .055);
-
 }
-
 
 .lista-produtos-estoque-venda .produto-card-conteudo {
-
 Width: 100%;
-
 Min-width: 0;
-
 Min-height: 162px;
-
 Display: flex;
-
 Flex-direction: column;
-
 Gap: 4px;
-
 Padding: 6px;
-
 Box-sizing: border-box;
-
 }
 
-
 /* =========================================================
-
 IMAGEM DOS CARDS
-
 ========================================================= */
 
 .lista-produtos-estoque-venda .produto-foto,
-
 .lista-produtos-estoque-venda .produto-imagem,
-
 .lista-produtos-estoque-venda .produto-inicial {
-
 Width: 100%;
-
 Height: 55px;
-
 Min-height: 55px;
-
 Max-height: 55px;
-
 Flex: 0 0 55px;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: center;
-
 Overflow: hidden;
-
 Border-radius: 9px;
-
 Background: #f2f7f5;
-
 }
-
 
 .lista-produtos-estoque-venda .produto-foto img,
-
 .lista-produtos-estoque-venda .produto-imagem img {
-
 Width: 100%;
-
 Height: 100%;
-
 Max-width: 100%;
-
 Max-height: 100%;
-
 Display: block;
-
 Object-fit: contain;
-
 Border-radius: 9px;
-
 }
-
 
 .lista-produtos-estoque-venda .produto-inicial {
-
 Color: var(--verde);
-
 Font-size: 23px;
-
 }
 
-
 /* =========================================================
-
 INFORMAÇÕES DOS PRODUTOS
-
 ========================================================= */
-
 
 .lista-produtos-estoque-venda .produto-info {
-
 Width: 100%;
-
 Min-width: 0;
-
 Overflow: hidden;
-
 Display: flex;
-
 Flex-direction: column;
-
 Gap: 2px;
-
 }
-
 
 .lista-produtos-estoque-venda .produto-nome,
-
 .lista-produtos-estoque-venda .produto-info h3 {
-
 Display: -webkit-box;
-
 -webkit-box-orient: vertical;
-
 -webkit-line-clamp: 2;
-
 Overflow: hidden;
-
 Min-height: 27px;
-
 Max-height: 27px;
-
 Margin: 0;
-
 Color: #30404b;
-
 Font-size: 10.5px;
-
 Line-height: 1.28;
-
 Font-weight: 800;
-
 }
-
 
 .lista-produtos-estoque-venda .produto-codigo {
-
 Display: none;
-
 }
-
 
 .lista-produtos-estoque-venda .produto-estoque {
-
 Display: block;
-
 Overflow: hidden;
-
 White-space: nowrap;
-
 Text-overflow: ellipsis;
-
 Color: #74827f;
-
 Font-size: 8.5px;
-
 Line-height: 1.2;
-
 Font-weight: 700;
-
 }
-
 
 .lista-produtos-estoque-venda .produto-preco,
-
 .lista-produtos-estoque-venda .produto-valor {
-
 Display: block;
-
 Margin-top: 1px;
-
 Overflow: hidden;
-
 White-space: nowrap;
-
 Text-overflow: ellipsis;
-
 Color: #15945b;
-
 Font-size: 12px;
-
 Line-height: 1.2;
-
 Font-weight: 900;
-
 }
-
 
 /* =========================================================
-
 QUANTIDADE
-
 ========================================================= */
 
-
 .lista-produtos-estoque-venda .produto-lado {
-
 Width: 100%;
-
 Min-width: 0;
-
 Margin-top: auto;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: space-between;
-
 Gap: 3px;
-
 }
 
-
 .lista-produtos-estoque-venda .produto-quantidade {
-
 Min-width: 0;
-
 Overflow: hidden;
-
 White-space: nowrap;
-
 Text-overflow: ellipsis;
-
 Color: #738088;
-
 Font-size: 8px;
-
 Line-height: 1.2;
-
 Font-weight: 700;
-
 }
 
 .lista-produtos-estoque-venda .produto-quantidade strong {
-
 Color: #30404b;
-
 Font-size: 9px;
-
 Font-weight: 900;
-
 }
-
 
 .lista-produtos-estoque-venda .controle-quantidade {
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: flex-end;
-
 Gap: 2px;
-
 Flex-shrink: 0;
-
 }
-
 
 .lista-produtos-estoque-venda .controle-quantidade button {
-
 Width: 27px;
-
 Height: 27px;
-
 Min-width: 27px;
-
 Min-height: 27px;
-
 Flex: 0 0 27px;
-
 Display: flex;
-
 Align-items: center;
-
 Justify-content: center;
-
 Padding: 0;
-
 Border: 0;
-
 Border-radius: 7px;
-
 Background: #e9f7ef;
-
 Color: #15945b;
-
 Font-size: 16px;
-
 Line-height: 1;
-
 Font-weight: 900;
-
 Cursor: pointer;
-
 Touch-action: manipulation;
-
 }
-
 
 .lista-produtos-estoque-venda .controle-quantidade button:disabled {
-
 Opacity: .42;
-
 Cursor: not-allowed;
-
 }
-
 
 .lista-produtos-estoque-venda .controle-quantidade span {
-
 Min-width: 16px;
-
 Text-align: center;
-
 Color: #374651;
-
 Font-size: 11px;
-
 Font-weight: 900;
-
 }
 
-
 /* =========================================================
-
 ESTADO VAZIO DO MODAL
-
 ========================================================= */
-
 
 .lista-produtos-estoque-venda .estado-produtos-venda,
-
 .lista-produtos-estoque-venda .produtos-venda-vazio {
-
 Grid-column: 1 / -1;
-
 Width: 100%;
-
 Min-height: 170px;
-
 Display: flex;
-
 Flex-direction: column;
-
 Align-items: center;
-
 Justify-content: center;
-
 Padding: 20px;
-
 Box-sizing: border-box;
-
 Border: 1px dashed #d6e1db;
-
 Border-radius: 15px;
-
 Background: #f8faf9;
-
 Text-align: center;
-
 }
-
 
 .lista-produtos-estoque-venda .estado-produtos-venda > div,
-
 .lista-produtos-estoque-venda .icone-vazio {
-
 Margin-bottom: 7px;
-
 Font-size: 28px;
-
 }
-
 
 .lista-produtos-estoque-venda .estado-produtos-venda strong,
-
 .lista-produtos-estoque-venda .produtos-venda-vazio strong {
-
 Color: #42534b;
-
 Font-size: 12px;
-
 Font-weight: 900;
-
 }
-
 
 .lista-produtos-estoque-venda .produtos-venda-vazio p {
-
 Max-width: 270px;
-
 Margin: 5px 0 0;
-
 Color: #87938e;
-
 Font-size: 10px;
-
 Line-height: 1.4;
-
 }
 
-
 /* =========================================================
-
 CONCLUIR ADIÇÃO DE PRODUTOS
-
 ========================================================= */
-
 
 .modal-produtos-venda .modal-acoes-venda {
-
 Flex: 0 0 auto;
-
 Width: 100%;
-
 Margin: 0;
-
 Padding: 8px 0 0;
-
 Border-top: 1px solid #edf1ef;
-
 Background: #fff;
-
 z-index: 5;
-
 }
-
 
 #btnConcluirProdutosVenda {
-
 Width: 100%;
-
 Min-height: 50px;
-
 Display: block;
-
 Padding: 12px;
-
 Border: 0;
-
 Border-radius: 13px;
-
 Background: linear-gradient(135deg, #25aa6a, #168d54);
-
 Color: #fff;
-
 Font-size: 14px;
-
 Font-weight: 900;
-
 Cursor: pointer;
-
 Box-shadow: 0 6px 14px rgba(32, 167, 103, .17);
-
 }
 
-
 /* =========================================================
-
 MODAL LEITOR
-
 ========================================================= */
 
-
 #modalLeitorVenda {
-
 Position: fixed !important;
-
 Inset: 0 !important;
-
 z-index: 10000 !important;
-
 }
-
 
 .modal-leitor-venda {
-
 Width: min(100%, 620px);
-
-Max-height: calc(100dvh - 16px);
-
+Max-height: calc(100dvh – 16px);
 Overflow-y: auto;
-
 Padding: 17px;
-
 }
-
 
 .area-leitor-venda {
-
 Position: relative;
-
 Width: 100%;
-
 Height: min(62vh, 440px);
-
 Min-height: 280px;
-
 Overflow: hidden;
-
 Border-radius: 18px;
-
 Background: #101820;
-
 Isolation: isolate;
-
 }
-
 
 .video-leitor-venda {
-
 Position: absolute !important;
-
 Inset: 0 !important;
-
 Width: 100% !important;
-
 Height: 100% !important;
-
 Display: block !important;
-
 Object-fit: cover !important;
-
 Background: #101820;
-
 z-index: 1;
-
 }
-
 
 .moldura-leitor-venda {
-
 Position: absolute;
-
 Left: 50%;
-
 Top: 50%;
-
 Width: min(76%, 390px);
-
 Height: 150px;
-
 Transform: translate(-50%, -50%);
-
 Border: 3px solid #43e88b;
-
 Border-radius: 17px;
-
 z-index: 5;
-
 pointer-events: none;
-
 box-shadow: 0 0 0 9999px rgba(0, 0, 0, .30), 0 0 22px rgba(39, 216, 121, .55);
-
 }
-
 
 .linha-leitor-venda {
-
 Position: absolute;
-
 Left: 7px;
-
 Right: 7px;
-
 Top: 50%;
-
 Height: 2px;
-
 Transform: translateY(-50%);
-
 Background: #50ee92;
-
 Box-shadow: 0 0 10px rgba(80, 238, 146, .9);
-
 }
-
 
 .mensagem-leitor-venda {
-
 Margin-top: 11px;
-
 Padding: 11px;
-
 Border-radius: 12px;
-
 Background: #f3f6f7;
-
 Color: #344653;
-
 Font-size: 12px;
-
 Text-align: center;
-
 }
-
 
 .status-leitor-venda {
-
 Min-height: 18px;
-
 Margin-top: 7px;
-
-Color: #72808a;
-
+Color: #72808ª;
 Font-size: 10px;
-
 Text-align: center;
-
 }
-
 
 .modal-leitor-venda .modal-acoes-venda {
-
 Margin-top: 12px;
-
 Display: flex;
-
 Gap: 8px;
-
 }
-
 
 .btn-cancel {
-
 Width: 100%;
-
 Min-height: 48px;
-
 Border: 1px solid #dfe7e3;
-
 Border-radius: 13px;
-
 Background: #f6f8f7;
-
 Color: #586761;
-
 Font-size: 13px;
-
 Font-weight: 800;
-
 Cursor: pointer;
-
 }
 
-
 /* =========================================================
-
 MODAL DE CONFIRMAÇÃO
-
 ========================================================= */
 
 #modalConfirmarVenda .modal-box {
-
 Width: min(100%, 520px);
-
-Max-height: calc(100dvh - 16px);
-
+Max-height: calc(100dvh – 16px);
 Overflow-y: auto;
-
 }
-
 
 .resumo-confirmacao-venda {
-
 Width: 100%;
-
 Padding: 14px;
-
 Border: 1px solid #e2eae5;
-
 Border-radius: 14px;
-
 Background: #f8faf9;
-
 Color: var(--texto);
-
 Font-size: 12px;
-
 Line-height: 1.5;
-
 }
-
 
 #modalConfirmarVenda .modal-acoes-venda {
-
 Display: grid;
-
 Grid-template-columns: 1fr 1.3fr;
-
 Gap: 8px;
-
 Margin-top: 14px;
-
 }
-
 
 #modalConfirmarVenda .btn-confirmar {
-
 Min-height: 48px;
-
 Border: 0;
-
 Border-radius: 13px;
-
 Background: var(--verde);
-
 Color: #fff;
-
 Font-size: 12px;
-
 Font-weight: 900;
-
 Cursor: pointer;
-
 }
 
-
 /* =========================================================
-
 CLASSE HIDDEN
-
 ========================================================= */
-
 
 .hidden {
-
 Display: none !important;
-
 }
-
 
 /* =========================================================
-
 CELULAR — RESPONSIVIDADE
-
 ========================================================= */
 
-
 @media (max-width: 600px) {
-
 Body {
-
 Padding-bottom: 72px;
-
 }
 
-
 .app-container {
-
-    Padding: 0 10px 20px;
-
+Padding: 0 10px 20px;
 }
 
 .app-header {
-
-    Padding: 14px 3px 12px;
-
+Padding: 14px 3px 12px;
 }
-
 
 .header-logo {
-
-    Width: 43px;
-
-    Height: 43px;
-
-    Flex-basis: 43px;
-
-    Border-radius: 13px;
-
-    Font-size: 22px;
-
+Width: 43px;
+Height: 43px;
+Flex-basis: 43px;
+Border-radius: 13px;
+Font-size: 22px;
 }
-
 
 .app-header h1 {
-
-    Font-size: 20px;
-
+Font-size: 20px;
 }
-
 
 .app-header p {
-
-    Font-size: 10px;
-
+Font-size: 10px;
 }
-
 
 .card.calculadora-card {
-
-    Padding: 12px;
-
-    Border-radius: 19px;
-
+Padding: 12px;
+Border-radius: 19px;
 }
-
 
 .cabecalho-calculadora {
-
-    Margin-bottom: 14px;
-
-    Padding-bottom: 12px;
-
+Margin-bottom: 14px;
+Padding-bottom: 12px;
 }
-
 
 .cabecalho-calculadora h2 {
-
-    Font-size: 20px;
-
+Font-size: 20px;
 }
-
 
 .icone-venda {
-
-    Width: 40px;
-
-    Height: 40px;
-
-    Flex-basis: 40px;
-
+Width: 40px;
+Height: 40px;
+Flex-basis: 40px;
 }
-
 
 .secao-venda,
-
 .secao-troco {
-
-    Padding: 12px;
-
-    Border-radius: 15px;
-
+Padding: 12px;
+Border-radius: 15px;
 }
-
 
 .titulo-secao h3 {
-
-    Font-size: 14px;
-
+Font-size: 14px;
 }
-
 
 .titulo-secao p {
-
-    Font-size: 9px;
-
+Font-size: 9px;
 }
-
 
 .titulo-icone {
-
-    Width: 33px;
-
-    Height: 33px;
-
-    Flex-basis: 33px;
-
-    Font-size: 15px;
-
+Width: 33px;
+Height: 33px;
+Flex-basis: 33px;
+Font-size: 15px;
 }
-
 
 .btn-adicionar-produto {
-
-    Min-height: 62px;
-
-    Padding: 9px 11px;
-
-    Border-radius: 14px;
-
+Min-height: 62px;
+Padding: 9px 11px;
+Border-radius: 14px;
 }
-
 
 .btn-adicionar-produto .icone-plus {
-
-    Width: 40px;
-
-    Height: 40px;
-
-    Min-width: 40px;
-
-    Flex-basis: 40px;
-
-    Border-radius: 11px;
-
-    Font-size: 22px;
-
+Width: 40px;
+Height: 40px;
+Min-width: 40px;
+Flex-basis: 40px;
+Border-radius: 11px;
+Font-size: 22px;
 }
-
 
 .btn-adicionar-produto strong {
-
-    Font-size: 13px;
-
+Font-size: 13px;
 }
 
-
 .btn-adicionar-produto small {
-
-    Font-size: 9px;
-
+Font-size: 9px;
 }
 
 .campo-dinheiro {
-
-    Height: 51px;
-
-    Border-radius: 13px;
-
+Height: 51px;
+Border-radius: 13px;
 }
-
 
 .campo-dinheiro input {
-
-    Font-size: 18px;
-
+Font-size: 18px;
 }
-
 
 .resumo-venda-card {
-
-    Padding: 13px;
-
-    Border-radius: 15px;
-
+Padding: 13px;
+Border-radius: 15px;
 }
-
 
 .resumo-venda-topo strong {
-
-    Font-size: 20px;
-
+Font-size: 20px;
 }
-
 
 .payment-options {
-
-    Gap: 5px;
-
+Gap: 5px;
 }
-
 
 .btn-payment {
-
-    Min-height: 59px;
-
-    Border-radius: 10px;
-
+Min-height: 59px;
+Border-radius: 10px;
 }
-
 
 .btn-payment span {
-
-    Font-size: 17px;
-
+Font-size: 17px;
 }
-
 
 .btn-payment strong {
-
-    Font-size: 8px;
-
+Font-size: 8px;
 }
-
 
 .resultado-troco {
-
-    Padding: 13px;
-
-    Border-radius: 14px;
-
+Padding: 13px;
+Border-radius: 14px;
 }
-
 
 .resultado-troco-topo strong {
-
-    Font-size: 19px;
-
+Font-size: 19px;
 }
-
 
 .btn-primary,
-
 .btn-registrar-venda {
-
-    Min-height: 53px;
-
-    Margin-top: 14px;
-
-    Border-radius: 14px;
-
+Min-height: 53px;
+Margin-top: 14px;
+Border-radius: 14px;
 }
-
 
 .btn-cancelar-venda {
-
-    Min-height: 42px;
-
+Min-height: 42px;
 }
-
 
 /* Modais */
-
 .modal-overlay {
-
-    Padding: 6px;
-
+Padding: 6px;
 }
-
 
 .modal-box {
-
-    Border-radius: 20px;
-
-    Padding: 13px;
-
+Border-radius: 20px;
+Padding: 13px;
 }
-
 
 .modal-produtos-venda {
-
-    Width: 100%;
-
-    Height: calc(100dvh - 12px);
-
-    Max-height: calc(100dvh - 12px);
-
-    Padding: 13px;
-
-    Border-radius: 20px;
-
+Width: 100%;
+Height: calc(100dvh – 12px);
+Max-height: calc(100dvh – 12px);
+Padding: 13px;
+Border-radius: 20px;
 }
-
 
 .modal-cabecalho h3 {
-
-    Font-size: 18px;
-
+Font-size: 18px;
 }
-
 
 .btn-fechar-modal {
-
-    Width: 38px;
-
-    Height: 38px;
-
-    Min-width: 38px;
-
-    Flex-basis: 38px;
-
-    Border-radius: 10px;
-
-    Font-size: 23px;
-
+Width: 38px;
+Height: 38px;
+Min-width: 38px;
+Flex-basis: 38px;
+Border-radius: 10px;
+Font-size: 23px;
 }
-
 
 .modal-produtos-venda .btn-leitor-venda {
-
-    Min-height: 52px;
-
-    Padding: 8px 10px;
-
+Min-height: 52px;
+Padding: 8px 10px;
 }
-
 
 .modal-produtos-venda .btn-leitor-venda .icone-plus {
-
-    Width: 33px;
-
-    Height: 33px;
-
-    Min-width: 33px;
-
-    Flex-basis: 33px;
-
+Width: 33px;
+Height: 33px;
+Min-width: 33px;
+Flex-basis: 33px;
 }
-
 
 .campo-busca-produto {
-
-    Min-height: 42px;
-
-    Border-radius: 11px;
-
+Min-height: 42px;
+Border-radius: 11px;
 }
-
 
 .campo-busca-produto input {
-
-    Height: 40px;
-
-    Font-size: 12px;
-
+Height: 40px;
+Font-size: 12px;
 }
-
 
 /* Mantém os produtos em 3 colunas no celular */
-
 .lista-produtos-estoque-venda {
-
-    Grid-template-columns: repeat(3, minmax(0, 1fr));
-
-    Gap: 6px;
-
+Grid-template-columns: repeat(3, minmax(0, 1fr));
+Gap: 6px;
 }
-
 
 .lista-produtos-estoque-venda .produto-card-conteudo {
-
-    Min-height: 155px;
-
-    Padding: 5px;
-
+Min-height: 155px;
+Padding: 5px;
 }
-
 
 .lista-produtos-estoque-venda .produto-foto,
-
 .lista-produtos-estoque-venda .produto-imagem,
-
 .lista-produtos-estoque-venda .produto-inicial {
-
-    Height: 52px;
-
-    Min-height: 52px;
-
-    Max-height: 52px;
-
-    Flex-basis: 52px;
-
+Height: 52px;
+Min-height: 52px;
+Max-height: 52px;
+Flex-basis: 52px;
 }
-
 
 .lista-produtos-estoque-venda .produto-nome,
-
 .lista-produtos-estoque-venda .produto-info h3 {
-
-    Min-height: 25px;
-
-    Max-height: 25px;
-
-    Font-size: 10px;
-
+Min-height: 25px;
+Max-height: 25px;
+Font-size: 10px;
 }
-
 
 .lista-produtos-estoque-venda .produto-estoque {
-
-    Font-size: 8px;
-
+Font-size: 8px;
 }
-
 
 .lista-produtos-estoque-venda .produto-preco {
-
-    Font-size: 11px;
-
+Font-size: 11px;
 }
-
 
 .lista-produtos-estoque-venda .controle-quantidade button {
-
-    Width: 25px;
-
-    Height: 25px;
-
-    Min-width: 25px;
-
-    Min-height: 25px;
-
-    Flex-basis: 25px;
-
-    Font-size: 15px;
-
+Width: 25px;
+Height: 25px;
+Min-width: 25px;
+Min-height: 25px;
+Flex-basis: 25px;
+Font-size: 15px;
 }
-
 
 .lista-produtos-estoque-venda .controle-quantidade span {
-
-    Min-width: 15px;
-
-    Font-size: 10px;
-
+Min-width: 15px;
+Font-size: 10px;
 }
-
 
 .modal-produtos-venda .modal-acoes-venda {
-
-    Padding-top: 7px;
-
+Padding-top: 7px;
 }
-
 
 #btnConcluirProdutosVenda {
-
-    Min-height: 48px;
-
-    Border-radius: 12px;
-
-    Font-size: 13px;
-
+Min-height: 48px;
+Border-radius: 12px;
+Font-size: 13px;
 }
-
 
 /* Leitor */
-
 .modal-leitor-venda {
-
-    Padding: 13px;
-
+Padding: 13px;
 }
-
 
 .area-leitor-venda {
-
-    Height: min(58vh, 390px);
-
-    Min-height: 250px;
-
-    Border-radius: 16px;
-
+Height: min(58vh, 390px);
+Min-height: 250px;
+Border-radius: 16px;
 }
-
 
 .moldura-leitor-venda {
-
-    Width: 78%;
-
-    Height: 120px;
-
+Width: 78%;
+Height: 120px;
 }
-
 
 #modalConfirmarVenda .modal-acoes-venda {
-
-    Grid-template-columns: 1fr;
-
+Grid-template-columns: 1fr;
 }
 
-
 /* Fotos dos produtos já adicionados à venda */
-
 .lista-produtos-venda img {
-
-    Width: 64px !important;
-
-    Height: 64px !important;
-
-    Min-width: 64px !important;
-
-    Min-height: 64px !important;
-
-    Max-width: 64px !important;
-
-    Max-height: 64px !important;
-
+Width: 64px !important;
+Height: 64px !important;
+Min-width: 64px !important;
+Min-height: 64px !important;
+Max-width: 64px !important;
+Max-height: 64px !important;
 }
 
 .lista-produtos-venda .produto-foto {
-
-    Width: 64px !important;
-
-    Height: 64px !important;
-
-    Min-width: 64px !important;
-
-    Max-width: 64px !important;
-
+Width: 64px !important;
+Height: 64px !important;
+Min-width: 64px !important;
+Max-width: 64px !important;
 }
 
-
 }
-
 
 /* =========================================================
-
 CELULARES MUITO PEQUENOS
-
 ========================================================= */
 
-
 @media (max-width: 360px) {
-
 .app-container {
-
 Padding-left: 7px;
-
 Padding-right: 7px;
-
 }
-
 
 .card.calculadora-card {
-
-    Padding: 9px;
-
-    Border-radius: 17px;
-
+Padding: 9px;
+Border-radius: 17px;
 }
-
 
 .secao-venda,
-
 .secao-troco {
-
-    Padding: 10px;
-
+Padding: 10px;
 }
-
 
 .payment-options {
-
-    Gap: 4px;
-
+Gap: 4px;
 }
-
 
 .btn-payment {
-
-    Min-height: 55px;
-
+Min-height: 55px;
 }
-
 
 .btn-payment strong {
-
-    Font-size: 7px;
-
+Font-size: 7px;
 }
-
 
 .modal-produtos-venda {
-
-    Padding: 10px;
-
-    Border-radius: 18px;
-
+Padding: 10px;
+Border-radius: 18px;
 }
-
 
 .lista-produtos-estoque-venda {
-
-    Gap: 5px;
-
+Gap: 5px;
 }
 
-
 .lista-produtos-estoque-venda .produto-card-conteudo {
-
-    Min-height: 148px;
-
-    Padding: 4px;
-
+Min-height: 148px;
+Padding: 4px;
 }
 
 .lista-produtos-estoque-venda .produto-foto,
-
 .lista-produtos-estoque-venda .produto-imagem,
-
 .lista-produtos-estoque-venda .produto-inicial {
-
-    Height: 48px;
-
-    Min-height: 48px;
-
-    Max-height: 48px;
-
-    Flex-basis: 48px;
-
+Height: 48px;
+Min-height: 48px;
+Max-height: 48px;
+Flex-basis: 48px;
 }
-
 
 .lista-produtos-estoque-venda .produto-nome,
-
 .lista-produtos-estoque-venda .produto-info h3 {
-
-    Font-size: 9px;
-
-    Min-height: 23px;
-
-    Max-height: 23px;
-
+Font-size: 9px;
+Min-height: 23px;
+Max-height: 23px;
 }
-
 
 .lista-produtos-estoque-venda .produto-preco {
-
-    Font-size: 10px;
-
+Font-size: 10px;
 }
-
 
 .lista-produtos-estoque-venda .produto-estoque {
-
-    Font-size: 7px;
-
+Font-size: 7px;
 }
 
-
 .lista-produtos-estoque-venda .controle-quantidade {
-
-    Gap: 1px;
-
+Gap: 1px;
 }
 
 .lista-produtos-estoque-venda .controle-quantidade button {
-
-    Width: 23px;
-
-    Height: 23px;
-
-    Min-width: 23px;
-
-    Min-height: 23px;
-
-    Flex-basis: 23px;
-
-    Border-radius: 6px;
-
-    Font-size: 14px;
-
+Width: 23px;
+Height: 23px;
+Min-width: 23px;
+Min-height: 23px;
+Flex-basis: 23px;
+Border-radius: 6px;
+Font-size: 14px;
 }
-
 
 .lista-produtos-estoque-venda .controle-quantidade span {
-
-    Min-width: 13px;
-
-    Font-size: 9px;
-
+Min-width: 13px;
+Font-size: 9px;
 }
-
 
 .area-leitor-venda {
-
-    Min-height: 230px;
-
+Min-height: 230px;
 }
 
-
 }
-
 
 /* =========================================================
-
 NAVEGAÇÃO INFERIOR — BLOCO ÚNICO CONSOLIDADO
-
 ========================================================= */
-
 
 Body nav.menu-inferior {
-
 Position: fixed !important;
-
 Left: 50% !important;
-
 Right: auto !important;
-
 Bottom: 0 !important;
-
 Transform: translateX(-50%) !important;
 
-
 Display: grid !important;
-
 Grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-
 Align-items: stretch;
-
 Justify-content: initial;
 
-
 Width: 100% !important;
-
 Max-width: 760px !important;
-
 Min-height: 64px;
-
 Padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
 
-
 Box-sizing: border-box !important;
-
 Border-top: 1px solid #dfe8e3;
-
 Background: rgba(255, 255, 255, .97);
-
 Box-shadow: 0 -5px 20px rgba(30, 50, 42, .08);
-
 Overflow: visible !important;
-
 z-index: 99999 !important;
-
 backdrop-filter: blur(12px);
-
 -webkit-backdrop-filter: blur(12px);
 
-
 }
-
 
 Body nav.menu-inferior > a.menu-item {
-
 Display: flex !important;
-
 Flex: none !important;
-
 Flex-direction: column !important;
-
 Align-items: center !important;
-
 Justify-content: center !important;
-
 Gap: 3px;
 
-
 Width: 100% !important;
-
 Min-width: 0 !important;
-
 Margin: 0 !important;
-
 Padding: 4px 0 !important;
 
-
 Border-radius: 11px;
-
 Color: #7c8985;
-
 Font-size: 19px;
-
 Visibility: visible !important;
-
 Opacity: 1 !important;
-
 Text-decoration: none !important;
-
 Transition: background .12s ease, color .12s ease;
 
-
 }
-
 
 Body nav.menu-inferior > a.menu-item > span,
-
 Body nav.menu-inferior > a.menu-item > small {
-
 Display: block !important;
-
 Visibility: visible !important;
-
 Opacity: 1 !important;
-
 }
-
 
 Body nav.menu-inferior > a.menu-item > small {
-
 Max-width: 100%;
-
 Overflow: hidden;
-
 White-space: nowrap !important;
-
 Color: inherit;
-
 Font-size: 10px !important;
-
 Font-weight: 800;
-
 }
-
 
 Body nav.menu-inferior > a.menu-item.ativo {
-
 Color: var(--verde);
-
 Background: #eef9f4;
-
 }
-
 
 Body nav.menu-inferior > a.menu-item:active {
-
 Transform: scale(.96);
-
 }
-
 
 /* =========================================================
-
 REDUÇÃO DE MOVIMENTO
-
 ========================================================= */
 
-
 @media (prefers-reduced-motion: reduce) {
-
 *,
-
 *::before,
-
 ::after {
-
 Scroll-behavior: auto !important;
-
 Transition: none !important;
-
 Animation: none !important;
+}
+}
+/ =========================================================
+DR. TROCO — VISUAL DA TELA DE FIADO
+========================================================= */
 
+Body:has(.fiado-resumo) {
+Background: #f1f5f9;
+Color: #1e293b;
 }
 
-    }
+Body:has(.fiado-resumo) .app-container {
+Width: 100%;
+Max-width: 850px;
+Margin: 0 auto;
+Padding: 20px 16px 40px;
+Box-sizing: border-box;
+}
+
+/* CABEÇALHO */
+
+Body:has(.fiado-resumo) .app-header {
+Display: flex;
+Align-items: center;
+Gap: 13px;
+Padding: 20px;
+Margin-bottom: 20px;
+Background: #ffffff;
+Border: 1px solid #e2e8f0;
+Border-radius: 18px;
+Box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+}
+
+Body:has(.fiado-resumo) .app-logo {
+Display: grid;
+Place-items: center;
+Width: 52px;
+Height: 52px;
+Flex-shrink: 0;
+Border-radius: 15px;
+Background: #dbeafe;
+Font-size: 27px;
+}
+
+Body:has(.fiado-resumo) .app-header h1 {
+Margin: 0;
+Color: #0f172a;
+Font-size: 25px;
+Line-height: 1.2;
+}
+
+Body:has(.fiado-resumo) .app-header p {
+Margin: 5px 0 0;
+Color: #64748b;
+Font-size: 14px;
+}
+
+/* NAVEGAÇÃO */
+
+Body:has(.fiado-resumo) .fiado-nav {
+Display: flex;
+Gap: 8px;
+Margin: 0 0 22px;
+Padding: 5px;
+Overflow-x: auto;
+Background: #ffffff;
+Border: 1px solid #e2e8f0;
+Border-radius: 13px;
+Scrollbar-width: thin;
+}
+
+Body:has(.fiado-resumo) .fiado-nav a {
+Flex: 0 0 auto;
+Padding: 11px 13px;
+Color: #475569;
+Text-decoration: none;
+Font-size: 14px;
+Font-weight: 600;
+Border-radius: 9px;
+Transition: background 0.2s, color 0.2s;
+}
+
+Body:has(.fiado-resumo) .fiado-nav a[href=”fiado.html”],
+Body:has(.fiado-resumo) .fiado-nav a:hover {
+Color: #ffffff;
+Background: #2563eb;
+}
+
+/* INDICADORES FINANCEIROS */
+
+Body:has(.fiado-resumo) .fiado-resumo {
+Display: grid;
+Grid-template-columns: repeat(2, minmax(0, 1fr));
+Gap: 12px;
+Margin-bottom: 22px;
+}
+
+Body:has(.fiado-resumo) .fiado-card {
+Min-width: 0;
+Padding: 17px;
+Background: #ffffff;
+Border: 1px solid #e2e8f0;
+Border-radius: 16px;
+Box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+}
+
+Body:has(.fiado-resumo) .fiado-card span {
+Display: block;
+Margin-bottom: 10px;
+Color: #64748b;
+Font-size: 13px;
+Font-weight: 600;
+}
+
+Body:has(.fiado-resumo) .fiado-card strong {
+Display: block;
+Color: #0f172a;
+Font-size: clamp(18px, 4.5vw, 25px);
+Overflow-wrap: anywhere;
+}
+
+/* DESTAQUE DOS VALORES */
+
+Body:has(.fiado-resumo) #fiadoTotalDividas {
+Color: #d97706;
+}
+
+Body:has(.fiado-resumo) #fiadoTotalRecebido {
+Color: #059669;
+}
+
+Body:has(.fiado-resumo) #fiadoTotalAberto {
+Color: #dc2626;
+}
+
+/* SEÇÕES */
+
+Body:has(.fiado-resumo) .fiado-secao {
+Min-width: 0;
+Margin-bottom: 20px;
+Padding: 20px;
+Background: #ffffff;
+Border: 1px solid #e2e8f0;
+Border-radius: 18px;
+Box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+Body:has(.fiado-resumo) .fiado-titulo {
+Margin-bottom: 20px;
+}
+
+Body:has(.fiado-resumo) .fiado-titulo h2 {
+Margin: 0 0 7px;
+Color: #0f172a;
+Font-size: 21px;
+Line-height: 1.3;
+}
+
+Body:has(.fiado-resumo) .fiado-titulo p {
+Margin: 0;
+Color: #64748b;
+Font-size: 14px;
+Line-height: 1.5;
+}
+
+/* FORMULÁRIOS */
+
+Body:has(.fiado-resumo) .fiado-form {
+Display: flex;
+Flex-direction: column;
+Gap: 16px;
+}
+
+Body:has(.fiado-resumo) .fiado-campo {
+Display: flex;
+Flex-direction: column;
+Gap: 7px;
+Min-width: 0;
+}
+
+Body:has(.fiado-resumo) .fiado-campo label {
+Color: #334155;
+Font-size: 14px;
+Font-weight: 700;
+}
+
+Body:has(.fiado-resumo) .fiado-campo input,
+Body:has(.fiado-resumo) .fiado-campo select,
+Body:has(.fiado-resumo) .fiado-busca input {
+Display: block;
+Width: 100%;
+Min-width: 0;
+Min-height: 48px;
+Padding: 12px 14px;
+Box-sizing: border-box;
+Color: #0f172a;
+Background: #f8fafc;
+Border: 1px solid #cbd5e1;
+Border-radius: 11px;
+Font-family: inherit;
+Font-size: 16px;
+Outline: none;
+}
+
+Body:has(.fiado-resumo) .fiado-campo input:focus,
+Body:has(.fiado-resumo) .fiado-campo select:focus,
+Body:has(.fiado-resumo) .fiado-busca input:focus {
+Border-color: #2563eb;
+Box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* BOTÕES */
+
+Body:has(.fiado-resumo) .fiado-btn {
+Display: inline-flex;
+Align-items: center;
+Justify-content: center;
+Gap: 8px;
+Min-height: 46px;
+Padding: 12px 16px;
+Border: 1px solid transparent;
+Border-radius: 11px;
+Font-family: inherit;
+Font-size: 14px;
+Font-weight: 700;
+Text-align: center;
+Cursor: pointer;
+Transition: transform 0.15s, background 0.2s;
+}
+
+Body:has(.fiado-resumo) .fiado-btn:active {
+Transform: scale(0.98);
+}
+
+Body:has(.fiado-resumo) .fiado-btn-principal {
+Color: #ffffff;
+Background: #2563eb;
+}
+
+Body:has(.fiado-resumo) .fiado-btn-principal:hover {
+Background: #1d4ed8;
+}
+
+Body:has(.fiado-resumo) .fiado-btn-secundario {
+Color: #334155;
+Background: #f1f5f9;
+Border-color: #cbd5e1;
+}
+
+Body:has(.fiado-resumo) .fiado-btn-fechar {
+Width: 42px;
+Height: 42px;
+Flex-shrink: 0;
+Padding: 0;
+Color: #475569;
+Background: #f1f5f9;
+Border: 0;
+Border-radius: 50%;
+Font-size: 27px;
+Cursor: pointer;
+}
+
+/* PESQUISA */
+
+Body:has(.fiado-resumo) .fiado-busca {
+Margin-bottom: 16px;
+}
+
+/* LISTA DE CLIENTES */
+
+Body:has(.fiado-resumo) .fiado-lista {
+Display: grid;
+Grid-template-columns: minmax(0, 1fr);
+Gap: 12px;
+}
+
+Body:has(.fiado-resumo) .fiado-cliente-card {
+Display: flex;
+Flex-direction: column;
+Gap: 15px;
+Min-width: 0;
+Padding: 16px;
+Background: #ffffff;
+Border: 1px solid #e2e8f0;
+Border-radius: 15px;
+}
+
+Body:has(.fiado-resumo) .fiado-cliente-info {
+Display: flex;
+Align-items: center;
+Gap: 12px;
+Min-width: 0;
+}
+
+Body:has(.fiado-resumo) .fiado-avatar {
+Display: grid;
+Place-items: center;
+Width: 46px;
+Height: 46px;
+Flex-shrink: 0;
+Background: #dbeafe;
+Border-radius: 14px;
+Font-size: 23px;
+}
+
+Body:has(.fiado-resumo) .fiado-cliente-texto {
+Min-width: 0;
+}
+
+Body:has(.fiado-resumo) .fiado-cliente-texto h3 {
+Margin: 0 0 5px;
+Color: #0f172a;
+Font-size: 16px;
+Overflow-wrap: anywhere;
+}
+
+Body:has(.fiado-resumo) .fiado-cliente-texto p {
+Margin: 0 0 5px;
+Color: #64748b;
+Font-size: 13px;
+Overflow-wrap: anywhere;
+}
+
+Body:has(.fiado-resumo) .fiado-cliente-texto small {
+Color: #64748b;
+Font-size: 12px;
+}
+
+Body:has(.fiado-resumo) .fiado-cliente-saldo {
+Display: flex;
+Align-items: center;
+Justify-content: space-between;
+Gap: 10px;
+Padding: 12px;
+Background: #fff1f2;
+Border-radius: 10px;
+}
+
+Body:has(.fiado-resumo) .fiado-cliente-saldo span {
+Color: #9f1239;
+Font-size: 13px;
+}
+
+Body:has(.fiado-resumo) .fiado-cliente-saldo strong {
+Color: #be123c;
+Font-size: 17px;
+Overflow-wrap: anywhere;
+}
+
+/* LISTA VAZIA */
+
+Body:has(.fiado-resumo) .fiado-vazio {
+Padding: 28px 16px;
+Text-align: center;
+Background: #f8fafc;
+Border: 1px dashed #cbd5e1;
+Border-radius: 15px;
+}
+
+Body:has(.fiado-resumo) .fiado-vazio > div {
+Margin-bottom: 12px;
+Font-size: 36px;
+}
+
+Body:has(.fiado-resumo) .fiado-vazio h3 {
+Margin: 0 0 8px;
+Color: #334155;
+Font-size: 17px;
+}
+
+Body:has(.fiado-resumo) .fiado-vazio p {
+Margin: 0;
+Color: #64748b;
+Font-size: 14px;
+Line-height: 1.6;
+}
+
+/* MODAIS */
+
+Body:has(.fiado-resumo) .fiado-modal {
+Position: fixed;
+Inset: 0;
+z-index: 9999;
+display: none;
+align-items: center;
+justify-content: center;
+padding: 16px;
+box-sizing: border-box;
+overflow-y: auto;
+background: rgba(15, 23, 42, 0.65);
+backdrop-filter: blur(3px);
+}
+
+Body:has(.fiado-resumo) .fiado-modal.aberto {
+Display: flex;
+}
+
+Body:has(.fiado-resumo) .fiado-modal-conteudo {
+Width: 100%;
+Max-width: 480px;
+Max-height: 90%;
+Overflow-y: auto;
+Padding: 22px;
+Box-sizing: border-box;
+Background: #ffffff;
+Border-radius: 20px;
+Box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+}
+
+Body:has(.fiado-resumo) .fiado-modal-topo {
+Display: flex;
+Align-items: flex-start;
+Justify-content: space-between;
+Gap: 12px;
+Margin-bottom: 20px;
+}
+
+Body:has(.fiado-resumo) .fiado-modal-topo h2 {
+Margin: 0 0 6px;
+Color: #0f172a;
+Font-size: 21px;
+Line-height: 1.3;
+Overflow-wrap: anywhere;
+}
+
+Body:has(.fiado-resumo) .fiado-modal-topo p {
+Margin: 0;
+Color: #64748b;
+Font-size: 14px;
+}
+
+Body:has(.fiado-resumo) .fiado-etiqueta {
+Display: inline-block;
+Margin-bottom: 7px;
+Color: #2563eb;
+Font-size: 11px;
+Font-weight: 800;
+Letter-spacing: 1px;
+}
+
+/* SALDO NO MODAL */
+
+Body:has(.fiado-resumo) .fiado-saldo-destaque {
+Padding: 20px;
+Margin-bottom: 14px;
+Text-align: center;
+Background: #fff1f2;
+Border-radius: 15px;
+}
+
+Body:has(.fiado-resumo) .fiado-saldo-destaque span {
+Display: block;
+Margin-bottom: 8px;
+Color: #9f1239;
+Font-size: 14px;
+}
+
+Body:has(.fiado-resumo) .fiado-saldo-destaque strong {
+Color: #be123c;
+Font-size: 29px;
+Overflow-wrap: anywhere;
+}
+
+Body:has(.fiado-resumo) .fiado-detalhes-resumo {
+Display: grid;
+Grid-template-columns: repeat(2, minmax(0, 1fr));
+Gap: 10px;
+Margin-bottom: 22px;
+}
+
+Body:has(.fiado-resumo) .fiado-detalhes-resumo > div {
+Padding: 13px;
+Background: #f8fafc;
+Border: 1px solid #e2e8f0;
+Border-radius: 12px;
+}
+
+Body:has(.fiado-resumo) .fiado-detalhes-resumo span,
+Body:has(.fiado-resumo) .fiado-detalhes-resumo strong {
+Display: block;
+}
+
+Body:has(.fiado-resumo) .fiado-detalhes-resumo span {
+Margin-bottom: 7px;
+Color: #64748b;
+Font-size: 12px;
+}
+
+Body:has(.fiado-resumo) .fiado-detalhes-resumo strong {
+Color: #0f172a;
+Font-size: 16px;
+Overflow-wrap: anywhere;
+}
+
+/* HISTÓRICO DO CLIENTE */
+
+Body:has(.fiado-resumo) .fiado-historico {
+Margin-bottom: 20px;
+}
+
+Body:has(.fiado-resumo) .fiado-historico h3 {
+Margin: 0 0 12px;
+Color: #0f172a;
+Font-size: 17px;
+}
+
+Body:has(.fiado-resumo) .fiado-historico > div > p {
+Color: #64748b;
+Font-size: 14px;
+}
+
+Body:has(.fiado-resumo) .fiado-movimento {
+Display: flex;
+Align-items: flex-start;
+Justify-content: space-between;
+Gap: 12px;
+Padding: 13px 0;
+Border-bottom: 1px solid #e2e8f0;
+}
+
+Body:has(.fiado-resumo) .fiado-movimento > div {
+Display: flex;
+Flex-direction: column;
+Gap: 5px;
+Min-width: 0;
+}
+
+Body:has(.fiado-resumo) .fiado-movimento > div > strong {
+Color: #334155;
+Font-size: 14px;
+Overflow-wrap: anywhere;
+}
+
+Body:has(.fiado-resumo) .fiado-movimento small {
+Color: #64748b;
+Font-size: 12px;
+Overflow-wrap: anywhere;
+}
+
+Body:has(.fiado-resumo) .fiado-movimento > strong {
+Flex-shrink: 0;
+Font-size: 13px;
+Text-align: right;
+Overflow-wrap: anywhere;
+}
+
+Body:has(.fiado-resumo) .fiado-valor-pago {
+Color: #059669;
+}
+
+Body:has(.fiado-resumo) .fiado-valor-divida {
+Color: #d97706;
+}
+
+/* AÇÕES DOS MODAIS */
+
+Body:has(.fiado-resumo) .fiado-acoes-modal {
+Display: flex;
+Flex-direction: column;
+Gap: 10px;
+Margin-top: 18px;
+}
+
+Body:has(.fiado-resumo) .fiado-acoes-modal .fiado-btn {
+Width: 100%;
+}
+
+/* NOTIFICAÇÕES */
+
+Body:has(.fiado-resumo) .fiado-notificacao {
+Position: fixed;
+Right: 16px;
+Bottom: 20px;
+Left: 16px;
+z-index: 10001;
+max-width: 500px;
+margin: 0 auto;
+padding: 14px 17px;
+color: #ffffff;
+background: #047857;
+border-radius: 12px;
+box-shadow: 0 8px 25px rgba(15, 23, 42, 0.18);
+font-size: 14px;
+font-weight: 600;
+line-height: 1.5;
+opacity: 0;
+visibility: hidden;
+transform: translateY(10px);
+transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+}
+
+Body:has(.fiado-resumo) .fiado-notificacao.visivel {
+Opacity: 1;
+Visibility: visible;
+Transform: translateY(0);
+}
+
+Body:has(.fiado-resumo) .fiado-notificacao.erro {
+Background: #b91c1c;
+}
+
+/* CELULARES PEQUENOS */
+
+@media (max-width: 380px) {
+Body:has(.fiado-resumo) .app-container {
+Padding: 12px 10px 28px;
+}
+
+Body:has(.fiado-resumo) .fiado-secao {
+Padding: 15px;
+}
+
+Body:has(.fiado-resumo) .fiado-card {
+Padding: 13px;
+}
+
+Body:has(.fiado-resumo) .fiado-nav a {
+Padding: 10px;
+Font-size: 13px;
+}
+
+Body:has(.fiado-resumo) .fiado-movimento {
+Flex-direction: column;
+}
+
+Body:has(.fiado-resumo) .fiado-movimento > strong {
+Text-align: left;
+}
+}
+
+/* TELAS MAIORES */
+
+@media (min-width: 600px) {
+Body:has(.fiado-resumo) .fiado-resumo {
+Grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+Body:has(.fiado-resumo) .fiado-form {
+Display: grid;
+Grid-template-columns: repeat(2, minmax(0, 1fr));
+Align-items: end;
+}
+
+Body:has(.fiado-resumo) .fiado-form > button {
+Grid-column: 1 / -1;
+}
+
+Body:has(.fiado-resumo) .fiado-lista {
+Grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+/* BARRA DE NAVEGAÇÃO INFERIOR */
+
+.bottom-nav {
+Position: fixed;
+Bottom: 0;
+Left: 0;
+Right: 0;
+z-index: 9000;
+
+display: grid;
+grid-template-columns: repeat(5, minmax(0, 1fr));
+gap: 2px;
+
+padding: 8px 5px;
+padding-bottom: calc(8px + env(safe-area-inset-bottom));
+
+background: #ffffff;
+border-top: 1px solid #e2e8f0;
+box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.08);
+}
+
+.bottom-nav .nav-item {
+Display: flex;
+Flex-direction: column;
+Align-items: center;
+Justify-content: center;
+Gap: 5px;
+
+Min-width: 0;
+Min-height: 54px;
+Padding: 5px 2px;
+
+Color: #64748b;
+Text-decoration: none;
+Font-family: inherit;
+Font-size: 11px;
+Font-weight: 600;
+
+Border-radius: 12px;
+-webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav .nav-icon {
+Font-size: 21px;
+Line-height: 1.2;
+}
+
+.bottom-nav .nav-item.ativo {
+Color: #2563eb;
+Background: #eff6ff;
+}
+
+.bottom-nav .nav-item:active {
+Background: #dbeafe;
+}
+
+/* Evita que o conteúdo fique escondido atrás da barra */
+
+Body.pagina-fiado {
+Padding-bottom: 90px;
+}
+/* =========================================================
+CORREÇÕES — NOVA VENDA
+========================================================= */
+
+/* Espaço para o conteúdo não ficar atrás da navegação */
+Body {
+Padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+}
+
+.app-container {
+Padding-bottom: calc(35px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Pagamentos: duas colunas */
+.payment-options {
+Display: grid;
+Grid-template-columns: repeat(2, minmax(0, 1fr));
+Gap: 8px;
+}
+
+/* Botões com espaço suficiente para os nomes */
+.payment-options .btn-payment {
+Width: 100%;
+Min-width: 0;
+Min-height: 60px;
+}
+
+/* Fiado ocupa toda a linha, se for o último botão */
+.payment-options .btn-payment:last-child {
+Grid-column: 1 / -1;
+}
+
+/* Evita que o conteúdo seja cortado em telas pequenas /
+.card.calculadora-card,
+.secao-venda,
+.secao-troco {
+Min-width: 0;
+Max-width: 100%;
+}
+/ =========================================================
+DR. TROCO — AJUSTES DA NOVA VENDA
+========================================================= */
+
+/* Impede que o conteúdo fique escondido atrás da navegação */
+Body.pagina-calculadora {
+Padding-bottom: calc(105px + env(safe-area-inset-bottom)) !important;
+}
+
+Body.pagina-calculadora .app-container {
+Padding-bottom: calc(30px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Pagamentos organizados */
+.payment-options {
+Display: grid;
+Grid-template-columns: repeat(2, minmax(0, 1fr));
+Gap: 10px;
+Width: 100%;
+}
+
+.payment-options .btn-payment {
+Min-width: 0;
+Min-height: 76px;
+Padding: 10px 6px;
+Border: 1px solid #dfe8e3;
+Border-radius: 15px;
+Background: #fafcfb;
+Transition: background .15s ease, border-color .15s ease;
+}
+
+.payment-options .btn-payment span {
+Font-size: 23px;
+}
+
+.payment-options .btn-payment strong {
+Font-size: 12px;
+}
+
+.payment-options .btn-payment.active {
+Border: 2px solid var(--verde);
+Background: var(--verde-claro);
+Color: var(--verde-escuro);
+}
+
+/* Fiado ocupa a largura inteira */
+.payment-options .btn-payment-fiado {
+Grid-column: 1 / -1;
+Min-height: 62px;
+Flex-direction: row;
+Gap: 10px;
+Border-color: #d9c9a6;
+Background: #fffaf0;
+Color: #826126;
+}
+
+.payment-options .btn-payment-fiado.active {
+Border-color: #b78b35;
+Background: #fff1d1;
+Color: #75531ª;
+}
+
+/* Campos de Fiado */
+.grupo-fiado .label-campo {
+Display: block;
+Margin: 13px 0 6px;
+Color: var(--texto-2);
+Font-size: 12px;
+Font-weight: 800;
+}
+
+.campo-texto-fiado {
+Width: 100%;
+Min-height: 48px;
+Padding: 11px 12px;
+Border: 1px solid var(--borda);
+Border-radius: 12px;
+Background: #fbfcfb;
+Color: var(--texto);
+Font-size: 14px;
+}
+
+.campo-texto-fiado:focus {
+Outline: 2px solid rgba(32, 167, 103, .2);
+Border-color: var(--verde);
+}
+
+.resumo-fiado {
+Display: flex;
+Align-items: center;
+Justify-content: space-between;
+Gap: 10px;
+Margin-top: 14px;
+Padding: 13px;
+Border-radius: 12px;
+Background: #fff5df;
+Color: #75531ª;
+Font-size: 12px;
+}
+
+.resumo-fiado strong {
+Font-size: 17px;
+}
+
+/* Cartões dos produtos adicionados */
+.lista-produtos-venda {
+Gap: 12px;
+}
+
+.lista-produtos-venda > * {
+Min-width: 0;
+}
+
+.lista-produtos-venda .produto-venda,
+.lista-produtos-venda .item-produto-venda,
+.lista-produtos-venda .produto-item {
+Display: flex;
+Align-items: center;
+Gap: 12px;
+Padding: 12px;
+Border: 1px solid #e1e9e5;
+Border-radius: 16px;
+Background: #fff;
+Box-shadow: 0 3px 12px rgba(30, 50, 42, .06);
+}
+
+.lista-produtos-venda .produto-foto {
+Flex: 0 0 72px;
+Width: 72px;
+Height: 72px;
+Overflow: hidden;
+Border-radius: 12px;
+Background: #f1f6f3;
+}
+
+.lista-produtos-venda .produto-foto img {
+Display: block;
+Width: 100%;
+Height: 100%;
+Object-fit: contain;
+}
+
+.lista-produtos-venda .produto-nome {
+Color: var(--texto);
+Font-size: 13px;
+Font-weight: 800;
+Line-height: 1.35;
+}
+
+.lista-produtos-venda .produto-preco {
+Color: var(--verde-escuro);
+Font-size: 14px;
+Font-weight: 900;
+}
+
+.lista-produtos-venda button {
+Cursor: pointer;
+Touch-action: manipulation;
+}
+
+/* Modal de produtos: espaço próprio para lista e botão concluir */
+.modal-produtos-venda {
+Display: flex;
+Flex-direction: column;
+Min-height: 0;
+}
+
+.lista-produtos-estoque-venda {
+Overscroll-behavior: contain;
+-webkit-overflow-scrolling: touch;
+}
+
+.modal-acoes-venda {
+Flex-shrink: 0;
+Padding-top: 10px;
+Background: #fff;
+}
+
+/* Ajustes para celulares */
+@media (max-width: 600px) {
+Body.pagina-calculadora {
+Padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+}
+
+Body.pagina-calculadora .app-container {
+Padding-bottom: 24px !important;
+}
+
+.payment-options {
+Gap: 8px;
+}
+
+.payment-options .btn-payment {
+Min-height: 70px;
+}
+
+.lista-produtos-venda .produto-venda,
+.lista-produtos-venda .item-produto-venda,
+.lista-produtos-venda .produto-item {
+Gap: 9px;
+Padding: 10px;
+}
+
+.lista-produtos-venda .produto-foto {
+Flex-basis: 62px;
+Width: 62px;
+Height: 62px;
+}
+
+.modal-produtos-venda {
+Height: calc(100dvh – 16px);
+Max-height: calc(100dvh – 16px);
+}
+}
+/* NAVEGAÇÃO INFERIOR — 5 ABAS */
+Body nav.menu-inferior {
+Grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+Body nav.menu-inferior > a.menu-item {
+Min-width: 0;
+Gap: 4px;
+Font-size: 20px;
+}
+
+Body nav.menu-inferior > a.menu-item small {
+Font-size: 10px;
+Line-height: 1.2;
+Text-align: center;
+White-space: nowrap;
+}
+
+@media (max-width: 360px) {
+Body nav.menu-inferior > a.menu-item small {
+Font-size: 9px;
+}
+}
+
+/* Ícone do estabelecimento no cabeçalho */
+.botao-estabelecimento {
+Margin-left: auto;
+Flex-shrink: 0;
+Width: 44px;
+Height: 44px;
+Border-radius: 50%;
+Border: 2px solid #d8eee1;
+Background: #eaf7ef;
+Color: #168b53;
+Display: flex;
+Align-items: center;
+Justify-content: center;
+Text-decoration: none;
+Font-size: 23px;
+Box-sizing: border-box;
+Cursor: pointer;
+}
+
+.botao-estabelecimento:active {
+Transform: scale(0.96);
+}
+/* ==========================================
+DR. TROCO — VISUAL ATUALIZADO DO FIADO
+Cole este bloco no FINAL do style.css
+========================================== */
+
+.pagina-fiado #modalDetalhesFiado {
+Color: #26352e;
+}
+
+.pagina-fiado #modalDetalhesFiado > div,
+.pagina-fiado #modalDetalhesFiado .modal-conteudo,
+.pagina-fiado #modalDetalhesFiado .modal-content,
+.pagina-fiado #modalDetalhesFiado .modal-card,
+.pagina-fiado #modalDetalhesFiado .modal-dialog,
+.pagina-fiado #modalDetalhesFiado .conteudo-modal {
+Box-sizing: border-box;
+Border-radius: 24px !important;
+}
+
+/* Títulos e textos */
+.pagina-fiado #modalDetalhesFiado h1,
+.pagina-fiado #modalDetalhesFiado h2,
+.pagina-fiado #modalDetalhesFiado h3 {
+Color: #20352b;
+Font-weight: 800;
+Letter-spacing: -0.4px;
+}
+
+.pagina-fiado #modalDetalhesFiado p {
+Color: #718078;
+Line-height: 1.55;
+}
+
+/* Campos de formulário */
+.pagina-fiado #modalDetalhesFiado input,
+.pagina-fiado #modalDetalhesFiado select,
+.pagina-fiado #modalDetalhesFiado textarea {
+Box-sizing: border-box;
+Width: 100%;
+Min-height: 52px;
+Padding: 14px 16px;
+Color: #26352e;
+Background: #f7faf8;
+Border: 1px solid #dce6e0;
+Border-radius: 15px;
+Font-size: 16px;
+Outline: none;
+Transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pagina-fiado #modalDetalhesFiado input:focus,
+.pagina-fiado #modalDetalhesFiado select:focus,
+.pagina-fiado #modalDetalhesFiado textarea:focus {
+Border-color: #20ª767;
+Box-shadow: 0 0 0 3px rgba(32, 167, 103, 0.12);
+}
+
+/* Rótulos */
+.pagina-fiado #modalDetalhesFiado label {
+Display: block;
+Margin: 12px 0 7px;
+Color: #3e5147;
+Font-size: 14px;
+Font-weight: 700;
+}
+
+/* Cartões e áreas de resumo */
+.pagina-fiado #modalDetalhesFiado .card,
+.pagina-fiado #modalDetalhesFiado .resumo-card,
+.pagina-fiado #modalDetalhesFiado .info-card,
+.pagina-fiado #modalDetalhesFiado .stat-card,
+.pagina-fiado #modalDetalhesFiado .resumo-item {
+Box-sizing: border-box;
+Padding: 17px;
+Background: #f7faf8;
+Border: 1px solid #e0e8e3;
+Border-radius: 18px;
+}
+
+/* Saldo do cliente */
+.pagina-fiado #fiadoDetalhesSaldo {
+Color: #a35d20;
+Font-size: 25px;
+Font-weight: 800;
+}
+
+/* Nome do cliente */
+.pagina-fiado #fiadoDetalhesNome {
+Color: #20352b;
+Font-size: 28px;
+Font-weight: 850;
+Line-height: 1.2;
+Overflow-wrap: anywhere;
+}
+
+/* Telefone */
+.pagina-fiado #fiadoDetalhesTelefone {
+Color: #78847d;
+Font-size: 15px;
+}
+
+/* Botões da tela de detalhes */
+.pagina-fiado #modalDetalhesFiado button {
+Box-sizing: border-box;
+Min-height: 48px;
+Padding: 12px 17px;
+Border-radius: 14px;
+Font-size: 15px;
+Font-weight: 700;
+Cursor: pointer;
+Transition: transform 0.15s, opacity 0.15s;
+}
+
+.pagina-fiado #modalDetalhesFiado button:active {
+Transform: scale(0.98);
+}
+
+/* Registrar compra */
+.pagina-fiado #btnAdicionarDividaFiado {
+Color: #218457;
+Background: #eaf7f0;
+Border: 1px solid #cfe9db;
+}
+
+/* Registrar pagamento */
+.pagina-fiado #btnRegistrarPagamentoFiado {
+Color: #ffffff;
+Background: linear-gradient(135deg, #25ad70, #168b53);
+Border: 1px solid #168b53;
+Box-shadow: 0 5px 12px rgba(22, 139, 83, 0.14);
+}
+
+/* Gerar extrato */
+.pagina-fiado #btnExportarFiadoPDF {
+Color: #218457;
+Background: #eaf7f0;
+Border: 1px solid #cfe9db;
+}
+
+/* Excluir cliente: manter separado dos botões principais */
+.pagina-fiado #btnExcluirClienteFiado {
+Color: #b42318;
+Background: #fff4f2;
+Border: 1px solid #f3d0cc;
+}
+
+/* Histórico de movimentações */
+.pagina-fiado #fiadoHistoricoCliente {
+Margin-top: 14px;
+}
+
+.pagina-fiado #fiadoHistoricoCliente > *,
+.pagina-fiado #fiadoDetalhesCompras > * {
+Box-sizing: border-box;
+}
+
+/* Tabelas, caso existam no histórico */
+.pagina-fiado #modalDetalhesFiado table {
+Width: 100%;
+Border-collapse: separate;
+Border-spacing: 0;
+Overflow: hidden;
+Border: 1px solid #e1e9e4;
+Border-radius: 15px;
+}
+
+.pagina-fiado #modalDetalhesFiado th {
+Padding: 12px;
+Color: #4b6254;
+Background: #eef6f1;
+Font-size: 13px;
+Text-align: left;
+}
+
+.pagina-fiado #modalDetalhesFiado td {
+Padding: 12px;
+Color: #394b40;
+Background: #ffffff;
+Border-top: 1px solid #e7eee9;
+Font-size: 14px;
+}
+
+/* Telas pequenas */
+@media (max-width: 480px) {
+.pagina-fiado #modalDetalhesFiado > div,
+.pagina-fiado #modalDetalhesFiado .modal-conteudo,
+.pagina-fiado #modalDetalhesFiado .modal-content,
+.pagina-fiado #modalDetalhesFiado .modal-card,
+.pagina-fiado #modalDetalhesFiado .modal-dialog,
+.pagina-fiado #modalDetalhesFiado .conteudo-modal {
+Max-width: 100%;
+}
+
+.pagina-fiado #fiadoDetalhesNome {
+Font-size: 24px;
+}
+
+.pagina-fiado #modalDetalhesFiado button {
+Max-width: 100%;
+}
+}
+/* ====================================
+FIADO — AJUSTES DO MODAL DE DETALHES
+==================================== */
+
+/* Esconder o botão de fechar da parte inferior.
+O X superior continua funcionando. */
+.pagina-fiado #btnFecharDetalhesFiado2 {
+Display: none !important;
+}
+
+/* Esconder o resumo mensal e a mensagem de juros */
+.pagina-fiado #fiadoResumoMensal {
+Display: none !important;
+}
+
+.pagina-fiado #modalDetalhesFiado :is(
+.fiado-sem-juros,
+.aviso-sem-juros,
+.mensagem-sem-juros
+) {
+Display: none !important;
+}
+
+/* PDF verde, centralizado e destacado */
+.pagina-fiado #btnExportarFiadoPDF {
+Display: flex !important;
+Align-items: center;
+Justify-content: center;
+Width: 100% !important;
+Max-width: 360px;
+Min-height: 58px;
+Margin: 16px auto !important;
+Padding: 14px 20px;
+Color: #fff !important;
+Background: linear-gradient(135deg, #25ad70, #168b53) !important;
+Border: 1px solid #168b53 !important;
+Border-radius: 17px !important;
+Box-shadow: 0 5px 12px rgba(22, 139, 83, .15);
+Font-size: 17px;
+Font-weight: 750;
+}
+
+/* Excluir cliente menor e discreto */
+.pagina-fiado #btnExcluirClienteFiado {
+Display: block;
+Width: auto !important;
+Min-width: 150px;
+Min-height: 42px;
+Margin: 10px auto 16px !important;
+Padding: 9px 16px !important;
+Color: #b42318 !important;
+Background: #fff4f2 !important;
+Border: 1px solid #f0d2ce !important;
+Border-radius: 12px !important;
+Box-shadow: none !important;
+Font-size: 13px !important;
+Font-weight: 650;
+}
+
+/* X de fechar no canto superior direito */
+.pagina-fiado #btnFecharDetalhesFiado {
+Display: flex;
+Align-items: center;
+Justify-content: center;
+Width: 52px;
+Height: 52px;
+Min-width: 52px;
+Min-height: 52px;
+Margin-left: auto;
+Padding: 0;
+Color: #53645ª;
+Background: #f1f5f2;
+Border: 1px solid #e0e8e3;
+Border-radius: 17px;
+Font-size: 0;
+}
+
+.pagina-fiado #btnFecharDetalhesFiado::before {
+Content: “×”;
+Font-size: 30px;
+Line-height: 1;
+Font-weight: 400;
+}
+
+/* Ajustes para celular */
+@media (max-width: 480px) {
+.pagina-fiado #btnExportarFiadoPDF {
+Max-width: 100%;
+}
+
+.pagina-fiado #btnExcluirClienteFiado {
+Min-width: 135px;
+}
+}
