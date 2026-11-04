@@ -1,6 +1,6 @@
 /* =========================================================
    DR. TROCO — NOVA VENDA / FIADO
-   style.css (Fase 3 consolidado)
+   style.css (consolidado)
 ========================================================= */
 
 :root {
@@ -490,7 +490,7 @@ img { max-width: 100%; }
 .troco-vazio strong { color: #53645d; font-size: 12px; }
 .troco-vazio span { margin-top: 4px; color: #8b9692; font-size: 10px; }
 
-/* ===== CTA (BOTÃO PRINCIPAL VERDE) — BASE CONSOLIDADA ===== */
+/* ===== CTA (BOTÃO PRINCIPAL VERDE) ===== */
 .btn-primary,
 .btn-registrar-venda,
 #btnConcluirProdutosVenda {
@@ -1179,7 +1179,7 @@ body:has(.fiado-resumo) .fiado-modal-topo p { margin: 0; color: #64748b; font-si
   .area-leitor-venda { min-height: 230px; }
 }
 
-/* ===== NAVEGAÇÃO INFERIOR (5 abas) ===== */
+/* ===== NAVEGAÇÃO INFERIOR (menu-inferior — 5 abas) ===== */
 body nav.menu-inferior {
   position: fixed !important;
   left: 50% !important;
@@ -1254,8 +1254,6 @@ body nav.menu-inferior > a.menu-item:active { transform: scale(.96); }
 
 /* =========================================================
    FIADO — TELA DE LISTA (sistema via :has)
-   ⚠️ Se seu HTML usa APENAS .pagina-fiado, este bloco
-      inteiro pode ser removido (~350 linhas).
 ========================================================= */
 
 body:has(.fiado-resumo) { background: #f1f5f9; color: #1e293b; }
@@ -1746,65 +1744,12 @@ body:has(.fiado-resumo) .fiado-notificacao.erro { background: #b91c1c; }
   .pagina-fiado #modalDetalhesFiado button { max-width: 100%; }
   .pagina-fiado #btnExportarFiadoPDF { max-width: 100%; }
   .pagina-fiado #btnExcluirClienteFiado { min-width: 135px; }
-                             }
-
-/* ===== COMPATIBILIDADE — .bottom-nav com visual de menu-inferior ===== */
-body .bottom-nav {
-  position: fixed !important;
-  left: 50% !important;
-  right: auto !important;
-  bottom: 0 !important;
-  transform: translateX(-50%) !important;
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  align-items: stretch;
-  width: 100% !important;
-  max-width: 760px !important;
-  min-height: 64px;
-  padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
-  box-sizing: border-box;
-  border-top: 1px solid #dfe8e3;
-  background: rgba(255, 255, 255, .97);
-  box-shadow: 0 -5px 20px rgba(30, 50, 42, .08);
-  z-index: 99999 !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
-body .bottom-nav .nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 100%;
-  min-width: 0;
-  margin: 0;
-  padding: 4px 0;
-  border-radius: 11px;
-  color: #7c8985;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1.2;
-  text-align: center;
-  text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-body .bottom-nav .nav-icon {
-  font-size: 20px;
-  line-height: 1;
-}
-
-body .bottom-nav .nav-item.ativo {
-  color: var(--verde);
-  background: #eef9f4;
-}
-
-body .bottom-nav .nav-item:active {
-  transform: scale(.96);
-}
-/* ===== COMPATIBILIDADE — .bottom-nav com visual de menu-inferior ===== */
+/* =========================================================
+   COMPATIBILIDADE — .bottom-nav com visual de menu-inferior
+   (usado pelo fiado.html)
+========================================================= */
 body .bottom-nav {
   position: fixed !important;
   left: 50% !important;
@@ -1870,5 +1815,5 @@ body .bottom-nav .nav-item.ativo {
 }
 
 body .bottom-nav .nav-item:active {
-  background: #dbeafe;
-}
+  transform: scale(.96);
+     }
