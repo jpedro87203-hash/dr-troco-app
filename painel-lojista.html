@@ -3,112 +3,206 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta name="theme-color" content="#168b53">
   <title>Dr. Troco - Painel do Lojista</title>
   <link rel="stylesheet" href="style.css">
 
   <style>
     .painel-lojista {
-      max-width: 700px;
+      max-width: 760px;
       margin: 0 auto;
-      padding: 20px 16px 100px;
+      padding: 20px 14px 100px;
+      box-sizing: border-box;
     }
 
     .cabecalho-lojista {
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .cabecalho-lojista h1 {
-      margin-bottom: 6px;
+      margin: 0 0 6px;
+      color: #168b53;
+      font-size: 26px;
+      line-height: 1.25;
     }
 
-    .cartao-estabelecimento {
-      background: var(--card, #fff);
-      border: 1px solid var(--borda, #e5e7eb);
+    .cabecalho-lojista p {
+      margin: 0;
+      color: #66736b;
+      font-size: 14px;
+    }
+
+    /* Card colapsável genérico */
+    .painel-card {
+      margin-bottom: 14px;
+      border: 1px solid #e1e9e3;
       border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 18px;
+      background: #ffffff;
+      box-shadow: 0 4px 16px rgba(20, 80, 45, 0.06);
+      overflow: hidden;
     }
 
+    .painel-card-cabecalho {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 16px;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .painel-card-icone {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      background: #eaf8f1;
+      color: #168b53;
+      font-size: 22px;
+    }
+
+    .painel-card-titulo {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .painel-card-titulo h2 {
+      margin: 0 0 4px;
+      color: #1f3028;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .painel-card-titulo p {
+      margin: 0;
+      color: #7b898f;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .painel-card-seta {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: #eaf8f1;
+      color: #168b53;
+      font-size: 20px;
+      transition: transform .2s;
+    }
+
+    .painel-card-cabecalho[aria-expanded="true"] .painel-card-seta {
+      transform: rotate(180deg);
+    }
+
+    .painel-card-conteudo {
+      padding: 0 16px 16px;
+    }
+
+    .painel-card-conteudo[hidden] {
+      display: none !important;
+    }
+
+    /* Dados do estabelecimento */
     .identidade-loja {
       display: flex;
       align-items: center;
       gap: 14px;
-      margin-bottom: 22px;
+      padding: 4px 0 16px;
+      border-bottom: 1px solid #edf2ef;
+      margin-bottom: 16px;
     }
 
     .icone-loja {
       width: 54px;
       height: 54px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      place-items: center;
       border-radius: 14px;
       background: #e7f8ee;
       font-size: 28px;
       flex-shrink: 0;
     }
 
-    .identidade-loja h2 {
-      margin: 0 0 5px;
+    .identidade-loja h3 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      color: #1f3028;
       overflow-wrap: anywhere;
     }
 
     .identidade-loja p {
       margin: 0;
       opacity: .7;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .informacao-lojista {
-      padding: 14px 0;
-      border-top: 1px solid var(--borda, #e5e7eb);
+      padding: 10px 0;
+      border-top: 1px solid #f0f4f1;
     }
 
     .informacao-lojista small {
       display: block;
-      margin-bottom: 5px;
-      opacity: .7;
+      margin-bottom: 3px;
+      color: #7b898f;
+      font-size: 11px;
+      font-weight: 700;
     }
 
     .informacao-lojista p {
       margin: 0;
       overflow-wrap: anywhere;
-      font-weight: 500;
-    }
-
-    .acoes-lojista {
-      display: grid;
-      gap: 10px;
-    }
-
-    .acoes-lojista a {
-      display: block;
-      box-sizing: border-box;
-      width: 100%;
-      padding: 14px;
-      text-align: center;
-      text-decoration: none;
-      border-radius: 12px;
       font-weight: 600;
+      color: #1f3028;
+      font-size: 14px;
     }
 
-    .botao-editar-loja {
-      background: #20a767;
-      color: white;
-    }
-
-    .botao-voltar-loja {
-      border: 1px solid var(--borda, #e5e7eb);
-      color: inherit;
-    }
-
+    /* Aviso sem cadastro */
     .aviso-loja {
       padding: 16px;
       border-radius: 12px;
       background: #fff7df;
       color: #745600;
       line-height: 1.5;
+      font-size: 13px;
+    }
+
+    /* Botões */
+    .painel-acoes {
+      display: grid;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .painel-acoes a {
+      display: block;
+      padding: 14px;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .botao-editar-loja {
+      background: #20a767;
+      color: #fff;
+    }
+
+    .botao-voltar-loja {
+      border: 1px solid #d4ded7;
+      color: #52635b;
+      background: #f8faf9;
     }
 
     [hidden] {
@@ -121,80 +215,162 @@
   <main class="painel-lojista">
     <header class="cabecalho-lojista">
       <h1>🏪 Painel do lojista</h1>
-      <p>Informações do seu estabelecimento</p>
+      <p>Gerencie o estabelecimento, contas, fornecedores e lucro</p>
     </header>
 
-    <section id="avisoSemCadastro" class="aviso-loja" hidden>
-      <strong>Cadastro não encontrado.</strong>
-      <p>Cadastre os dados do estabelecimento para visualizar as informações aqui.</p>
-      <a href="estabelecimento.html">Cadastrar estabelecimento</a>
+    <!-- ============================================= -->
+    <!-- 1. DADOS DO ESTABELECIMENTO                    -->
+    <!-- ============================================= -->
+    <section class="painel-card">
+      <button type="button"
+              class="painel-card-cabecalho"
+              data-toggle-painel="conteudoEstabelecimento"
+              aria-expanded="true"
+              aria-controls="conteudoEstabelecimento">
+        <span class="painel-card-icone" aria-hidden="true">🏪</span>
+        <span class="painel-card-titulo">
+          <h2>Dados do estabelecimento</h2>
+          <p>Nome, contato e endereço da loja</p>
+        </span>
+        <span class="painel-card-seta" aria-hidden="true">⌄</span>
+      </button>
+
+      <div class="painel-card-conteudo" id="conteudoEstabelecimento">
+        <section id="avisoSemCadastro" class="aviso-loja" hidden>
+          <strong>Cadastro não encontrado.</strong>
+          <p>Cadastre os dados do estabelecimento para visualizar as informações aqui.</p>
+          <p style="margin-top:8px">
+            <a href="estabelecimento.html" style="color:#745600;font-weight:700">
+              Cadastrar estabelecimento →
+            </a>
+          </p>
+        </section>
+
+        <section id="dadosEstabelecimento" hidden>
+          <div class="identidade-loja">
+            <div class="icone-loja" aria-hidden="true">🏪</div>
+            <div>
+              <h3 id="painelNome">—</h3>
+              <p>Dados do estabelecimento</p>
+            </div>
+          </div>
+
+          <div class="informacao-lojista">
+            <small>Responsável</small>
+            <p id="painelResponsavel">—</p>
+          </div>
+
+          <div class="informacao-lojista">
+            <small>Telefone</small>
+            <p id="painelTelefone">—</p>
+          </div>
+
+          <div class="informacao-lojista">
+            <small>E-mail</small>
+            <p id="painelEmail">—</p>
+          </div>
+
+          <div class="informacao-lojista">
+            <small>Endereço</small>
+            <p id="painelEndereco">—</p>
+          </div>
+
+          <div class="informacao-lojista">
+            <small>Cidade</small>
+            <p id="painelCidade">—</p>
+          </div>
+
+          <div class="informacao-lojista">
+            <small>Estado</small>
+            <p id="painelEstado">—</p>
+          </div>
+        </section>
+      </div>
     </section>
 
-    <section id="cartaoEstabelecimento" class="cartao-estabelecimento" hidden>
-      <div class="identidade-loja">
-        <div class="icone-loja">🏪</div>
-        <div>
-          <h2 id="painelNome">—</h2>
-          <p>Dados do estabelecimento</p>
-        </div>
-      </div>
+    <!-- ============================================= -->
+    <!-- 2. CONTAS A PAGAR                              -->
+    <!-- O contas-pagar.js injeta aqui dentro.          -->
+    <!-- ============================================= -->
+    <div data-contas-pagar></div>
 
-      <div class="informacao-lojista">
-        <small>Responsável</small>
-        <p id="painelResponsavel">—</p>
-      </div>
+    <!-- ============================================= -->
+    <!-- 3. FORNECEDORES                                -->
+    <!-- ============================================= -->
+    <section class="painel-card">
+      <button type="button"
+              class="painel-card-cabecalho"
+              data-toggle-painel="conteudoFornecedores"
+              aria-expanded="false"
+              aria-controls="conteudoFornecedores">
+        <span class="painel-card-icone" aria-hidden="true">📦</span>
+        <span class="painel-card-titulo">
+          <h2>Fornecedores</h2>
+          <p>Cadastre fornecedores e registre suas compras</p>
+        </span>
+        <span class="painel-card-seta" aria-hidden="true">⌄</span>
+      </button>
 
-      <div class="informacao-lojista">
-        <small>Telefone</small>
-        <p id="painelTelefone">—</p>
-      </div>
-
-      <div class="informacao-lojista">
-        <small>E-mail</small>
-        <p id="painelEmail">—</p>
-      </div>
-
-      <div class="informacao-lojista">
-        <small>Endereço</small>
-        <p id="painelEndereco">—</p>
-      </div>
-
-      <div class="informacao-lojista">
-        <small>Cidade</small>
-        <p id="painelCidade">—</p>
-      </div>
-
-      <div class="informacao-lojista">
-        <small>Estado</small>
-        <p id="painelEstado">—</p>
+      <div class="painel-card-conteudo" id="conteudoFornecedores" hidden>
+        <div id="fornecedoresArea"></div>
       </div>
     </section>
 
-    <nav class="acoes-lojista">
-      <a class="botao-editar-loja" href="estabelecimento.html">
+    <!-- ============================================= -->
+    <!-- 4. ESTIMATIVA DE LUCRO                         -->
+    <!-- ============================================= -->
+    <section class="painel-card">
+      <button type="button"
+              class="painel-card-cabecalho"
+              data-toggle-painel="conteudoLucro"
+              aria-expanded="false"
+              aria-controls="conteudoLucro">
+        <span class="painel-card-icone" aria-hidden="true">📊</span>
+        <span class="painel-card-titulo">
+          <h2>Estimativa de lucro</h2>
+          <p>Lucro bruto e líquido por período</p>
+        </span>
+        <span class="painel-card-seta" aria-hidden="true">⌄</span>
+      </button>
+
+      <div class="painel-card-conteudo" id="conteudoLucro" hidden>
+        <div id="lucroArea"></div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
+    <!-- AÇÕES                                          -->
+    <!-- ============================================= -->
+    <nav class="painel-acoes">
+      <a class="botao-editar-loja" href="estabelecimento.html?editar=1">
         ✏️ Editar dados do estabelecimento
       </a>
 
       <a class="botao-voltar-loja" href="index.html">
-        Voltar para a calculadora
+        ← Voltar para a calculadora
       </a>
     </nav>
   </main>
+
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="contas-pagar.js"></script>
+  <script src="fornecedores.js"></script>
+  <script src="lucro.js"></script>
+
   <script>
+    // Carrega dados do estabelecimento (como já era antes)
     document.addEventListener("DOMContentLoaded", () => {
       const CHAVE = "drTroco_estabelecimento";
-
       const aviso = document.getElementById("avisoSemCadastro");
-      const cartao = document.getElementById("cartaoEstabelecimento");
+      const dados = document.getElementById("dadosEstabelecimento");
 
       try {
-        const dados = JSON.parse(localStorage.getItem(CHAVE) || "{}");
-
-        const nome = (dados.nomeEstabelecimento || "").trim();
-        const responsavel = (dados.responsavelEstabelecimento || "").trim();
+        const salvos = JSON.parse(localStorage.getItem(CHAVE) || "{}");
+        const nome = (salvos.nomeEstabelecimento || "").trim();
+        const responsavel = (salvos.responsavelEstabelecimento || "").trim();
 
         if (!nome || !responsavel) {
           aviso.hidden = false;
@@ -204,21 +380,34 @@
         document.getElementById("painelNome").textContent = nome;
         document.getElementById("painelResponsavel").textContent = responsavel;
         document.getElementById("painelTelefone").textContent =
-          dados.telefoneEstabelecimento || "Não informado";
+          salvos.telefoneEstabelecimento || "Não informado";
         document.getElementById("painelEmail").textContent =
-          dados.emailEstabelecimento || "Não informado";
+          salvos.emailEstabelecimento || "Não informado";
         document.getElementById("painelEndereco").textContent =
-          dados.enderecoEstabelecimento || "Não informado";
+          salvos.enderecoEstabelecimento || "Não informado";
         document.getElementById("painelCidade").textContent =
-          dados.cidadeEstabelecimento || "Não informado";
+          salvos.cidadeEstabelecimento || "Não informado";
         document.getElementById("painelEstado").textContent =
-          dados.estadoEstabelecimento || "Não informado";
+          salvos.estadoEstabelecimento || "Não informado";
 
-        cartao.hidden = false;
+        dados.hidden = false;
       } catch (erro) {
-        aviso.hidden = false;
         console.error("Erro ao carregar dados do estabelecimento:", erro);
+        aviso.hidden = false;
       }
+    });
+
+    // Toggle das seções
+    document.addEventListener("click", (ev) => {
+      const btn = ev.target.closest("[data-toggle-painel]");
+      if (!btn) return;
+      const alvoId = btn.getAttribute("data-toggle-painel");
+      const alvo = document.getElementById(alvoId);
+      if (!alvo) return;
+
+      const aberto = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!aberto));
+      alvo.hidden = aberto;
     });
   </script>
 </body>
