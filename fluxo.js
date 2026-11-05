@@ -1,5 +1,7 @@
 // ============================================
-// DR. TROCO — FLUXO DE CAIXA (LIMPO)
+// DR. TROCO — FLUXO DE CAIXA
+// Vendas, movimentações e saldos sincronizados com Supabase
+// via window.DrTrocoDados (dados-supabase.js)
 // ============================================
 
 const CHAVE_VENDAS = 'drTroco_vendas';
@@ -61,7 +63,7 @@ function formatarReal(valor) {
 function obterDataOperacional(dataCustomizada = new Date()) {
     const config = obterConfigCaixa();
     const [horaCorte, minutoCorte] = (config.horarioCorte || '04:00').split(':').map(Number);
-    
+
     const d = new Date(dataCustomizada);
     const horaAtualD = d.getHours();
     const minutoAtualD = d.getMinutes();
@@ -172,9 +174,21 @@ function obterSaldoInicialHoje() {
     return Number(saldos[dataChave()] || 0);
 }
 
-function salvarSaldoInicial(valor) {
+async function salvarSaldoInicial(valor) {
+    const chave = dataChave();
+
+    // Caminho preferencial: Supabase via DrTrocoDados
+    if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarSaldoInicial === 'function') {
+        const r = await window.DrTrocoDados.salvarSaldoInicial(chave, valor);
+        if (!r || !r.ok) {
+            throw new Error((r && r.erro) || 'Falha ao salvar saldo inicial.');
+        }
+        return;
+    }
+
+    // Fallback (modo offline): grava só no localStorage
     const saldos = obterSaldosIniciais();
-    saldos[dataChave()] = valor;
+    saldos[chave] = valor;
     localStorage.setItem(CHAVE_SALDOS_INICIAIS, JSON.stringify(saldos));
 }
 
@@ -255,21 +269,33 @@ document.querySelectorAll('[data-fechar]').forEach(botao => {
 // ============================================
 
 if (formSaldoInicial) {
-    formSaldoInicial.addEventListener('submit', evento => {
+    formSaldoInicial.addEventListener('submit', async evento => {
         evento.preventDefault();
         const valor = Number(String(valorSaldoInicial.value).replace(',', '.'));
         if (isNaN(valor) || valor < 0) {
             alert('Digite um valor válido.');
             return;
         }
-        salvarSaldoInicial(valor);
-        fecharModal('modalSaldoInicial');
-        carregarFluxo();
+
+        const btn = evento.target.querySelector('button[type="submit"]');
+        const textoOriginal = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+        try {
+            await salvarSaldoInicial(valor);
+            fecharModal('modalSaldoInicial');
+            carregarFluxo();
+        } catch (err) {
+            console.error('[Fluxo] Falha ao salvar saldo inicial:', err);
+            alert('Não foi possível salvar o saldo inicial.\n' + (err.message || ''));
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = textoOriginal || 'Salvar saldo inicial'; }
+        }
     });
 }
 
 if (formMovimento) {
-    formMovimento.addEventListener('submit', evento => {
+    formMovimento.addEventListener('submit', async evento => {
         evento.preventDefault();
         const valor = Number(String(valorMovimento.value).replace(',', '.'));
         if (isNaN(valor) || valor <= 0) {
@@ -280,9 +306,8 @@ if (formMovimento) {
         const descricao = descricaoMovimento.value.trim() ||
             (tipoMovimentoAtual === 'entrada' ? 'Entrada manual' : 'Saída manual');
 
-        const movimentacoes = obterMovimentacoes();
         const novoMovimento = {
-            id: Date.now(),
+            id: String(Date.now()),
             data: dataHojeFormatada(),
             dataChave: dataChave(),
             hora: horaAtual(),
@@ -293,10 +318,43 @@ if (formMovimento) {
             formaPagamentoNome: nomeFormaPagamento(forma)
         };
 
-        movimentacoes.push(novoMovimento);
-        localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(movimentacoes));
-        fecharModal('modalMovimento');
-        carregarFluxo();
+        // Anexa sessão de caixa se houver (DrTrocoCaixa pode não estar carregado)
+        try {
+            if (window.DrTrocoCaixa && typeof window.DrTrocoCaixa.current === 'function') {
+                const sessaoAtual = window.DrTrocoCaixa.current();
+                if (sessaoAtual) {
+                    novoMovimento.caixaSessaoId = sessaoAtual.id;
+                    novoMovimento.caixaSessaoNumero = sessaoAtual.numero;
+                }
+            }
+        } catch (e) {}
+
+        const btn = evento.target.querySelector('button[type="submit"]');
+        const textoOriginal = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+        try {
+            if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarMovimentacao === 'function') {
+                const r = await window.DrTrocoDados.salvarMovimentacao(novoMovimento);
+                if (!r || !r.ok) {
+                    // DrTrocoDados já grava no cache local mesmo quando Supabase falha
+                    console.warn('[Fluxo] Movimentação salva apenas localmente:', r && r.erro);
+                }
+            } else {
+                // Fallback: grava apenas local
+                const movimentacoes = obterMovimentacoes();
+                movimentacoes.push(novoMovimento);
+                localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(movimentacoes));
+            }
+
+            fecharModal('modalMovimento');
+            carregarFluxo();
+        } catch (err) {
+            console.error('[Fluxo] Falha ao registrar movimentação:', err);
+            alert('Não foi possível registrar a movimentação.\n' + (err.message || ''));
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
+        }
     });
 }
 
@@ -451,13 +509,26 @@ function escaparHTML(texto) {
         .replace(/'/g, '&#039;');
 }
 
-function excluirMovimentacao(id) {
+async function excluirMovimentacao(id) {
     if (!confirm('Excluir esta movimentação?')) return;
 
-    const movimentacoes = obterMovimentacoes();
-    const novasMovimentacoes = movimentacoes.filter(m => String(m.id) !== String(id));
-    localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(novasMovimentacoes));
-    carregarFluxo();
+    try {
+        if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirMovimentacao === 'function') {
+            const r = await window.DrTrocoDados.excluirMovimentacao(id);
+            if (!r || !r.ok) {
+                alert('Não foi possível excluir no servidor.\n' + ((r && r.erro) || ''));
+                return;
+            }
+        } else {
+            const movimentacoes = obterMovimentacoes();
+            const novas = movimentacoes.filter(m => String(m.id) !== String(id));
+            localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(novas));
+        }
+        carregarFluxo();
+    } catch (err) {
+        console.error('[Fluxo] Falha ao excluir movimentação:', err);
+        alert('Erro ao excluir movimentação.\n' + (err.message || ''));
+    }
 }
 
 
@@ -465,4 +536,16 @@ function excluirMovimentacao(id) {
 // INICIAR
 // ============================================
 
+// Renderiza imediatamente com o que está no cache local
 carregarFluxo();
+
+// Em paralelo, sincroniza com o Supabase e re-renderiza quando pronto
+if (window.DrTrocoDados && typeof window.DrTrocoDados.sincronizar === 'function') {
+    window.DrTrocoDados.sincronizar()
+        .then(ok => {
+            if (ok) carregarFluxo();
+        })
+        .catch(err => {
+            console.warn('[Fluxo] Sincronização com Supabase falhou:', err);
+        });
+                }
