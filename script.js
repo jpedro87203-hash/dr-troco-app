@@ -183,15 +183,33 @@ function fecharModalOverlay(modal) {
 
 // ------------------------------------------------------------
 // Datas e Turno
+// Lê o horário de corte do drTroco_configCaixa (mesmo
+// usado por fluxo.js e historico.js). Antes estava fixo em 6h,
+// o que causava divergência do dia operacional.
 // ------------------------------------------------------------
 function obterDataHoraAtual() {
     const agora = new Date();
-    if (agora.getHours() >= 0 && agora.getHours() < 6) {
+
+    let horaCorte = 4;
+    let minutoCorte = 0;
+    try {
+        const config = JSON.parse(localStorage.getItem('drTroco_configCaixa') || '{}');
+        const [h, m] = String(config.horarioCorte || '04:00').split(':').map(Number);
+        if (Number.isFinite(h)) horaCorte = h;
+        if (Number.isFinite(m)) minutoCorte = m;
+    } catch (e) { /* mantém o padrão */ }
+
+    const horaAtual = agora.getHours();
+    const minutoAtual = agora.getMinutes();
+
+    if (horaAtual < horaCorte || (horaAtual === horaCorte && minutoAtual < minutoCorte)) {
         agora.setDate(agora.getDate() - 1);
     }
+
     const dia = String(agora.getDate()).padStart(2, '0');
     const mes = String(agora.getMonth() + 1).padStart(2, '0');
     const ano = agora.getFullYear();
+
     const hora = String(new Date().getHours()).padStart(2, '0');
     const minuto = String(new Date().getMinutes()).padStart(2, '0');
     const segundo = String(new Date().getSeconds()).padStart(2, '0');
@@ -1232,4 +1250,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
-}
+            }
