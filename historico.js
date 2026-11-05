@@ -364,7 +364,6 @@ function criarId() {
 
 /* ==========================================================
    GESTÃO DE CAIXA (ABRIR / FECHAR) NO HISTÓRICO
-   // >>> SYNC: sessões salvas no Supabase via DrTrocoDados
 ========================================================== */
 
 if (elementos.btnAbrirCaixaHistorico) {
@@ -396,7 +395,6 @@ if (elementos.btnAbrirCaixaHistorico) {
             operador: operador
         };
 
-        // >>> SYNC
         if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarSessao === 'function') {
             const r = await window.DrTrocoDados.salvarSessao(novaSessao);
             if (!r || !r.ok) {
@@ -413,7 +411,6 @@ if (elementos.btnAbrirCaixaHistorico) {
         saldos[dataOp] = valorAbertura;
         salvarJSON(CHAVE_SALDOS, saldos);
 
-        // >>> SYNC: saldo inicial também vai para o Supabase
         if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarSaldoInicial === 'function') {
             try {
                 await window.DrTrocoDados.salvarSaldoInicial(dataOp, valorAbertura);
@@ -439,7 +436,6 @@ if (elementos.btnFecharCaixaHistorico) {
     });
 }
 
-// >>> SYNC: fechar caixa manual salva no Supabase
 async function fecharCaixaManual(sessao) {
     const totais = calcularTotaisParaData(sessao.dataOperacional);
     const dinheiroEsperado = sessao.valorAbertura + totais.dinheiro + totais.entradasDinheiro - totais.saidasDinheiro;
@@ -463,7 +459,6 @@ async function fecharCaixaManual(sessao) {
     sessao.observacaoFechamento = obs;
     sessao.totais = totais;
 
-    // >>> SYNC
     if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarSessao === 'function') {
         const r = await window.DrTrocoDados.salvarSessao(sessao);
         if (!r || !r.ok) {
@@ -482,7 +477,6 @@ async function fecharCaixaManual(sessao) {
     atualizarHistorico();
 }
 
-// >>> SYNC: fechar caixa automático salva no Supabase
 async function fecharCaixaAutomatico(sessao) {
     const totais = calcularTotaisParaData(sessao.dataOperacional);
     const dinheiroEsperado = sessao.valorAbertura + totais.dinheiro + totais.entradasDinheiro - totais.saidasDinheiro;
@@ -495,7 +489,6 @@ async function fecharCaixaAutomatico(sessao) {
     sessao.observacaoFechamento = 'Fechamento automático por horário de corte.';
     sessao.totais = totais;
 
-    // >>> SYNC
     if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarSessao === 'function') {
         try {
             await window.DrTrocoDados.salvarSessao(sessao);
@@ -916,7 +909,6 @@ elementos.modalMovimentacao?.addEventListener("click", evento => {
     }
 });
 
-// >>> SYNC: nova movimentação salva no Supabase
 if (elementos.formMovimentacao) {
     elementos.formMovimentacao.addEventListener("submit", async evento => {
         evento.preventDefault();
@@ -954,7 +946,6 @@ if (elementos.formMovimentacao) {
                 descricao
             };
 
-            // >>> SYNC
             if (window.DrTrocoDados && typeof window.DrTrocoDados.atualizarMovimentacao === 'function') {
                 const r = await window.DrTrocoDados.atualizarMovimentacao(atualizado);
                 if (!r || !r.ok) {
@@ -987,11 +978,9 @@ if (elementos.formMovimentacao) {
                 })
             };
 
-            // >>> SYNC
             if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarMovimentacao === 'function') {
                 const r = await window.DrTrocoDados.salvarMovimentacao(movimento);
                 if (!r || !r.ok) {
-                    // salva localmente como fallback
                     movimentacoes.push(movimento);
                     salvarJSON(CHAVE_MOVIMENTACOES, movimentacoes);
                     console.warn('[Histórico] Movimentação salva só localmente:', r && r.erro);
@@ -1063,7 +1052,6 @@ elementos.modalDetalhes?.addEventListener("click", evento => {
 
 /* =========================
    EXCLUIR REGISTRO
-   // >>> SYNC: exclusão propaga para o Supabase
 ========================= */
 
 async function excluirRegistro(registro) {
@@ -1082,7 +1070,6 @@ async function excluirRegistro(registro) {
     const idParaExcluir = registro.id ?? registro.original?.id ?? registro.original?.vendaId;
 
     if (registro.categoria === "venda") {
-        // >>> SYNC
         if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirVenda === 'function') {
             const r = await window.DrTrocoDados.excluirVenda(idParaExcluir);
             if (!r || !r.ok) {
@@ -1115,7 +1102,6 @@ async function excluirRegistro(registro) {
             if (!salvarJSON(CHAVE_VENDAS, vendas)) return;
         }
     } else {
-        // >>> SYNC
         if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirMovimentacao === 'function') {
             const r = await window.DrTrocoDados.excluirMovimentacao(idParaExcluir);
             if (!r || !r.ok) {
@@ -1174,7 +1160,7 @@ elementos.btnEditarDetalhe?.addEventListener("click", () => {
 });
 
 /* ==========================================================
-   EXPORTAÇÃO DE PDF (PERÍODO / MULTI-DIAS) COM DADOS DA EMPRESA
+   EXPORTAÇÃO DE PDF
 ========================================================== */
 
 if (elementos.btnExportarPeriodoPDF) {
@@ -1340,23 +1326,36 @@ document.addEventListener("keydown", evento => {
 
 /* =========================
    INICIALIZAÇÃO
-   // >>> SYNC: renderiza com cache local, depois sincroniza
+   Renderiza com cache local, depois sincroniza e re-renderiza SEMPRE
 ========================= */
 
 atualizarInterfaceCaixa();
 atualizarHistorico();
 
-if (window.DrTrocoDados && typeof window.DrTrocoDados.sincronizar === 'function') {
-    window.DrTrocoDados.sincronizar()
-        .then(ok => {
-            if (ok) {
+if (window.DrTrocoDados) {
+    // Escuta qualquer sincronização (mesmo parcial) e re-renderiza
+    if (typeof window.DrTrocoDados.onSync === 'function') {
+        window.DrTrocoDados.onSync(() => {
+            console.log('[Histórico] onSync disparado — re-renderizando');
+            atualizarHistorico();
+            atualizarInterfaceCaixa();
+        });
+    }
+
+    // Dispara sincronização inicial (sempre re-renderiza ao final)
+    if (typeof window.DrTrocoDados.sincronizar === 'function') {
+        window.DrTrocoDados.sincronizar()
+            .then(resultado => {
+                console.log('[Histórico] Sync finalizado. Resultado:', resultado);
                 atualizarHistorico();
                 atualizarInterfaceCaixa();
-            }
-        })
-        .catch(err => {
-            console.warn('[Histórico] Sincronização com Supabase falhou:', err);
-        });
+            })
+            .catch(err => {
+                console.warn('[Histórico] Sync falhou:', err);
+                atualizarHistorico();
+                atualizarInterfaceCaixa();
+            });
+    }
 }
 
 });
