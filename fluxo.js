@@ -177,7 +177,6 @@ function obterSaldoInicialHoje() {
 async function salvarSaldoInicial(valor) {
     const chave = dataChave();
 
-    // Caminho preferencial: Supabase via DrTrocoDados
     if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarSaldoInicial === 'function') {
         const r = await window.DrTrocoDados.salvarSaldoInicial(chave, valor);
         if (!r || !r.ok) {
@@ -186,7 +185,6 @@ async function salvarSaldoInicial(valor) {
         return;
     }
 
-    // Fallback (modo offline): grava só no localStorage
     const saldos = obterSaldosIniciais();
     saldos[chave] = valor;
     localStorage.setItem(CHAVE_SALDOS_INICIAIS, JSON.stringify(saldos));
@@ -318,7 +316,6 @@ if (formMovimento) {
             formaPagamentoNome: nomeFormaPagamento(forma)
         };
 
-        // Anexa sessão de caixa se houver (DrTrocoCaixa pode não estar carregado)
         try {
             if (window.DrTrocoCaixa && typeof window.DrTrocoCaixa.current === 'function') {
                 const sessaoAtual = window.DrTrocoCaixa.current();
@@ -337,11 +334,9 @@ if (formMovimento) {
             if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarMovimentacao === 'function') {
                 const r = await window.DrTrocoDados.salvarMovimentacao(novoMovimento);
                 if (!r || !r.ok) {
-                    // DrTrocoDados já grava no cache local mesmo quando Supabase falha
                     console.warn('[Fluxo] Movimentação salva apenas localmente:', r && r.erro);
                 }
             } else {
-                // Fallback: grava apenas local
                 const movimentacoes = obterMovimentacoes();
                 movimentacoes.push(novoMovimento);
                 localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(movimentacoes));
@@ -539,13 +534,27 @@ async function excluirMovimentacao(id) {
 // Renderiza imediatamente com o que está no cache local
 carregarFluxo();
 
-// Em paralelo, sincroniza com o Supabase e re-renderiza quando pronto
-if (window.DrTrocoDados && typeof window.DrTrocoDados.sincronizar === 'function') {
-    window.DrTrocoDados.sincronizar()
-        .then(ok => {
-            if (ok) carregarFluxo();
-        })
-        .catch(err => {
-            console.warn('[Fluxo] Sincronização com Supabase falhou:', err);
+// Sincroniza com o Supabase e re-renderiza SEMPRE (mesmo se retornar false)
+if (window.DrTrocoDados) {
+    // Escuta qualquer sincronização (mesmo parcial)
+    if (typeof window.DrTrocoDados.onSync === 'function') {
+        window.DrTrocoDados.onSync(() => {
+            console.log('[Fluxo] onSync disparado — re-renderizando');
+            carregarFluxo();
         });
-                }
+    }
+
+    // Dispara sincronização inicial
+    if (typeof window.DrTrocoDados.sincronizar === 'function') {
+        window.DrTrocoDados.sincronizar()
+            .then(resultado => {
+                console.log('[Fluxo] Sync finalizado. Resultado:', resultado);
+                // Re-renderiza de qualquer forma (segurança dupla)
+                carregarFluxo();
+            })
+            .catch(err => {
+                console.warn('[Fluxo] Sync falhou:', err);
+                carregarFluxo();
+            });
+    }
+}
