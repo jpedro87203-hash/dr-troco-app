@@ -2,7 +2,7 @@
    DR. TROCO — CONTAS A PAGAR (SUPABASE)
    Fonte da verdade: public.contas_pagar
    Espelho/fallback: localStorage (drTroco_contasPagar)
-   Caixa: continua em drTroco_movimentacoes (localStorage)
+   Caixa: Supabase via DrTrocoDados (fallback local)
    ========================================================= */
 
 'use strict';
@@ -254,9 +254,16 @@
     catch (e) { console.warn('[Contas] Cache local falhou:', e); }
   }
 
-  /* ---- Movimentação de caixa (continua local) ---- */
+  /* ---- Movimentação de caixa (Supabase via DrTrocoDados) ---- */
 
   function lerMovimentacoes() {
+    // Preferência: cache unificado do DrTrocoDados (que reflete o Supabase)
+    if (window.DrTrocoDados && typeof window.DrTrocoDados.movimentacoes === 'function') {
+      try {
+        const arr = window.DrTrocoDados.movimentacoes();
+        if (Array.isArray(arr)) return arr;
+      } catch (e) { /* cai no fallback */ }
+    }
     try {
       const bruto = localStorage.getItem(CHAVE_MOV);
       if (!bruto) return [];
@@ -264,7 +271,8 @@
       return Array.isArray(arr) ? arr : [];
     } catch (e) { return []; }
   }
-  function salvarMovimentacoes(m) {
+
+  function salvarMovimentacoesLocal(m) {
     try { localStorage.setItem(CHAVE_MOV, JSON.stringify(m)); return true; }
     catch (e) { console.error(e); return false; }
   }
@@ -472,25 +480,40 @@
     )) return;
 
     const movimentoId = 'conta-pagar-' + conta.id;
-    const movimentos = lerMovimentacoes();
-    const jaExiste = movimentos.some(m => String(m.id) === movimentoId);
+
+    // Verifica duplicidade no cache
+    const jaExiste = lerMovimentacoes().some(m => String(m.id) === movimentoId);
 
     if (!jaExiste) {
-      movimentos.push({
+      const novaMov = {
         id: movimentoId,
         tipo: 'saida',
         descricao: 'Conta a pagar: ' + conta.descricao,
         valor: conta.valor,
         formaPagamento,
+        formaPagamentoNome: nomesForma[formaPagamento] || formaPagamento,
         data: dataHojeBR(),
         dataChave: dataHojeISO(),
         hora: horaAtual(),
         origem: 'contas_pagar',
         contaPagarId: conta.id
-      });
-      if (!salvarMovimentacoes(movimentos)) {
-        alert('Falha ao registrar saída no caixa. Pagamento cancelado.');
-        return;
+      };
+
+      // >>> SYNC: Supabase via DrTrocoDados
+      if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarMovimentacao === 'function') {
+        const r = await window.DrTrocoDados.salvarMovimentacao(novaMov);
+        if (!r || !r.ok) {
+          alert('Falha ao registrar saída no caixa. Pagamento cancelado.\n' + ((r && r.erro) || ''));
+          return;
+        }
+      } else {
+        // Fallback: localStorage
+        const movs = lerMovimentacoes();
+        movs.push(novaMov);
+        if (!salvarMovimentacoesLocal(movs)) {
+          alert('Falha ao registrar saída no caixa. Pagamento cancelado.');
+          return;
+        }
       }
     }
 
