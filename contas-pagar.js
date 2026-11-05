@@ -12,10 +12,6 @@
 
   let filtroAtual = 'pendentes';
 
-  // ---------------------------------------------------------
-  // FUNÇÕES BÁSICAS
-  // ---------------------------------------------------------
-
   function lerJSON(chave, padrao) {
     try {
       const dados = JSON.parse(localStorage.getItem(chave));
@@ -41,10 +37,7 @@
   }
 
   function salvarMovimentacoes(movimentacoes) {
-    localStorage.setItem(
-      CHAVE_MOVIMENTACOES,
-      JSON.stringify(movimentacoes)
-    );
+    localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(movimentacoes));
   }
 
   function formatarReal(valor) {
@@ -59,7 +52,6 @@
     const ano = agora.getFullYear();
     const mes = String(agora.getMonth() + 1).padStart(2, '0');
     const dia = String(agora.getDate()).padStart(2, '0');
-
     return `${ano}-${mes}-${dia}`;
   }
 
@@ -76,11 +68,8 @@
 
   function formatarData(dataISO) {
     if (!dataISO) return 'Sem vencimento';
-
     const partes = dataISO.split('-');
-
     if (partes.length !== 3) return dataISO;
-
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
   }
 
@@ -95,14 +84,8 @@
   }
 
   function gerarId() {
-    return 'cp-' + Date.now() + '-' +
-      Math.random().toString(36).slice(2, 9);
+    return 'cp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
   }
-
-  // ---------------------------------------------------------
-  // ESTILOS DA SEÇÃO
-  // Não altera o arquivo style.css existente.
-  // ---------------------------------------------------------
 
   function adicionarEstilos() {
     if (document.getElementById('estilosContasPagar')) return;
@@ -112,39 +95,33 @@
 
     estilo.textContent = `
       .cp-secao {
-        margin: 20px 0;
-        padding: 18px;
-        border-radius: 18px;
-        background: var(--card-bg, #fff);
-        color: var(--text-color, #203126);
-        border: 1px solid #e2eee6;
-        box-shadow: 0 4px 16px rgba(20, 80, 45, .07);
+        margin: 0 0 14px;
+        padding: 0;
+        border-radius: 16px;
+        background: #fff;
+        color: #1f3028;
+        border: 1px solid #e1e9e3;
+        box-shadow: 0 4px 16px rgba(20, 80, 45, .06);
+        overflow: hidden;
       }
 
-      /* Cabeçalho que abre e fecha a seção */
       .cp-cabecalho {
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 16px;
-      }
-
-      .cp-cabecalho-toggle {
         width: 100%;
-        padding: 0;
+        padding: 16px;
         border: 0;
         background: transparent;
         color: inherit;
         text-align: left;
         font: inherit;
         cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
       }
 
-      .cp-cabecalho-toggle:focus-visible {
+      .cp-cabecalho:focus-visible {
         outline: 2px solid #168b53;
-        outline-offset: 5px;
-        border-radius: 8px;
+        outline-offset: -2px;
       }
 
       .cp-titulo-cabecalho {
@@ -156,52 +133,58 @@
         display: grid;
         place-items: center;
         flex-shrink: 0;
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         border-radius: 9px;
-        background: #e7f7ed;
+        background: #eaf8f1;
         color: #168b53;
-        font-size: 23px;
+        font-size: 20px;
         line-height: 1;
         transition: transform .2s ease;
       }
 
-      .cp-cabecalho-toggle[aria-expanded="true"] .cp-seta {
+      .cp-cabecalho[aria-expanded="true"] .cp-seta {
         transform: rotate(180deg);
       }
 
-      /* Garante que a seção fechada realmente fique oculta */
       #conteudoContasPagar[hidden] {
         display: none !important;
       }
 
       .cp-icone {
-        width: 46px;
-        height: 46px;
+        width: 44px;
+        height: 44px;
         display: grid;
         place-items: center;
-        border-radius: 14px;
-        background: #e7f7ed;
-        font-size: 24px;
+        border-radius: 13px;
+        background: #eaf8f1;
+        font-size: 22px;
         flex-shrink: 0;
       }
 
       .cp-cabecalho h2 {
-        margin: 0;
-        font-size: 19px;
+        margin: 0 0 4px;
+        font-size: 16px;
+        font-weight: 900;
+        color: #1f3028;
       }
 
       .cp-cabecalho p {
-        margin: 5px 0 0;
+        margin: 0;
         font-size: 12px;
-        opacity: .72;
+        color: #7b898f;
+        line-height: 1.4;
+      }
+
+      .cp-conteudo {
+        padding: 0 16px 16px;
       }
 
       .cp-resumos {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
-        margin-bottom: 18px;
+        margin-bottom: 16px;
       }
 
       .cp-resumo {
@@ -213,14 +196,15 @@
 
       .cp-resumo span {
         display: block;
-        font-size: 11px;
-        margin-bottom: 7px;
+        font-size: 10px;
+        margin-bottom: 6px;
         color: #52685a;
+        font-weight: 700;
       }
 
       .cp-resumo strong {
         display: block;
-        font-size: 14px;
+        font-size: 13px;
         overflow-wrap: anywhere;
         color: #176b3a;
       }
@@ -228,15 +212,17 @@
       .cp-form {
         display: grid;
         gap: 12px;
-        margin-bottom: 20px;
-        padding: 15px;
+        margin-bottom: 16px;
+        padding: 14px;
         border: 1px solid #e4eee7;
-        border-radius: 14px;
+        border-radius: 13px;
+        background: #fafcfb;
       }
 
       .cp-form h3 {
         margin: 0;
-        font-size: 16px;
+        font-size: 14px;
+        color: #1f3028;
       }
 
       .cp-campo {
@@ -245,8 +231,9 @@
       }
 
       .cp-campo label {
-        font-size: 13px;
-        font-weight: 600;
+        font-size: 12px;
+        font-weight: 700;
+        color: #34483d;
       }
 
       .cp-campo input,
@@ -261,6 +248,13 @@
         color: #203126;
         font: inherit;
         font-size: 14px;
+      }
+
+      .cp-campo input:focus,
+      .cp-campo select:focus {
+        outline: none;
+        border-color: #20a767;
+        box-shadow: 0 0 0 3px rgba(32, 167, 103, .12);
       }
 
       .cp-btn {
@@ -293,7 +287,7 @@
       .cp-filtros {
         display: flex;
         gap: 8px;
-        margin-bottom: 14px;
+        margin-bottom: 12px;
       }
 
       .cp-filtro {
@@ -339,11 +333,12 @@
         margin: 0;
         font-size: 15px;
         overflow-wrap: anywhere;
+        color: #1f3028;
       }
 
       .cp-conta-valor {
         font-size: 15px;
-        font-weight: 800;
+        font-weight: 900;
         color: #176b3a;
         white-space: nowrap;
       }
@@ -400,49 +395,26 @@
       }
 
       @media (max-width: 360px) {
-        .cp-secao {
-          padding: 12px;
-        }
-
-        .cp-resumos {
-          gap: 5px;
-        }
-
-        .cp-resumo {
-          padding: 9px 5px;
-        }
-
-        .cp-resumo strong {
-          font-size: 12px;
-        }
-
-        .cp-conta-topo {
-          flex-direction: column;
-        }
-
-        .cp-cabecalho h2 {
-          font-size: 17px;
-        }
+        .cp-resumos { gap: 5px; }
+        .cp-resumo { padding: 9px 5px; }
+        .cp-resumo strong { font-size: 12px; }
+        .cp-conta-topo { flex-direction: column; }
       }
     `;
 
     document.head.appendChild(estilo);
   }
 
-  // ---------------------------------------------------------
-  // CRIAR A INTERFACE DENTRO DO FLUXO DE CAIXA
-  // A seção começa fechada.
-  // ---------------------------------------------------------
-
   function criarInterface() {
     if (document.getElementById('secaoContasPagar')) return;
 
-    const principal = document.querySelector('main');
+    // Procura primeiro um container dedicado; senão usa o <main>.
+    const principal =
+      document.querySelector('[data-contas-pagar]') ||
+      document.querySelector('main');
 
     if (!principal) {
-      console.error(
-        'Dr. Troco: não foi encontrado o elemento <main> em fluxo.html.'
-      );
+      console.error('Dr. Troco: não foi encontrado container para Contas a Pagar.');
       return;
     }
 
@@ -453,33 +425,29 @@
     secao.innerHTML = `
       <button
         type="button"
-        class="cp-cabecalho cp-cabecalho-toggle"
+        class="cp-cabecalho"
         id="btnToggleContasPagar"
         aria-expanded="false"
         aria-controls="conteudoContasPagar"
       >
         <span class="cp-icone" aria-hidden="true">🧾</span>
-
         <span class="cp-titulo-cabecalho">
           <h2>Contas a pagar</h2>
-          <p>Organize vencimentos e registre pagamentos no caixa.</p>
+          <p>Organize vencimentos e registre pagamentos no caixa</p>
         </span>
-
         <span class="cp-seta" aria-hidden="true">⌄</span>
       </button>
 
-      <div id="conteudoContasPagar" hidden>
+      <div id="conteudoContasPagar" class="cp-conteudo" hidden>
         <div class="cp-resumos">
           <div class="cp-resumo">
             <span>Pendentes</span>
             <strong id="cpTotalPendentes">R$ 0,00</strong>
           </div>
-
           <div class="cp-resumo">
             <span>Atrasadas</span>
             <strong id="cpTotalAtrasadas">R$ 0,00</strong>
           </div>
-
           <div class="cp-resumo">
             <span>Pagas hoje</span>
             <strong id="cpTotalPagas">R$ 0,00</strong>
@@ -491,63 +459,28 @@
 
           <div class="cp-campo">
             <label for="cpDescricao">Descrição da conta</label>
-            <input
-              id="cpDescricao"
-              name="descricao"
-              type="text"
-              maxlength="100"
-              placeholder="Ex.: fornecedor, energia, aluguel"
-              required
-            >
+            <input id="cpDescricao" name="descricao" type="text" maxlength="100"
+              placeholder="Ex.: fornecedor, energia, aluguel" required>
           </div>
 
           <div class="cp-campo">
             <label for="cpValor">Valor (R$)</label>
-            <input
-              id="cpValor"
-              name="valor"
-              type="number"
-              min="0.01"
-              step="0.01"
-              inputmode="decimal"
-              placeholder="0,00"
-              required
-            >
+            <input id="cpValor" name="valor" type="number" min="0.01" step="0.01"
+              inputmode="decimal" placeholder="0,00" required>
           </div>
 
           <div class="cp-campo">
             <label for="cpVencimento">Data de vencimento</label>
-            <input
-              id="cpVencimento"
-              name="vencimento"
-              type="date"
-              required
-            >
+            <input id="cpVencimento" name="vencimento" type="date" required>
           </div>
 
-          <button class="cp-btn cp-btn-principal" type="submit">
-            Salvar conta
-          </button>
+          <button class="cp-btn cp-btn-principal" type="submit">Salvar conta</button>
         </form>
 
         <div class="cp-filtros">
-          <button
-            type="button"
-            class="cp-filtro ativo"
-            data-filtro="pendentes"
-          >Pendentes</button>
-
-          <button
-            type="button"
-            class="cp-filtro"
-            data-filtro="pagas"
-          >Pagas</button>
-
-          <button
-            type="button"
-            class="cp-filtro"
-            data-filtro="todas"
-          >Todas</button>
+          <button type="button" class="cp-filtro ativo" data-filtro="pendentes">Pendentes</button>
+          <button type="button" class="cp-filtro" data-filtro="pagas">Pagas</button>
+          <button type="button" class="cp-filtro" data-filtro="todas">Todas</button>
         </div>
 
         <div id="cpListaContas" class="cp-lista"></div>
@@ -562,53 +495,28 @@
 
     principal.appendChild(secao);
 
-    // Define a data inicial do formulário.
     document.getElementById('cpVencimento').value = dataHojeISO();
 
-    // Cadastro de contas.
     document.getElementById('cpFormConta')
       .addEventListener('submit', cadastrarConta);
 
-    // Clique no cabeçalho, filtros e botões das contas.
     secao.addEventListener('click', tratarClique);
 
-    // Renderiza os dados mesmo com a seção fechada.
     renderizar();
   }
-
-  // ---------------------------------------------------------
-  // CADASTRAR CONTA
-  // ---------------------------------------------------------
 
   function cadastrarConta(evento) {
     evento.preventDefault();
 
-    const descricao = document.getElementById('cpDescricao')
-      .value.trim();
-
-    const valor = Number(
-      document.getElementById('cpValor').value
-    );
-
+    const descricao = document.getElementById('cpDescricao').value.trim();
+    const valor = Number(document.getElementById('cpValor').value);
     const vencimento = document.getElementById('cpVencimento').value;
 
-    if (!descricao) {
-      alert('Informe a descrição da conta.');
-      return;
-    }
-
-    if (!Number.isFinite(valor) || valor <= 0) {
-      alert('Informe um valor válido maior que zero.');
-      return;
-    }
-
-    if (!vencimento) {
-      alert('Informe a data de vencimento.');
-      return;
-    }
+    if (!descricao) { alert('Informe a descrição da conta.'); return; }
+    if (!Number.isFinite(valor) || valor <= 0) { alert('Informe um valor válido maior que zero.'); return; }
+    if (!vencimento) { alert('Informe a data de vencimento.'); return; }
 
     const contas = obterContas();
-
     contas.push({
       id: gerarId(),
       descricao,
@@ -627,39 +535,22 @@
     document.getElementById('cpVencimento').value = dataHojeISO();
 
     renderizar();
-
     alert('Conta cadastrada com sucesso!');
   }
-
-  // ---------------------------------------------------------
-  // PAGAR CONTA
-  // ---------------------------------------------------------
 
   function pagarConta(id) {
     let contas = obterContas();
     const conta = contas.find(item => item.id === id);
-
-    if (!conta) {
-      alert('Conta não encontrada.');
-      return;
-    }
-
-    if (conta.paga) {
-      alert('Esta conta já foi paga.');
-      return;
-    }
+    if (!conta) { alert('Conta não encontrada.'); return; }
+    if (conta.paga) { alert('Esta conta já foi paga.'); return; }
 
     const forma = document.getElementById('cpMetodo-' + id);
-
     if (!forma) return;
-
     const formaPagamento = forma.value;
 
     const nomeForma = {
-      dinheiro: 'Dinheiro',
-      pix: 'Pix',
-      debito: 'Débito',
-      credito: 'Crédito'
+      dinheiro: 'Dinheiro', pix: 'Pix',
+      debito: 'Débito', credito: 'Crédito'
     };
 
     const confirmar = confirm(
@@ -669,15 +560,10 @@
       'Forma: ' + (nomeForma[formaPagamento] || formaPagamento) + '\n\n' +
       'Será registrada uma saída no Fluxo de Caixa.'
     );
-
     if (!confirmar) return;
 
-    // Recarrega os dados antes de gravar para reduzir o risco
-    // de pagar duas vezes a mesma conta.
     contas = obterContas();
-
     const contaAtual = contas.find(item => item.id === id);
-
     if (!contaAtual || contaAtual.paga) {
       alert('Esta conta já foi paga ou não está mais disponível.');
       renderizar();
@@ -685,10 +571,7 @@
     }
 
     const movimentacoes = obterMovimentacoes();
-
     const movimentoId = 'conta-pagar-' + contaAtual.id;
-
-    // Proteção contra duplicidade do lançamento vinculado.
     const movimentoExistente = movimentacoes.some(
       movimento => String(movimento.id) === movimentoId
     );
@@ -706,11 +589,9 @@
         origem: 'contas_pagar',
         contaPagarId: contaAtual.id
       });
-
       salvarMovimentacoes(movimentacoes);
     }
 
-    // A conta é marcada como paga e guarda o ID da saída.
     contaAtual.paga = true;
     contaAtual.dataPagamento = dataHojeISO();
     contaAtual.formaPagamento = formaPagamento;
@@ -718,152 +599,88 @@
 
     salvarContas(contas);
 
-    // Atualiza os cartões e a lista do Fluxo de Caixa existente.
     if (typeof window.carregarFluxo === 'function') {
       window.carregarFluxo();
     }
 
     renderizar();
-
     alert('Pagamento registrado com sucesso!');
   }
-
-  // ---------------------------------------------------------
-  // EXCLUIR CONTA PENDENTE
-  // ---------------------------------------------------------
 
   function excluirConta(id) {
     const contas = obterContas();
     const conta = contas.find(item => item.id === id);
-
     if (!conta) return;
 
     if (conta.paga) {
-      alert(
-        'Esta conta já foi paga. Não é possível excluí-la por aqui.'
-      );
+      alert('Esta conta já foi paga. Não é possível excluí-la por aqui.');
       return;
     }
 
-    if (!confirm(
-      'Excluir a conta "' + conta.descricao + '"?'
-    )) {
-      return;
-    }
+    if (!confirm('Excluir a conta "' + conta.descricao + '"?')) return;
 
     salvarContas(contas.filter(item => item.id !== id));
     renderizar();
   }
 
-  // ---------------------------------------------------------
-  // ABRIR/FECHAR, FILTROS E AÇÕES
-  // ---------------------------------------------------------
-
   function tratarClique(evento) {
-    // Abrir ou fechar a seção Contas a pagar.
     const botaoToggle = evento.target.closest('#btnToggleContasPagar');
-
     if (botaoToggle) {
       const conteudo = document.getElementById('conteudoContasPagar');
-
       if (!conteudo) return;
-
-      const estaAberto =
-        botaoToggle.getAttribute('aria-expanded') === 'true';
-
-      botaoToggle.setAttribute(
-        'aria-expanded',
-        String(!estaAberto)
-      );
-
+      const estaAberto = botaoToggle.getAttribute('aria-expanded') === 'true';
+      botaoToggle.setAttribute('aria-expanded', String(!estaAberto));
       conteudo.hidden = estaAberto;
-
       return;
     }
 
-    // Filtros: pendentes, pagas e todas.
     const botaoFiltro = evento.target.closest('[data-filtro]');
-
     if (botaoFiltro) {
       filtroAtual = botaoFiltro.dataset.filtro;
-
       document.querySelectorAll('.cp-filtro').forEach(botao => {
-        botao.classList.toggle(
-          'ativo',
-          botao.dataset.filtro === filtroAtual
-        );
+        botao.classList.toggle('ativo', botao.dataset.filtro === filtroAtual);
       });
-
       renderizar();
       return;
     }
 
-    // Confirmar pagamento.
     const botaoPagar = evento.target.closest('[data-cp-pagar]');
-
     if (botaoPagar) {
       pagarConta(botaoPagar.dataset.cpPagar);
       return;
     }
 
-    // Excluir conta pendente.
     const botaoExcluir = evento.target.closest('[data-cp-excluir]');
-
     if (botaoExcluir) {
       excluirConta(botaoExcluir.dataset.cpExcluir);
     }
   }
 
-  // ---------------------------------------------------------
-  // RESUMOS E LISTAGEM
-  // ---------------------------------------------------------
-
   function renderizar() {
     const lista = document.getElementById('cpListaContas');
-
     if (!lista) return;
 
     const contas = obterContas();
     const hoje = dataHojeISO();
 
     const pendentes = contas.filter(conta => !conta.paga);
-
-    const atrasadas = pendentes.filter(
-      conta => conta.vencimento && conta.vencimento < hoje
-    );
-
-    const pagasHoje = contas.filter(
-      conta => conta.paga && conta.dataPagamento === hoje
-    );
+    const atrasadas = pendentes.filter(conta => conta.vencimento && conta.vencimento < hoje);
+    const pagasHoje = contas.filter(conta => conta.paga && conta.dataPagamento === hoje);
 
     document.getElementById('cpTotalPendentes').textContent =
-      formatarReal(
-        pendentes.reduce((total, conta) => total + conta.valor, 0)
-      );
-
+      formatarReal(pendentes.reduce((total, conta) => total + conta.valor, 0));
     document.getElementById('cpTotalAtrasadas').textContent =
-      formatarReal(
-        atrasadas.reduce((total, conta) => total + conta.valor, 0)
-      );
-
+      formatarReal(atrasadas.reduce((total, conta) => total + conta.valor, 0));
     document.getElementById('cpTotalPagas').textContent =
-      formatarReal(
-        pagasHoje.reduce((total, conta) => total + conta.valor, 0)
-      );
+      formatarReal(pagasHoje.reduce((total, conta) => total + conta.valor, 0));
 
     let exibidas = contas;
-
-    if (filtroAtual === 'pendentes') {
-      exibidas = contas.filter(conta => !conta.paga);
-    } else if (filtroAtual === 'pagas') {
-      exibidas = contas.filter(conta => conta.paga);
-    }
+    if (filtroAtual === 'pendentes') exibidas = contas.filter(conta => !conta.paga);
+    else if (filtroAtual === 'pagas') exibidas = contas.filter(conta => conta.paga);
 
     exibidas.sort((a, b) => {
       if (a.paga !== b.paga) return a.paga ? 1 : -1;
-
-      return String(a.vencimento || '')
-        .localeCompare(String(b.vencimento || ''));
+      return String(a.vencimento || '').localeCompare(String(b.vencimento || ''));
     });
 
     if (exibidas.length === 0) {
@@ -872,117 +689,63 @@
         pagas: 'Nenhuma conta paga ainda.',
         todas: 'Nenhuma conta cadastrada.'
       };
-
       lista.innerHTML = `
         <div class="cp-vazio">
           <div style="font-size:25px;margin-bottom:8px">🧾</div>
           ${mensagens[filtroAtual] || mensagens.pendentes}
-        </div>
-      `;
-
+        </div>`;
       return;
     }
 
     lista.innerHTML = exibidas.map(conta => {
-      const atrasada =
-        !conta.paga &&
-        conta.vencimento &&
-        conta.vencimento < hoje;
-
+      const atrasada = !conta.paga && conta.vencimento && conta.vencimento < hoje;
       let status = 'Pendente';
-
-      if (conta.paga) {
-        status = 'Paga';
-      } else if (atrasada) {
-        status = 'Vencida';
-      }
+      if (conta.paga) status = 'Paga';
+      else if (atrasada) status = 'Vencida';
 
       const statusClasse = atrasada ? ' atrasada' : '';
 
-      const pagamento = conta.paga
-        ? `
-          <div class="cp-detalhes">
-            <span>
-              Pagamento:
-              ${escaparHTML(formatarData(conta.dataPagamento))}
-            </span>
-
-            <span>
-              Forma:
-              ${escaparHTML(
-                conta.formaPagamento || 'Não informada'
-              )}
-            </span>
-          </div>
-        `
-        : '';
+      const pagamento = conta.paga ? `
+        <div class="cp-detalhes">
+          <span>Pagamento: ${escaparHTML(formatarData(conta.dataPagamento))}</span>
+          <span>Forma: ${escaparHTML(conta.formaPagamento || 'Não informada')}</span>
+        </div>` : '';
 
       const idSeguro = escaparHTML(conta.id);
 
-      const acoes = conta.paga
-        ? ''
-        : `
-          <div class="cp-campo" style="margin-top:12px">
-            <label for="cpMetodo-${idSeguro}">
-              Forma de pagamento
-            </label>
+      const acoes = conta.paga ? '' : `
+        <div class="cp-campo" style="margin-top:12px">
+          <label for="cpMetodo-${idSeguro}">Forma de pagamento</label>
+          <select id="cpMetodo-${idSeguro}">
+            <option value="dinheiro">Dinheiro</option>
+            <option value="pix">Pix</option>
+            <option value="debito">Débito</option>
+            <option value="credito">Crédito</option>
+          </select>
+        </div>
 
-            <select id="cpMetodo-${idSeguro}">
-              <option value="dinheiro">Dinheiro</option>
-              <option value="pix">Pix</option>
-              <option value="debito">Débito</option>
-              <option value="credito">Crédito</option>
-            </select>
-          </div>
-
-          <div class="cp-acoes">
-            <button
-              type="button"
-              class="cp-btn cp-btn-pagar"
-              data-cp-pagar="${idSeguro}"
-            >✓ Confirmar pagamento</button>
-
-            <button
-              type="button"
-              class="cp-btn cp-btn-excluir"
-              data-cp-excluir="${idSeguro}"
-            >Excluir</button>
-          </div>
-        `;
+        <div class="cp-acoes">
+          <button type="button" class="cp-btn cp-btn-pagar"
+            data-cp-pagar="${idSeguro}">✓ Confirmar pagamento</button>
+          <button type="button" class="cp-btn cp-btn-excluir"
+            data-cp-excluir="${idSeguro}">Excluir</button>
+        </div>`;
 
       return `
         <article class="cp-conta">
           <div class="cp-conta-topo">
-            <h3 class="cp-conta-nome">
-              ${escaparHTML(conta.descricao)}
-            </h3>
-
-            <strong class="cp-conta-valor">
-              ${formatarReal(conta.valor)}
-            </strong>
+            <h3 class="cp-conta-nome">${escaparHTML(conta.descricao)}</h3>
+            <strong class="cp-conta-valor">${formatarReal(conta.valor)}</strong>
           </div>
-
           <div class="cp-detalhes">
-            <span>
-              Vencimento:
-              ${escaparHTML(formatarData(conta.vencimento))}
-            </span>
+            <span>Vencimento: ${escaparHTML(formatarData(conta.vencimento))}</span>
           </div>
-
-          <span class="cp-status${statusClasse}">
-            ${status}
-          </span>
-
+          <span class="cp-status${statusClasse}">${status}</span>
           ${pagamento}
           ${acoes}
-        </article>
-      `;
+        </article>`;
     }).join('');
   }
-
-  // ---------------------------------------------------------
-  // INICIALIZAÇÃO
-  // ---------------------------------------------------------
 
   function iniciar() {
     adicionarEstilos();
