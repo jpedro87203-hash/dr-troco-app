@@ -40,13 +40,13 @@ const produtosVendaVazio = $('produtosVendaVazio');
 const secaoCedulas = $('secaoCedulas');
 const listaCedulas = $('listaCedulas');
 
-// Campos do fiado
+// Campos do fiado — fallback cobre os dois HTMLs possíveis
 const groupFiado = $('groupFiado');
 const nomeClienteFiado = $('nomeClienteFiado');
-const valorPagoInicialFiado = $('valorPagoInicialFiado');
-const formaPagamentoInicialFiado = $('formaPagamentoInicialFiado');
+const valorPagoInicialFiado = $('valorEntradaFiado') || $('valorPagoInicialFiado');
+const formaPagamentoInicialFiado = $('metodoEntradaFiado') || $('formaPagamentoInicialFiado');
 const rowSaldoDevedorFiado = $('rowSaldoDevedorFiado');
-const saldoDevedorVenda = $('saldoDevedorVenda');
+const saldoDevedorVenda = $('saldoPendenteFiado') || $('saldoDevedorVenda');
 
 // Modais
 const modalProdutosVenda = $('modalProdutosVenda');
@@ -175,7 +175,7 @@ function fecharModalOverlay(modal) {
     modal.classList.add('hidden');
     modal.setAttribute('aria-hidden', 'true');
     modal.style.setProperty('display', 'none', 'important');
-    
+
     const algumAberto = [modalProdutosVenda, modalLeitorVenda, modalConfirmarVenda].some(m => m && m.classList.contains('aberto') && !m.classList.contains('hidden'));
     document.body.classList.toggle('modal-aberto', algumAberto);
     document.body.style.overflow = algumAberto ? 'hidden' : '';
@@ -209,7 +209,7 @@ function obterDataHoraAtual() {
 function reverterEstoquePorVenda(venda) {
     if (!venda?.produtos || !Array.isArray(venda.produtos)) return;
     const estoque = obterEstoque();
-    
+
     venda.produtos.forEach(itemVendido => {
         const prod = estoque.find(p => String(p.id) === String(itemVendido.id));
         if (prod) {
@@ -236,7 +236,7 @@ function iniciarCalculadora() {
     fecharModalOverlay(modalProdutosVenda);
     pararLeitorVenda();
     configurarEventos();
-    
+
     if (valorContaInput) valorContaInput.disabled = false;
     formaPagamento = 'dinheiro';
     atualizarBotoesPagamento();
@@ -745,7 +745,6 @@ function validarResumoVenda(resumo) {
         }
     }
 
-    // Validação de estoque
     const estoque = obterEstoque();
     for (const item of produtosVenda) {
         const prod = estoque.find(r => String(r.id) === String(item.id));
@@ -790,14 +789,73 @@ function criarResumoConfirmacao(resumo) {
     return html;
 }
 
-function confirmarVenda() {
+// ------------------------------------------------------------
+// CONFIRMAÇÃO DE VENDA — INTEGRAÇÃO COM FIADO E SUPABASE
+// ------------------------------------------------------------
+async function confirmarVenda() {
     if (vendaEmProcessamento) return;
+
     const resumo = calcularResumoVenda();
     if (!validarResumoVenda(resumo)) return;
 
     vendaEmProcessamento = true;
     if (btnConfirmarVenda) btnConfirmarVenda.disabled = true;
 
+    const isFiado = resumo.formaPagamento === 'fiado';
+    let clienteFiado = null;
+
+    // ETAPA 1 — Se for fiado, localizar o cliente cadastrado
+    if (isFiado) {
+        if (!window.DrTrocoFiado || typeof window.DrTrocoFiado.listarClientes !== 'function') {
+            alert('O módulo Fiado não foi carregado corretamente. Recarregue a página.');
+            vendaEmProcessamento = false;
+            if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
+            return;
+        }
+
+        let lista;
+        try {
+            lista = await window.DrTrocoFiado.listarClientes();
+        } catch (err) {
+            console.error('Falha ao consultar clientes do Fiado:', err);
+            alert(
+                'Não foi possível consultar os clientes do Fiado.\n\n' +
+                'Verifique a conexão com a internet e tente novamente.\n' +
+                'A venda NÃO foi registrada.'
+            );
+            vendaEmProcessamento = false;
+            if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
+            return;
+        }
+
+        const alvo = normalizar(resumo.clienteNome);
+        const encontrados = (lista || []).filter(c => normalizar(c.nome) === alvo);
+
+        if (encontrados.length === 0) {
+            alert(
+                'Nenhum cliente cadastrado no Fiado com esse nome.\n\n' +
+                'Abra o módulo Fiado e cadastre o cliente antes de ' +
+                'realizar uma venda fiada.'
+            );
+            vendaEmProcessamento = false;
+            if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
+            return;
+        }
+
+        if (encontrados.length > 1) {
+            alert(
+                'Há mais de um cliente cadastrado com esse nome no Fiado.\n\n' +
+                'Resolva a duplicidade no módulo Fiado antes de continuar.'
+            );
+            vendaEmProcessamento = false;
+            if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
+            return;
+        }
+
+        clienteFiado = encontrados[0];
+    }
+
+    // ETAPA 2 — validar estoque local
     const estoqueOriginal = obterEstoque();
     const estoqueAtualizado = JSON.parse(JSON.stringify(estoqueOriginal));
 
@@ -816,7 +874,51 @@ function confirmarVenda() {
     const dataHora = obterDataHoraAtual();
     const idVenda = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-    // Registro das movimentações de estoque
+    // ETAPA 3 — registrar DÍVIDA no Fiado (Supabase)
+    if (isFiado) {
+        try {
+            const r = await window.DrTrocoFiado.registrarVendaFiado({
+                clienteId: clienteFiado.id,
+                valor: resumo.total,
+                descricao: `Venda #${idVenda}`,
+                vendaId: idVenda,
+                origem: 'pdv'
+            });
+            if (!r || !r.sucesso) throw new Error((r && r.erro) || 'Falha ao registrar dívida.');
+        } catch (err) {
+            console.error('Erro ao registrar dívida no Fiado:', err);
+            alert(
+                'Não foi possível registrar a dívida no Fiado.\n\n' +
+                'A venda NÃO foi concluída.\n\n' + (err.message || '')
+            );
+            vendaEmProcessamento = false;
+            if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
+            return;
+        }
+    }
+
+    // ETAPA 4 — registrar PAGAMENTO INICIAL no Fiado (se houve entrada)
+    if (isFiado && resumo.pagamentoInicial > 0) {
+        try {
+            const r = await window.DrTrocoFiado.registrarPagamento(
+                clienteFiado.id,
+                resumo.pagamentoInicial,
+                resumo.formaPagamentoRecebido,
+                `Pagamento inicial da venda #${idVenda}`,
+                idVenda
+            );
+            if (!r || !r.sucesso) throw new Error((r && r.erro) || 'Falha ao registrar pagamento inicial.');
+        } catch (err) {
+            console.error('Erro ao registrar pagamento inicial no Fiado:', err);
+            alert(
+                'A dívida foi registrada, mas o pagamento inicial não pôde ser gravado.\n\n' +
+                'Abra o Fiado, verifique o histórico do cliente e registre o ' +
+                'pagamento manualmente se necessário.\n\n' + (err.message || '')
+            );
+        }
+    }
+
+    // ETAPA 5 — baixar estoque local + registrar movimentação de estoque
     const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
     let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque);
 
@@ -838,7 +940,7 @@ function confirmarVenda() {
     });
     localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
 
-    const isFiado = resumo.formaPagamento === 'fiado';
+    // ETAPA 6 — montar registro da venda
     const venda = {
         id: idVenda,
         data: dataHora.data,
@@ -859,15 +961,27 @@ function confirmarVenda() {
         }))
     };
 
-    let movimentacoes = lerListaLocalStorage(CHAVE_MOVIMENTACOES);
+    // Anexa sessão de caixa se houver
+    try {
+        if (window.DrTrocoCaixa && typeof window.DrTrocoCaixa.current === 'function') {
+            const sessaoAtual = window.DrTrocoCaixa.current();
+            if (sessaoAtual) {
+                venda.caixaSessaoId = sessaoAtual.id;
+                venda.caixaSessaoNumero = sessaoAtual.numero;
+            }
+        }
+    } catch (e) {}
+
     let movimentacaoInicial = null;
 
     if (isFiado) {
         const pago = Math.round(resumo.pagamentoInicial * 100) / 100;
         const saldo = Math.max(0, Math.round((resumo.total - pago) * 100) / 100);
-        venda.clienteNome = resumo.clienteNome;
+        venda.clienteId = clienteFiado.id;
+        venda.clienteNome = clienteFiado.nome;
         venda.fiado = {
-            clienteNome: resumo.clienteNome,
+            clienteId: clienteFiado.id,
+            clienteNome: clienteFiado.nome,
             valorOriginal: resumo.total,
             totalPago: pago,
             saldoDevedor: saldo,
@@ -877,37 +991,91 @@ function confirmarVenda() {
 
         if (pago > 0) {
             venda.fiado.pagamentos.push({
-                id: `pg-${idVenda}-inicial`, valor: pago, formaPagamento: resumo.formaPagamentoRecebido,
+                id: `pg-${idVenda}-inicial`,
+                valor: pago,
+                formaPagamento: resumo.formaPagamentoRecebido,
                 formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
-                data: dataHora.data, dataChave: dataHora.dataChave, hora: dataHora.hora, tipo: 'pagamento_inicial'
+                data: dataHora.data,
+                dataChave: dataHora.dataChave,
+                hora: dataHora.hora,
+                tipo: 'pagamento_inicial'
             });
 
             movimentacaoInicial = {
-                id: `fiado-${idVenda}-${Date.now()}`, tipo: 'entrada', valor: pago,
-                formaPagamento: resumo.formaPagamentoRecebido, formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
-                descricao: `Pagamento inicial do fiado — ${resumo.clienteNome}`,
-                data: dataHora.data, dataChave: dataHora.dataChave, hora: dataHora.hora,
-                origem: 'pagamento_fiado_inicial', fiadoId: idVenda, vendaId: idVenda
+                id: `fiado-${idVenda}-${Date.now()}`,
+                tipo: 'entrada',
+                valor: pago,
+                formaPagamento: resumo.formaPagamentoRecebido,
+                formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
+                descricao: `Pagamento inicial do fiado — ${clienteFiado.nome}`,
+                data: dataHora.data,
+                dataChave: dataHora.dataChave,
+                hora: dataHora.hora,
+                origem: 'pagamento_fiado_inicial',
+                fiadoId: idVenda,
+                vendaId: idVenda
             };
-            movimentacoes.push(movimentacaoInicial);
+            if (venda.caixaSessaoId) {
+                movimentacaoInicial.caixaSessaoId = venda.caixaSessaoId;
+                movimentacaoInicial.caixaSessaoNumero = venda.caixaSessaoNumero;
+            }
         }
     }
 
-    const vendas = lerListaLocalStorage(CHAVE_VENDAS);
+    // ETAPA 7 — persistir estoque local (não crítico)
     try {
-        localStorage.setItem(CHAVE_VENDAS, JSON.stringify([...vendas, venda]));
-        if (isFiado && movimentacaoInicial) localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(movimentacoes));
-        if (!salvarEstoque(estoqueAtualizado)) throw new Error('Erro ao salvar estoque.');
+        if (!salvarEstoque(estoqueAtualizado)) {
+            console.warn('[Venda] Falha ao salvar estoque local.');
+        }
     } catch (err) {
-        console.error('Erro ao salvar venda:', err);
-        alert('Erro ao registrar a venda.');
-        vendaEmProcessamento = false;
-        if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
-        return;
+        console.warn('[Venda] Erro ao salvar estoque:', err);
     }
 
+    // ETAPA 8 — gravar venda + movimentação (Supabase via DrTrocoDados ou fallback local)
+    let vendaOk = false;
+
+    if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarVenda === 'function') {
+        try {
+            const r = await window.DrTrocoDados.salvarVenda(venda);
+            vendaOk = !!(r && r.ok);
+            if (!vendaOk) console.warn('[Venda] Salva apenas no aparelho:', r && r.erro);
+        } catch (err) {
+            console.error('[Venda] Erro ao salvar via DrTrocoDados:', err);
+        }
+
+        if (movimentacaoInicial && typeof window.DrTrocoDados.salvarMovimentacao === 'function') {
+            try {
+                await window.DrTrocoDados.salvarMovimentacao(movimentacaoInicial);
+            } catch (err) {
+                console.error('[Venda] Erro ao salvar movimentação inicial:', err);
+            }
+        }
+    } else {
+        // Fallback: apenas localStorage
+        const vendas = lerListaLocalStorage(CHAVE_VENDAS);
+        localStorage.setItem(CHAVE_VENDAS, JSON.stringify([...vendas, venda]));
+        if (movimentacaoInicial) {
+            const movs = lerListaLocalStorage(CHAVE_MOVIMENTACOES);
+            movs.push(movimentacaoInicial);
+            localStorage.setItem(CHAVE_MOVIMENTACOES, JSON.stringify(movs));
+        }
+        vendaOk = true;
+    }
+
+    // ETAPA 9 — finalizar
     fecharModalOverlay(modalConfirmarVenda);
-    alert(isFiado ? `Venda fiada registrada para ${resumo.clienteNome}!` : 'Venda registrada com sucesso!');
+
+    if (vendaOk) {
+        alert(isFiado
+            ? `Venda fiada registrada para ${clienteFiado.nome}!`
+            : 'Venda registrada com sucesso!');
+    } else {
+        alert(
+            'A venda foi salva no aparelho, mas o envio para a nuvem falhou.\n\n' +
+            'Ela será sincronizada automaticamente quando a conexão voltar.'
+        );
+    }
+
     vendaEmProcessamento = false;
     if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
     limparVenda();
