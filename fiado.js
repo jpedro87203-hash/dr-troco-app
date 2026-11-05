@@ -1,9 +1,9 @@
 /* ============================================================
    DR. TROCO — CONTROLE DE FIADO (SUPABASE)
    Arquivo: fiado.js
-   Armazenamento principal: Supabase (tabelas fiado_clientes / fiado_movimentacoes)
+   Armazenamento: Supabase (fiado_clientes / fiado_movimentacoes)
    Backup/fallback: localStorage (drTroco_fiadoClientes)
-   Valores monetários: cálculos em centavos
+   Estrutura real: ids são TEXT, valor_centavos é BIGINT, valor é NUMERIC
 ============================================================ */
 
 'use strict';
@@ -12,13 +12,9 @@
   if (window.__drTrocoFiadoInicializado) return;
   window.__drTrocoFiadoInicializado = true;
 
-  /* ==========================================================
-     1. CONSTANTES E ELEMENTOS
-  ========================================================== */
-
-  const TAB_CLIENTES   = 'fiado_clientes';
-  const TAB_MOVS       = 'fiado_movimentacoes';
-  const CHAVE_LOCAL    = 'drTroco_fiadoClientes';
+  const TAB_CLIENTES = 'fiado_clientes';
+  const TAB_MOVS     = 'fiado_movimentacoes';
+  const CHAVE_LOCAL  = 'drTroco_fiadoClientes';
 
   const $ = id => document.getElementById(id);
 
@@ -68,11 +64,7 @@
     notificacao: $('fiadoNotificacao')
   };
 
-  /* ==========================================================
-     2. ESTADO GLOBAL
-  ========================================================== */
-
-  let clientes = [];               // cache [{id,nome,telefone,movimentacoes:[...]}]
+  let clientes = [];
   let clienteSelecionadoId = null;
   let usuarioAtual = null;
   let carregando = false;
@@ -81,13 +73,11 @@
   let temporizadorNotificacao = null;
 
   /* ==========================================================
-     3. UTILITÁRIOS BÁSICOS
+     UTILITÁRIOS
   ========================================================== */
 
   function getSupa() {
-    if (!window.supabaseClient) {
-      throw new Error('Cliente Supabase não foi inicializado (supabase.js).');
-    }
+    if (!window.supabaseClient) throw new Error('Cliente Supabase não inicializado (supabase.js).');
     return window.supabaseClient;
   }
 
@@ -106,8 +96,10 @@
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
   }
 
-  function ehUUID(valor) {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(valor || ''));
+  // IMPORTANTE: id é TEXT na tabela real.
+  // Qualquer string não vazia pode ser preservada na migração.
+  function idPreservavel(v) {
+    return typeof v === 'string' && v.trim().length > 0;
   }
 
   function agoraISO() { return new Date().toISOString(); }
@@ -122,15 +114,11 @@
   function mesAtual() { return dataLocalISO().slice(0, 7); }
 
   function formatarDinheiro(centavos) {
-    return (centavos / 100).toLocaleString('pt-BR', {
-      style: 'currency', currency: 'BRL'
-    });
+    return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
   function paraCentavos(valor) {
-    if (typeof valor === 'number') {
-      return Number.isFinite(valor) ? Math.round(valor * 100) : 0;
-    }
+    if (typeof valor === 'number') return Number.isFinite(valor) ? Math.round(valor * 100) : 0;
     if (typeof valor !== 'string') return 0;
     let texto = valor.trim();
     if (!texto) return 0;
@@ -164,13 +152,10 @@
   function formatarData(valor) {
     if (!valor) return 'Data não informada';
     const texto = String(valor);
-    const iso = /^\d{4}-\d{2}-\d{2}/.test(texto)
-      ? texto.slice(0, 10)
-      : obterDataMovimento({ data: texto });
+    const iso = /^\d{4}-\d{2}-\d{2}/.test(texto) ? texto.slice(0, 10) : obterDataMovimento({ data: texto });
     if (!iso) return 'Data não informada';
     const p = iso.split('-');
-    if (p.length !== 3) return 'Data não informada';
-    return `${p[2]}/${p[1]}/${p[0]}`;
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : 'Data não informada';
   }
 
   function formatarHora(valor) {
@@ -183,8 +168,7 @@
   function formatarMes(mes) {
     if (!/^\d{4}-\d{2}$/.test(String(mes))) return String(mes || '');
     const [ano, n] = mes.split('-');
-    return new Date(Number(ano), Number(n) - 1, 1)
-      .toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    return new Date(Number(ano), Number(n) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   }
 
   function clonar(v) { return JSON.parse(JSON.stringify(v)); }
@@ -202,12 +186,17 @@
   function confirmar(msg) { return window.confirm(msg); }
 
   /* ==========================================================
-     4. MAPEAMENTO BANCO <-> APP
+     MAPEAMENTO BANCO <-> APP
+     Estrutura real:
+       fiado_clientes: id text, nome, telefone, criado_em, atualizado_em, usuario_id
+       fiado_movimentacoes: id text, cliente_id text, tipo, valor_centavos bigint,
+                            valor numeric, descricao, forma, observacao, data, data_hora,
+                            origem, venda_id text, usuario_id
   ========================================================== */
 
   function clienteDoBanco(row) {
     return {
-      id: row.id,
+      id: String(row.id),
       nome: row.nome,
       telefone: row.telefone || '',
       criadoEm: row.criado_em || agoraISO(),
@@ -218,14 +207,20 @@
 
   function movDoBanco(row) {
     const tipo = row.tipo === 'pagamento' ? 'pagamento' : 'divida';
-    const valorC = Number(row.valor_centavos) || 0;
+    // valor_centavos é bigint; pode vir como string do driver. Converter.
+    let valorC = Number(row.valor_centavos);
+    if (!Number.isFinite(valorC) || valorC === 0) {
+      // fallback: usar valor numeric se valor_centavos estiver vazio
+      const v = Number(row.valor);
+      valorC = Number.isFinite(v) ? Math.round(v * 100) : 0;
+    }
     return {
-      id: row.id,
+      id: String(row.id),
       tipo,
       valorCentavos: valorC,
       valor: valorC / 100,
       descricao: row.descricao || '',
-      data: row.data || (row.data_hora ? row.data_hora.slice(0, 10) : dataLocalISO()),
+      data: row.data || (row.data_hora ? String(row.data_hora).slice(0, 10) : dataLocalISO()),
       dataHora: row.data_hora || agoraISO(),
       forma: row.forma || (tipo === 'pagamento' ? 'dinheiro' : ''),
       observacao: row.observacao || '',
@@ -236,7 +231,7 @@
 
   function clienteParaBanco(c) {
     return {
-      id: c.id,
+      id: String(c.id),
       usuario_id: usuarioAtual.id,
       nome: String(c.nome || '').trim(),
       telefone: c.telefone ? String(c.telefone).trim() : null,
@@ -247,12 +242,14 @@
 
   function movParaBanco(m, clienteId) {
     const tipo = m.tipo === 'pagamento' ? 'pagamento' : 'divida';
+    const valorC = Number(m.valorCentavos) || 0;
     return {
-      id: m.id,
+      id: String(m.id),
       usuario_id: usuarioAtual.id,
-      cliente_id: clienteId,
+      cliente_id: String(clienteId),
       tipo,
-      valor_centavos: Number(m.valorCentavos) || 0,
+      valor_centavos: valorC,
+      valor: valorC / 100,               // coluna numeric espelhada — mantém consistência
       descricao: m.descricao || (tipo === 'divida' ? 'Compra fiado' : 'Pagamento'),
       data: m.data || dataLocalISO(),
       data_hora: m.dataHora || agoraISO(),
@@ -264,7 +261,7 @@
   }
 
   /* ==========================================================
-     5. CARREGAMENTO + MIGRAÇÃO
+     CARREGAMENTO + MIGRAÇÃO
   ========================================================== */
 
   async function carregarTudo() {
@@ -285,9 +282,9 @@
       if (movResp.error) throw movResp.error;
 
       const mapa = new Map();
-      (cliResp.data || []).forEach(row => mapa.set(row.id, clienteDoBanco(row)));
+      (cliResp.data || []).forEach(row => mapa.set(String(row.id), clienteDoBanco(row)));
       (movResp.data || []).forEach(row => {
-        const c = mapa.get(row.cliente_id);
+        const c = mapa.get(String(row.cliente_id));
         if (c) c.movimentacoes.push(movDoBanco(row));
       });
 
@@ -298,7 +295,6 @@
     } catch (err) {
       console.error('[Fiado] Falha ao carregar do Supabase:', err);
       erroCarregamento = err;
-      // Fallback: mantém o que houver em memória; tenta ler local como apoio (NÃO sobrescreve se vazio)
       if (clientes.length === 0) {
         try {
           const bruto = localStorage.getItem(CHAVE_LOCAL);
@@ -321,7 +317,7 @@
 
   function normalizarClienteLocal(c) {
     const item = { ...c };
-    item.id = item.id || gerarId();
+    item.id = item.id ? String(item.id) : gerarId();
     item.nome = String(item.nome || item.nomeCliente || '').trim();
     item.telefone = String(item.telefone || '').trim();
     item.criadoEm = item.criadoEm || item.dataCadastro || agoraISO();
@@ -329,7 +325,7 @@
     const movs = Array.isArray(item.movimentacoes) ? item.movimentacoes : [];
     item.movimentacoes = movs.map(m => {
       const mm = { ...m };
-      mm.id = mm.id || gerarId();
+      mm.id = mm.id ? String(mm.id) : gerarId();
       mm.tipo = (mm.tipo === 'pagamento') ? 'pagamento' : 'divida';
       mm.valorCentavos = Number.isInteger(mm.valorCentavos)
         ? mm.valorCentavos
@@ -344,8 +340,7 @@
   }
 
   /**
-   * Migração idempotente: lê drTroco_fiadoClientes, envia ao Supabase
-   * preservando IDs sempre que possível. NÃO apaga dados locais.
+   * Migração idempotente — preserva IDs textuais sempre que possível.
    */
   async function migrarDadosLocais() {
     await getUsuario();
@@ -363,7 +358,6 @@
     }
     if (!locais.length) return { migrados: 0, pulados: 0, erro: null, vazio: true };
 
-    // Snapshot dos IDs já existentes
     const [idsCliResp, idsMovResp] = await Promise.all([
       supa.from(TAB_CLIENTES).select('id').eq('usuario_id', user.id),
       supa.from(TAB_MOVS).select('id').eq('usuario_id', user.id)
@@ -371,8 +365,8 @@
     if (idsCliResp.error) return { migrados: 0, pulados: 0, erro: 'Falha ao verificar clientes existentes: ' + idsCliResp.error.message };
     if (idsMovResp.error) return { migrados: 0, pulados: 0, erro: 'Falha ao verificar movimentações existentes: ' + idsMovResp.error.message };
 
-    const idsClientes = new Set((idsCliResp.data || []).map(r => r.id));
-    const idsMovs = new Set((idsMovResp.data || []).map(r => r.id));
+    const idsClientes = new Set((idsCliResp.data || []).map(r => String(r.id)));
+    const idsMovs = new Set((idsMovResp.data || []).map(r => String(r.id)));
 
     let migrados = 0, pulados = 0;
 
@@ -382,7 +376,7 @@
       if (!nome) continue;
 
       const idOriginal = local.id ? String(local.id) : null;
-      const podePreservarId = idOriginal && ehUUID(idOriginal);
+      const podePreservarId = idPreservavel(idOriginal);
       const jaExiste = podePreservarId && idsClientes.has(idOriginal);
 
       let idCliente;
@@ -418,7 +412,7 @@
         if (valorC <= 0) continue;
 
         const idMovOrig = movLocal.id ? String(movLocal.id) : null;
-        const preservarMov = idMovOrig && ehUUID(idMovOrig);
+        const preservarMov = idPreservavel(idMovOrig);
         const movJaExiste = preservarMov && idsMovs.has(idMovOrig);
         if (movJaExiste) { pulados++; continue; }
 
@@ -428,9 +422,10 @@
         const { error: movErr } = await supa.from(TAB_MOVS).insert({
           id: idMov,
           usuario_id: user.id,
-          cliente_id: idCliente,
+          cliente_id: String(idCliente),
           tipo,
           valor_centavos: valorC,
+          valor: valorC / 100,
           descricao: movLocal.descricao || (tipo === 'divida' ? 'Compra fiado' : 'Pagamento'),
           data: movLocal.data || dataLocalISO(),
           data_hora: movLocal.dataHora || agoraISO(),
@@ -453,7 +448,7 @@
   }
 
   /* ==========================================================
-     6. OPERAÇÕES DE CLIENTE (SUPABASE)
+     OPERAÇÕES DE CLIENTE
   ========================================================== */
 
   async function inserirCliente({ nome, telefone }) {
@@ -467,8 +462,7 @@
       atualizadoEm: agoraISO(),
       movimentacoes: []
     };
-    const { data, error } = await supa.from(TAB_CLIENTES)
-      .insert(clienteParaBanco(novo)).select().single();
+    const { data, error } = await supa.from(TAB_CLIENTES).insert(clienteParaBanco(novo)).select().single();
     if (error) throw new Error('Falha ao cadastrar cliente: ' + error.message);
     return clienteDoBanco(data);
   }
@@ -482,7 +476,7 @@
         telefone: String(telefone || '').trim() || null,
         atualizado_em: agoraISO()
       })
-      .eq('id', id).eq('usuario_id', usuarioAtual.id)
+      .eq('id', String(id)).eq('usuario_id', usuarioAtual.id)
       .select().single();
     if (error) throw new Error('Falha ao editar cliente: ' + error.message);
     return clienteDoBanco(data);
@@ -493,14 +487,12 @@
     const supa = getSupa();
 
     const { data: movs, error: e1 } = await supa.from(TAB_MOVS)
-      .select('id').eq('cliente_id', id).eq('usuario_id', usuarioAtual.id).limit(1);
+      .select('id').eq('cliente_id', String(id)).eq('usuario_id', usuarioAtual.id).limit(1);
     if (e1) throw new Error('Falha ao verificar movimentações: ' + e1.message);
-    if (movs && movs.length > 0) {
-      throw new Error('Este cliente possui movimentações. Exclua-as primeiro.');
-    }
+    if (movs && movs.length > 0) throw new Error('Este cliente possui movimentações. Exclua-as primeiro.');
 
     const { error: e2 } = await supa.from(TAB_CLIENTES)
-      .delete().eq('id', id).eq('usuario_id', usuarioAtual.id);
+      .delete().eq('id', String(id)).eq('usuario_id', usuarioAtual.id);
     if (e2) throw new Error('Falha ao excluir cliente: ' + e2.message);
   }
 
@@ -517,26 +509,22 @@
     await getUsuario();
     const supa = getSupa();
     const { error } = await supa.from(TAB_MOVS)
-      .delete().eq('id', movId).eq('usuario_id', usuarioAtual.id);
+      .delete().eq('id', String(movId)).eq('usuario_id', usuarioAtual.id);
     if (error) throw new Error('Falha ao excluir movimentação: ' + error.message);
   }
 
   /* ==========================================================
-     7. CÁLCULOS A PARTIR DO CACHE
+     CÁLCULOS
   ========================================================== */
 
   function obterMovimentacoes(c) { return Array.isArray(c.movimentacoes) ? c.movimentacoes : []; }
 
   function valorMovimentoCentavos(m) {
-    return Number.isInteger(m.valorCentavos)
-      ? m.valorCentavos
-      : paraCentavos(m.valor ?? 0);
+    return Number.isInteger(m.valorCentavos) ? m.valorCentavos : paraCentavos(m.valor ?? 0);
   }
 
   function totalPorTipo(c, tipo) {
-    return obterMovimentacoes(c).reduce(
-      (t, m) => m.tipo === tipo ? t + valorMovimentoCentavos(m) : t, 0
-    );
+    return obterMovimentacoes(c).reduce((t, m) => m.tipo === tipo ? t + valorMovimentoCentavos(m) : t, 0);
   }
 
   const totalComprado = c => totalPorTipo(c, 'divida');
@@ -557,7 +545,7 @@
   }
 
   /* ==========================================================
-     8. MODAIS (inalterado)
+     MODAIS
   ========================================================== */
 
   function abrirModal(modal, campo) {
@@ -572,37 +560,26 @@
     if (!modal) return;
     modal.classList.remove('aberto');
     modal.setAttribute('aria-hidden', 'true');
-    if (!document.querySelector('.fiado-modal.aberto')) {
-      document.body.style.overflow = '';
-    }
+    if (!document.querySelector('.fiado-modal.aberto')) document.body.style.overflow = '';
   }
 
-  function fecharDetalhes() {
-    fecharModal(elementos.modalDetalhes);
-    clienteSelecionadoId = null;
-  }
-
+  function fecharDetalhes() { fecharModal(elementos.modalDetalhes); clienteSelecionadoId = null; }
   function fecharPagamento() {
     fecharModal(elementos.modalPagamento);
     if (elementos.formPagamento) elementos.formPagamento.reset();
   }
-
   function fecharTodosModais() {
     document.querySelectorAll('.fiado-modal.aberto').forEach(fecharModal);
     clienteSelecionadoId = null;
   }
 
   document.querySelectorAll('.fiado-modal').forEach(modal => {
-    modal.addEventListener('click', ev => {
-      if (ev.target === modal) fecharModal(modal);
-    });
+    modal.addEventListener('click', ev => { if (ev.target === modal) fecharModal(modal); });
   });
-  document.addEventListener('keydown', ev => {
-    if (ev.key === 'Escape') fecharTodosModais();
-  });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape') fecharTodosModais(); });
 
   /* ==========================================================
-     9. CADASTRO / EDIÇÃO DE CLIENTES
+     CADASTRO / EDIÇÃO DE CLIENTES
   ========================================================== */
 
   function abrirCadastroCliente(cliente = null) {
@@ -631,20 +608,13 @@
     const telefone = elementos.telefone.value.trim();
     const idEdicao = elementos.formCadastro.dataset.editarId;
 
-    if (!nome) {
-      mostrarNotificacao('Digite o nome do cliente.', true);
-      elementos.nome.focus();
-      return;
-    }
+    if (!nome) { mostrarNotificacao('Digite o nome do cliente.', true); elementos.nome.focus(); return; }
 
     const nomeNorm = normalizarTexto(nome);
     const duplicado = clientes.find(c =>
-      normalizarTexto(c.nome) === nomeNorm &&
-      String(c.id) !== String(idEdicao || '')
+      normalizarTexto(c.nome) === nomeNorm && String(c.id) !== String(idEdicao || '')
     );
-    if (duplicado && !confirmar('Já existe um cliente com esse nome. Cadastrar mesmo assim?')) {
-      return;
-    }
+    if (duplicado && !confirmar('Já existe um cliente com esse nome. Cadastrar mesmo assim?')) return;
 
     try {
       if (idEdicao) {
@@ -695,7 +665,7 @@
   }
 
   /* ==========================================================
-     10. COMPRAS (DÍVIDAS) E PAGAMENTOS
+     COMPRAS / PAGAMENTOS
   ========================================================== */
 
   function criarModalCompra() {
@@ -740,17 +710,10 @@
     const campoValor = $('fiadoValorDivida');
     const campoDesc = $('fiadoDescricaoDivida');
     const valorC = paraCentavos(campoValor.value);
-    if (valorC <= 0) {
-      mostrarNotificacao('Informe um valor válido.', true);
-      campoValor.focus();
-      return;
-    }
+    if (valorC <= 0) { mostrarNotificacao('Informe um valor válido.', true); campoValor.focus(); return; }
+
     const cliente = buscarClienteInterno(clienteSelecionadoId);
-    if (!cliente) {
-      mostrarNotificacao('Selecione um cliente.', true);
-      fecharModal(modal);
-      return;
-    }
+    if (!cliente) { mostrarNotificacao('Selecione um cliente.', true); fecharModal(modal); return; }
 
     const mov = {
       id: gerarId(),
@@ -788,10 +751,7 @@
   function abrirPagamento() {
     const cliente = buscarClienteInterno(clienteSelecionadoId);
     if (!cliente) { mostrarNotificacao('Selecione um cliente.', true); return; }
-    if (obterSaldo(cliente) <= 0) {
-      mostrarNotificacao('Este cliente não possui saldo devedor.', true);
-      return;
-    }
+    if (obterSaldo(cliente) <= 0) { mostrarNotificacao('Este cliente não possui saldo devedor.', true); return; }
     if (elementos.formPagamento) elementos.formPagamento.reset();
     abrirModal(elementos.modalPagamento, elementos.valorPagamento);
   }
@@ -804,15 +764,9 @@
     const valorC = paraCentavos(elementos.valorPagamento.value);
     const saldoAtual = obterSaldo(cliente);
 
-    if (valorC <= 0) {
-      mostrarNotificacao('Informe um valor válido.', true);
-      elementos.valorPagamento.focus();
-      return;
-    }
+    if (valorC <= 0) { mostrarNotificacao('Informe um valor válido.', true); elementos.valorPagamento.focus(); return; }
     if (valorC > saldoAtual) {
-      mostrarNotificacao(
-        'O pagamento não pode ser maior que a dívida (' + formatarDinheiro(saldoAtual) + ').', true
-      );
+      mostrarNotificacao('O pagamento não pode ser maior que a dívida (' + formatarDinheiro(saldoAtual) + ').', true);
       return;
     }
 
@@ -850,13 +804,11 @@
   }
 
   /* ==========================================================
-     11. API PÚBLICA (usada pelo PDV/script.js)
+     API PÚBLICA
   ========================================================== */
 
   async function registrarVendaFiado(dados) {
-    if (!dados || typeof dados !== 'object') {
-      return { sucesso: false, erro: 'Dados inválidos.' };
-    }
+    if (!dados || typeof dados !== 'object') return { sucesso: false, erro: 'Dados inválidos.' };
     const idCliente = dados.clienteId ?? dados.idCliente ?? dados.cliente_id;
     const cliente = buscarClienteInterno(idCliente);
     if (!cliente) return { sucesso: false, erro: 'Cliente não encontrado.' };
@@ -881,12 +833,7 @@
       cliente.movimentacoes.push(salvo);
       cliente.atualizadoEm = agoraISO();
       renderizarTudo();
-      return {
-        sucesso: true,
-        clienteId: cliente.id,
-        movimentoId: salvo.id,
-        saldoDevedor: obterSaldo(cliente) / 100
-      };
+      return { sucesso: true, clienteId: cliente.id, movimentoId: salvo.id, saldoDevedor: obterSaldo(cliente) / 100 };
     } catch (err) {
       console.error('[Fiado] Erro registrarVendaFiado:', err);
       return { sucesso: false, erro: err.message };
@@ -899,11 +846,7 @@
 
     const valorC = paraCentavos(valor);
     if (valorC <= 0) return { sucesso: false, erro: 'Valor inválido.' };
-    if (!['dinheiro', 'pix', 'debito', 'credito'].includes(forma)) {
-      return { sucesso: false, erro: 'Forma de pagamento inválida.' };
-    }
-    // Não bloqueia pagamento inicial acima do saldo (o saldo é o total da dívida)
-    // Basta ser positivo.
+    if (!['dinheiro', 'pix', 'debito', 'credito'].includes(forma)) return { sucesso: false, erro: 'Forma de pagamento inválida.' };
 
     const mov = {
       id: gerarId(),
@@ -924,12 +867,7 @@
       cliente.movimentacoes.push(salvo);
       cliente.atualizadoEm = agoraISO();
       renderizarTudo();
-      return {
-        sucesso: true,
-        clienteId: cliente.id,
-        movimentoId: salvo.id,
-        saldoDevedor: obterSaldo(cliente) / 100
-      };
+      return { sucesso: true, clienteId: cliente.id, movimentoId: salvo.id, saldoDevedor: obterSaldo(cliente) / 100 };
     } catch (err) {
       console.error('[Fiado] Erro registrarPagamento:', err);
       return { sucesso: false, erro: err.message };
@@ -946,16 +884,9 @@
     return clonar(clientes);
   }
 
-  function listarClientesComSaldoSync() {
-    return clientes.map(c => ({
-      id: c.id, nome: c.nome, telefone: c.telefone,
-      saldoDevedor: obterSaldo(c) / 100
-    }));
-  }
-
   async function listarClientesComSaldo() {
     if (!pronto && !carregando) await carregarTudo();
-    return listarClientesComSaldoSync();
+    return clientes.map(c => ({ id: c.id, nome: c.nome, telefone: c.telefone, saldoDevedor: obterSaldo(c) / 100 }));
   }
 
   async function saldoDevedorAPI(id) {
@@ -979,9 +910,7 @@
       cliente.movimentacoes.splice(idx, 1);
       cliente.atualizadoEm = agoraISO();
       renderizarTudo();
-      if (elementos.modalDetalhes?.classList.contains('aberto')) {
-        renderizarDetalhes(cliente);
-      }
+      if (elementos.modalDetalhes?.classList.contains('aberto')) renderizarDetalhes(cliente);
       mostrarNotificacao('Lançamento excluído.');
     } catch (err) {
       console.error('[Fiado]', err);
@@ -990,7 +919,7 @@
   }
 
   /* ==========================================================
-     12. RENDERIZAÇÃO
+     RENDERIZAÇÃO
   ========================================================== */
 
   function atualizarResumoGeral() {
@@ -1062,9 +991,7 @@
 
     if (elementos.detalhesNome) elementos.detalhesNome.textContent = c.nome;
     if (elementos.detalhesTelefone) elementos.detalhesTelefone.textContent = c.telefone || 'Telefone não informado';
-    if (elementos.mesReferencia && !elementos.mesReferencia.value) {
-      elementos.mesReferencia.value = mesAtual();
-    }
+    if (elementos.mesReferencia && !elementos.mesReferencia.value) elementos.mesReferencia.value = mesAtual();
     renderizarDetalhes(c);
     abrirModal(elementos.modalDetalhes);
   }
@@ -1074,11 +1001,9 @@
     const compras = totalComprado(c);
     const pago = totalPago(c);
     const saldo = obterSaldo(c);
-
     if (elementos.detalhesSaldo) elementos.detalhesSaldo.textContent = formatarDinheiro(saldo);
     if (elementos.detalhesCompras) elementos.detalhesCompras.textContent = formatarDinheiro(compras);
     if (elementos.detalhesPago) elementos.detalhesPago.textContent = formatarDinheiro(pago);
-
     renderizarResumoMensal(c);
     renderizarHistorico(c);
   }
@@ -1091,14 +1016,8 @@
       return;
     }
     const movs = obterMovimentacoes(c);
-    const anteriores = movs.filter(m => {
-      const d = obterDataMovimento(m);
-      return d && d.slice(0, 7) < mes;
-    });
-    const doMes = movs.filter(m => {
-      const d = obterDataMovimento(m);
-      return d && d.slice(0, 7) === mes;
-    });
+    const anteriores = movs.filter(m => { const d = obterDataMovimento(m); return d && d.slice(0, 7) < mes; });
+    const doMes = movs.filter(m => { const d = obterDataMovimento(m); return d && d.slice(0, 7) === mes; });
     const saldoAnterior = anteriores.reduce((s, m) => {
       const v = valorMovimentoCentavos(m);
       return m.tipo === 'divida' ? s + v : (m.tipo === 'pagamento' ? s - v : s);
@@ -1185,13 +1104,11 @@
     atualizarResumoGeral();
     renderizarClientes();
     const c = buscarClienteInterno(clienteSelecionadoId);
-    if (c && elementos.modalDetalhes?.classList.contains('aberto')) {
-      renderizarDetalhes(c);
-    }
+    if (c && elementos.modalDetalhes?.classList.contains('aberto')) renderizarDetalhes(c);
   }
 
   /* ==========================================================
-     13. EXTRATO PDF (inalterado)
+     EXTRATO PDF
   ========================================================== */
 
   function gerarExtratoHTML(cliente, movs, tituloPeriodo) {
@@ -1251,10 +1168,7 @@
     let titulo = 'Todo o histórico';
     if (periodo === 'mes') {
       const mes = elementos.mesReferencia?.value || mesAtual();
-      movs = movs.filter(m => {
-        const d = obterDataMovimento(m);
-        return d && d.slice(0, 7) === mes;
-      });
+      movs = movs.filter(m => { const d = obterDataMovimento(m); return d && d.slice(0, 7) === mes; });
       titulo = formatarMes(mes);
     }
     const html = gerarExtratoHTML(c, movs, titulo);
@@ -1266,7 +1180,7 @@
   }
 
   /* ==========================================================
-     14. EVENTOS
+     EVENTOS
   ========================================================== */
 
   if (elementos.formCadastro) elementos.formCadastro.addEventListener('submit', salvarCliente);
@@ -1284,9 +1198,7 @@
     elementos.historico.addEventListener('click', ev => {
       const btn = ev.target.closest('[data-acao]');
       if (!btn) return;
-      if (btn.dataset.acao === 'excluir-movimento') {
-        excluirMovimentacao(btn.dataset.id, btn.dataset.movimentoId);
-      }
+      if (btn.dataset.acao === 'excluir-movimento') excluirMovimentacao(btn.dataset.id, btn.dataset.movimentoId);
     });
   }
 
@@ -1294,7 +1206,6 @@
   if (elementos.btnPagamento) elementos.btnPagamento.addEventListener('click', abrirPagamento);
   if (elementos.formPagamento) elementos.formPagamento.addEventListener('submit', registrarPagamentoManual);
   if (elementos.btnPDF) elementos.btnPDF.addEventListener('click', exportarPDF);
-
   if (elementos.btnExcluirCliente) {
     elementos.btnExcluirCliente.addEventListener('click', () => {
       if (clienteSelecionadoId) excluirCliente(clienteSelecionadoId);
@@ -1314,7 +1225,7 @@
   }
 
   /* ==========================================================
-     15. INICIALIZAÇÃO + MIGRAÇÃO AUTOMÁTICA
+     INICIALIZAÇÃO + MIGRAÇÃO AUTOMÁTICA
   ========================================================== */
 
   function renderizarTudoInicial() {
@@ -1324,14 +1235,10 @@
   }
 
   async function inicializar() {
-    if (elementos.mesReferencia && !elementos.mesReferencia.value) {
-      elementos.mesReferencia.value = mesAtual();
-    }
+    if (elementos.mesReferencia && !elementos.mesReferencia.value) elementos.mesReferencia.value = mesAtual();
 
-    // Render inicial com cache (mesmo vazio)
     renderizarTudoInicial();
 
-    // Carrega do Supabase
     const ok = await carregarTudo();
 
     if (ok) {
@@ -1341,7 +1248,6 @@
           console.warn('[Fiado/migração]', resultado.erro);
         } else if (resultado.migrados > 0) {
           console.log(`[Fiado/migração] ${resultado.migrados} registros migrados, ${resultado.pulados} já existiam.`);
-          // Recarrega para exibir os migrados
           await carregarTudo();
         }
       } catch (err) {
@@ -1350,17 +1256,14 @@
       renderizarTudoInicial();
     } else {
       console.warn('[Fiado] Modo offline — exibindo cache local.');
-      mostrarNotificacao(
-        'Não foi possível conectar ao Supabase. Os dados exibidos podem estar desatualizados.',
-        true
-      );
+      mostrarNotificacao('Não foi possível conectar ao Supabase. Os dados exibidos podem estar desatualizados.', true);
     }
 
     console.log('Dr. Troco — módulo Fiado (Supabase) inicializado.');
   }
 
   /* ==========================================================
-     16. API PÚBLICA (window.DrTrocoFiado)
+     API PÚBLICA
   ========================================================== */
 
   window.DrTrocoFiado = {
@@ -1370,22 +1273,18 @@
     listarClientes,
     listarClientesComSaldo,
     saldoDevedor: saldoDevedorAPI,
-    atualizar: async () => {
-      await carregarTudo();
-      renderizarTudoInicial();
-    },
+    atualizar: async () => { await carregarTudo(); renderizarTudoInicial(); },
     abrirDetalhes,
     abrirCadastro: () => abrirCadastroCliente(),
     paraCentavos,
     formatarDinheiro,
-    // Exclusivo desta versão — para reconciliação e diagnóstico:
     migrarDadosLocais,
     recarregarDoSupabase: carregarTudo,
     estaPronto: () => pronto
   };
 
   /* ==========================================================
-     17. START
+     START
   ========================================================== */
 
   if (document.readyState === 'loading') {
