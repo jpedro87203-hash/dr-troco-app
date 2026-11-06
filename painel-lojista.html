@@ -233,7 +233,7 @@
     </header>
 
     <!-- ============================================= -->
-    <!-- ALERTAS (seção principal, começa aberta)       -->
+    <!-- ALERTAS                                        -->
     <!-- ============================================= -->
     <section class="painel-card">
       <button type="button"
@@ -326,6 +326,37 @@
     </section>
 
     <!-- ============================================= -->
+    <!-- 1.5 RECEBIMENTO PIX                            -->
+    <!-- ============================================= -->
+    <section class="painel-card">
+      <button type="button"
+              class="painel-card-cabecalho"
+              data-toggle-painel="conteudoPix"
+              aria-expanded="false"
+              aria-controls="conteudoPix">
+        <span class="painel-card-icone" aria-hidden="true">📱</span>
+        <span class="painel-card-titulo">
+          <h2>Recebimento Pix</h2>
+          <p>Configurar chave para gerar QR Code</p>
+        </span>
+        <span class="painel-card-seta" aria-hidden="true">⌄</span>
+      </button>
+
+      <div class="painel-card-conteudo" id="conteudoPix" hidden>
+        <div class="informacao-lojista" style="padding-top:0; border:0;">
+          <small>Chave Pix (CPF, CNPJ, celular, e-mail ou chave aleatória)</small>
+          <div style="display:flex; gap:8px; margin-top:6px;">
+            <input type="text" id="inputChavePix" placeholder="Digite sua chave Pix" style="flex:1; min-width:0; padding:10px; border:1px solid #d4ded7; border-radius:8px; outline:none; font-family:inherit;">
+            <button type="button" id="btnSalvarChavePix" style="background:#20a767; color:#fff; border:0; border-radius:8px; padding:0 16px; font-weight:bold; cursor:pointer;">Salvar</button>
+          </div>
+        </div>
+        <p style="font-size:12px; color:#7b898f; margin-top:8px; line-height: 1.4;">
+          Esta chave será usada para gerar o QR Code automático nas vendas no Pix.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
     <!-- 2. CONTAS A PAGAR                              -->
     <!-- ============================================= -->
     <div data-contas-pagar></div>
@@ -399,8 +430,10 @@
   <script src="alertas.js"></script>
 
   <script>
-    // Carrega dados do estabelecimento
     document.addEventListener("DOMContentLoaded", () => {
+      // ==========================================
+      // DADOS DO ESTABELECIMENTO
+      // ==========================================
       const CHAVE = "drTroco_estabelecimento";
       const aviso = document.getElementById("avisoSemCadastro");
       const dados = document.getElementById("dadosEstabelecimento");
@@ -412,40 +445,78 @@
 
         if (!nome || !responsavel) {
           aviso.hidden = false;
-          return;
+        } else {
+          document.getElementById("painelNome").textContent = nome;
+          document.getElementById("painelResponsavel").textContent = responsavel;
+          document.getElementById("painelTelefone").textContent =
+            salvos.telefoneEstabelecimento || "Não informado";
+          document.getElementById("painelEmail").textContent =
+            salvos.emailEstabelecimento || "Não informado";
+          document.getElementById("painelEndereco").textContent =
+            salvos.enderecoEstabelecimento || "Não informado";
+          document.getElementById("painelCidade").textContent =
+            salvos.cidadeEstabelecimento || "Não informado";
+          document.getElementById("painelEstado").textContent =
+            salvos.estadoEstabelecimento || "Não informado";
+
+          dados.hidden = false;
         }
-
-        document.getElementById("painelNome").textContent = nome;
-        document.getElementById("painelResponsavel").textContent = responsavel;
-        document.getElementById("painelTelefone").textContent =
-          salvos.telefoneEstabelecimento || "Não informado";
-        document.getElementById("painelEmail").textContent =
-          salvos.emailEstabelecimento || "Não informado";
-        document.getElementById("painelEndereco").textContent =
-          salvos.enderecoEstabelecimento || "Não informado";
-        document.getElementById("painelCidade").textContent =
-          salvos.cidadeEstabelecimento || "Não informado";
-        document.getElementById("painelEstado").textContent =
-          salvos.estadoEstabelecimento || "Não informado";
-
-        dados.hidden = false;
       } catch (erro) {
         console.error("Erro ao carregar dados do estabelecimento:", erro);
         aviso.hidden = false;
       }
-    });
 
-    // Toggle das seções
-    document.addEventListener("click", (ev) => {
-      const btn = ev.target.closest("[data-toggle-painel]");
-      if (!btn) return;
-      const alvoId = btn.getAttribute("data-toggle-painel");
-      const alvo = document.getElementById(alvoId);
-      if (!alvo) return;
+      // ==========================================
+      // CONFIGURAÇÃO PIX
+      // ==========================================
+      const inputPix = document.getElementById('inputChavePix');
+      const btnSalvarPix = document.getElementById('btnSalvarChavePix');
 
-      const aberto = btn.getAttribute("aria-expanded") === "true";
-      btn.setAttribute("aria-expanded", String(!aberto));
-      alvo.hidden = aberto;
+      try {
+        const configPix = JSON.parse(localStorage.getItem('drTroco_configPix') || '{}');
+        if (configPix.chave && inputPix) {
+          inputPix.value = configPix.chave;
+        }
+      } catch (e) {}
+
+      if (btnSalvarPix && inputPix) {
+        btnSalvarPix.addEventListener('click', () => {
+          const chave = inputPix.value.trim();
+          if (!chave) {
+            alert('Digite uma chave Pix válida.');
+            return;
+          }
+
+          let nomeLoja = 'Loja';
+          try {
+            const est = JSON.parse(localStorage.getItem('drTroco_estabelecimento') || '{}');
+            if (est.nomeEstabelecimento) nomeLoja = est.nomeEstabelecimento;
+          } catch (e) {}
+
+          localStorage.setItem('drTroco_configPix', JSON.stringify({ 
+            chave: chave, 
+            nome: nomeLoja, 
+            cidade: 'SAO PAULO' 
+          }));
+
+          alert('Chave Pix salva com sucesso!');
+        });
+      }
+
+      // ==========================================
+      // TOGGLE PAINEL
+      // ==========================================
+      document.addEventListener("click", (ev) => {
+        const btn = ev.target.closest("[data-toggle-painel]");
+        if (!btn) return;
+        const alvoId = btn.getAttribute("data-toggle-painel");
+        const alvo = document.getElementById(alvoId);
+        if (!alvo) return;
+
+        const aberto = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!aberto));
+        alvo.hidden = aberto;
+      });
     });
   </script>
 </body>
