@@ -107,6 +107,15 @@
     .fiado-btn-secundario { color: #148751; border-color: #cfeadb; background: #eaf8f1; }
     .fiado-btn-perigo { color: #c43d42; border-color: #f0d8d8; background: #fff6f6; }
     .fiado-btn-neutro { color: #53635b; border-color: #e5ebe7; background: #f2f6f3; }
+    .fiado-btn-whatsapp {
+      grid-column: 1 / -1;
+      color: #ffffff;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      border-color: #128C7E;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, .25);
+      font-weight: 800;
+    }
+    .fiado-btn-whatsapp:active { transform: scale(.98); }
 
     /* Modais */
     .fiado-modal { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 12px; overflow-y: auto; background: #0f1e17ad; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
@@ -141,7 +150,7 @@
     .fiado-mes-item.final { border-color: #cfeadb; background: #eaf8f1; }
     .fiado-mes-item.final strong { color: #148751; }
 
-    /* Extrato e ações: hierarquia visual mais clara */
+    /* Extrato e ações */
     .fiado-extrato-opcoes { margin-top: 16px; padding: 14px; border: 1px solid #e1eae5; border-radius: 15px; background: #f8faf9; }
     .fiado-extrato-opcoes p { margin: 0 0 11px; color: var(--f-muted); font-size: 11.5px; line-height: 1.55; }
     .fiado-extrato-opcoes p strong { color: var(--f-texto); font-size: 13px; }
@@ -151,7 +160,7 @@
     #btnExcluirClienteFiado { grid-column: 1 / -1; min-height: 40px; margin-top: 2px; background: #fff8f8; }
     #btnFecharDetalhesFiado2 { width: 100%; margin-top: 9px; }
 
-    /* Histórico recolhível para deixar os detalhes menos carregados */
+    /* Histórico recolhível */
     .fiado-historico-bloco { margin-top: 19px; border: 1px solid var(--f-borda); border-radius: 15px; background: #fff; overflow: hidden; }
     .fiado-historico-bloco > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; color: #24372c; background: #f8faf9; font-size: 13px; font-weight: 900; cursor: pointer; list-style: none; }
     .fiado-historico-bloco > summary::-webkit-details-marker { display: none; }
@@ -173,7 +182,6 @@
     .fiado-notificacao.visivel { opacity: 1; visibility: visible; transform: translateY(0); }
     .fiado-notificacao.erro { background: #c43d42; }
 
-    /* Navegação inferior existente */
     body.pagina-fiado .bottom-nav { z-index: 9980; }
 
     @media (min-width: 560px) {
@@ -344,17 +352,19 @@
       <div class="fiado-acoes-modal" aria-label="Ações da conta do cliente">
         <button id="btnAdicionarDividaFiado" type="button" class="fiado-btn fiado-btn-secundario">＋ Registrar compra</button>
         <button id="btnRegistrarPagamentoFiado" type="button" class="fiado-btn fiado-btn-principal">＋ Registrar pagamento</button>
+        <button id="btnCobrarWhatsAppFiado" type="button" class="fiado-btn fiado-btn-whatsapp">💬 Cobrar no WhatsApp</button>
         <button id="btnExportarFiadoPDF" type="button" class="fiado-btn fiado-btn-secundario">▤ Gerar extrato PDF</button>
         <button id="btnExcluirClienteFiado" type="button" class="fiado-btn fiado-btn-perigo">Excluir cliente</button>
       </div>
-<button
-  type="button"
-  id="btnFecharDetalhesFiado2"
-  class="btn-fechar-detalhes-secundario"
-  aria-label="Fechar detalhes"
->
-  Fechar detalhes
-</button>
+
+      <button
+        type="button"
+        id="btnFecharDetalhesFiado2"
+        class="btn-fechar-detalhes-secundario"
+        aria-label="Fechar detalhes"
+      >
+        Fechar detalhes
+      </button>
       <details class="fiado-historico-bloco">
         <summary>Histórico de movimentações</summary>
         <div id="fiadoHistoricoCliente" class="fiado-historico" aria-live="polite"></div>
