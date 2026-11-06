@@ -624,44 +624,6 @@
       </section>
     </main>
 
-    <!-- BACKUP -->
-    <section id="secaoBackup" class="card"
-      style="
-        box-sizing: border-box;
-        width: calc(100% - 24px);
-        max-width: 600px;
-        margin: 24px auto 120px;
-        padding: 18px;
-      ">
-      <h3 style="margin: 0 0 8px;">
-        🛡️ Backup e restauração
-      </h3>
-
-      <p style="font-size: 14px; line-height: 1.5;">
-        Guarde uma cópia das vendas, do caixa, do estoque,
-        do fiado e das contas a pagar.
-      </p>
-
-      <button type="button" id="btnExportarBackup"
-        class="btn-primary"
-        style="display:block; box-sizing:border-box; width:100%;
-          min-height:48px; margin:12px 0;">
-        📥 Fazer backup
-      </button>
-
-      <button type="button" id="btnRestaurarBackup"
-        class="btn-cancelar-venda"
-        style="display:block; box-sizing:border-box; width:100%;
-          min-height:48px;">
-        📂 Restaurar backup
-      </button>
-
-      <p style="font-size:12px; line-height:1.5; opacity:.75;">
-        Restaurar um backup substitui os dados atuais.
-        Guarde seu arquivo em local seguro.
-      </p>
-    </section>
-
   </div>
 
   <!-- MODAL DE PRODUTOS REFORMULADO (3 COLUNAS) -->
@@ -822,45 +784,7 @@
 <script src="fiado.js"></script>
 <script src="dados-supabase.js"></script>
 <script src="script.js"></script>
-<script src="backup.js"></script>
-  
-  <!-- CONEXÃO DOS BOTÕES DE BACKUP -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const btnExportar = document.getElementById('btnExportarBackup');
-      const btnRestaurar = document.getElementById('btnRestaurarBackup');
 
-      if (btnExportar) {
-        btnExportar.addEventListener('click', function () {
-          if (
-            window.DrTrocoBackup &&
-            typeof window.DrTrocoBackup.exportar === 'function'
-          ) {
-            window.DrTrocoBackup.exportar();
-          } else {
-            alert(
-              'O módulo de backup não foi carregado. Confira o arquivo backup.js.'
-            );
-          }
-        });
-      }
-
-      if (btnRestaurar) {
-        btnRestaurar.addEventListener('click', function () {
-          if (
-            window.DrTrocoBackup &&
-            typeof window.DrTrocoBackup.selecionarArquivoEImportar === 'function'
-          ) {
-            window.DrTrocoBackup.selecionarArquivoEImportar();
-          } else {
-            alert(
-              'O módulo de backup não foi carregado. Confira o arquivo backup.js.'
-            );
-          }
-        });
-      }
-    });
-  </script>
 
   <!-- SAIR DA CONTA -->
   <script>
