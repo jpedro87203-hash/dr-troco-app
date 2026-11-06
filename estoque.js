@@ -1238,10 +1238,19 @@ function pararLeitorCodigo() {
     }
 
     const video = document.getElementById("videoLeitorCodigo");
+    const msg = document.getElementById("mensagemLeitorCodigo");
+    const moldura = document.getElementById("molduraCodigoBarras");
+
     if (video) {
         try { video.pause(); } catch (e) {}
         video.srcObject = null;
+        video.style.display = "none";
     }
+    
+    // Restaura a mensagem para o próximo uso
+    if (msg) msg.style.display = "flex";
+    if (moldura) moldura.style.display = "none";
+
     abrindoLeitorCodigo = false;
 }
 
@@ -1308,13 +1317,24 @@ async function abrirLeitorCodigo() {
         
         abrirModal("modalLeitorCodigo");
         const video = document.getElementById("videoLeitorCodigo");
+        const msg = document.getElementById("mensagemLeitorCodigo");
+        const moldura = document.getElementById("molduraCodigoBarras");
+
         if (video) {
             video.srcObject = stream;
+            
+            // Força a exibição do vídeo e esconde a mensagem
+            video.style.setProperty('display', 'block', 'important');
+            if (msg) msg.style.display = 'none';
+            if (moldura) moldura.style.display = 'block';
+
             await video.play();
             iniciarDeteccaoCodigoBarras();
         }
     } catch (e) {
-        alert("Não foi possível acessar a câmera.");
+        console.error("Erro ao abrir câmera:", e);
+        alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
+        fecharLeitorCodigo();
     } finally {
         abrindoLeitorCodigo = false;
     }
