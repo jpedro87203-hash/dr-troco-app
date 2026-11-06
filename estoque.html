@@ -1835,6 +1835,26 @@
 
 
         <!-- =================================================
+             HISTÓRICO DE MOVIMENTAÇÕES (COLAPSÁVEL)
+             Fica acima dos produtos
+             ================================================= -->
+
+        <section style="margin-top: 6px; margin-bottom: 20px; padding: 16px; background: #fff; border-radius: 17px; box-shadow: 0 5px 17px rgba(28, 48, 62, .045); border: 1px solid rgba(39, 57, 69, .06);">
+            <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="alternarHistoricoMovimentacoes()">
+                <h3 style="margin: 0; color: #2c3e4a; font-size: 15px; font-weight: 900;">📋 Histórico de Entradas e Saídas</h3>
+                <button type="button" id="btnToggleHistorico" style="background: #eaf8f0; color: #16834d; border: 0; border-radius: 8px; padding: 6px 12px; font-weight: 900; font-size: 12px; cursor: pointer;">Ver histórico ▼</button>
+            </div>
+            
+            <div id="containerHistoricoMovimentacoes" style="display: none; margin-top: 16px; flex-direction: column; gap: 10px;">
+                <div id="listaHistoricoMovimentacoes" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- As movimentações filtradas aparecem aqui -->
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- =================================================
              TOPO DA LISTA
              ================================================= -->
 
@@ -1860,25 +1880,6 @@
             id="listaProdutos"
             aria-live="polite"
         ></section>
-
-
-
-        <!-- =================================================
-             HISTÓRICO DE MOVIMENTAÇÕES (COLAPSÁVEL)
-             ================================================= -->
-
-        <section style="margin-top: 24px; padding: 20px; background: #fff; border-radius: 17px; box-shadow: 0 5px 17px rgba(28, 48, 62, .045); border: 1px solid rgba(39, 57, 69, .06);">
-            <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="alternarHistoricoMovimentacoes()">
-                <h3 style="margin: 0; color: #2c3e4a; font-size: 15px; font-weight: 900;">📋 Histórico de Entradas e Saídas</h3>
-                <button type="button" id="btnToggleHistorico" style="background: #eaf8f0; color: #16834d; border: 0; border-radius: 8px; padding: 6px 12px; font-weight: 900; font-size: 12px; cursor: pointer;">Ver histórico ▼</button>
-            </div>
-            
-            <div id="containerHistoricoMovimentacoes" style="display: none; margin-top: 16px; flex-direction: column; gap: 10px;">
-                <div id="listaHistoricoMovimentacoes" style="display: flex; flex-direction: column; gap: 10px;">
-                    <!-- As movimentações filtradas aparecem aqui -->
-                </div>
-            </div>
-        </section>
 
     </main>
 
@@ -2638,4 +2639,4 @@
 
 </body>
 
-</html>
+    </html>
