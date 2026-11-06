@@ -46,6 +46,7 @@
 
     btnComprar:        $('btnAdicionarDividaFiado'),
     btnPagamento:      $('btnRegistrarPagamentoFiado'),
+    btnWhatsApp:       $('btnCobrarWhatsAppFiado'),
     btnPDF:            $('btnExportarFiadoPDF'),
     btnExcluirCliente: $('btnExcluirClienteFiado'),
 
@@ -96,8 +97,6 @@
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
   }
 
-  // IMPORTANTE: id é TEXT na tabela real.
-  // Qualquer string não vazia pode ser preservada na migração.
   function idPreservavel(v) {
     return typeof v === 'string' && v.trim().length > 0;
   }
@@ -187,11 +186,6 @@
 
   /* ==========================================================
      MAPEAMENTO BANCO <-> APP
-     Estrutura real:
-       fiado_clientes: id text, nome, telefone, criado_em, atualizado_em, usuario_id
-       fiado_movimentacoes: id text, cliente_id text, tipo, valor_centavos bigint,
-                            valor numeric, descricao, forma, observacao, data, data_hora,
-                            origem, venda_id text, usuario_id
   ========================================================== */
 
   function clienteDoBanco(row) {
@@ -207,10 +201,8 @@
 
   function movDoBanco(row) {
     const tipo = row.tipo === 'pagamento' ? 'pagamento' : 'divida';
-    // valor_centavos é bigint; pode vir como string do driver. Converter.
     let valorC = Number(row.valor_centavos);
     if (!Number.isFinite(valorC) || valorC === 0) {
-      // fallback: usar valor numeric se valor_centavos estiver vazio
       const v = Number(row.valor);
       valorC = Number.isFinite(v) ? Math.round(v * 100) : 0;
     }
@@ -249,7 +241,7 @@
       cliente_id: String(clienteId),
       tipo,
       valor_centavos: valorC,
-      valor: valorC / 100,               // coluna numeric espelhada — mantém consistência
+      valor: valorC / 100,
       descricao: m.descricao || (tipo === 'divida' ? 'Compra fiado' : 'Pagamento'),
       data: m.data || dataLocalISO(),
       data_hora: m.dataHora || agoraISO(),
@@ -339,9 +331,6 @@
     return item;
   }
 
-  /**
-   * Migração idempotente — preserva IDs textuais sempre que possível.
-   */
   async function migrarDadosLocais() {
     await getUsuario();
     const supa = getSupa();
@@ -1180,6 +1169,91 @@
   }
 
   /* ==========================================================
+     COBRANÇA VIA WHATSAPP
+  ========================================================== */
+
+  function normalizarTelefoneWhatsApp(telefone) {
+    let numero = String(telefone || '').replace(/\D/g, '');
+    if (!numero) return '';
+    if (numero.length === 10 || numero.length === 11) {
+      numero = '55' + numero;
+    }
+    if (numero.length < 12 || numero.length > 15) return '';
+    return numero;
+  }
+
+  function cobrarWhatsApp() {
+    const cliente = buscarClienteInterno(clienteSelecionadoId);
+    if (!cliente) {
+      mostrarNotificacao('Cliente não encontrado.', true);
+      return;
+    }
+
+    const saldo = obterSaldo(cliente);
+    if (saldo <= 0) {
+      mostrarNotificacao('Este cliente não possui saldo devedor.', true);
+      return;
+    }
+
+    const telefone = String(cliente.telefone || '').trim();
+    if (!telefone) {
+      mostrarNotificacao(
+        'Este cliente não possui telefone cadastrado. Edite o cliente e informe um número.',
+        true
+      );
+      return;
+    }
+
+    const numero = normalizarTelefoneWhatsApp(telefone);
+    if (!numero) {
+      mostrarNotificacao(
+        'Telefone inválido. Cadastre com DDD (ex.: 98 99999-9999).',
+        true
+      );
+      return;
+    }
+
+    let nomeLoja = 'Dr. Troco';
+    try {
+      const est = JSON.parse(localStorage.getItem('drTroco_estabelecimento') || '{}');
+      if (est && est.nomeEstabelecimento) nomeLoja = String(est.nomeEstabelecimento).trim();
+    } catch (_) {}
+
+    const saldoReais = (saldo / 100).toLocaleString('pt-BR', {
+      style: 'currency', currency: 'BRL'
+    });
+
+    let citacaoUltimaCompra = '';
+    const movs = obterMovimentacoes(cliente);
+    const dividas = movs.filter(m => m.tipo === 'divida');
+    if (dividas.length > 0) {
+      const ordenadas = ordenarMovimentacoes(dividas);
+      const ultima = ordenadas[0];
+      const dataUltima = obterDataMovimento(ultima);
+      if (dataUltima) {
+        citacaoUltimaCompra = `\n📅 Última compra: ${formatarData(dataUltima)}`;
+      }
+    }
+
+    const mensagem =
+      `Olá, ${cliente.nome}! 👋\n\n` +
+      `Passando para lembrar do seu saldo em aberto com *${nomeLoja}*:\n\n` +
+      `💰 Saldo devedor: *${saldoReais}*` +
+      citacaoUltimaCompra +
+      `\n\nQualquer dúvida estou à disposição. Obrigado! 🙏`;
+
+    const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+
+    try {
+      window.open(url, '_blank', 'noopener');
+      mostrarNotificacao('Abrindo WhatsApp...');
+    } catch (err) {
+      console.error('[Fiado] Falha ao abrir WhatsApp:', err);
+      mostrarNotificacao('Não foi possível abrir o WhatsApp.', true);
+    }
+  }
+
+  /* ==========================================================
      EVENTOS
   ========================================================== */
 
@@ -1204,6 +1278,7 @@
 
   if (elementos.btnComprar) elementos.btnComprar.addEventListener('click', abrirCompra);
   if (elementos.btnPagamento) elementos.btnPagamento.addEventListener('click', abrirPagamento);
+  if (elementos.btnWhatsApp) elementos.btnWhatsApp.addEventListener('click', cobrarWhatsApp);
   if (elementos.formPagamento) elementos.formPagamento.addEventListener('submit', registrarPagamentoManual);
   if (elementos.btnPDF) elementos.btnPDF.addEventListener('click', exportarPDF);
   if (elementos.btnExcluirCliente) {
