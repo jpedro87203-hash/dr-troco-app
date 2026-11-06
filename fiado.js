@@ -503,6 +503,95 @@
   }
 
   /* ==========================================================
+     ENTRADA NO CAIXA AO REGISTRAR PAGAMENTO DE FIADO
+  ========================================================== */
+
+  function chaveMovCaixaFiado(movId) {
+    return 'fiado-pg-' + String(movId);
+  }
+
+  async function registrarEntradaCaixaFiado(mov, cliente) {
+    if (!mov || mov.tipo !== 'pagamento') {
+      return { ok: false, motivo: 'não é pagamento' };
+    }
+    if (!cliente) {
+      return { ok: false, motivo: 'cliente ausente' };
+    }
+
+    // Pagamentos iniciais do PDV já geram movimentação pelo script.js.
+    // Não duplicar.
+    if (mov.origem === 'pdv') {
+      return { ok: true, pulado: true, motivo: 'origem=pdv' };
+    }
+
+    if (!window.DrTrocoDados || typeof window.DrTrocoDados.salvarMovimentacao !== 'function') {
+      return { ok: false, motivo: 'DrTrocoDados indisponível' };
+    }
+
+    const idCaixa = chaveMovCaixaFiado(mov.id);
+
+    // Verifica duplicidade no cache
+    try {
+      const existentes = typeof window.DrTrocoDados.movimentacoes === 'function'
+        ? window.DrTrocoDados.movimentacoes()
+        : [];
+      if (existentes.some(m => String(m.id) === idCaixa)) {
+        return { ok: true, pulado: true, motivo: 'já registrada' };
+      }
+    } catch (_) {}
+
+    const valorC = Number(mov.valorCentavos) || 0;
+    if (valorC <= 0) {
+      return { ok: false, motivo: 'valor inválido' };
+    }
+
+    const dataISO = dataLocalISO();
+    const [ano, mes, dia] = dataISO.split('-');
+    const dataBR = `${dia}/${mes}/${ano}`;
+    const agora = new Date();
+
+    const formas = { dinheiro: 'Dinheiro', pix: 'Pix', debito: 'Débito', credito: 'Crédito' };
+
+    const entrada = {
+      id: idCaixa,
+      tipo: 'entrada',
+      valor: valorC / 100,
+      descricao: 'Pagamento de fiado — ' + (cliente.nome || 'Cliente'),
+      formaPagamento: mov.forma || 'dinheiro',
+      formaPagamentoNome: formas[mov.forma] || (mov.forma || 'Dinheiro'),
+      data: dataBR,
+      dataChave: dataISO,
+      hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      origem: 'fiado',
+      fiadoId: String(mov.id),
+      vendaId: mov.vendaId || null
+    };
+
+    try {
+      const r = await window.DrTrocoDados.salvarMovimentacao(entrada);
+      if (!r || !r.ok) {
+        console.warn('[Fiado] Falha ao registrar entrada no caixa:', r && r.erro);
+        return { ok: false, motivo: (r && r.erro) || 'falha' };
+      }
+      return { ok: true };
+    } catch (err) {
+      console.warn('[Fiado] Erro ao registrar entrada no caixa:', err);
+      return { ok: false, motivo: err.message };
+    }
+  }
+
+  async function removerEntradaCaixaFiado(movId) {
+    const idCaixa = chaveMovCaixaFiado(movId);
+    try {
+      if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirMovimentacao === 'function') {
+        await window.DrTrocoDados.excluirMovimentacao(idCaixa);
+      }
+    } catch (err) {
+      console.warn('[Fiado] Não foi possível excluir entrada no caixa:', err);
+    }
+  }
+
+  /* ==========================================================
      CÁLCULOS
   ========================================================== */
 
@@ -782,6 +871,17 @@
       const salvo = await inserirMovimentacao(cliente.id, mov);
       cliente.movimentacoes.push(salvo);
       cliente.atualizadoEm = agoraISO();
+
+      // Registra entrada no caixa (best-effort — não bloqueia se falhar)
+      try {
+        const rCaixa = await registrarEntradaCaixaFiado(salvo, cliente);
+        if (!rCaixa.ok && !rCaixa.pulado) {
+          console.warn('[Fiado] Caixa não registrado:', rCaixa.motivo);
+        }
+      } catch (e) {
+        console.warn('[Fiado] Exceção ao registrar caixa:', e);
+      }
+
       fecharPagamento();
       mostrarNotificacao('Pagamento registrado: ' + formatarDinheiro(valorC));
       renderizarTudo();
@@ -896,6 +996,12 @@
 
     try {
       await removerMovimentacao(movId);
+
+      // Se for pagamento, remove também a entrada correspondente no caixa
+      if (mov.tipo === 'pagamento') {
+        await removerEntradaCaixaFiado(movId);
+      }
+
       cliente.movimentacoes.splice(idx, 1);
       cliente.atualizadoEm = agoraISO();
       renderizarTudo();
