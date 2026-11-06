@@ -32,7 +32,6 @@
       font-size: 14px;
     }
 
-    /* Card colapsável genérico */
     .painel-card {
       margin-bottom: 14px;
       border: 1px solid #e1e9e3;
@@ -112,7 +111,24 @@
       display: none !important;
     }
 
-    /* Dados do estabelecimento */
+    /* Contador de alertas */
+    .contador-alertas {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      margin-left: auto;
+      margin-right: 8px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 900;
+      background: #fff0f0;
+      color: #b42318;
+    }
+
     .identidade-loja {
       display: flex;
       align-items: center;
@@ -167,7 +183,6 @@
       font-size: 14px;
     }
 
-    /* Aviso sem cadastro */
     .aviso-loja {
       padding: 16px;
       border-radius: 12px;
@@ -177,7 +192,6 @@
       font-size: 13px;
     }
 
-    /* Botões */
     .painel-acoes {
       display: grid;
       gap: 10px;
@@ -217,6 +231,29 @@
       <h1>🏪 Painel do lojista</h1>
       <p>Gerencie o estabelecimento, contas, fornecedores e lucro</p>
     </header>
+
+    <!-- ============================================= -->
+    <!-- ALERTAS (seção principal, começa aberta)       -->
+    <!-- ============================================= -->
+    <section class="painel-card">
+      <button type="button"
+              class="painel-card-cabecalho"
+              data-toggle-painel="conteudoAlertas"
+              aria-expanded="true"
+              aria-controls="conteudoAlertas">
+        <span class="painel-card-icone" aria-hidden="true">🔔</span>
+        <span class="painel-card-titulo">
+          <h2>Alertas</h2>
+          <p>Verificação automática do seu negócio</p>
+        </span>
+        <span class="contador-alertas" id="alertasContador">…</span>
+        <span class="painel-card-seta" aria-hidden="true">⌄</span>
+      </button>
+
+      <div class="painel-card-conteudo" id="conteudoAlertas">
+        <div id="alertasArea"></div>
+      </div>
+    </section>
 
     <!-- ============================================= -->
     <!-- 1. DADOS DO ESTABELECIMENTO                    -->
@@ -290,7 +327,6 @@
 
     <!-- ============================================= -->
     <!-- 2. CONTAS A PAGAR                              -->
-    <!-- O contas-pagar.js injeta aqui dentro.          -->
     <!-- ============================================= -->
     <div data-contas-pagar></div>
 
@@ -353,15 +389,17 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
-<script src="auth-guard.js"></script>
-<script src="dados-supabase.js"></script>
-<script src="contas-pagar.js"></script>
-<script src="fornecedores.js"></script>
-<script src="lucro.js"></script>
+  <script src="supabase.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="dados-supabase.js"></script>
+  <script src="estoque-supabase.js"></script>
+  <script src="contas-pagar.js"></script>
+  <script src="fornecedores.js"></script>
+  <script src="lucro.js"></script>
+  <script src="alertas.js"></script>
 
   <script>
-    // Carrega dados do estabelecimento (como já era antes)
+    // Carrega dados do estabelecimento
     document.addEventListener("DOMContentLoaded", () => {
       const CHAVE = "drTroco_estabelecimento";
       const aviso = document.getElementById("avisoSemCadastro");
