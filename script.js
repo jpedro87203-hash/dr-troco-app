@@ -70,6 +70,11 @@ const btnFecharConfirmacao = $('btnFecharConfirmacao');
 const btnCancelarConfirmacao = $('btnCancelarConfirmacao');
 const btnConfirmarVenda = $('btnConfirmarVenda');
 
+// Modais Pix
+const modalPix = $('modalPix');
+const btnFecharPix = $('btnFecharPix');
+const btnGerarQrCodePix = $('btnGerarQrCodePix');
+
 // ------------------------------------------------------------
 // Multiestabelecimento & LocalStorage
 // ------------------------------------------------------------
@@ -176,16 +181,13 @@ function fecharModalOverlay(modal) {
     modal.setAttribute('aria-hidden', 'true');
     modal.style.setProperty('display', 'none', 'important');
 
-    const algumAberto = [modalProdutosVenda, modalLeitorVenda, modalConfirmarVenda].some(m => m && m.classList.contains('aberto') && !m.classList.contains('hidden'));
+    const algumAberto = [modalProdutosVenda, modalLeitorVenda, modalConfirmarVenda, modalPix].some(m => m && m.classList.contains('aberto') && !m.classList.contains('hidden'));
     document.body.classList.toggle('modal-aberto', algumAberto);
     document.body.style.overflow = algumAberto ? 'hidden' : '';
 }
 
 // ------------------------------------------------------------
 // Datas e Turno
-// Lê o horário de corte do drTroco_configCaixa (mesmo
-// usado por fluxo.js e historico.js). Antes estava fixo em 6h,
-// o que causava divergência do dia operacional.
 // ------------------------------------------------------------
 function obterDataHoraAtual() {
     const agora = new Date();
@@ -246,12 +248,100 @@ window.reverterEstoquePorVenda = reverterEstoquePorVenda;
 const nomeFormaPagamento = (metodo) => ({ dinheiro: 'Dinheiro', pix: 'Pix', debito: 'Débito', credito: 'Crédito', fiado: 'Fiado' })[String(metodo || '').toLowerCase()] || 'Dinheiro';
 
 // ------------------------------------------------------------
+// Integração Pix (QR Code)
+// ------------------------------------------------------------
+function obterConfigPix() {
+    try {
+        const config = JSON.parse(localStorage.getItem('drTroco_configPix') || '{}');
+        if (config.chave) return config;
+    } catch (e) {}
+    return { chave: '', nome: '', cidade: '' };
+}
+
+function gerarPayloadPix(chave, nome, cidade, valor) {
+    function getTLV(id, value) {
+        return id + value.length.toString().padStart(2, '0') + value;
+    }
+    let payload = '';
+    payload += getTLV('00', '01');
+    let merchantAccount = getTLV('00', 'br.gov.bcb.pix') + getTLV('01', chave);
+    payload += getTLV('26', merchantAccount);
+    payload += getTLV('52', '0000');
+    payload += getTLV('53', '986');
+    payload += getTLV('54', valor.toFixed(2));
+    payload += getTLV('58', 'BR');
+    payload += getTLV('59', nome.substring(0, 25).toUpperCase() || 'LOJA');
+    payload += getTLV('60', cidade.substring(0, 15).toUpperCase() || 'SAO PAULO');
+    let additionalData = getTLV('05', '***');
+    payload += getTLV('62', additionalData);
+    payload += '6304';
+    
+    // Calcula CRC16
+    let crc = 0xFFFF;
+    for (let i = 0; i < payload.length; i++) {
+        crc ^= payload.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) {
+            if ((crc & 0x8000) !== 0) {
+                crc = (crc << 1) ^ 0x1021;
+            } else {
+                crc <<= 1;
+            }
+        }
+    }
+    payload += (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+    return payload;
+}
+
+function abrirModalPix(valor) {
+    const config = obterConfigPix();
+
+    if (!config.chave) {
+        alert('Chave Pix não configurada!\n\nVá no Painel do Lojista (aba Recebimento Pix) para configurar sua chave e poder gerar o QR Code.');
+        return;
+    }
+
+    if (typeof window.qrcode === 'undefined') {
+        alert('Erro: Biblioteca geradora de QR Code não carregou. Verifique sua conexão com a internet e recarregue a página.');
+        return;
+    }
+
+    const payload = gerarPayloadPix(config.chave, config.nome, config.cidade, valor);
+    
+    // Gera o QR Code
+    const qr = window.qrcode(0, 'L');
+    qr.addData(payload);
+    qr.make();
+    
+    const imgContainer = $('pixQrCodeImg');
+    if (imgContainer) imgContainer.innerHTML = qr.createImgTag(6, 10);
+    
+    const valorExibicao = $('pixValorExibicao');
+    if (valorExibicao) valorExibicao.textContent = `Valor: ${formatarReal(valor)}`;
+    
+    // Configura o botão de copiar
+    const btnCopiar = $('btnCopiarPix');
+    if (btnCopiar) {
+        btnCopiar.onclick = () => {
+            navigator.clipboard.writeText(payload).then(() => {
+                alert('Código Pix copiado!');
+            }).catch(err => {
+                console.error('Erro ao copiar:', err);
+                alert('Não foi possível copiar automaticamente. Selecione o código manualmente.');
+            });
+        };
+    }
+
+    abrirModalOverlay(modalPix, 10003);
+}
+
+// ------------------------------------------------------------
 // Inicialização e Eventos
 // ------------------------------------------------------------
 function iniciarCalculadora() {
     if (!totalCobrar) return;
     fecharModalOverlay(modalConfirmarVenda);
     fecharModalOverlay(modalProdutosVenda);
+    fecharModalOverlay(modalPix);
     pararLeitorVenda();
     configurarEventos();
 
@@ -311,6 +401,11 @@ function configurarEventos() {
     modalProdutosVenda?.addEventListener('click', (e) => { if (e.target === modalProdutosVenda) fecharModalOverlay(modalProdutosVenda); });
     modalLeitorVenda?.addEventListener('click', (e) => { if (e.target === modalLeitorVenda) fecharLeitorVenda(true); });
     modalConfirmarVenda?.addEventListener('click', (e) => { if (e.target === modalConfirmarVenda) fecharModalOverlay(modalConfirmarVenda); });
+    
+    if (btnFecharPix) {
+        btnFecharPix.addEventListener('click', () => fecharModalOverlay(modalPix));
+    }
+    modalPix?.addEventListener('click', (e) => { if (e.target === modalPix) fecharModalOverlay(modalPix); });
 
     listaProdutosVenda?.addEventListener('click', (e) => {
         const botao = e.target.closest('[data-acao]');
@@ -320,7 +415,8 @@ function configurarEventos() {
 
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
-        if (modalLeitorVenda?.classList.contains('aberto')) fecharLeitorVenda(true);
+        if (modalPix?.classList.contains('aberto')) fecharModalOverlay(modalPix);
+        else if (modalLeitorVenda?.classList.contains('aberto')) fecharLeitorVenda(true);
         else if (modalConfirmarVenda?.classList.contains('aberto')) fecharModalOverlay(modalConfirmarVenda);
         else if (modalProdutosVenda?.classList.contains('aberto')) fecharModalOverlay(modalProdutosVenda);
     });
@@ -780,6 +876,17 @@ function abrirConfirmacaoVenda() {
     if (!modalConfirmarVenda || !resumoConfirmacaoVenda) return;
 
     resumoConfirmacaoVenda.innerHTML = criarResumoConfirmacao(resumo);
+    
+    // Mostra ou esconde o botão do Pix
+    if (btnGerarQrCodePix) {
+        if (resumo.formaPagamento === 'pix') {
+            btnGerarQrCodePix.style.display = 'flex';
+            btnGerarQrCodePix.onclick = () => abrirModalPix(resumo.total);
+        } else {
+            btnGerarQrCodePix.style.display = 'none';
+        }
+    }
+
     abrirModalOverlay(modalConfirmarVenda, 10001);
 }
 
@@ -1112,6 +1219,7 @@ function limparVenda() {
     renderizarProdutosVenda();
     renderizarProdutosEstoqueVenda();
     fecharModalOverlay(modalProdutosVenda);
+    fecharModalOverlay(modalPix);
     pararLeitorVenda();
     fecharModalOverlay(modalConfirmarVenda);
     atualizarTela();
@@ -1250,4 +1358,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
-            }
+        }
