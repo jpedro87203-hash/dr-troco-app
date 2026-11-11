@@ -275,7 +275,7 @@ function gerarPayloadPix(chave, nome, cidade, valor) {
     let additionalData = getTLV('05', '***');
     payload += getTLV('62', additionalData);
     payload += '6304';
-    
+
     // Calcula CRC16
     let crc = 0xFFFF;
     for (let i = 0; i < payload.length; i++) {
@@ -306,18 +306,18 @@ function abrirModalPix(valor) {
     }
 
     const payload = gerarPayloadPix(config.chave, config.nome, config.cidade, valor);
-    
+
     // Gera o QR Code
     const qr = window.qrcode(0, 'L');
     qr.addData(payload);
     qr.make();
-    
+
     const imgContainer = $('pixQrCodeImg');
     if (imgContainer) imgContainer.innerHTML = qr.createImgTag(6, 10);
-    
+
     const valorExibicao = $('pixValorExibicao');
     if (valorExibicao) valorExibicao.textContent = `Valor: ${formatarReal(valor)}`;
-    
+
     // Configura o botão de copiar
     const btnCopiar = $('btnCopiarPix');
     if (btnCopiar) {
@@ -401,7 +401,7 @@ function configurarEventos() {
     modalProdutosVenda?.addEventListener('click', (e) => { if (e.target === modalProdutosVenda) fecharModalOverlay(modalProdutosVenda); });
     modalLeitorVenda?.addEventListener('click', (e) => { if (e.target === modalLeitorVenda) fecharLeitorVenda(true); });
     modalConfirmarVenda?.addEventListener('click', (e) => { if (e.target === modalConfirmarVenda) fecharModalOverlay(modalConfirmarVenda); });
-    
+
     if (btnFecharPix) {
         btnFecharPix.addEventListener('click', () => fecharModalOverlay(modalPix));
     }
@@ -876,7 +876,7 @@ function abrirConfirmacaoVenda() {
     if (!modalConfirmarVenda || !resumoConfirmacaoVenda) return;
 
     resumoConfirmacaoVenda.innerHTML = criarResumoConfirmacao(resumo);
-    
+
     // Mostra ou esconde o botão do Pix
     if (btnGerarQrCodePix) {
         if (resumo.formaPagamento === 'pix') {
@@ -915,7 +915,37 @@ function criarResumoConfirmacao(resumo) {
 }
 
 // ------------------------------------------------------------
-// CONFIRMAÇÃO DE VENDA — INTEGRAÇÃO COM FIADO E SUPABASE
+// Helper: reverter estoque no Supabase após falha na venda
+// ------------------------------------------------------------
+async function reverterEstoqueSupabase(estoqueBaixado) {
+    if (!Array.isArray(estoqueBaixado) || !estoqueBaixado.length) return;
+    if (!window.EstoqueSupabase || typeof window.EstoqueSupabase.salvarProduto !== 'function') {
+        console.warn('[Venda/rollback] EstoqueSupabase indisponível — não foi possível reverter.');
+        return;
+    }
+
+    for (const item of estoqueBaixado) {
+        try {
+            await window.EstoqueSupabase.salvarProduto({
+                id: item.produtoOriginal.id,
+                nome: item.produtoOriginal.nome,
+                codigo: item.produtoOriginal.codigo,
+                preco: item.produtoOriginal.preco,
+                tipo: item.produtoOriginal.tipo,
+                estoqueMinimo: item.produtoOriginal.estoqueMinimo,
+                quantidade: numeroSeguro(item.produtoOriginal.quantidade),
+                validade: item.produtoOriginal.validade,
+                foto: item.produtoOriginal.foto,
+                criadoEm: item.produtoOriginal.criadoEm
+            });
+        } catch (e) {
+            console.error('[Venda/rollback] Falha ao reverter estoque de', item.id, e);
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// CONFIRMAÇÃO DE VENDA — INTEGRAÇÃO COM FIADO, SUPABASE E ESTOQUE
 // ------------------------------------------------------------
 async function confirmarVenda() {
     if (vendaEmProcessamento) return;
@@ -959,8 +989,7 @@ async function confirmarVenda() {
         if (encontrados.length === 0) {
             alert(
                 'Nenhum cliente cadastrado no Fiado com esse nome.\n\n' +
-                'Abra o módulo Fiado e cadastre o cliente antes de ' +
-                'realizar uma venda fiada.'
+                'Abra o módulo Fiado e cadastre o cliente antes de realizar uma venda fiada.'
             );
             vendaEmProcessamento = false;
             if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
@@ -999,7 +1028,97 @@ async function confirmarVenda() {
     const dataHora = obterDataHoraAtual();
     const idVenda = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-    // ETAPA 3 — registrar DÍVIDA no Fiado (Supabase)
+    // ======================================================
+    // ETAPA 2.5 — NOVO: baixar estoque no Supabase
+    // ======================================================
+    const estoqueBaixadoSupabase = [];
+    let offlineDetectado = false;
+
+    const podeUsarSupabaseEstoque =
+        window.EstoqueSupabase &&
+        typeof window.EstoqueSupabase.obterComercioId === 'function' &&
+        typeof window.EstoqueSupabase.salvarProduto === 'function' &&
+        typeof window.EstoqueSupabase.salvarMovimentacao === 'function';
+
+    if (podeUsarSupabaseEstoque && produtosVenda.length > 0) {
+        try {
+            // Identifica o estabelecimento (usa cache interno após a 1ª vez)
+            await window.EstoqueSupabase.obterComercioId();
+
+            for (const item of produtosVenda) {
+                const prodOriginal = estoqueOriginal.find(r => String(r.id) === String(item.id));
+                if (!prodOriginal) {
+                    throw new Error(`Produto "${item.nome}" não encontrado no estoque.`);
+                }
+
+                const qtdAnt = numeroSeguro(prodOriginal.quantidade);
+                const qtdNova = Math.max(0, qtdAnt - numeroSeguro(item.quantidade));
+
+                // (1) Atualiza a quantidade do produto no Supabase
+                await window.EstoqueSupabase.salvarProduto({
+                    id: prodOriginal.id,
+                    nome: prodOriginal.nome,
+                    codigo: prodOriginal.codigo,
+                    preco: prodOriginal.preco,
+                    tipo: prodOriginal.tipo,
+                    estoqueMinimo: prodOriginal.estoqueMinimo,
+                    quantidade: qtdNova,
+                    validade: prodOriginal.validade,
+                    foto: prodOriginal.foto,
+                    criadoEm: prodOriginal.criadoEm
+                });
+
+                // (2) Registra a movimentação de saída no Supabase
+                await window.EstoqueSupabase.salvarMovimentacao({
+                    produtoId: prodOriginal.id,
+                    produtoNome: prodOriginal.nome,
+                    tipo: 'saida',
+                    quantidade: numeroSeguro(item.quantidade),
+                    quantidadeAnterior: qtdAnt,
+                    quantidadeNova: qtdNova,
+                    data: dataHora.dataChave,
+                    hora: dataHora.hora
+                });
+
+                // Guarda para rollback caso algo falhe depois
+                estoqueBaixadoSupabase.push({
+                    id: prodOriginal.id,
+                    produtoOriginal: { ...prodOriginal }
+                });
+            }
+        } catch (erro) {
+            console.error('[Venda] Falha ao baixar estoque no Supabase:', erro);
+
+            // Rollback do que já foi baixado
+            await reverterEstoqueSupabase(estoqueBaixadoSupabase);
+            estoqueBaixadoSupabase.length = 0;
+
+            // Distingue erro de rede (offline) de erro de servidor
+            const msg = String((erro && erro.message) || '').toLowerCase();
+            offlineDetectado =
+                !navigator.onLine ||
+                msg.includes('network') ||
+                msg.includes('failed to fetch') ||
+                msg.includes('fetch failed') ||
+                msg.includes('offline') ||
+                msg.includes('load failed');
+
+            if (!offlineDetectado) {
+                alert(
+                    'Não foi possível baixar o estoque no servidor.\n\n' +
+                    (erro.message || 'Erro desconhecido') +
+                    '\n\nA venda NÃO foi registrada.'
+                );
+                vendaEmProcessamento = false;
+                if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
+                return;
+            }
+
+            console.warn('[Venda] Modo offline: baixa de estoque no Supabase ignorada nesta venda.');
+        }
+    }
+
+    // ETAPA 3 — registrar DÍVIDA no Fiado (com rollback de estoque se falhar)
     if (isFiado) {
         try {
             const r = await window.DrTrocoFiado.registrarVendaFiado({
@@ -1012,6 +1131,13 @@ async function confirmarVenda() {
             if (!r || !r.sucesso) throw new Error((r && r.erro) || 'Falha ao registrar dívida.');
         } catch (err) {
             console.error('Erro ao registrar dívida no Fiado:', err);
+
+            if (estoqueBaixadoSupabase.length > 0) {
+                console.warn('[Venda] Revertendo estoque no Supabase pois o fiado falhou...');
+                await reverterEstoqueSupabase(estoqueBaixadoSupabase);
+                estoqueBaixadoSupabase.length = 0;
+            }
+
             alert(
                 'Não foi possível registrar a dívida no Fiado.\n\n' +
                 'A venda NÃO foi concluída.\n\n' + (err.message || '')
@@ -1051,7 +1177,7 @@ async function confirmarVenda() {
         const pOrig = estoqueOriginal.find(r => String(r.id) === String(item.id));
         const qtdAnt = pOrig ? numeroSeguro(pOrig.quantidade) : 0;
         movimentacoesEstoque.push({
-            id: `mov_venda_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            id: `mov_venda_${idVenda}_${item.id}`,
             vendaId: idVenda,
             produtoId: item.id,
             produtoNome: item.nome,
@@ -1163,9 +1289,23 @@ async function confirmarVenda() {
         try {
             const r = await window.DrTrocoDados.salvarVenda(venda);
             vendaOk = !!(r && r.ok);
-            if (!vendaOk) console.warn('[Venda] Salva apenas no aparelho:', r && r.erro);
+
+            if (!vendaOk) {
+                console.warn('[Venda] Venda salva apenas no aparelho:', r && r.erro);
+
+                // ROLLBACK: venda não foi pro Supabase, estoque não deveria ter ido
+                if (estoqueBaixadoSupabase.length > 0) {
+                    console.warn('[Venda] Revertendo estoque no Supabase pois a venda falhou...');
+                    await reverterEstoqueSupabase(estoqueBaixadoSupabase);
+                    estoqueBaixadoSupabase.length = 0;
+                }
+            }
         } catch (err) {
             console.error('[Venda] Erro ao salvar via DrTrocoDados:', err);
+            if (estoqueBaixadoSupabase.length > 0) {
+                await reverterEstoqueSupabase(estoqueBaixadoSupabase);
+                estoqueBaixadoSupabase.length = 0;
+            }
         }
 
         if (movimentacaoInicial && typeof window.DrTrocoDados.salvarMovimentacao === 'function') {
@@ -1194,6 +1334,11 @@ async function confirmarVenda() {
         alert(isFiado
             ? `Venda fiada registrada para ${clienteFiado.nome}!`
             : 'Venda registrada com sucesso!');
+    } else if (offlineDetectado) {
+        alert(
+            'Você está offline. A venda foi salva no aparelho e o estoque foi baixado localmente.\n\n' +
+            'Quando a conexão voltar, a venda será sincronizada.'
+        );
     } else {
         alert(
             'A venda foi salva no aparelho, mas o envio para a nuvem falhou.\n\n' +
@@ -1358,4 +1503,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
-        }
+}
