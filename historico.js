@@ -1060,9 +1060,29 @@ async function excluirRegistro(registro) {
     const nomeTipo = registro.categoria === "venda" ? "esta venda" :
         (registro.categoria === "entrada" ? "esta entrada" : "esta saída");
 
+    // Prepara aviso de reposição de estoque (só para vendas com produtos)
+    let avisoEstoque = '';
+    let vendaCompleta = null;
+
+    if (registro.categoria === "venda") {
+        const original = registro.original || {};
+        vendaCompleta = {
+            id: registro.id ?? original.id ?? original.vendaId,
+            produtos: Array.isArray(original.produtos) ? original.produtos : []
+        };
+
+        if (vendaCompleta.produtos.length > 0) {
+            const listaNomes = vendaCompleta.produtos
+                .map(p => `• ${p.nome || 'Produto'} (${p.quantidade}×)`)
+                .join('\n');
+            avisoEstoque = `\n\n⚠️ O estoque abaixo será reposto:\n${listaNomes}\n\nSe esta venda foi feita antes da última atualização do app, pode gerar estoque a mais.`;
+        }
+    }
+
     const confirmado = confirm(
         `Deseja excluir ${nomeTipo}?\n\n` +
-        `${registro.descricao}\n${moeda(registro.valor)}`
+        `${registro.descricao}\n${moeda(registro.valor)}` +
+        avisoEstoque
     );
 
     if (!confirmado) return;
@@ -1070,6 +1090,23 @@ async function excluirRegistro(registro) {
     const idParaExcluir = registro.id ?? registro.original?.id ?? registro.original?.vendaId;
 
     if (registro.categoria === "venda") {
+        // 1. Estornar estoque ANTES de excluir a venda
+        if (vendaCompleta && vendaCompleta.produtos.length > 0 && typeof window.reverterEstoquePorVenda === 'function') {
+            try {
+                const resultado = await window.reverterEstoquePorVenda(vendaCompleta);
+                if (resultado && resultado.erros && resultado.erros.length > 0) {
+                    const msg = 'Alguns produtos não puderam ser estornados:\n\n' +
+                        resultado.erros.join('\n') +
+                        '\n\nDeseja excluir a venda mesmo assim?';
+                    if (!confirm(msg)) return;
+                }
+            } catch (err) {
+                console.error('[Histórico] Erro ao estornar estoque:', err);
+                if (!confirm('Falha ao reverter estoque: ' + (err.message || err) + '\n\nDeseja excluir a venda mesmo assim?')) return;
+            }
+        }
+
+        // 2. Excluir a venda
         if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirVenda === 'function') {
             const r = await window.DrTrocoDados.excluirVenda(idParaExcluir);
             if (!r || !r.ok) {
@@ -1102,6 +1139,7 @@ async function excluirRegistro(registro) {
             if (!salvarJSON(CHAVE_VENDAS, vendas)) return;
         }
     } else {
+        // Entradas e saídas manuais — igual ao original
         if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirMovimentacao === 'function') {
             const r = await window.DrTrocoDados.excluirMovimentacao(idParaExcluir);
             if (!r || !r.ok) {
