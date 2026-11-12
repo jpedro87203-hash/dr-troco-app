@@ -1155,14 +1155,16 @@ async function excluirRegistro(registro) {
     const nomeTipo = registro.categoria === "venda" ? "esta venda" :
         (registro.categoria === "entrada" ? "esta entrada" : "esta saída");
 
-    // Prepara aviso de reposição de estoque (só para vendas com produtos)
+    const idParaExcluir = registro.id ?? registro.original?.id ?? registro.original?.vendaId;
+
     let avisoEstoque = '';
+    let avisoFiado = '';
     let vendaCompleta = null;
 
     if (registro.categoria === "venda") {
         const original = registro.original || {};
         vendaCompleta = {
-            id: registro.id ?? original.id ?? original.vendaId,
+            id: idParaExcluir,
             produtos: Array.isArray(original.produtos) ? original.produtos : []
         };
 
@@ -1170,19 +1172,21 @@ async function excluirRegistro(registro) {
             const listaNomes = vendaCompleta.produtos
                 .map(p => `• ${p.nome || 'Produto'} (${p.quantidade}×)`)
                 .join('\n');
-            avisoEstoque = `\n\n⚠️ O estoque abaixo será reposto:\n${listaNomes}\n\nSe esta venda foi feita antes da última atualização do app, pode gerar estoque a mais.`;
+            avisoEstoque = `\n\n⚠️ O estoque abaixo será reposto:\n${listaNomes}`;
+        }
+
+        if (original.fiado || original.clienteId) {
+            avisoFiado = `\n\n⚠️ Esta é uma venda fiada.\nA dívida do cliente será CANCELADA e o pagamento inicial removido do caixa.`;
         }
     }
 
     const confirmado = confirm(
         `Deseja excluir ${nomeTipo}?\n\n` +
         `${registro.descricao}\n${moeda(registro.valor)}` +
-        avisoEstoque
+        avisoEstoque + avisoFiado
     );
 
     if (!confirmado) return;
-
-    const idParaExcluir = registro.id ?? registro.original?.id ?? registro.original?.vendaId;
 
     if (registro.categoria === "venda") {
         // 1. Estornar estoque
@@ -1190,9 +1194,7 @@ async function excluirRegistro(registro) {
             try {
                 const resultado = await estornarEstoque(vendaCompleta);
                 if (resultado && resultado.erros && resultado.erros.length > 0) {
-                    const msg = 'Alguns produtos não puderam ser estornados:\n\n' +
-                        resultado.erros.join('\n') +
-                        '\n\nDeseja excluir a venda mesmo assim?';
+                    const msg = 'Alguns produtos não puderam ser estornados:\n\n' + resultado.erros.join('\n') + '\n\nDeseja excluir a venda mesmo assim?';
                     if (!confirm(msg)) return;
                 }
             } catch (err) {
@@ -1201,7 +1203,28 @@ async function excluirRegistro(registro) {
             }
         }
 
-        // 2. Excluir a venda
+        // 2. Estornar Fiado
+        if (vendaCompleta && (registro.original?.fiado || registro.original?.clienteId)) {
+            if (window.DrTrocoFiado && typeof window.DrTrocoFiado.estornarVendaFiado === 'function') {
+                try {
+                    await window.DrTrocoFiado.estornarVendaFiado(idParaExcluir);
+                } catch (e) {
+                    console.error('[Histórico] Erro no estorno fiado:', e);
+                    if (!confirm('Erro ao cancelar a dívida do fiado. Deseja continuar?')) return;
+                }
+            }
+        }
+
+        // 3. Estornar Caixa (Pagamento Inicial)
+        if (window.DrTrocoDados && typeof window.DrTrocoDados.movimentacoes === 'function' && typeof window.DrTrocoDados.excluirMovimentacao === 'function') {
+            const movs = window.DrTrocoDados.movimentacoes();
+            const movFiado = movs.find(m => String(m.vendaId) === String(idParaExcluir) && m.origem === 'pagamento_fiado_inicial');
+            if (movFiado) {
+                await window.DrTrocoDados.excluirMovimentacao(movFiado.id);
+            }
+        }
+
+        // 4. Excluir a venda
         if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirVenda === 'function') {
             const r = await window.DrTrocoDados.excluirVenda(idParaExcluir);
             if (!r || !r.ok) {
