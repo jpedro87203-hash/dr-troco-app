@@ -40,13 +40,21 @@ const produtosVendaVazio = $('produtosVendaVazio');
 const secaoCedulas = $('secaoCedulas');
 const listaCedulas = $('listaCedulas');
 
-// Campos do fiado — fallback cobre os dois HTMLs possíveis
+// Campos do fiado
 const groupFiado = $('groupFiado');
 const nomeClienteFiado = $('nomeClienteFiado');
 const valorPagoInicialFiado = $('valorEntradaFiado') || $('valorPagoInicialFiado');
 const formaPagamentoInicialFiado = $('metodoEntradaFiado') || $('formaPagamentoInicialFiado');
 const rowSaldoDevedorFiado = $('rowSaldoDevedorFiado');
 const saldoDevedorVenda = $('saldoPendenteFiado') || $('saldoDevedorVenda');
+
+// Elementos do Fiado (Busca)
+const buscaClienteFiado = $('buscaClienteFiado');
+const listaClientesFiado = $('listaClientesFiado');
+const clienteSelecionadoVenda = $('clienteSelecionadoVenda');
+const nomeClienteSelecionadoVenda = $('nomeClienteSelecionadoVenda');
+const btnTrocarClienteVenda = $('btnTrocarClienteVenda');
+let clientesFiadoCache = [];
 
 // Modais
 const modalProdutosVenda = $('modalProdutosVenda');
@@ -398,6 +406,70 @@ function abrirModalPix(valor) {
 }
 
 // ------------------------------------------------------------
+// Busca de Clientes do Fiado
+// ------------------------------------------------------------
+async function carregarClientesFiado() {
+    if (!window.DrTrocoFiado || typeof window.DrTrocoFiado.listarClientes !== 'function') return;
+    try {
+        const lista = await window.DrTrocoFiado.listarClientes();
+        clientesFiadoCache = lista || [];
+    } catch (e) {
+        console.warn('Erro ao carregar clientes do fiado:', e);
+    }
+}
+
+function renderizarListaClientes(termo = '') {
+    if (!listaClientesFiado) return;
+    const termoNorm = normalizar(termo);
+    
+    const filtrados = clientesFiadoCache.filter(c => normalizar(c.nome).includes(termoNorm));
+    
+    if (!filtrados.length) {
+        listaClientesFiado.innerHTML = '<div style="padding:14px;text-align:center;color:#7b898f;font-size:12px;">Nenhum cliente encontrado.</div>';
+        listaClientesFiado.classList.remove('hidden');
+        return;
+    }
+
+    listaClientesFiado.innerHTML = filtrados.map(c => `
+        <div class="cliente-item-fiado" data-id="${escaparAtributo(c.id)}" data-nome="${escaparAtributo(c.nome)}">
+            <strong>${escaparHTML(c.nome)}</strong>
+            <small>${escaparHTML(c.telefone || 'Sem telefone')}</small>
+        </div>
+    `).join('');
+
+    listaClientesFiado.classList.remove('hidden');
+
+    listaClientesFiado.querySelectorAll('.cliente-item-fiado').forEach(item => {
+        item.addEventListener('click', () => {
+            selecionarClienteFiado(item.dataset.id, item.dataset.nome);
+        });
+    });
+}
+
+function selecionarClienteFiado(id, nome) {
+    if (nomeClienteFiado) nomeClienteFiado.value = nome;
+    if (nomeClienteSelecionadoVenda) nomeClienteSelecionadoVenda.textContent = nome;
+    
+    if (clienteSelecionadoVenda) clienteSelecionadoVenda.classList.remove('hidden');
+    if (buscaClienteFiado) {
+        buscaClienteFiado.value = '';
+        buscaClienteFiado.closest('.busca-cliente-wrapper').classList.add('hidden');
+    }
+    if (listaClientesFiado) listaClientesFiado.classList.add('hidden');
+    
+    atualizarTela();
+}
+
+function limparClienteFiado() {
+    if (nomeClienteFiado) nomeClienteFiado.value = '';
+    if (clienteSelecionadoVenda) clienteSelecionadoVenda.classList.add('hidden');
+    if (buscaClienteFiado) {
+        buscaClienteFiado.value = '';
+        buscaClienteFiado.closest('.busca-cliente-wrapper').classList.remove('hidden');
+    }
+}
+
+// ------------------------------------------------------------
 // Inicialização e Eventos
 // ------------------------------------------------------------
 function iniciarCalculadora() {
@@ -432,6 +504,22 @@ function configurarEventos() {
                 atualizarTela();
             }
         });
+    });
+
+    // Eventos da busca de cliente fiado
+    buscaClienteFiado?.addEventListener('input', (e) => renderizarListaClientes(e.target.value));
+    buscaClienteFiado?.addEventListener('focus', async () => {
+        if (clientesFiadoCache.length === 0) await carregarClientesFiado();
+        renderizarListaClientes(buscaClienteFiado.value);
+    });
+    btnTrocarClienteVenda?.addEventListener('click', () => {
+        limparClienteFiado();
+        buscaClienteFiado?.focus();
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.busca-cliente-wrapper')) {
+            listaClientesFiado?.classList.add('hidden');
+        }
     });
 
     btnAdicionarProduto?.addEventListener('click', (e) => { e.preventDefault(); abrirModalProdutos(); });
@@ -521,6 +609,7 @@ function atualizarTela() {
     if (valorRecebidoInput) valorRecebidoInput.disabled = !ehDinheiro;
 
     mostrarElemento(groupFiado, ehFiado, 'block');
+    if (ehFiado && clientesFiadoCache.length === 0) carregarClientesFiado();
     mostrarElemento(rowSaldoDevedorFiado, ehFiado, 'flex');
 
     if (ehFiado) {
@@ -1419,6 +1508,7 @@ function limparVenda() {
     if (valorContaInput) valorContaInput.value = '';
     if (valorRecebidoInput) valorRecebidoInput.value = '';
     if (nomeClienteFiado) nomeClienteFiado.value = '';
+    limparClienteFiado();
     if (valorPagoInicialFiado) valorPagoInicialFiado.value = '0';
     if (formaPagamentoInicialFiado) formaPagamentoInicialFiado.value = 'dinheiro';
 
@@ -1566,4 +1656,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
-    }
+                                          }
