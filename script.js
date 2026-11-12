@@ -224,12 +224,71 @@ function obterDataHoraAtual() {
 }
 
 // ------------------------------------------------------------
-// Estorno de Estoque
+// Estorno de Estoque (local + Supabase)
 // ------------------------------------------------------------
-function reverterEstoquePorVenda(venda) {
-    if (!venda?.produtos || !Array.isArray(venda.produtos)) return;
-    const estoque = obterEstoque();
+async function reverterEstoquePorVenda(venda) {
+    if (!venda?.produtos || !Array.isArray(venda.produtos) || !venda.produtos.length) {
+        return { ok: true, produtosEstornados: 0, erros: [] };
+    }
 
+    const erros = [];
+    let produtosEstornados = 0;
+
+    // 1. Reverter no Supabase (se disponível)
+    const podeUsarSupabase =
+        window.EstoqueSupabase &&
+        typeof window.EstoqueSupabase.obterComercioId === 'function' &&
+        typeof window.EstoqueSupabase.salvarProduto === 'function' &&
+        typeof window.EstoqueSupabase.salvarMovimentacao === 'function' &&
+        typeof window.EstoqueSupabase.carregarProdutos === 'function';
+
+    if (podeUsarSupabase) {
+        try {
+            await window.EstoqueSupabase.obterComercioId();
+            const produtosRemotos = await window.EstoqueSupabase.carregarProdutos();
+
+            for (const itemVendido of venda.produtos) {
+                try {
+                    const prodRemoto = produtosRemotos.find(p => String(p.id) === String(itemVendido.id));
+                    if (!prodRemoto) {
+                        erros.push(`Produto "${itemVendido.nome}" não existe mais no Supabase.`);
+                        continue;
+                    }
+
+                    const qtdAnt = Number(prodRemoto.quantidade) || 0;
+                    const qtdNova = qtdAnt + (Number(itemVendido.quantidade) || 0);
+
+                    await window.EstoqueSupabase.salvarProduto({
+                        ...prodRemoto,
+                        quantidade: qtdNova
+                    });
+
+                    const dataHora = obterDataHoraAtual();
+                    await window.EstoqueSupabase.salvarMovimentacao({
+                        produtoId: prodRemoto.id,
+                        produtoNome: prodRemoto.nome,
+                        tipo: 'entrada',
+                        quantidade: Number(itemVendido.quantidade) || 0,
+                        quantidadeAnterior: qtdAnt,
+                        quantidadeNova: qtdNova,
+                        data: dataHora.dataChave,
+                        hora: dataHora.hora
+                    });
+
+                    produtosEstornados++;
+                } catch (e) {
+                    console.error('[Estorno] Erro no produto', itemVendido.nome, e);
+                    erros.push(`${itemVendido.nome}: ${e.message}`);
+                }
+            }
+        } catch (e) {
+            console.error('[Estorno] Erro ao conectar Supabase:', e);
+            erros.push(`Conexão Supabase: ${e.message}`);
+        }
+    }
+
+    // 2. Reverter no localStorage (sempre)
+    const estoque = obterEstoque();
     venda.produtos.forEach(itemVendido => {
         const prod = estoque.find(p => String(p.id) === String(itemVendido.id));
         if (prod) {
@@ -239,9 +298,13 @@ function reverterEstoquePorVenda(venda) {
     });
     salvarEstoque(estoque);
 
+    // 3. Remover movimentações locais de saída dessa venda
     const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
-    let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque).filter(mov => mov.vendaId !== venda.id);
+    const movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque)
+        .filter(mov => mov.vendaId !== venda.id);
     localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
+
+    return { ok: erros.length === 0, produtosEstornados, erros };
 }
 window.reverterEstoquePorVenda = reverterEstoquePorVenda;
 
@@ -1503,4 +1566,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
-}
+    }
