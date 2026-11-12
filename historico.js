@@ -1051,6 +1051,101 @@ elementos.modalDetalhes?.addEventListener("click", evento => {
 });
 
 /* =========================
+   FUNÇÃO DE ESTORNO DE ESTOQUE (LOCAL + SUPABASE)
+========================= */
+
+function obterComercioIdLocalHistorico() {
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const chave = localStorage.key(i);
+            if (chave && chave.startsWith("drTroco_estoque_") && chave !== "drTroco_estoque_legado") {
+                return chave.replace("drTroco_estoque_", "");
+            }
+        }
+    } catch (e) {}
+    return null;
+}
+
+async function estornarEstoque(venda) {
+    if (!venda?.produtos || !Array.isArray(venda.produtos) || !venda.produtos.length) {
+        return { ok: true, produtosEstornados: 0, erros: [] };
+    }
+
+    const erros = [];
+    let produtosEstornados = 0;
+
+    // 1. LOCAL
+    const comercioId = obterComercioIdLocalHistorico();
+    const chaveEstoque = comercioId ? `drTroco_estoque_${comercioId}` : 'drTroco_estoque';
+    const chaveMovEstoque = comercioId ? `drTroco_movimentacoesEstoque_${comercioId}` : 'drTroco_movimentacoesEstoque';
+
+    try {
+        let estoque = lerJSON(chaveEstoque, []);
+        venda.produtos.forEach(itemVendido => {
+            const prod = estoque.find(p => String(p.id) === String(itemVendido.id));
+            if (prod) {
+                prod.quantidade = numero(prod.quantidade) + numero(itemVendido.quantidade);
+                prod.atualizadoEm = new Date().toISOString();
+            }
+        });
+        salvarJSON(chaveEstoque, estoque);
+
+        let movs = lerJSON(chaveMovEstoque, []);
+        movs = movs.filter(m => m.vendaId !== venda.id);
+        salvarJSON(chaveMovEstoque, movs);
+    } catch (e) {
+        console.error('[Estorno local]', e);
+        erros.push(`Erro local: ${e.message}`);
+    }
+
+    // 2. REMOTO (SUPABASE)
+    if (window.EstoqueSupabase && typeof window.EstoqueSupabase.salvarProduto === 'function') {
+        try {
+            await window.EstoqueSupabase.obterComercioId();
+            const produtosRemotos = await window.EstoqueSupabase.carregarProdutos();
+            const dataOp = obterDataOperacional();
+            const agora = new Date();
+            const horaOp = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            for (const itemVendido of venda.produtos) {
+                const prodRemoto = produtosRemotos.find(p => String(p.id) === String(itemVendido.id));
+                if (!prodRemoto) {
+                    erros.push(`Produto ${itemVendido.nome || itemVendido.id} não encontrado na nuvem.`);
+                    continue;
+                }
+
+                const qtdAnt = numero(prodRemoto.quantidade);
+                const qtdNova = qtdAnt + numero(itemVendido.quantidade);
+
+                await window.EstoqueSupabase.salvarProduto({
+                    ...prodRemoto,
+                    quantidade: qtdNova
+                });
+
+                await window.EstoqueSupabase.salvarMovimentacao({
+                    produtoId: prodRemoto.id,
+                    produtoNome: prodRemoto.nome,
+                    tipo: 'entrada',
+                    quantidade: numero(itemVendido.quantidade),
+                    quantidadeAnterior: qtdAnt,
+                    quantidadeNova: qtdNova,
+                    data: dataOp,
+                    hora: horaOp
+                });
+                produtosEstornados++;
+            }
+        } catch (e) {
+            console.error('[Estorno Supabase]', e);
+            erros.push(`Erro nuvem: ${e.message}`);
+        }
+    } else {
+        erros.push('Módulo EstoqueSupabase (nuvem) não está disponível nesta página.');
+    }
+
+    return { ok: erros.length === 0, produtosEstornados, erros };
+}
+
+/* =========================
    EXCLUIR REGISTRO
 ========================= */
 
@@ -1090,10 +1185,10 @@ async function excluirRegistro(registro) {
     const idParaExcluir = registro.id ?? registro.original?.id ?? registro.original?.vendaId;
 
     if (registro.categoria === "venda") {
-        // 1. Estornar estoque ANTES de excluir a venda
-        if (vendaCompleta && vendaCompleta.produtos.length > 0 && typeof window.reverterEstoquePorVenda === 'function') {
+        // 1. Estornar estoque
+        if (vendaCompleta && vendaCompleta.produtos.length > 0) {
             try {
-                const resultado = await window.reverterEstoquePorVenda(vendaCompleta);
+                const resultado = await estornarEstoque(vendaCompleta);
                 if (resultado && resultado.erros && resultado.erros.length > 0) {
                     const msg = 'Alguns produtos não puderam ser estornados:\n\n' +
                         resultado.erros.join('\n') +
@@ -1139,7 +1234,7 @@ async function excluirRegistro(registro) {
             if (!salvarJSON(CHAVE_VENDAS, vendas)) return;
         }
     } else {
-        // Entradas e saídas manuais — igual ao original
+        // Entradas e saídas manuais
         if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirMovimentacao === 'function') {
             const r = await window.DrTrocoDados.excluirMovimentacao(idParaExcluir);
             if (!r || !r.ok) {
@@ -1371,7 +1466,6 @@ atualizarInterfaceCaixa();
 atualizarHistorico();
 
 if (window.DrTrocoDados) {
-    // Escuta qualquer sincronização (mesmo parcial) e re-renderiza
     if (typeof window.DrTrocoDados.onSync === 'function') {
         window.DrTrocoDados.onSync(() => {
             console.log('[Histórico] onSync disparado — re-renderizando');
@@ -1380,7 +1474,6 @@ if (window.DrTrocoDados) {
         });
     }
 
-    // Dispara sincronização inicial (sempre re-renderiza ao final)
     if (typeof window.DrTrocoDados.sincronizar === 'function') {
         window.DrTrocoDados.sincronizar()
             .then(resultado => {
