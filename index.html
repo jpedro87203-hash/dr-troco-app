@@ -88,6 +88,83 @@
     }
 
     /* =========================================================
+       ESTILOS ESPECÍFICOS — BUSCA DE CLIENTE NO FIADO
+       ========================================================= */
+    .busca-cliente-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .lista-clientes-fiado {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border: 1px solid #e1e9e5;
+      border-radius: 12px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 1050;
+      box-shadow: 0 8px 24px rgba(30, 50, 42, 0.15);
+    }
+
+    .cliente-item-fiado {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f0f4f1;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transition: background 0.15s;
+    }
+
+    .cliente-item-fiado:last-child {
+      border-bottom: 0;
+    }
+
+    .cliente-item-fiado:hover, .cliente-item-fiado:active {
+      background: #eaf8f1;
+    }
+
+    .cliente-item-fiado strong {
+      color: #1f3028;
+      font-size: 13px;
+    }
+
+    .cliente-item-fiado small {
+      color: #7b898f;
+      font-size: 11px;
+    }
+
+    .cliente-selecionado-venda {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #eaf8f1;
+      border: 1px solid #cfeadb;
+      border-radius: 12px;
+      margin-top: 8px;
+    }
+
+    .cliente-selecionado-venda span {
+      color: #168b53;
+      font-size: 14px;
+    }
+
+    .btn-trocar-cliente {
+      background: #ffffff;
+      border: 1px solid #168b53;
+      color: #168b53;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* =========================================================
        ESTILOS ESPECÍFICOS — MODAL DE PRODUTOS (3 COLUNAS)
        ========================================================= */
     .modal-produtos-venda {
@@ -554,14 +631,25 @@
             </div>
           </div>
 
-          <label class="label-campo" for="nomeClienteFiado">
-            Nome do cliente
+          <label class="label-campo" for="buscaClienteFiado">
+            Buscar cliente cadastrado
           </label>
 
-          <input type="text" id="nomeClienteFiado"
-            class="campo-texto-fiado"
-            placeholder="Digite o nome do cliente"
-            autocomplete="name">
+          <div class="busca-cliente-wrapper">
+            <input type="search" id="buscaClienteFiado" 
+              class="campo-texto-fiado" 
+              placeholder="Digite o nome para pesquisar..." 
+              autocomplete="off">
+            <div id="listaClientesFiado" class="lista-clientes-fiado hidden"></div>
+          </div>
+          
+          <!-- Campo oculto para manter compatibilidade com a lógica existente -->
+          <input type="hidden" id="nomeClienteFiado" value="">
+
+          <div id="clienteSelecionadoVenda" class="cliente-selecionado-venda hidden">
+            <span>👤 <strong id="nomeClienteSelecionadoVenda"></strong></span>
+            <button type="button" id="btnTrocarClienteVenda" class="btn-trocar-cliente">Trocar</button>
+          </div>
 
           <label class="label-campo" for="valorEntradaFiado">
             Entrada (opcional)
