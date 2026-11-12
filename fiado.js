@@ -1014,6 +1014,41 @@
   }
 
   /* ==========================================================
+     ESTORNO DE VENDA (cancelamento)
+  ========================================================== */
+
+  async function estornarVendaFiado(vendaId) {
+    if (!vendaId) return { sucesso: false, erro: 'ID da venda não informado.' };
+    await getUsuario();
+    const supa = getSupa();
+
+    let alterouLocal = false;
+    clientes.forEach(c => {
+      const movsAntes = c.movimentacoes.length;
+      c.movimentacoes = c.movimentacoes.filter(m => String(m.vendaId) !== String(vendaId));
+      if (c.movimentacoes.length !== movsAntes) {
+        alterouLocal = true;
+      }
+    });
+
+    if (alterouLocal) {
+      renderizarTudo();
+    }
+
+    try {
+      const { error } = await supa.from(TAB_MOVS)
+        .delete()
+        .eq('venda_id', String(vendaId))
+        .eq('usuario_id', usuarioAtual.id);
+      if (error) throw error;
+      return { sucesso: true };
+    } catch (err) {
+      console.error('[Fiado] Erro ao estornar venda:', err);
+      return { sucesso: false, erro: err.message };
+    }
+  }
+
+  /* ==========================================================
      RENDERIZAÇÃO
   ========================================================== */
 
@@ -1461,7 +1496,8 @@
     formatarDinheiro,
     migrarDadosLocais,
     recarregarDoSupabase: carregarTudo,
-    estaPronto: () => pronto
+    estaPronto: () => pronto,
+    estornarVendaFiado
   };
 
   /* ==========================================================
