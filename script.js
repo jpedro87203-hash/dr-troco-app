@@ -232,6 +232,31 @@ function obterDataHoraAtual() {
 }
 
 // ------------------------------------------------------------
+// Verificação de Caixa
+// ------------------------------------------------------------
+function caixaEstaAberto() {
+    try {
+        if (window.DrTrocoCaixa && typeof window.DrTrocoCaixa.current === 'function') {
+            return !!window.DrTrocoCaixa.current();
+        }
+    } catch (e) {}
+
+    try {
+        if (window.DrTrocoDados && typeof window.DrTrocoDados.sessoes === 'function') {
+            const sessoes = window.DrTrocoDados.sessoes();
+            return sessoes.some(s => s.status === 'aberto');
+        }
+    } catch (e) {}
+
+    try {
+        const sessoes = JSON.parse(localStorage.getItem('drTroco_sessoesCaixa') || '[]');
+        return sessoes.some(s => s.status === 'aberto');
+    } catch (e) {
+        return false;
+    }
+}
+
+// ------------------------------------------------------------
 // Estorno de Estoque (local + Supabase)
 // ------------------------------------------------------------
 async function reverterEstoquePorVenda(venda) {
@@ -1023,6 +1048,13 @@ function validarResumoVenda(resumo) {
 }
 
 function abrirConfirmacaoVenda() {
+    if (!caixaEstaAberto()) {
+        if (confirm('O caixa está fechado.\n\nÉ necessário abrir o caixa antes de registrar vendas.\n\nDeseja ir para a tela do caixa agora?')) {
+            window.location.href = 'fluxo.html';
+        }
+        return;
+    }
+
     const resumo = calcularResumoVenda();
     if (!validarResumoVenda(resumo)) return;
     if (!modalConfirmarVenda || !resumoConfirmacaoVenda) return;
@@ -1101,6 +1133,13 @@ async function reverterEstoqueSupabase(estoqueBaixado) {
 // ------------------------------------------------------------
 async function confirmarVenda() {
     if (vendaEmProcessamento) return;
+
+    // Trava 2: verifica novamente se o caixa continua aberto
+    if (!caixaEstaAberto()) {
+        alert('O caixa foi fechado. Abra o caixa antes de confirmar a venda.');
+        fecharModalOverlay(modalConfirmarVenda);
+        return;
+    }
 
     const resumo = calcularResumoVenda();
     if (!validarResumoVenda(resumo)) return;
@@ -1656,4 +1695,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
-                                          }
+    }
