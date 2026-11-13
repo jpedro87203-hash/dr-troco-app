@@ -1217,7 +1217,11 @@ async function confirmarVenda() {
     }
 
     const dataHora = obterDataHoraAtual();
-    const idVenda = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    
+    // CORREÇÃO: Usar UUID para o ID da venda para evitar erros no Supabase
+    const idVenda = (window.crypto && typeof window.crypto.randomUUID === 'function')
+        ? window.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
     // ======================================================
     // ETAPA 2.5 — NOVO: baixar estoque no Supabase
@@ -1475,6 +1479,7 @@ async function confirmarVenda() {
 
     // ETAPA 8 — gravar venda + movimentação (Supabase via DrTrocoDados ou fallback local)
     let vendaOk = false;
+    let motivoFalha = '';
 
     if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarVenda === 'function') {
         try {
@@ -1482,7 +1487,8 @@ async function confirmarVenda() {
             vendaOk = !!(r && r.ok);
 
             if (!vendaOk) {
-                console.warn('[Venda] Venda salva apenas no aparelho:', r && r.erro);
+                motivoFalha = (r && r.erro) ? r.erro : 'Erro desconhecido';
+                console.warn('[Venda] Venda salva apenas no aparelho:', motivoFalha);
 
                 // ROLLBACK: venda não foi pro Supabase, estoque não deveria ter ido
                 if (estoqueBaixadoSupabase.length > 0) {
@@ -1493,6 +1499,7 @@ async function confirmarVenda() {
             }
         } catch (err) {
             console.error('[Venda] Erro ao salvar via DrTrocoDados:', err);
+            motivoFalha = err.message || 'Erro desconhecido';
             if (estoqueBaixadoSupabase.length > 0) {
                 await reverterEstoqueSupabase(estoqueBaixadoSupabase);
                 estoqueBaixadoSupabase.length = 0;
@@ -1533,6 +1540,7 @@ async function confirmarVenda() {
     } else {
         alert(
             'A venda foi salva no aparelho, mas o envio para a nuvem falhou.\n\n' +
+            'Motivo: ' + motivoFalha + '\n\n' +
             'Ela será sincronizada automaticamente quando a conexão voltar.'
         );
     }
@@ -1695,4 +1703,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
-    }
+                    }
