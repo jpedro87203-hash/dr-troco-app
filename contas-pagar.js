@@ -257,7 +257,6 @@
   /* ---- Movimentação de caixa (Supabase via DrTrocoDados) ---- */
 
   function lerMovimentacoes() {
-    // Preferência: cache unificado do DrTrocoDados (que reflete o Supabase)
     if (window.DrTrocoDados && typeof window.DrTrocoDados.movimentacoes === 'function') {
       try {
         const arr = window.DrTrocoDados.movimentacoes();
@@ -275,6 +274,22 @@
   function salvarMovimentacoesLocal(m) {
     try { localStorage.setItem(CHAVE_MOV, JSON.stringify(m)); return true; }
     catch (e) { console.error(e); return false; }
+  }
+
+  function obterSessaoAtual() {
+    try {
+      if (window.DrTrocoCaixa && typeof window.DrTrocoCaixa.current === 'function') {
+        return window.DrTrocoCaixa.current();
+      }
+      if (window.DrTrocoDados && typeof window.DrTrocoDados.sessoes === 'function') {
+        const sessoes = window.DrTrocoDados.sessoes();
+        return sessoes.find(s => s.status === 'aberto') || null;
+      }
+      const sessoes = JSON.parse(localStorage.getItem('drTroco_sessoesCaixa') || '[]');
+      return sessoes.find(s => s.status === 'aberto') || null;
+    } catch (e) {
+      return null;
+    }
   }
 
   /* ---- UI ---- */
@@ -499,6 +514,13 @@
         contaPagarId: conta.id
       };
 
+      // NOVO: Vincular à sessão de caixa
+      const sessao = obterSessaoAtual();
+      if (sessao) {
+        novaMov.caixaSessaoId = sessao.id;
+        novaMov.caixaSessaoNumero = sessao.numero;
+      }
+
       // >>> SYNC: Supabase via DrTrocoDados
       if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarMovimentacao === 'function') {
         const r = await window.DrTrocoDados.salvarMovimentacao(novaMov);
@@ -523,7 +545,13 @@
       if (typeof window.carregarFluxo === 'function') window.carregarFluxo();
       alert('Pagamento registrado!');
     } catch (err) {
-      console.error('[Contas]', err);
+      console.error('[Contas] Erro ao confirmar pagamento. Desfazendo movimentação...', err);
+      
+      // Rollback: tenta excluir a movimentação se o pagamento falhou
+      if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirMovimentacao === 'function') {
+        await window.DrTrocoDados.excluirMovimentacao(movimentoId);
+      }
+
       alert(err.message || 'Não foi possível registrar pagamento.');
     }
   }
