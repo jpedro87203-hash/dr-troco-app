@@ -64,6 +64,20 @@
     return `${ano}-${mes}-${dia}`;
   }
 
+  function obterDataHoraAtual() {
+    const agora = new Date();
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const ano = agora.getFullYear();
+    const hora = String(agora.getHours()).padStart(2, '0');
+    const minuto = String(agora.getMinutes()).padStart(2, '0');
+    return {
+        data: `${dia}/${mes}/${ano}`,
+        dataChave: `${ano}-${mes}-${dia}`,
+        hora: `${hora}:${minuto}`
+    };
+  }
+
   function escaparHTML(v) {
     return String(v ?? '').replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -694,13 +708,13 @@
     const produto = $('frnProduto').value.trim();
     const quantidade = Number($('frnQtd').value);
     const precoUnitario = Number($('frnPreco').value);
-    const data = $('frnData').value;
+    const dataCompra = $('frnData').value;
     const observacao = $('frnObs').value.trim();
 
     if (!produto) { alert('Informe o produto.'); return; }
     if (!(quantidade > 0)) { alert('Quantidade inválida.'); return; }
     if (!(precoUnitario > 0)) { alert('Preço inválido.'); return; }
-    if (!data) { alert('Informe a data.'); return; }
+    if (!dataCompra) { alert('Informe a data.'); return; }
 
     const btn = evento.target.querySelector('button[type="submit"]');
     const textoOriginal = btn.textContent;
@@ -708,20 +722,95 @@
     btn.textContent = 'Salvando...';
 
     try {
+      // 1. Salva a compra no fornecedor
       await inserirCompra(compraFornecedorId, {
-        produto, quantidade, precoUnitario, data, observacao
+        produto, quantidade, precoUnitario, data: dataCompra, observacao
       });
 
-      const produtos = listarProdutosEstoque();
-      const existe = produtos.find(p => normalizar(p.nome) === normalizar(produto));
-      if (!existe) {
-        alert(`Compra registrada!\n\nAtenção: "${produto}" não está no estoque. ` +
-              `O lucro será calculado, mas o produto não aparecerá para venda ` +
-              `até você cadastrá-lo em Estoque.`);
+      // 2. REPOSIÇÃO AUTOMÁTICA NO ESTOQUE
+      try {
+        const chaveEstoque = obterChaveEstoque();
+        let estoque = listarProdutosEstoque();
+        const produtoNomeNorm = normalizar(produto);
+        let index = estoque.findIndex(p => normalizar(p.nome) === produtoNomeNorm);
+
+        const dataHora = obterDataHoraAtual();
+
+        if (index >= 0) {
+          // Produto já existe: soma a quantidade
+          const prod = estoque[index];
+          const qtdAnt = Number(prod.quantidade) || 0;
+          const qtdNova = qtdAnt + quantidade;
+          prod.quantidade = qtdNova;
+          prod.atualizadoEm = new Date().toISOString();
+
+          localStorage.setItem(chaveEstoque, JSON.stringify(estoque));
+
+          // Sincroniza com o Supabase
+          if (window.EstoqueSupabase && typeof window.EstoqueSupabase.salvarProduto === 'function') {
+            await window.EstoqueSupabase.salvarProduto(prod);
+            await window.EstoqueSupabase.salvarMovimentacao({
+              produtoId: prod.id,
+              produtoNome: prod.nome,
+              tipo: 'entrada',
+              quantidade: quantidade,
+              quantidadeAnterior: qtdAnt,
+              quantidadeNova: qtdNova,
+              data: dataHora.dataChave,
+              hora: dataHora.hora
+            });
+          }
+        } else {
+          // Produto não existe: cadastra automaticamente
+          const novoProduto = {
+            id: 'prod_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8),
+            nome: produto,
+            codigo: '',
+            preco: precoUnitario, // usa o preço de compra como preço de venda inicial
+            tipo: 'nao_perecivel',
+            estoqueMinimo: 5,
+            quantidade: quantidade,
+            validade: '',
+            foto: '',
+            criadoEm: new Date().toISOString(),
+            atualizadoEm: new Date().toISOString()
+          };
+          estoque.push(novoProduto);
+          localStorage.setItem(chaveEstoque, JSON.stringify(estoque));
+
+          // Sincroniza com o Supabase
+          if (window.EstoqueSupabase && typeof window.EstoqueSupabase.salvarProduto === 'function') {
+            const salvo = await window.EstoqueSupabase.salvarProduto(novoProduto);
+            if (salvo && salvo.id && salvo.id !== novoProduto.id) {
+              novoProduto.id = salvo.id;
+              localStorage.setItem(chaveEstoque, JSON.stringify(estoque));
+            }
+            await window.EstoqueSupabase.salvarMovimentacao({
+              produtoId: novoProduto.id,
+              produtoNome: novoProduto.nome,
+              tipo: 'cadastro',
+              quantidade: quantidade,
+              quantidadeAnterior: 0,
+              quantidadeNova: quantidade,
+              data: dataHora.dataChave,
+              hora: dataHora.hora
+            });
+          }
+          alert(`Compra registrada!\n\nO produto "${produto}" não existia e foi cadastrado automaticamente no estoque com ${quantidade} unidades.`);
+        }
+      } catch (errEstoque) {
+        console.error('[Fornecedores] Falha ao atualizar estoque:', errEstoque);
+        alert('Compra registrada no fornecedor, mas houve um erro ao repor o estoque. Verifique a tela de Estoque manualmente.');
       }
 
       compraFornecedorId = null;
       renderizar();
+      
+      // Se não caiu no alerta de "produto novo", avisa que deu tudo certo
+      if (produtoNomeNorm === normalizar(produto)) {
+         alert('Compra registrada e estoque atualizado com sucesso!');
+      }
+
     } catch (err) {
       console.error('[Fornecedores]', err);
       alert(err.message || 'Falha ao registrar compra.');
