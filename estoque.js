@@ -180,11 +180,6 @@ function fecharModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
 
-    if (id === "modalLeitorCodigo") {
-        fecharLeitorCodigo();
-        return;
-    }
-
     modal.classList.remove("aberto");
 
     setTimeout(() => {
@@ -1268,7 +1263,13 @@ async function iniciarDeteccaoCodigoBarras() {
     if (!detectorCodigoBarras) detectorCodigoBarras = await criarDetectorCodigoBarras();
 
     const video = document.getElementById("videoLeitorCodigo");
-    if (!video || !detectorCodigoBarras) return;
+    if (!video) return;
+
+    if (!detectorCodigoBarras) {
+        alert("Seu navegador não suporta a leitura automática. Digite o código manualmente.");
+        fecharLeitorCodigo();
+        return;
+    }
 
     const sessaoAtual = sessaoLeitorCodigo;
     lendoCodigoBarras = true;
@@ -1296,7 +1297,7 @@ async function iniciarDeteccaoCodigoBarras() {
 function codigoEncontrado(codigo) {
     codigoBarrasLido = codigo;
     pararLeitorCodigo();
-    fecharModal("modalLeitorCodigo");
+    fecharLeitorCodigo();
 
     const campoCodigo = document.getElementById("codigoProduto");
     if (campoCodigo) {
@@ -1342,7 +1343,13 @@ async function abrirLeitorCodigo() {
 
 function fecharLeitorCodigo() {
     pararLeitorCodigo();
-    fecharModal("modalLeitorCodigo");
+    const modal = document.getElementById("modalLeitorCodigo");
+    if (modal) {
+        modal.classList.remove("aberto");
+        if (!document.querySelector(".estoque-modal.aberto")) {
+            document.body.classList.remove("modal-aberto");
+        }
+    }
 }
 
 /* =========================================================
@@ -1724,4 +1731,4 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", inicializarEstoque);
 } else {
     inicializarEstoque();
-}
+                                       }
