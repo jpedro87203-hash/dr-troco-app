@@ -12,166 +12,68 @@
 
   <title>Dr. Troco - Nova Venda</title>
 
-  <!-- Biblioteca para gerar o QR Code do Pix -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 
   <link rel="stylesheet" href="style.css">
 
   <style>
+    /* ===== ESTILOS GERAIS DO TOPO ===== */
     #botao-controle-licencas,
     #botao-sair-conta {
-      box-sizing: border-box;
-      flex: 0 0 44px;
-      width: 44px;
-      min-width: 44px;
-      height: 44px;
-      margin-left: 8px;
-      padding: 0;
-      border-radius: 12px;
-      font-size: 22px;
-      line-height: 1;
-      text-align: center;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
+      box-sizing: border-box; flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px;
+      margin-left: 8px; padding: 0; border-radius: 12px; font-size: 22px; line-height: 1;
+      text-align: center; align-items: center; justify-content: center; cursor: pointer;
     }
+    #botao-controle-licencas { border: 1px solid #d7eee2; background: #e7f5ee; color: #16794b; }
+    #botao-controle-licencas[hidden] { display: none !important; }
+    #botao-controle-licencas:not([hidden]) { display: inline-flex; }
+    #botao-sair-conta { border: 1px solid #f0d8d8; background: #fff0f0; color: #b42318; }
+    #botao-sair-conta:disabled { opacity: 0.6; cursor: wait; }
 
-    #botao-controle-licencas {
-      border: 1px solid #d7eee2;
-      background: #e7f5ee;
-      color: #16794b;
-    }
-
-    #botao-controle-licencas[hidden] {
-      display: none !important;
-    }
-
-    #botao-controle-licencas:not([hidden]) {
-      display: inline-flex;
-    }
-
-    #botao-sair-conta {
-      border: 1px solid #f0d8d8;
-      background: #fff0f0;
-      color: #b42318;
-    }
-
-    #botao-sair-conta:disabled {
-      opacity: 0.6;
-      cursor: wait;
-    }
-
-    /* ===== BADGE DE ALERTAS NO BOTÃO DO LOJISTA ===== */
-    .botao-estabelecimento {
-      position: relative;
-    }
-
+    .botao-estabelecimento { position: relative; }
     .badge-alertas {
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      min-width: 20px;
-      height: 20px;
-      padding: 0 6px;
-      border-radius: 10px;
-      background: #e53935;
-      color: #fff;
-      font-size: 11px;
-      font-weight: 900;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      border: 2px solid #fff;
-      box-sizing: border-box;
-      pointer-events: none;
+      position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 6px;
+      border-radius: 10px; background: #e53935; color: #fff; font-size: 11px; font-weight: 900;
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      border: 2px solid #fff; box-sizing: border-box; pointer-events: none;
     }
 
-    /* =========================================================
-       ESTILOS ESPECÍFICOS — BUSCA DE CLIENTE NO FIADO
-       ========================================================= */
-    .busca-cliente-wrapper {
-      position: relative;
-      width: 100%;
-    }
-
+    /* ===== BUSCA DE CLIENTE NO FIADO ===== */
+    .busca-cliente-wrapper { position: relative; width: 100%; }
     .lista-clientes-fiado {
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0;
-      right: 0;
-      background: #ffffff;
-      border: 1px solid #e1e9e5;
-      border-radius: 12px;
-      max-height: 220px;
-      overflow-y: auto;
-      z-index: 1050;
-      box-shadow: 0 8px 24px rgba(30, 50, 42, 0.15);
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #ffffff;
+      border: 1px solid #e1e9e5; border-radius: 12px; max-height: 220px; overflow-y: auto;
+      z-index: 1050; box-shadow: 0 8px 24px rgba(30, 50, 42, 0.15);
     }
-
     .cliente-item-fiado {
-      padding: 12px 14px;
-      border-bottom: 1px solid #f0f4f1;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      transition: background 0.15s;
+      padding: 12px 14px; border-bottom: 1px solid #f0f4f1; cursor: pointer;
+      display: flex; flex-direction: column; gap: 2px; transition: background 0.15s;
     }
-
-    .cliente-item-fiado:last-child {
-      border-bottom: 0;
-    }
-
-    .cliente-item-fiado:hover, .cliente-item-fiado:active {
-      background: #eaf8f1;
-    }
-
-    .cliente-item-fiado strong {
-      color: #1f3028;
-      font-size: 13px;
-    }
-
-    .cliente-item-fiado small {
-      color: #7b898f;
-      font-size: 11px;
-    }
-
+    .cliente-item-fiado:last-child { border-bottom: 0; }
+    .cliente-item-fiado:hover, .cliente-item-fiado:active { background: #eaf8f1; }
+    .cliente-item-fiado strong { color: #1f3028; font-size: 13px; }
+    .cliente-item-fiado small { color: #7b898f; font-size: 11px; }
     .cliente-selecionado-venda {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 14px;
-      background: #eaf8f1;
-      border: 1px solid #cfeadb;
-      border-radius: 12px;
-      margin-top: 8px;
+      display: flex; align-items: center; justify-content: space-between; padding: 12px 14px;
+      background: #eaf8f1; border: 1px solid #cfeadb; border-radius: 12px; margin-top: 8px;
     }
-
-    .cliente-selecionado-venda span {
-      color: #168b53;
-      font-size: 14px;
-    }
-
+    .cliente-selecionado-venda span { color: #168b53; font-size: 14px; }
     .btn-trocar-cliente {
-      background: #ffffff;
-      border: 1px solid #168b53;
-      color: #168b53;
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 11px;
-      font-weight: 800;
-      cursor: pointer;
+      background: #ffffff; border: 1px solid #168b53; color: #168b53; border-radius: 8px;
+      padding: 6px 12px; font-size: 11px; font-weight: 800; cursor: pointer;
     }
 
     /* =========================================================
-       ESTILOS ESPECÍFICOS — MODAL DE PRODUTOS (3 COLUNAS)
+       MODAL DE PRODUTOS (3 COLUNAS) — ESTRUTURA DE SCROLL
        ========================================================= */
     .modal-produtos-venda {
       width: 100%;
       max-width: 760px;
-      max-height: 85vh;
-      max-height: 85dvh;
+      /* ALTURA FIXA: permite que o flex:1 funcione perfeitamente */
+      height: 90vh;
+      height: 90dvh;
+      max-height: 90vh;
+      max-height: 90dvh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -184,55 +86,29 @@
       margin-bottom: 12px;
     }
 
-    /* ========================================================
-       CORREÇÃO DO SCROLL: min-height: 0 obrigatório
-       (sem isso o flex-item cresce e o overflow não funciona)
-       ======================================================== */
+    /* ÁREA DE SCROLL: flex-basis 0% garante que ela respeite o limite */
     .modal-produtos-scroll-area {
-      flex: 1 1 auto;
-      min-height: 0;
+      flex: 1 1 0%; 
+      min-height: 0; 
       overflow-y: auto;
+      overflow-x: hidden;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       padding-bottom: 20px;
     }
 
-    .btn-leitor-venda {
-      margin-bottom: 10px;
-    }
-
-    .campo-busca-produto {
-      position: relative;
-      margin-bottom: 14px;
-    }
-
+    .btn-leitor-venda { margin-bottom: 10px; }
+    .campo-busca-produto { position: relative; margin-bottom: 14px; }
     .campo-busca-produto span {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 18px;
-      color: #8a979e;
-      pointer-events: none;
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 18px; color: #8a979e; pointer-events: none;
     }
-
     .campo-busca-produto input {
-      width: 100%;
-      height: 46px;
-      padding: 0 14px 0 42px;
-      border: 1px solid #e2e8ec;
-      border-radius: 14px;
-      background: #ffffff;
-      color: #30414d;
-      outline: none;
-      box-sizing: border-box;
-      font-size: 14px;
+      width: 100%; height: 46px; padding: 0 14px 0 42px; border: 1px solid #e2e8ec;
+      border-radius: 14px; background: #ffffff; color: #30414d; outline: none;
+      box-sizing: border-box; font-size: 14px;
     }
-
-    .campo-busca-produto input:focus {
-      border-color: #56a97b;
-      box-shadow: 0 0 0 3px rgba(32, 169, 93, 0.1);
-    }
+    .campo-busca-produto input:focus { border-color: #56a97b; box-shadow: 0 0 0 3px rgba(32, 169, 93, 0.1); }
 
     .lista-produtos-estoque-venda {
       display: grid;
@@ -241,9 +117,9 @@
       margin-bottom: 16px;
     }
 
-    /* ========================================================
-       CARD DE PRODUTO — CLICÁVEL, SEM BOTÕES + / -
-       ======================================================== */
+    /* =========================================================
+       CARD DE PRODUTO — FOTO PROPORCIONAL + BOTÕES +/-
+       ========================================================= */
     .cartao-produto-grade {
       background: #ffffff;
       border: 1px solid rgba(39, 57, 69, 0.08);
@@ -254,282 +130,119 @@
       justify-content: space-between;
       box-shadow: 0 2px 8px rgba(28, 48, 62, 0.04);
       box-sizing: border-box;
-      min-height: 168px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
-      transition:
-        transform .12s ease,
-        border-color .15s ease,
-        background .15s ease,
-        box-shadow .15s ease;
+      transition: transform .12s ease, border-color .15s ease, background .15s ease;
     }
-
     .cartao-produto-grade:active {
       transform: scale(.97);
       border-color: #20a66a;
       background: #f0faf5;
-      box-shadow: 0 4px 14px rgba(32, 166, 106, .16);
-    }
-
-    .cartao-produto-grade:focus-visible {
-      outline: 2px solid #20a66a;
-      outline-offset: 2px;
     }
 
     .cartao-produto-topo {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      width: 100%;
+      display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%;
     }
 
+    /* PROPORÇÃO DA FOTO CORRIGIDA (Quadrada, limitada a 80px) */
     .cartao-produto-foto {
       width: 100%;
-      height: 76px;
+      aspect-ratio: 1 / 1;
+      max-height: 80px; /* Não deixa a foto gigante no tablet */
       border-radius: 10px;
       overflow: hidden;
       background: linear-gradient(135deg, #edf7f1, #e4f1ea);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #16834d;
-      font-size: 20px;
-      font-weight: 900;
-      margin-bottom: 6px;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #16834d; font-size: 20px; font-weight: 900;
+      margin-bottom: 6px; flex-shrink: 0;
     }
-
-    .cartao-produto-foto img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    .cartao-produto-foto img { width: 100%; height: 100%; object-fit: cover; }
 
     .cartao-produto-info {
-      width: 100%;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
+      width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px;
     }
-
     .cartao-produto-info strong {
-      display: -webkit-box;
-      color: #2c3e4a;
-      font-size: 11px;
-      font-weight: 900;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      line-height: 1.25;
-      height: 28px;
-      margin-bottom: 2px;
-      text-align: center;
-      width: 100%;
-      word-break: break-word;
+      display: -webkit-box; color: #2c3e4a; font-size: 11px; font-weight: 900;
+      overflow: hidden; text-overflow: ellipsis; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      line-height: 1.25; height: 28px; margin-bottom: 2px; text-align: center; width: 100%; word-break: break-word;
     }
+    .cartao-produto-info small { color: #8a969e; font-size: 9px; font-weight: 700; width: 100%; }
+    .cartao-produto-preco { color: #16834d; font-size: 13px; font-weight: 900; width: 100%; margin-top: 1px; }
 
-    .cartao-produto-info small {
-      display: block;
-      color: #8a969e;
-      font-size: 9px;
-      font-weight: 700;
-      margin-bottom: 2px;
-      text-align: center;
+    /* BOTÕES + E - REATIVADOS */
+    .cartao-produto-acoes {
+      margin-top: 8px;
       width: 100%;
     }
-
-    .cartao-produto-preco {
-      color: #16834d;
-      font-size: 13px;
-      font-weight: 900;
-      text-align: center;
-      width: 100%;
-      margin-top: 1px;
+    
+    .controle-qtd-card {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #f4f8fa; border: 1px solid #dbe4e8; border-radius: 8px;
+      height: 32px; padding: 0 3px; width: 100%; box-sizing: border-box;
+    }
+    .controle-qtd-card button {
+      width: 26px; height: 26px; border: 0; border-radius: 6px; background: #ffffff;
+      color: #2864ad; font-size: 14px; font-weight: 900; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .controle-qtd-card button:active { transform: scale(0.92); }
+    .controle-qtd-card button:disabled { opacity: 0.3; }
+    .controle-qtd-card span {
+      font-size: 12px; font-weight: 900; color: #263746;
     }
 
-    /* =========================================================
-       OCULTA OS BOTÕES + / − DO CARD
-       (o card inteiro é o gatilho; o script.js continua
-        encontrando .btn-card-adicionar para a lógica)
-       ========================================================= */
-    .cartao-produto-grade .btn-card-adicionar {
-      display: none !important;
-    }
-
-    .cartao-produto-grade .controle-qtd-card {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: transparent;
-      border: 0;
-      height: auto;
-      padding: 0;
-      margin-top: 4px;
-      width: 100%;
-    }
-
-    .cartao-produto-grade .controle-qtd-card button {
-      display: none !important;
-    }
-
-    /* Chip de quantidade: aparece quando o produto já foi adicionado */
-    .cartao-produto-grade .controle-qtd-card span {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 34px;
-      height: 22px;
-      padding: 0 8px;
-      border-radius: 999px;
-      background: #eaf8f0;
-      color: #147844;
-      font-size: 11px;
-      font-weight: 900;
-      line-height: 1;
-    }
-
-    /* =========================================================
-       OCULTA O BOTÃO "ADICIONAR MANUALMENTE (VALOR AVULSO)"
-       — o elemento permanece no DOM para o script.js não quebrar
-       ========================================================= */
-    #btnAdicionarManualVenda {
-      display: none !important;
-    }
+    /* Botão manual oculto, mas no DOM */
+    #btnAdicionarManualVenda { display: none !important; }
 
     .modal-acoes-venda {
       flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #edf2f5;
+      display: flex; flex-direction: column; gap: 8px;
+      margin-top: 10px; padding-top: 10px; border-top: 1px solid #edf2f5;
     }
 
-    .btn-manual-venda {
-      width: 100%;
-      height: 40px;
-      border: 1px dashed #cbd5d0;
-      border-radius: 12px;
-      background: #fafcfd;
-      color: #52636e;
-      font-size: 11px;
-      font-weight: 900;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .estado-produtos-venda {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 30px 20px;
-      color: #8f9aa1;
-    }
+    .estado-produtos-venda { grid-column: 1 / -1; text-align: center; padding: 30px 20px; color: #8f9aa1; }
 
     /* Estilo do Botão Pix */
     .btn-pix-acao {
-      display: none;
-      width: 100%;
-      margin-top: 15px;
-      padding: 14px;
-      border: 0;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #32BCAD, #1E9E91);
-      color: #ffffff;
-      font-size: 14px;
-      font-weight: 900;
-      cursor: pointer;
-      text-align: center;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      box-shadow: 0 4px 10px rgba(30, 158, 145, 0.25);
+      display: none; width: 100%; margin-top: 15px; padding: 14px; border: 0; border-radius: 12px;
+      background: linear-gradient(135deg, #32BCAD, #1E9E91); color: #ffffff; font-size: 14px;
+      font-weight: 900; cursor: pointer; text-align: center; align-items: center; justify-content: center;
+      gap: 8px; box-shadow: 0 4px 10px rgba(30, 158, 145, 0.25);
     }
   </style>
 </head>
-
 <body class="pagina-calculadora">
 
   <div class="app-container">
-
-    <!-- CABEÇALHO -->
     <header class="app-header">
       <div class="header-logo">🧮</div>
-
       <div>
         <h1>Dr. Troco</h1>
         <p>Nova venda</p>
       </div>
-
-      <a
-        href="painel-lojista.html"
-        class="botao-estabelecimento"
-        aria-label="Painel do Lojista"
-        title="Painel do Lojista"
-      >
-        👤
-        <span id="badgeAlertasLojista" class="badge-alertas" hidden>0</span>
+      <a href="painel-lojista.html" class="botao-estabelecimento" aria-label="Painel" title="Painel">
+        👤 <span id="badgeAlertasLojista" class="badge-alertas" hidden>0</span>
       </a>
-
-      <button
-        id="botao-sair-conta"
-        type="button"
-        aria-label="Sair da conta"
-        title="Sair da conta"
-      >🚪</button>
-
-      <button
-        id="botao-controle-licencas"
-        type="button"
-        hidden
-        onclick="window.location.href='admin.html'"
-        aria-label="Controle de Licenças"
-        title="Controle de Licenças"
-      >⚙️</button>
+      <button id="botao-sair-conta" type="button" aria-label="Sair" title="Sair">🚪</button>
+      <button id="botao-controle-licencas" type="button" hidden onclick="window.location.href='admin.html'">⚙️</button>
     </header>
 
     <main class="calculadora-app">
       <section class="card calculadora-card">
-
         <div class="cabecalho-calculadora">
-          <div>
-            <span class="texto-pequeno">VENDA</span>
-            <h2>Nova Venda</h2>
-          </div>
+          <div><span class="texto-pequeno">VENDA</span><h2>Nova Venda</h2></div>
           <div class="icone-venda">🛒</div>
         </div>
 
-        <!-- PRODUTOS -->
         <section class="secao-venda produtos-venda">
           <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">📦</div>
-              <div>
-                <h3>Produtos</h3>
-                <p>Adicione produtos do seu estoque</p>
-              </div>
-            </div>
+            <div><div class="titulo-icone">📦</div><div><h3>Produtos</h3><p>Adicione produtos do seu estoque</p></div></div>
           </div>
-
-          <button
-            type="button"
-            id="btnAdicionarProduto"
-            class="btn-adicionar-produto"
-          >
+          <button type="button" id="btnAdicionarProduto" class="btn-adicionar-produto">
             <span class="icone-plus">＋</span>
-            <span>
-              <strong>Adicionar produto</strong>
-              <small>Pesquisar no estoque ou ler código</small>
-            </span>
+            <span><strong>Adicionar produto</strong><small>Pesquisar no estoque ou ler código</small></span>
           </button>
-
           <div id="listaProdutosVenda" class="lista-produtos-venda">
             <div id="produtosVendaVazio" class="produtos-vazio">
               <div class="produtos-vazio-icone">🛍️</div>
@@ -539,379 +252,173 @@
           </div>
         </section>
 
-        <!-- VALOR AVULSO -->
         <section class="secao-venda valor-avulso">
           <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">💰</div>
-              <div>
-                <h3>Valor avulso</h3>
-                <p>Para vendas sem produto cadastrado</p>
-              </div>
-            </div>
+            <div><div class="titulo-icone">💰</div><div><h3>Valor avulso</h3><p>Para vendas sem produto cadastrado</p></div></div>
           </div>
-
           <div class="campo-dinheiro">
             <span class="simbolo-moeda">R$</span>
-            <input
-              type="number"
-              id="valorConta"
-              step="0.01"
-              min="0"
-              inputmode="decimal"
-              autocomplete="off"
-              placeholder="0,00"
-              aria-label="Valor avulso da venda"
-            >
+            <input type="number" id="valorConta" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
           </div>
         </section>
 
-        <!-- RESUMO -->
         <section class="resumo-venda-card">
-          <div class="resumo-venda-topo">
-            <span>Total da venda</span>
-            <strong id="totalCobrar">R$ 0,00</strong>
-          </div>
-
+          <div class="resumo-venda-topo"><span>Total da venda</span><strong id="totalCobrar">R$ 0,00</strong></div>
           <div class="resumo-venda-info">
             <span id="quantidadeItensVenda">0 itens</span>
-            <button
-              type="button"
-              id="btnLimparVenda"
-              class="btn-limpar-venda"
-            >
-              Limpar venda
-            </button>
+            <button type="button" id="btnLimparVenda" class="btn-limpar-venda">Limpar venda</button>
           </div>
         </section>
 
-        <!-- PAGAMENTO -->
         <section class="secao-venda secao-pagamento">
           <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">💳</div>
-              <div>
-                <h3>Forma de pagamento</h3>
-                <p>Selecione como o cliente vai pagar</p>
-              </div>
-            </div>
+            <div><div class="titulo-icone">💳</div><div><h3>Forma de pagamento</h3><p>Selecione como o cliente vai pagar</p></div></div>
           </div>
-
           <div class="payment-options">
-            <button type="button" class="btn-payment active"
-              data-method="dinheiro" aria-pressed="true">
-              <span>💵</span>
-              <strong>Dinheiro</strong>
-            </button>
-
-            <button type="button" class="btn-payment"
-              data-method="pix" aria-pressed="false">
-              <span>📱</span>
-              <strong>Pix</strong>
-            </button>
-
-            <button type="button" class="btn-payment"
-              data-method="debito" aria-pressed="false">
-              <span>💳</span>
-              <strong>Débito</strong>
-            </button>
-
-            <button type="button" class="btn-payment"
-              data-method="credito" aria-pressed="false">
-              <span>💳</span>
-              <strong>Crédito</strong>
-            </button>
-
-            <button type="button" id="btnPagamentoFiado"
-              class="btn-payment btn-payment-fiado"
-              data-method="fiado" aria-pressed="false">
-              <span>🧾</span>
-              <strong>Fiado</strong>
-            </button>
+            <button type="button" class="btn-payment active" data-method="dinheiro" aria-pressed="true"><span>💵</span><strong>Dinheiro</strong></button>
+            <button type="button" class="btn-payment" data-method="pix" aria-pressed="false"><span>📱</span><strong>Pix</strong></button>
+            <button type="button" class="btn-payment" data-method="debito" aria-pressed="false"><span>💳</span><strong>Débito</strong></button>
+            <button type="button" class="btn-payment" data-method="credito" aria-pressed="false"><span>💳</span><strong>Crédito</strong></button>
+            <button type="button" id="btnPagamentoFiado" class="btn-payment btn-payment-fiado" data-method="fiado" aria-pressed="false"><span>🧾</span><strong>Fiado</strong></button>
           </div>
         </section>
 
-        <!-- DADOS DO FIADO -->
-        <section
-          id="groupFiado"
-          class="secao-venda grupo-fiado hidden"
-          aria-label="Dados da venda fiada"
-        >
+        <section id="groupFiado" class="secao-venda grupo-fiado hidden">
           <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">🧾</div>
-              <div>
-                <h3>Venda fiada</h3>
-                <p>Informe o cliente e o pagamento inicial</p>
-              </div>
-            </div>
+            <div><div class="titulo-icone">🧾</div><div><h3>Venda fiada</h3><p>Informe o cliente e o pagamento inicial</p></div></div>
           </div>
-
-          <label class="label-campo" for="buscaClienteFiado">
-            Buscar cliente cadastrado
-          </label>
-
+          <label class="label-campo" for="buscaClienteFiado">Buscar cliente cadastrado</label>
           <div class="busca-cliente-wrapper">
-            <input type="search" id="buscaClienteFiado" 
-              class="campo-texto-fiado" 
-              placeholder="Digite o nome para pesquisar..." 
-              autocomplete="off">
+            <input type="search" id="buscaClienteFiado" class="campo-texto-fiado" placeholder="Digite o nome para pesquisar..." autocomplete="off">
             <div id="listaClientesFiado" class="lista-clientes-fiado hidden"></div>
           </div>
-          
           <input type="hidden" id="nomeClienteFiado" value="">
-
           <div id="clienteSelecionadoVenda" class="cliente-selecionado-venda hidden">
             <span>👤 <strong id="nomeClienteSelecionadoVenda"></strong></span>
             <button type="button" id="btnTrocarClienteVenda" class="btn-trocar-cliente">Trocar</button>
           </div>
-
-          <label class="label-campo" for="valorEntradaFiado">
-            Entrada (opcional)
-          </label>
-
+          <label class="label-campo" for="valorEntradaFiado">Entrada (opcional)</label>
           <div class="campo-dinheiro">
             <span class="simbolo-moeda">R$</span>
-            <input type="number" id="valorEntradaFiado"
-              step="0.01" min="0" inputmode="decimal"
-              placeholder="0,00"
-              aria-label="Valor da entrada do fiado">
+            <input type="number" id="valorEntradaFiado" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
           </div>
-
-          <label class="label-campo" for="metodoEntradaFiado">
-            Forma de pagamento da entrada
-          </label>
-
+          <label class="label-campo" for="metodoEntradaFiado">Forma de pagamento da entrada</label>
           <select id="metodoEntradaFiado" class="campo-texto-fiado">
-            <option value="dinheiro">Dinheiro</option>
-            <option value="pix">Pix</option>
-            <option value="debito">Débito</option>
-            <option value="credito">Crédito</option>
+            <option value="dinheiro">Dinheiro</option><option value="pix">Pix</option>
+            <option value="debito">Débito</option><option value="credito">Crédito</option>
           </select>
-
           <div class="resumo-fiado">
             <span>Saldo que ficará pendente</span>
             <strong id="saldoPendenteFiado">R$ 0,00</strong>
           </div>
         </section>
 
-        <!-- VALOR RECEBIDO -->
-        <section id="groupRecebido"
-          class="secao-venda secao-recebido">
+        <section id="groupRecebido" class="secao-venda secao-recebido">
           <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">💵</div>
-              <div>
-                <h3>Valor recebido</h3>
-                <p>Informe quanto o cliente entregou</p>
-              </div>
-            </div>
+            <div><div class="titulo-icone">💵</div><div><h3>Valor recebido</h3><p>Informe quanto o cliente entregou</p></div></div>
           </div>
-
           <div class="campo-dinheiro campo-recebido">
             <span class="simbolo-moeda">R$</span>
-            <input type="number" id="valorRecebido"
-              step="0.01" min="0" inputmode="decimal"
-              autocomplete="off" placeholder="0,00"
-              aria-label="Valor recebido">
+            <input type="number" id="valorRecebido" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
           </div>
         </section>
 
-        <!-- TROCO -->
         <section id="rowTroco" class="resultado-troco">
           <div class="resultado-troco-topo">
-            <div>
-              <span>Troco</span>
-              <small>Valor a devolver ao cliente</small>
-            </div>
+            <div><span>Troco</span><small>Valor a devolver ao cliente</small></div>
             <strong id="valorTroco">R$ 0,00</strong>
           </div>
         </section>
 
-        <!-- CÉDULAS -->
         <section id="secaoCedulas" class="secao-troco">
           <div class="titulo-secao">
-            <div>
-              <div class="titulo-icone">🪙</div>
-              <div>
-                <h3>Combinações de troco</h3>
-                <p>Veja opções para devolver o troco</p>
-              </div>
-            </div>
+            <div><div class="titulo-icone">🪙</div><div><h3>Combinações de troco</h3><p>Veja opções para devolver o troco</p></div></div>
           </div>
-
           <div id="listaCedulas" class="lista-combinacoes-troco">
             <div class="troco-vazio">
-              <div>💰</div>
-              <strong>Informe o valor recebido</strong>
-              <span>As combinações aparecerão aqui.</span>
+              <div>💰</div><strong>Informe o valor recebido</strong><span>As combinações aparecerão aqui.</span>
             </div>
           </div>
         </section>
 
-        <!-- AÇÕES -->
-        <button type="button" id="btnRegistrarVenda"
-          class="btn-primary btn-registrar-venda">
-          <span>✓</span>
-          <span>Registrar Venda</span>
-        </button>
-
-        <button type="button" id="btnCancelarVenda"
-          class="btn-cancelar-venda">
-          Cancelar / Limpar venda
-        </button>
-
+        <button type="button" id="btnRegistrarVenda" class="btn-primary btn-registrar-venda"><span>✓</span><span>Registrar Venda</span></button>
+        <button type="button" id="btnCancelarVenda" class="btn-cancelar-venda">Cancelar / Limpar venda</button>
       </section>
     </main>
-
   </div>
 
-  <!-- MODAL DE PRODUTOS (3 COLUNAS) -->
-  <div id="modalProdutosVenda"
-    class="modal-overlay estoque-modal hidden">
+  <!-- MODAL DE PRODUTOS -->
+  <div id="modalProdutosVenda" class="modal-overlay estoque-modal hidden">
     <div class="modal-box modal-produtos-venda">
-      
       <div class="modal-cabecalho">
-        <div>
-          <span class="texto-pequeno">ESTOQUE</span>
-          <h3>Adicionar produto</h3>
-        </div>
-
-        <button type="button" id="btnFecharProdutosVenda"
-          class="btn-fechar-modal" aria-label="Fechar">×</button>
+        <div><span class="texto-pequeno">ESTOQUE</span><h3>Adicionar produto</h3></div>
+        <button type="button" id="btnFecharProdutosVenda" class="btn-fechar-modal" aria-label="Fechar">×</button>
       </div>
 
       <div class="modal-produtos-scroll-area">
-        <button type="button" id="btnAbrirLeitorVenda"
-          class="btn-adicionar-produto btn-leitor-venda">
+        <button type="button" id="btnAbrirLeitorVenda" class="btn-adicionar-produto btn-leitor-venda">
           <span class="icone-plus">📷</span>
-          <span>
-            <strong>Ler código de barras</strong>
-            <small>Usar a câmera do celular</small>
-          </span>
+          <span><strong>Ler código de barras</strong><small>Usar a câmera do celular</small></span>
         </button>
-
         <div class="campo-busca-produto">
           <span>🔎</span>
-          <input type="search" id="buscaProdutoVenda"
-            placeholder="Buscar por nome ou código..."
-            autocomplete="off" aria-label="Buscar produto">
+          <input type="search" id="buscaProdutoVenda" placeholder="Buscar por nome ou código..." autocomplete="off" aria-label="Buscar produto">
         </div>
-
-        <div id="listaProdutosEstoqueVenda"
-          class="lista-produtos-estoque-venda">
-          <div class="estado-produtos-venda">
-            <div>📦</div>
-            <strong>Carregando produtos...</strong>
-          </div>
+        <div id="listaProdutosEstoqueVenda" class="lista-produtos-estoque-venda">
+          <div class="estado-produtos-venda"><div>📦</div><strong>Carregando produtos...</strong></div>
         </div>
       </div>
 
       <div class="modal-acoes-venda">
-        <!-- Botão oculto via CSS: o script.js continua encontrando o elemento -->
         <button type="button" id="btnAdicionarManualVenda" class="btn-manual-venda">
           <span>＋</span> Adicionar manualmente (valor avulso)
         </button>
-        <button type="button" id="btnConcluirProdutosVenda"
-          class="btn-confirmar">Concluir</button>
+        <button type="button" id="btnConcluirProdutosVenda" class="btn-confirmar">Concluir</button>
       </div>
-
     </div>
   </div>
 
-  <!-- MODAL DO LEITOR -->
-  <div id="modalLeitorVenda"
-    class="modal-overlay leitor-modal hidden">
+  <div id="modalLeitorVenda" class="modal-overlay leitor-modal hidden">
     <div class="modal-box modal-leitor-venda">
       <div class="modal-cabecalho">
-        <div>
-          <span class="texto-pequeno">LEITOR</span>
-          <h3>Ler código de barras</h3>
-        </div>
-
-        <button type="button" id="btnFecharLeitorVenda"
-          class="btn-fechar-modal"
-          aria-label="Fechar leitor">×</button>
+        <div><span class="texto-pequeno">LEITOR</span><h3>Ler código de barras</h3></div>
+        <button type="button" id="btnFecharLeitorVenda" class="btn-fechar-modal" aria-label="Fechar leitor">×</button>
       </div>
-
       <div id="areaLeitorVenda" class="area-leitor-venda">
-        <video id="videoLeitorVenda"
-          class="video-leitor-venda"
-          autoplay muted playsinline></video>
-
-        <div id="molduraLeitorVenda"
-          class="moldura-leitor-venda">
-          <div class="linha-leitor-venda"></div>
-        </div>
+        <video id="videoLeitorVenda" class="video-leitor-venda" autoplay muted playsinline></video>
+        <div id="molduraLeitorVenda" class="moldura-leitor-venda"><div class="linha-leitor-venda"></div></div>
       </div>
-
-      <div id="mensagemLeitorVenda"
-        class="mensagem-leitor-venda">
-        Aponte a câmera para o código de barras.
-      </div>
-
-      <div id="statusLeitorVenda"
-        class="status-leitor-venda">
-        Preparando câmera...
-      </div>
-
-      <div class="modal-acoes-venda">
-        <button type="button" id="btnFecharLeitorVenda2"
-          class="btn-cancel">Fechar leitor</button>
-      </div>
+      <div id="mensagemLeitorVenda" class="mensagem-leitor-venda">Aponte a câmera para o código de barras.</div>
+      <div id="statusLeitorVenda" class="status-leitor-venda">Preparando câmera...</div>
+      <div class="modal-acoes-venda"><button type="button" id="btnFecharLeitorVenda2" class="btn-cancel">Fechar leitor</button></div>
     </div>
   </div>
 
-  <!-- MODAL DE CONFIRMAÇÃO -->
-  <div id="modalConfirmarVenda"
-    class="modal-overlay estoque-modal hidden">
+  <div id="modalConfirmarVenda" class="modal-overlay estoque-modal hidden">
     <div class="modal-box">
       <div class="modal-cabecalho">
-        <div>
-          <span class="texto-pequeno">CONFIRMAÇÃO</span>
-          <h3>Confirmar venda</h3>
-        </div>
-
-        <button type="button" id="btnFecharConfirmacao"
-          class="btn-fechar-modal"
-          aria-label="Fechar">×</button>
+        <div><span class="texto-pequeno">CONFIRMAÇÃO</span><h3>Confirmar venda</h3></div>
+        <button type="button" id="btnFecharConfirmacao" class="btn-fechar-modal" aria-label="Fechar">×</button>
       </div>
-
-      <div id="resumoConfirmacaoVenda"
-        class="resumo-confirmacao-venda"></div>
-
-      <button type="button" id="btnGerarQrCodePix" class="btn-pix-acao">
-        <span>📱</span>
-        <span>Gerar QR Code Pix</span>
-      </button>
-
+      <div id="resumoConfirmacaoVenda" class="resumo-confirmacao-venda"></div>
+      <button type="button" id="btnGerarQrCodePix" class="btn-pix-acao"><span>📱</span><span>Gerar QR Code Pix</span></button>
       <div class="modal-acoes-venda">
-        <button type="button" id="btnCancelarConfirmacao"
-          class="btn-cancel">Voltar</button>
-
-        <button type="button" id="btnConfirmarVenda"
-          class="btn-confirmar">Confirmar venda</button>
+        <button type="button" id="btnCancelarConfirmacao" class="btn-cancel">Voltar</button>
+        <button type="button" id="btnConfirmarVenda" class="btn-confirmar">Confirmar venda</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL DO QR CODE PIX -->
   <div id="modalPix" class="modal-overlay estoque-modal hidden">
     <div class="modal-box" style="text-align: center;">
       <div class="modal-cabecalho">
-        <div>
-          <span class="texto-pequeno">PAGAMENTO</span>
-          <h3>Pix Copia e Cola</h3>
-        </div>
+        <div><span class="texto-pequeno">PAGAMENTO</span><h3>Pix Copia e Cola</h3></div>
         <button type="button" id="btnFecharPix" class="btn-fechar-modal" aria-label="Fechar">×</button>
       </div>
-
       <div id="pixQrCodeContainer">
         <div id="pixQrCodeImg" style="margin: 15px 0; display: flex; justify-content: center;"></div>
-        
         <p style="font-size: 16px; font-weight: bold; color: #1f3028;" id="pixValorExibicao"></p>
         <p style="font-size: 12px; color: #7b898f; margin-top: 5px; line-height: 1.4;">Peça para o cliente escanear o código ou copiar e colar no app do banco.</p>
-        
         <button type="button" id="btnCopiarPix" style="background:#eaf8f1; color:#168b53; padding:12px; border:1px solid #168b53; border-radius:8px; width:100%; font-weight:bold; margin-top:15px; cursor:pointer;">
           📋 Copiar Código Pix
         </button>
@@ -919,35 +426,14 @@
     </div>
   </div>
 
-  <!-- NAVEGAÇÃO INFERIOR -->
   <nav class="menu-inferior">
-    <a href="index.html" class="menu-item ativo">
-      <span>🧮</span>
-      <small>Calculadora</small>
-    </a>
-
-    <a href="fluxo.html" class="menu-item">
-      <span>📊</span>
-      <small>Fluxo</small>
-    </a>
-
-    <a href="historico.html" class="menu-item">
-      <span>📋</span>
-      <small>Histórico</small>
-    </a>
-
-    <a href="estoque.html" class="menu-item">
-      <span>📦</span>
-      <small>Estoque</small>
-    </a>
-
-    <a href="fiado.html" class="menu-item">
-      <span>🧾</span>
-      <small>Fiado</small>
-    </a>
+    <a href="index.html" class="menu-item ativo"><span>🧮</span><small>Calculadora</small></a>
+    <a href="fluxo.html" class="menu-item"><span>📊</span><small>Fluxo</small></a>
+    <a href="historico.html" class="menu-item"><span>📋</span><small>Histórico</small></a>
+    <a href="estoque.html" class="menu-item"><span>📦</span><small>Estoque</small></a>
+    <a href="fiado.html" class="menu-item"><span>🧾</span><small>Fiado</small></a>
   </nav>
 
-  <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <script src="auth-guard.js"></script>
@@ -958,100 +444,31 @@
   <script src="script.js"></script>
   <script src="alertas.js"></script>
 
-  <!-- =========================================================
-       CARD DE PRODUTO CLICÁVEL
-       - Toca no card -> dispara o .btn-card-adicionar oculto
-       - Feedback visual verde
-       - Roda em fase de captura para não conflitar com script.js
-       ========================================================= -->
-  <script>
-  (() => {
-    'use strict';
-
-    document.addEventListener('click', function (evento) {
-      const card = evento.target.closest('#listaProdutosEstoqueVenda .cartao-produto-grade');
-      if (!card) return;
-
-      // Se o clique foi em um botão (ex.: caso o script.js reative
-      // algum botão), respeita o botão.
-      if (evento.target.closest('button')) return;
-
-      const botaoOriginal = card.querySelector('.btn-card-adicionar');
-      if (!botaoOriginal) return;
-
-      evento.preventDefault();
-      evento.stopPropagation();
-
-      botaoOriginal.click();
-
-      // Feedback visual
-      const bgOriginal = card.style.background;
-      const borderOriginal = card.style.borderColor;
-      card.style.background = '#d6f4e2';
-      card.style.borderColor = '#20a66a';
-      setTimeout(() => {
-        card.style.background = bgOriginal;
-        card.style.borderColor = borderOriginal;
-      }, 220);
-    }, true /* captura */);
-  })();
-  </script>
-
-  <!-- SAIR DA CONTA -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const botaoSair = document.getElementById('botao-sair-conta');
-
       if (!botaoSair) return;
-
       botaoSair.addEventListener('click', async function () {
-        const confirmar = confirm(
-          'Deseja realmente sair da sua conta?'
-        );
-
-        if (!confirmar) return;
-
+        if (!confirm('Deseja realmente sair da sua conta?')) return;
         botaoSair.disabled = true;
-
         try {
           const cliente = window.supabaseClient;
-
-          if (!cliente) {
-            throw new Error('Cliente Supabase não encontrado.');
-          }
-
+          if (!cliente) throw new Error('Cliente Supabase não encontrado.');
           const { error } = await cliente.auth.signOut();
-
           if (error) throw error;
-
           window.location.replace('login.html');
-
         } catch (erro) {
           console.error('Erro ao sair:', erro);
-
-          alert(
-            'Não foi possível sair da conta. Tente novamente.'
-          );
-
+          alert('Não foi possível sair da conta. Tente novamente.');
           botaoSair.disabled = false;
         }
       });
     });
-  </script>
-
-  <!-- REGISTRO DO PWA -->
-  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
-          .then((reg) => {
-            console.log('PWA: Service Worker registrado com sucesso!', reg.scope);
-          })
-          .catch((err) => {
-            console.error('PWA: Erro ao registrar Service Worker:', err);
-          });
+        navigator.serviceWorker.register('service-worker.js').catch((err) => console.error('PWA SW:', err));
       });
     }
   </script>
 </body>
-                </html>
+        </html>
