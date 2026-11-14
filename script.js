@@ -225,8 +225,8 @@ function obterDataHoraAtual() {
     const segundo = String(new Date().getSeconds()).padStart(2, '0');
 
     return {
-        data: `${dia}/${mes}/${ano}`,
-        dataChave: `${ano}-${mes}-${dia}`,
+        data: `${dia}/${mes}/${ano}`, // Formato BR (para exibição)
+        dataChave: `${ano}-${mes}-${dia}`, // Formato ISO (para o banco de dados)
         hora: `${hora}:${minuto}:${segundo}`
     };
 }
@@ -304,7 +304,7 @@ async function reverterEstoquePorVenda(venda) {
                         quantidade: Number(itemVendido.quantidade) || 0,
                         quantidadeAnterior: qtdAnt,
                         quantidadeNova: qtdNova,
-                        data: dataHora.dataChave,
+                        data: dataHora.dataChave, // Enviando no formato correto
                         hora: dataHora.hora
                     });
 
@@ -1271,7 +1271,7 @@ async function confirmarVenda() {
                     quantidade: numeroSeguro(item.quantidade),
                     quantidadeAnterior: qtdAnt,
                     quantidadeNova: qtdNova,
-                    data: dataHora.dataChave,
+                    data: dataHora.dataChave, // CORREÇÃO AQUI: Enviando data no formato ISO
                     hora: dataHora.hora
                 });
 
@@ -1380,7 +1380,7 @@ async function confirmarVenda() {
             quantidade: numeroSeguro(item.quantidade),
             quantidadeAnterior: qtdAnt,
             quantidadeNova: Math.max(0, qtdAnt - numeroSeguro(item.quantidade)),
-            data: dataHora.dataChave,
+            data: dataHora.dataChave, // CORREÇÃO AQUI: formato ISO
             hora: dataHora.hora
         });
     });
@@ -1389,7 +1389,7 @@ async function confirmarVenda() {
     // ETAPA 6 — montar registro da venda
     const venda = {
         id: idVenda,
-        data: dataHora.data,
+        data: dataHora.dataChave, // CORREÇÃO AQUI: Enviando data no formato ISO
         dataChave: dataHora.dataChave,
         hora: dataHora.hora,
         formaPagamento: resumo.formaPagamento,
@@ -1441,7 +1441,7 @@ async function confirmarVenda() {
                 valor: pago,
                 formaPagamento: resumo.formaPagamentoRecebido,
                 formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
-                data: dataHora.data,
+                data: dataHora.dataChave, // CORREÇÃO AQUI: formato ISO
                 dataChave: dataHora.dataChave,
                 hora: dataHora.hora,
                 tipo: 'pagamento_inicial'
@@ -1454,7 +1454,7 @@ async function confirmarVenda() {
                 formaPagamento: resumo.formaPagamentoRecebido,
                 formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
                 descricao: `Pagamento inicial do fiado — ${clienteFiado.nome}`,
-                data: dataHora.data,
+                data: dataHora.dataChave, // CORREÇÃO AQUI: formato ISO
                 dataChave: dataHora.dataChave,
                 hora: dataHora.hora,
                 origem: 'pagamento_fiado_inicial',
@@ -1703,4 +1703,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
-                    }
+}
