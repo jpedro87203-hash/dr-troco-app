@@ -33,6 +33,7 @@ let codigoBarrasLido = "";
 
 let abrindoLeitorCodigo = false;
 let sessaoLeitorCodigo = 0;
+let produtoModalAbertoAntesLeitor = false; // <-- NOVO: Lembra se o cadastro estava aberto
 
 /* =========================================================
 UTILITÁRIOS
@@ -1297,7 +1298,7 @@ async function iniciarDeteccaoCodigoBarras() {
 function codigoEncontrado(codigo) {
     codigoBarrasLido = codigo;
     pararLeitorCodigo();
-    fecharLeitorCodigo();
+    fecharLeitorCodigo(); // Fecha o leitor e restaura o modal de cadastro
 
     const campoCodigo = document.getElementById("codigoProduto");
     if (campoCodigo) {
@@ -1309,6 +1310,10 @@ function codigoEncontrado(codigo) {
 async function abrirLeitorCodigo() {
     if (abrindoLeitorCodigo) return;
     abrindoLeitorCodigo = true;
+
+    // LEMBRA SE O MODAL DE PRODUTO ESTAVA ABERTO
+    const modalProduto = document.getElementById("modalProduto");
+    produtoModalAbertoAntesLeitor = modalProduto ? modalProduto.classList.contains("aberto") : false;
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -1335,7 +1340,7 @@ async function abrirLeitorCodigo() {
     } catch (e) {
         console.error("Erro ao abrir câmera:", e);
         alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
-        fecharLeitorCodigo();
+        fecharLeitorCodigo(); // Restaura o modal de produto se der erro
     } finally {
         abrindoLeitorCodigo = false;
     }
@@ -1344,11 +1349,22 @@ async function abrirLeitorCodigo() {
 function fecharLeitorCodigo() {
     pararLeitorCodigo();
     const modal = document.getElementById("modalLeitorCodigo");
+    
     if (modal) {
         modal.classList.remove("aberto");
         if (!document.querySelector(".estoque-modal.aberto")) {
             document.body.classList.remove("modal-aberto");
         }
+    }
+
+    // RESTAURA O MODAL DE CADASTRO SE ELE ESTAVA ABERTO ANTES
+    if (produtoModalAbertoAntesLeitor) {
+        const modalProduto = document.getElementById("modalProduto");
+        if (modalProduto) {
+            modalProduto.classList.add("aberto");
+            document.body.classList.add("modal-aberto");
+        }
+        produtoModalAbertoAntesLeitor = false;
     }
 }
 
@@ -1731,4 +1747,4 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", inicializarEstoque);
 } else {
     inicializarEstoque();
-                                       }
+            }
