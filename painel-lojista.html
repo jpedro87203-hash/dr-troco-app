@@ -488,18 +488,21 @@
           }
 
           let nomeLoja = 'Loja';
+          let cidadeLoja = 'SAO PAULO';
+          
           try {
             const est = JSON.parse(localStorage.getItem('drTroco_estabelecimento') || '{}');
             if (est.nomeEstabelecimento) nomeLoja = est.nomeEstabelecimento;
+            if (est.cidadeEstabelecimento) cidadeLoja = est.cidadeEstabelecimento;
           } catch (e) {}
 
           localStorage.setItem('drTroco_configPix', JSON.stringify({ 
             chave: chave, 
             nome: nomeLoja, 
-            cidade: 'SAO PAULO' 
+            cidade: cidadeLoja 
           }));
 
-          alert('Chave Pix salva com sucesso!');
+          alert('Chave Pix salva com sucesso!\n\nA cidade usada no QR Code será: ' + cidadeLoja);
         });
       }
 
