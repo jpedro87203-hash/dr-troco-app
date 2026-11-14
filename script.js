@@ -358,6 +358,16 @@ function gerarPayloadPix(chave, nome, cidade, valor) {
     function getTLV(id, value) {
         return id + value.length.toString().padStart(2, '0') + value;
     }
+    
+    // Limpa acentos e caracteres especiais para o banco aceitar
+    function limparTexto(texto) {
+        if (!texto) return '';
+        return String(texto)
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
+            .replace(/[^a-zA-Z0-9 ]/g, '') // Remove pontuação
+            .toUpperCase();
+    }
+
     let payload = '';
     payload += getTLV('00', '01');
     let merchantAccount = getTLV('00', 'br.gov.bcb.pix') + getTLV('01', chave);
@@ -366,8 +376,14 @@ function gerarPayloadPix(chave, nome, cidade, valor) {
     payload += getTLV('53', '986');
     payload += getTLV('54', valor.toFixed(2));
     payload += getTLV('58', 'BR');
-    payload += getTLV('59', nome.substring(0, 25).toUpperCase() || 'LOJA');
-    payload += getTLV('60', cidade.substring(0, 15).toUpperCase() || 'SAO PAULO');
+    
+    // Usa a limpeza de texto no nome e na cidade
+    const nomeLimpo = limparTexto(nome) || 'LOJA';
+    const cidadeLimpa = limparTexto(cidade) || 'CIDADE';
+    
+    payload += getTLV('59', nomeLimpo.substring(0, 25));
+    payload += getTLV('60', cidadeLimpa.substring(0, 15));
+    
     let additionalData = getTLV('05', '***');
     payload += getTLV('62', additionalData);
     payload += '6304';
@@ -401,7 +417,18 @@ function abrirModalPix(valor) {
         return;
     }
 
-    const payload = gerarPayloadPix(config.chave, config.nome, config.cidade, valor);
+    // CORREÇÃO: Se a cidade ainda for a antiga "SAO PAULO", tenta puxar do estabelecimento
+    let cidadeFinal = config.cidade;
+    if (!cidadeFinal || cidadeFinal.toUpperCase() === 'SAO PAULO') {
+        try {
+            const est = JSON.parse(localStorage.getItem('drTroco_estabelecimento') || '{}');
+            if (est.cidadeEstabelecimento) {
+                cidadeFinal = est.cidadeEstabelecimento;
+            }
+        } catch(e) {}
+    }
+
+    const payload = gerarPayloadPix(config.chave, config.nome, cidadeFinal, valor);
 
     // Gera o QR Code
     const qr = window.qrcode(0, 'L');
