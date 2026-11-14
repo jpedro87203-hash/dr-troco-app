@@ -1465,11 +1465,53 @@ function exportarRelatorioEstoquePDF() {
         return ehEntradaOuSaida && passaData;
     });
 
-    movimentacoes.sort((a, b) => {
-        const dataA = `${a?.data || ""} ${a?.hora || ""}`;
-        const dataB = `${b?.data || ""} ${b?.hora || ""}`;
-        return dataB.localeCompare(dataA);
+    // =====================================================
+    // CONSOLIDAÇÃO: AGRUPA MOVIMENTAÇÕES POR PRODUTO
+    // =====================================================
+    const mapaGrupos = new Map();
+
+    movimentacoes.forEach(mov => {
+        const chave = String(mov.produtoId || mov.produtoNome || mov.nomeProduto || "sem-produto");
+
+        if (!mapaGrupos.has(chave)) {
+            mapaGrupos.set(chave, {
+                produtoId: mov.produtoId,
+                produtoNome: mov.produtoNome || mov.nomeProduto || "Produto não informado",
+                entradas: 0,
+                saidas: 0,
+                lancamentos: 0,
+                ultimaDataRaw: "",
+                ultimaHoraRaw: "",
+                ultimaData: "—",
+                ultimaHora: "—"
+            });
+        }
+
+        const grupo = mapaGrupos.get(chave);
+        const qtd = numeroSeguro(mov.quantidade);
+        const tipo = String(mov.tipo || "").toLowerCase();
+
+        if (tipo === "entrada") grupo.entradas += qtd;
+        else if (tipo === "saida") grupo.saidas += qtd;
+
+        grupo.lancamentos++;
+
+        const dataRaw = String(mov?.data || "");
+        const horaRaw = String(mov?.hora || "");
+        const chaveAtual = `${grupo.ultimaDataRaw} ${grupo.ultimaHoraRaw}`;
+        const chaveNova = `${dataRaw} ${horaRaw}`;
+
+        if (!grupo.ultimaHoraRaw || chaveNova > chaveAtual) {
+            grupo.ultimaDataRaw = dataRaw;
+            grupo.ultimaHoraRaw = horaRaw;
+            grupo.ultimaData = formatarDataBR(dataRaw.split("T")[0] || dataRaw) || "—";
+            grupo.ultimaHora = horaRaw.slice(0, 8) || "—";
+        }
     });
+
+    const gruposConsolidados = Array.from(mapaGrupos.values()).sort((a, b) =>
+        String(a.produtoNome).localeCompare(String(b.produtoNome), "pt-BR")
+    );
 
     const totalProdutos = produtos.length;
     const totalUnidades = produtos.reduce((soma, produto) => soma + numeroSeguro(produto.quantidade), 0);
@@ -1482,7 +1524,8 @@ function exportarRelatorioEstoquePDF() {
     const contagemMovimentos = {
         entrada: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "entrada").length,
         saida: movimentacoes.filter(m => String(m?.tipo).toLowerCase() === "saida").length,
-        total: movimentacoes.length
+        total: movimentacoes.length,
+        totalQtd: movimentacoes.reduce((soma, m) => soma + numeroSeguro(m.quantidade), 0)
     };
 
     const linhasProdutos = produtos.slice().sort((a, b) =>
@@ -1506,17 +1549,20 @@ function exportarRelatorioEstoquePDF() {
             </tr>`;
     }).join("");
 
-    const linhasMovimentacoes = movimentacoes.map(movimento => {
-        const quando = obterDataHoraRelatorio(movimento);
+    // Linhas consolidadas: uma linha por produto
+    const linhasMovimentacoesConsolidadas = gruposConsolidados.map(grupo => {
+        const qtdMov = grupo.entradas + grupo.saidas;
+        const saldo = grupo.entradas - grupo.saidas;
         return `
             <tr>
-                <td>${escaparHTML(quando.data)}</td>
-                <td>${escaparHTML(quando.hora)}</td>
-                <td>${escaparHTML(obterRotuloTipoMovimento(movimento.tipo))}</td>
-                <td>${escaparHTML(movimento.produtoNome || movimento.nomeProduto || "Produto não informado")}</td>
-                <td class="numero">${numeroSeguro(movimento.quantidade)}</td>
-                <td class="numero">${movimento.quantidadeAnterior === undefined ? "—" : numeroSeguro(movimento.quantidadeAnterior)}</td>
-                <td class="numero">${movimento.quantidadeNova === undefined ? "—" : numeroSeguro(movimento.quantidadeNova)}</td>
+                <td>${escaparHTML(grupo.ultimaData || "—")}</td>
+                <td>${escaparHTML(grupo.ultimaHora || "—")}</td>
+                <td>${escaparHTML(grupo.produtoNome)}</td>
+                <td class="numero">${grupo.entradas}</td>
+                <td class="numero">${grupo.saidas}</td>
+                <td class="numero"><strong>${qtdMov}</strong></td>
+                <td class="numero">${grupo.lancamentos}</td>
+                <td class="numero">${saldo}</td>
             </tr>`;
     }).join("");
 
@@ -1558,6 +1604,9 @@ function exportarRelatorioEstoquePDF() {
     .numero { text-align: right; white-space: nowrap; }
     .vazio { padding: 14px; text-align: center; border: 1px dashed #cbd5d0; color: #697781; }
     .nota { margin-top: 14px; padding: 9px; background: #fff8e8; border: 1px solid #eedeb1; color: #725c28; border-radius: 5px; }
+    .legenda { margin-top: 10px; padding: 9px; background: #f4faf6; border: 1px solid #dce8e1; border-radius: 5px; font-size: 9px; color: #3c5a48; line-height: 1.5; }
+    .legenda span { display: inline-block; margin-right: 16px; margin-bottom: 2px; }
+    .legenda b { color: #176b45; }
     footer { margin-top: 18px; border-top: 1px solid #dbe2e6; padding-top: 7px; color: #78848b; font-size: 8px; }
     .acoes { margin: 0 0 14px; }
     .acoes button { background: #176b45; color: #fff; border: 0; border-radius: 6px; padding: 9px 14px; font-weight: bold; }
@@ -1582,15 +1631,42 @@ function exportarRelatorioEstoquePDF() {
 </section>
 <h2>Resumo das entradas e saídas (${escaparHTML(rotuloPeriodoFiltro)})</h2>
 <div class="mov-resumo">
-    <span>Entradas: <strong>${contagemMovimentos.entrada}</strong></span>
-    <span>Saídas: <strong>${contagemMovimentos.saida}</strong></span>
-    <span>Total no período: <strong>${contagemMovimentos.total}</strong></span>
+    <span>Lançamentos de entrada: <strong>${contagemMovimentos.entrada}</strong></span>
+    <span>Lançamentos de saída: <strong>${contagemMovimentos.saida}</strong></span>
+    <span>Total de lançamentos: <strong>${contagemMovimentos.total}</strong></span>
+    <span>Qtd. total movimentada: <strong>${contagemMovimentos.totalQtd}</strong></span>
 </div>
 <h2>Produtos e posição atual</h2>
 ${produtos.length ? `<table><thead><tr><th>Produto</th><th>Código</th><th>Tipo</th><th>Qtd.</th><th>Mínimo</th><th>Preço un.</th><th>Valor total</th><th>Status</th><th>Validade</th></tr></thead><tbody>${linhasProdutos}</tbody></table>` : '<div class="vazio">Nenhum produto cadastrado.</div>'}
-<h2>Histórico de entradas e saídas (${escaparHTML(rotuloPeriodoFiltro)})</h2>
-${movimentacoes.length ? `<table><thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Produto</th><th>Qtd. mov.</th><th>Qtd. anterior</th><th>Qtd. nova</th></tr></thead><tbody>${linhasMovimentacoes}</tbody></table>` : '<div class="vazio">Nenhuma entrada ou saída registada para a data selecionada.</div>'}
-<div class="nota"><strong>Observação:</strong> o relatório exibe a posição atual do stock e as movimentações de entradas e saídas filtradas para o dia escolhido.</div>
+<h2>Histórico de entradas e saídas consolidadas (${escaparHTML(rotuloPeriodoFiltro)})</h2>
+${gruposConsolidados.length ? `
+<table>
+<thead>
+<tr>
+<th>Data</th>
+<th>Último horário</th>
+<th>Produto</th>
+<th>Entradas</th>
+<th>Saídas</th>
+<th>Qtd. mov.</th>
+<th>Lançamentos</th>
+<th>Saldo</th>
+</tr>
+</thead>
+<tbody>${linhasMovimentacoesConsolidadas}</tbody>
+</table>
+<div class="legenda">
+<strong>Legenda:</strong>
+<span><b>Data</b> = data da última movimentação agrupada.</span>
+<span><b>Último horário</b> = horário da última movimentação agrupada.</span>
+<span><b>Entradas</b> = soma das quantidades de entrada no período.</span>
+<span><b>Saídas</b> = soma das quantidades de saída no período.</span>
+<span><b>Qtd. mov.</b> = quantidade total movimentada no período (entradas + saídas).</span>
+<span><b>Lançamentos</b> = número de movimentações agrupadas nesta linha.</span>
+<span><b>Saldo</b> = entradas − saídas.</span>
+</div>
+` : '<div class="vazio">Nenhuma entrada ou saída registada para a data selecionada.</div>'}
+<div class="nota"><strong>Observação:</strong> o relatório exibe a posição atual do stock e as movimentações de entradas e saídas agrupadas por produto para o dia escolhido.</div>
 <footer>Dr. Troco • Relatório gerado localmente em ${escaparHTML(geradoEm)}</footer>
 </body>
 </html>`;
@@ -1747,4 +1823,4 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", inicializarEstoque);
 } else {
     inicializarEstoque();
-            }
+    }
