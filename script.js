@@ -695,11 +695,7 @@ function abrirModalProdutos() {
 }
 
 // ============================================================
-// RENDERIZAÇÃO DA GRADE DE PRODUTOS (ATUALIZADA)
-// - Gera .cartao-produto-grade (usado pelo CSS e pela delegação)
-// - Nome + preço centralizados
-// - Botão + oculto (card inteiro é clicável)
-// - Chip de quantidade aparece só quando > 0
+// RENDERIZAÇÃO DA GRADE DE PRODUTOS (ATUALIZADA COM BOTÕES +/-)
 // ============================================================
 function renderizarProdutosEstoqueVenda(termoBusca = '') {
     if (!listaProdutosEstoqueVenda) return;
@@ -722,16 +718,13 @@ function renderizarProdutosEstoqueVenda(termoBusca = '') {
         const id = String(produto.id);
         const naVenda = produtosVenda.find(item => String(item.id) === id);
         const qtdNaVenda = naVenda ? numeroSeguro(naVenda.quantidade) : 0;
+        const estoqueDisponivel = numeroSeguro(produto.quantidade);
+        const podeAdicionar = qtdNaVenda < estoqueDisponivel;
 
         const inicial = String(produto.nome || '?').trim().charAt(0).toUpperCase() || '?';
         const fotoHtml = produto.foto
             ? `<img src="${escaparAtributo(produto.foto)}" alt="${escaparAtributo(produto.nome)}">`
             : `<span>${escaparHTML(inicial)}</span>`;
-
-        // Chip de quantidade: só aparece quando o produto já está na venda
-        const chipHtml = qtdNaVenda > 0
-            ? `<div class="controle-qtd-card"><span>${qtdNaVenda}×</span></div>`
-            : '';
 
         return `
             <div class="cartao-produto-grade" role="button" tabindex="0"
@@ -742,19 +735,23 @@ function renderizarProdutosEstoqueVenda(termoBusca = '') {
                     <div class="cartao-produto-foto">${fotoHtml}</div>
                     <div class="cartao-produto-info">
                         <strong>${escaparHTML(produto.nome)}</strong>
-                        <small>Estoque: ${numeroSeguro(produto.quantidade)}</small>
+                        <small>Estoque: ${estoqueDisponivel}</small>
                         <span class="cartao-produto-preco">${formatarReal(produto.preco)}</span>
                     </div>
                 </div>
 
                 <div class="cartao-produto-acoes">
-                    <button type="button"
-                            class="btn-card-adicionar"
-                            data-acao-produto="adicionar"
+                    <div class="controle-qtd-card">
+                        <button type="button" class="btn-produto-menos" 
+                            data-acao-produto="diminuir" 
                             data-produto-estoque-id="${escaparAtributo(id)}"
-                            tabindex="-1"
-                            aria-hidden="true">+ Adicionar</button>
-                    ${chipHtml}
+                            ${qtdNaVenda <= 0 ? 'disabled' : ''}>−</button>
+                        <span class="quantidade-produto-modal">${qtdNaVenda}</span>
+                        <button type="button" class="btn-produto-mais" 
+                            data-acao-produto="adicionar" 
+                            data-produto-estoque-id="${escaparAtributo(id)}"
+                            ${!podeAdicionar ? 'disabled' : ''}>+</button>
+                    </div>
                 </div>
             </div>`;
     }).join('');
@@ -1722,4 +1719,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
-}
+                              }
