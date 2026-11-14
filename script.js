@@ -225,8 +225,8 @@ function obterDataHoraAtual() {
     const segundo = String(new Date().getSeconds()).padStart(2, '0');
 
     return {
-        data: `${dia}/${mes}/${ano}`, // Formato BR (para exibição)
-        dataChave: `${ano}-${mes}-${dia}`, // Formato ISO (para o banco de dados)
+        data: `${dia}/${mes}/${ano}`,
+        dataChave: `${ano}-${mes}-${dia}`,
         hora: `${hora}:${minuto}:${segundo}`
     };
 }
@@ -267,7 +267,6 @@ async function reverterEstoquePorVenda(venda) {
     const erros = [];
     let produtosEstornados = 0;
 
-    // 1. Reverter no Supabase (se disponível)
     const podeUsarSupabase =
         window.EstoqueSupabase &&
         typeof window.EstoqueSupabase.obterComercioId === 'function' &&
@@ -304,7 +303,7 @@ async function reverterEstoquePorVenda(venda) {
                         quantidade: Number(itemVendido.quantidade) || 0,
                         quantidadeAnterior: qtdAnt,
                         quantidadeNova: qtdNova,
-                        data: dataHora.dataChave, // Enviando no formato correto
+                        data: dataHora.dataChave,
                         hora: dataHora.hora
                     });
 
@@ -320,7 +319,6 @@ async function reverterEstoquePorVenda(venda) {
         }
     }
 
-    // 2. Reverter no localStorage (sempre)
     const estoque = obterEstoque();
     venda.produtos.forEach(itemVendido => {
         const prod = estoque.find(p => String(p.id) === String(itemVendido.id));
@@ -331,7 +329,6 @@ async function reverterEstoquePorVenda(venda) {
     });
     salvarEstoque(estoque);
 
-    // 3. Remover movimentações locais de saída dessa venda
     const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
     const movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque)
         .filter(mov => mov.vendaId !== venda.id);
@@ -358,13 +355,12 @@ function gerarPayloadPix(chave, nome, cidade, valor) {
     function getTLV(id, value) {
         return id + value.length.toString().padStart(2, '0') + value;
     }
-    
-    // Limpa acentos e caracteres especiais para o banco aceitar
+
     function limparTexto(texto) {
         if (!texto) return '';
         return String(texto)
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
-            .replace(/[^a-zA-Z0-9 ]/g, '') // Remove pontuação
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-zA-Z0-9 ]/g, '')
             .toUpperCase();
     }
 
@@ -376,19 +372,17 @@ function gerarPayloadPix(chave, nome, cidade, valor) {
     payload += getTLV('53', '986');
     payload += getTLV('54', valor.toFixed(2));
     payload += getTLV('58', 'BR');
-    
-    // Usa a limpeza de texto no nome e na cidade
+
     const nomeLimpo = limparTexto(nome) || 'LOJA';
     const cidadeLimpa = limparTexto(cidade) || 'CIDADE';
-    
+
     payload += getTLV('59', nomeLimpo.substring(0, 25));
     payload += getTLV('60', cidadeLimpa.substring(0, 15));
-    
+
     let additionalData = getTLV('05', '***');
     payload += getTLV('62', additionalData);
     payload += '6304';
 
-    // Calcula CRC16
     let crc = 0xFFFF;
     for (let i = 0; i < payload.length; i++) {
         crc ^= payload.charCodeAt(i) << 8;
@@ -417,7 +411,6 @@ function abrirModalPix(valor) {
         return;
     }
 
-    // CORREÇÃO: Se a cidade ainda for a antiga "SAO PAULO", tenta puxar do estabelecimento
     let cidadeFinal = config.cidade;
     if (!cidadeFinal || cidadeFinal.toUpperCase() === 'SAO PAULO') {
         try {
@@ -430,7 +423,6 @@ function abrirModalPix(valor) {
 
     const payload = gerarPayloadPix(config.chave, config.nome, cidadeFinal, valor);
 
-    // Gera o QR Code
     const qr = window.qrcode(0, 'L');
     qr.addData(payload);
     qr.make();
@@ -441,7 +433,6 @@ function abrirModalPix(valor) {
     const valorExibicao = $('pixValorExibicao');
     if (valorExibicao) valorExibicao.textContent = `Valor: ${formatarReal(valor)}`;
 
-    // Configura o botão de copiar
     const btnCopiar = $('btnCopiarPix');
     if (btnCopiar) {
         btnCopiar.onclick = () => {
@@ -473,9 +464,9 @@ async function carregarClientesFiado() {
 function renderizarListaClientes(termo = '') {
     if (!listaClientesFiado) return;
     const termoNorm = normalizar(termo);
-    
+
     const filtrados = clientesFiadoCache.filter(c => normalizar(c.nome).includes(termoNorm));
-    
+
     if (!filtrados.length) {
         listaClientesFiado.innerHTML = '<div style="padding:14px;text-align:center;color:#7b898f;font-size:12px;">Nenhum cliente encontrado.</div>';
         listaClientesFiado.classList.remove('hidden');
@@ -501,14 +492,14 @@ function renderizarListaClientes(termo = '') {
 function selecionarClienteFiado(id, nome) {
     if (nomeClienteFiado) nomeClienteFiado.value = nome;
     if (nomeClienteSelecionadoVenda) nomeClienteSelecionadoVenda.textContent = nome;
-    
+
     if (clienteSelecionadoVenda) clienteSelecionadoVenda.classList.remove('hidden');
     if (buscaClienteFiado) {
         buscaClienteFiado.value = '';
         buscaClienteFiado.closest('.busca-cliente-wrapper').classList.add('hidden');
     }
     if (listaClientesFiado) listaClientesFiado.classList.add('hidden');
-    
+
     atualizarTela();
 }
 
@@ -558,7 +549,6 @@ function configurarEventos() {
         });
     });
 
-    // Eventos da busca de cliente fiado
     buscaClienteFiado?.addEventListener('input', (e) => renderizarListaClientes(e.target.value));
     buscaClienteFiado?.addEventListener('focus', async () => {
         if (clientesFiadoCache.length === 0) await carregarClientesFiado();
@@ -704,6 +694,13 @@ function abrirModalProdutos() {
     }
 }
 
+// ============================================================
+// RENDERIZAÇÃO DA GRADE DE PRODUTOS (ATUALIZADA)
+// - Gera .cartao-produto-grade (usado pelo CSS e pela delegação)
+// - Nome + preço centralizados
+// - Botão + oculto (card inteiro é clicável)
+// - Chip de quantidade aparece só quando > 0
+// ============================================================
 function renderizarProdutosEstoqueVenda(termoBusca = '') {
     if (!listaProdutosEstoqueVenda) return;
     const estoque = obterEstoque();
@@ -713,8 +710,8 @@ function renderizarProdutosEstoqueVenda(termoBusca = '') {
 
     if (!disponiveis.length) {
         listaProdutosEstoqueVenda.innerHTML = `
-            <div class="produtos-venda-vazio">
-                <div class="icone-vazio">📦</div>
+            <div class="estado-produtos-venda">
+                <div style="font-size:34px;margin-bottom:8px;">📦</div>
                 <strong>Nenhum produto encontrado</strong>
                 <p>${estoque.length === 0 ? 'Cadastre produtos no estoque primeiro.' : 'Não há produtos disponíveis para venda.'}</p>
             </div>`;
@@ -725,20 +722,39 @@ function renderizarProdutosEstoqueVenda(termoBusca = '') {
         const id = String(produto.id);
         const naVenda = produtosVenda.find(item => String(item.id) === id);
         const qtdNaVenda = naVenda ? numeroSeguro(naVenda.quantidade) : 0;
-        const foto = produto.foto ? `<img src="${escaparAtributo(produto.foto)}" alt="${escaparAtributo(produto.nome)}">` : '<span>📦</span>';
+
+        const inicial = String(produto.nome || '?').trim().charAt(0).toUpperCase() || '?';
+        const fotoHtml = produto.foto
+            ? `<img src="${escaparAtributo(produto.foto)}" alt="${escaparAtributo(produto.nome)}">`
+            : `<span>${escaparHTML(inicial)}</span>`;
+
+        // Chip de quantidade: só aparece quando o produto já está na venda
+        const chipHtml = qtdNaVenda > 0
+            ? `<div class="controle-qtd-card"><span>${qtdNaVenda}×</span></div>`
+            : '';
 
         return `
-            <div class="produto-estoque-venda-item produto-card">
-                <div class="produto-estoque-venda-foto produto-foto">${foto}</div>
-                <div class="produto-estoque-venda-info produto-info">
-                    <strong>${escaparHTML(produto.nome)}</strong>
-                    <small>Estoque: ${numeroSeguro(produto.quantidade)}</small>
-                    <strong class="produto-estoque-venda-preco produto-preco">${formatarReal(produto.preco)}</strong>
+            <div class="cartao-produto-grade" role="button" tabindex="0"
+                 data-produto-estoque-id="${escaparAtributo(id)}"
+                 aria-label="Adicionar ${escaparAtributo(produto.nome)} ao carrinho">
+
+                <div class="cartao-produto-topo">
+                    <div class="cartao-produto-foto">${fotoHtml}</div>
+                    <div class="cartao-produto-info">
+                        <strong>${escaparHTML(produto.nome)}</strong>
+                        <small>Estoque: ${numeroSeguro(produto.quantidade)}</small>
+                        <span class="cartao-produto-preco">${formatarReal(produto.preco)}</span>
+                    </div>
                 </div>
-                <div class="produto-estoque-venda-acoes controle-quantidade">
-                    <button type="button" class="btn-produto-menos" data-acao-produto="diminuir" data-produto-estoque-id="${escaparAtributo(id)}" ${qtdNaVenda <= 0 ? 'disabled' : ''}>−</button>
-                    <span class="quantidade-produto-modal">${qtdNaVenda}</span>
-                    <button type="button" class="btn-produto-mais" data-acao-produto="adicionar" data-produto-estoque-id="${escaparAtributo(id)}">+</button>
+
+                <div class="cartao-produto-acoes">
+                    <button type="button"
+                            class="btn-card-adicionar"
+                            data-acao-produto="adicionar"
+                            data-produto-estoque-id="${escaparAtributo(id)}"
+                            tabindex="-1"
+                            aria-hidden="true">+ Adicionar</button>
+                    ${chipHtml}
                 </div>
             </div>`;
     }).join('');
@@ -1088,7 +1104,6 @@ function abrirConfirmacaoVenda() {
 
     resumoConfirmacaoVenda.innerHTML = criarResumoConfirmacao(resumo);
 
-    // Mostra ou esconde o botão do Pix
     if (btnGerarQrCodePix) {
         if (resumo.formaPagamento === 'pix') {
             btnGerarQrCodePix.style.display = 'flex';
@@ -1161,7 +1176,6 @@ async function reverterEstoqueSupabase(estoqueBaixado) {
 async function confirmarVenda() {
     if (vendaEmProcessamento) return;
 
-    // Trava 2: verifica novamente se o caixa continua aberto
     if (!caixaEstaAberto()) {
         alert('O caixa foi fechado. Abra o caixa antes de confirmar a venda.');
         fecharModalOverlay(modalConfirmarVenda);
@@ -1177,7 +1191,6 @@ async function confirmarVenda() {
     const isFiado = resumo.formaPagamento === 'fiado';
     let clienteFiado = null;
 
-    // ETAPA 1 — Se for fiado, localizar o cliente cadastrado
     if (isFiado) {
         if (!window.DrTrocoFiado || typeof window.DrTrocoFiado.listarClientes !== 'function') {
             alert('O módulo Fiado não foi carregado corretamente. Recarregue a página.');
@@ -1227,7 +1240,6 @@ async function confirmarVenda() {
         clienteFiado = encontrados[0];
     }
 
-    // ETAPA 2 — validar estoque local
     const estoqueOriginal = obterEstoque();
     const estoqueAtualizado = JSON.parse(JSON.stringify(estoqueOriginal));
 
@@ -1244,15 +1256,11 @@ async function confirmarVenda() {
     }
 
     const dataHora = obterDataHoraAtual();
-    
-    // CORREÇÃO: Usar UUID para o ID da venda para evitar erros no Supabase
+
     const idVenda = (window.crypto && typeof window.crypto.randomUUID === 'function')
         ? window.crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-    // ======================================================
-    // ETAPA 2.5 — NOVO: baixar estoque no Supabase
-    // ======================================================
     const estoqueBaixadoSupabase = [];
     let offlineDetectado = false;
 
@@ -1264,7 +1272,6 @@ async function confirmarVenda() {
 
     if (podeUsarSupabaseEstoque && produtosVenda.length > 0) {
         try {
-            // Identifica o estabelecimento (usa cache interno após a 1ª vez)
             await window.EstoqueSupabase.obterComercioId();
 
             for (const item of produtosVenda) {
@@ -1276,7 +1283,6 @@ async function confirmarVenda() {
                 const qtdAnt = numeroSeguro(prodOriginal.quantidade);
                 const qtdNova = Math.max(0, qtdAnt - numeroSeguro(item.quantidade));
 
-                // (1) Atualiza a quantidade do produto no Supabase
                 await window.EstoqueSupabase.salvarProduto({
                     id: prodOriginal.id,
                     nome: prodOriginal.nome,
@@ -1290,7 +1296,6 @@ async function confirmarVenda() {
                     criadoEm: prodOriginal.criadoEm
                 });
 
-                // (2) Registra a movimentação de saída no Supabase
                 await window.EstoqueSupabase.salvarMovimentacao({
                     produtoId: prodOriginal.id,
                     produtoNome: prodOriginal.nome,
@@ -1298,11 +1303,10 @@ async function confirmarVenda() {
                     quantidade: numeroSeguro(item.quantidade),
                     quantidadeAnterior: qtdAnt,
                     quantidadeNova: qtdNova,
-                    data: dataHora.dataChave, // CORREÇÃO AQUI: Enviando data no formato ISO
+                    data: dataHora.dataChave,
                     hora: dataHora.hora
                 });
 
-                // Guarda para rollback caso algo falhe depois
                 estoqueBaixadoSupabase.push({
                     id: prodOriginal.id,
                     produtoOriginal: { ...prodOriginal }
@@ -1311,11 +1315,9 @@ async function confirmarVenda() {
         } catch (erro) {
             console.error('[Venda] Falha ao baixar estoque no Supabase:', erro);
 
-            // Rollback do que já foi baixado
             await reverterEstoqueSupabase(estoqueBaixadoSupabase);
             estoqueBaixadoSupabase.length = 0;
 
-            // Distingue erro de rede (offline) de erro de servidor
             const msg = String((erro && erro.message) || '').toLowerCase();
             offlineDetectado =
                 !navigator.onLine ||
@@ -1340,7 +1342,6 @@ async function confirmarVenda() {
         }
     }
 
-    // ETAPA 3 — registrar DÍVIDA no Fiado (com rollback de estoque se falhar)
     if (isFiado) {
         try {
             const r = await window.DrTrocoFiado.registrarVendaFiado({
@@ -1370,7 +1371,6 @@ async function confirmarVenda() {
         }
     }
 
-    // ETAPA 4 — registrar PAGAMENTO INICIAL no Fiado (se houve entrada)
     if (isFiado && resumo.pagamentoInicial > 0) {
         try {
             const r = await window.DrTrocoFiado.registrarPagamento(
@@ -1391,7 +1391,6 @@ async function confirmarVenda() {
         }
     }
 
-    // ETAPA 5 — baixar estoque local + registrar movimentação de estoque
     const chaveMovEstoque = obterChaveMovimentacoesEstoqueComercio();
     let movimentacoesEstoque = lerListaLocalStorage(chaveMovEstoque);
 
@@ -1407,16 +1406,15 @@ async function confirmarVenda() {
             quantidade: numeroSeguro(item.quantidade),
             quantidadeAnterior: qtdAnt,
             quantidadeNova: Math.max(0, qtdAnt - numeroSeguro(item.quantidade)),
-            data: dataHora.dataChave, // CORREÇÃO AQUI: formato ISO
+            data: dataHora.dataChave,
             hora: dataHora.hora
         });
     });
     localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
 
-    // ETAPA 6 — montar registro da venda
     const venda = {
         id: idVenda,
-        data: dataHora.dataChave, // CORREÇÃO AQUI: Enviando data no formato ISO
+        data: dataHora.dataChave,
         dataChave: dataHora.dataChave,
         hora: dataHora.hora,
         formaPagamento: resumo.formaPagamento,
@@ -1434,7 +1432,6 @@ async function confirmarVenda() {
         }))
     };
 
-    // Anexa sessão de caixa se houver
     try {
         if (window.DrTrocoCaixa && typeof window.DrTrocoCaixa.current === 'function') {
             const sessaoAtual = window.DrTrocoCaixa.current();
@@ -1468,7 +1465,7 @@ async function confirmarVenda() {
                 valor: pago,
                 formaPagamento: resumo.formaPagamentoRecebido,
                 formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
-                data: dataHora.dataChave, // CORREÇÃO AQUI: formato ISO
+                data: dataHora.dataChave,
                 dataChave: dataHora.dataChave,
                 hora: dataHora.hora,
                 tipo: 'pagamento_inicial'
@@ -1481,7 +1478,7 @@ async function confirmarVenda() {
                 formaPagamento: resumo.formaPagamentoRecebido,
                 formaPagamentoNome: nomeFormaPagamento(resumo.formaPagamentoRecebido),
                 descricao: `Pagamento inicial do fiado — ${clienteFiado.nome}`,
-                data: dataHora.dataChave, // CORREÇÃO AQUI: formato ISO
+                data: dataHora.dataChave,
                 dataChave: dataHora.dataChave,
                 hora: dataHora.hora,
                 origem: 'pagamento_fiado_inicial',
@@ -1495,7 +1492,6 @@ async function confirmarVenda() {
         }
     }
 
-    // ETAPA 7 — persistir estoque local (não crítico)
     try {
         if (!salvarEstoque(estoqueAtualizado)) {
             console.warn('[Venda] Falha ao salvar estoque local.');
@@ -1504,7 +1500,6 @@ async function confirmarVenda() {
         console.warn('[Venda] Erro ao salvar estoque:', err);
     }
 
-    // ETAPA 8 — gravar venda + movimentação (Supabase via DrTrocoDados ou fallback local)
     let vendaOk = false;
     let motivoFalha = '';
 
@@ -1517,7 +1512,6 @@ async function confirmarVenda() {
                 motivoFalha = (r && r.erro) ? r.erro : 'Erro desconhecido';
                 console.warn('[Venda] Venda salva apenas no aparelho:', motivoFalha);
 
-                // ROLLBACK: venda não foi pro Supabase, estoque não deveria ter ido
                 if (estoqueBaixadoSupabase.length > 0) {
                     console.warn('[Venda] Revertendo estoque no Supabase pois a venda falhou...');
                     await reverterEstoqueSupabase(estoqueBaixadoSupabase);
@@ -1541,7 +1535,6 @@ async function confirmarVenda() {
             }
         }
     } else {
-        // Fallback: apenas localStorage
         const vendas = lerListaLocalStorage(CHAVE_VENDAS);
         localStorage.setItem(CHAVE_VENDAS, JSON.stringify([...vendas, venda]));
         if (movimentacaoInicial) {
@@ -1552,7 +1545,6 @@ async function confirmarVenda() {
         vendaOk = true;
     }
 
-    // ETAPA 9 — finalizar
     fecharModalOverlay(modalConfirmarVenda);
 
     if (vendaOk) {
