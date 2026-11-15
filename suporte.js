@@ -9,8 +9,8 @@
   window.__drTrocoSuporteInicializado = true;
 
   // ⚠️ CONFIGURE AQUI OS SEUS DADOS DE ATENDIMENTO
-  const WHATSAPP_SUPORTE = "5598999999999"; // Coloque o DDI + DDD + Número (ex: 55 para Brasil)
-  const EMAIL_SUPORTE = "suporte@drtroco.com"; // Coloque o seu e-mail real
+  const WHATSAPP_SUPORTE = "98988-415030"; // Coloque o DDI + DDD + Número (ex: 55 para Brasil)
+  const EMAIL_SUPORTE = "jpedro87203@gmail.com"; // Coloque o seu e-mail real
 
   // ==========================================
   // 1. CRIAR ESTILOS DO BOTÃO E DO MODAL
