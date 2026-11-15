@@ -7,6 +7,9 @@
   <title>Dr. Troco - Painel do Lojista</title>
   <link rel="stylesheet" href="style.css">
 
+  <!-- Biblioteca para os gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     .painel-lojista {
       max-width: 760px;
@@ -222,6 +225,37 @@
     [hidden] {
       display: none !important;
     }
+
+    /* Estilos dos Gráficos */
+    .grafico-card {
+      background: #f8faf9;
+      padding: 15px;
+      border-radius: 14px;
+      border: 1px solid #e1e9e5;
+      margin-bottom: 15px;
+    }
+    .grafico-card h3 {
+      margin: 0 0 15px;
+      font-size: 13px;
+      color: #52635b;
+      font-weight: 800;
+    }
+    .grafico-container {
+      position: relative;
+      height: 240px;
+      width: 100%;
+    }
+    /* No desktop, coloca lado a lado */
+    @media (min-width: 600px) {
+      .grid-graficos {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+      .grid-graficos .grafico-card:first-child {
+        grid-column: 1 / -1; /* O gráfico de linha ocupa a largura toda */
+      }
+    }
   </style>
 </head>
 
@@ -256,13 +290,66 @@
     </section>
 
     <!-- ============================================= -->
+    <!-- NOVO: GRÁFICOS DE DESEMPENHO                   -->
+    <!-- ============================================= -->
+    <section class="painel-card">
+      <button type="button"
+              class="painel-card-cabecalho"
+              data-toggle-painel="conteudoGraficos"
+              aria-expanded="true"
+              aria-controls="conteudoGraficos">
+        <span class="painel-card-icone" aria-hidden="true">📊</span>
+        <span class="painel-card-titulo">
+          <h2>Desempenho e Gráficos</h2>
+          <p>Faturamento, lucro e produtos mais vendidos</p>
+        </span>
+        <span class="painel-card-seta" aria-hidden="true">⌄</span>
+      </button>
+
+      <div class="painel-card-conteudo" id="conteudoGraficos">
+        <!-- Botão de Atualizar -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+          <button type="button" id="btnAtualizarGraficos" style="background: #eaf8f1; color: #168b53; border: 1px solid #cdebd8; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">
+            🔄 Atualizar Gráficos
+          </button>
+        </div>
+
+        <div class="grid-graficos">
+          <!-- Gráfico 1: Faturamento e Lucro -->
+          <div class="grafico-card">
+            <h3>Faturamento vs Lucro (Últimos 7 dias)</h3>
+            <div class="grafico-container">
+              <canvas id="graficoLinhaVendas"></canvas>
+            </div>
+          </div>
+
+          <!-- Gráfico 2: Formas de Pagamento -->
+          <div class="grafico-card">
+            <h3>Formas de Pagamento</h3>
+            <div class="grafico-container">
+              <canvas id="graficoPizzaPagamentos"></canvas>
+            </div>
+          </div>
+
+          <!-- Gráfico 3: Top 5 Produtos -->
+          <div class="grafico-card">
+            <h3>Top 5 Produtos Mais Vendidos</h3>
+            <div class="grafico-container">
+              <canvas id="graficoBarrasProdutos"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================= -->
     <!-- 1. DADOS DO ESTABELECIMENTO                    -->
     <!-- ============================================= -->
     <section class="painel-card">
       <button type="button"
               class="painel-card-cabecalho"
               data-toggle-painel="conteudoEstabelecimento"
-              aria-expanded="true"
+              aria-expanded="false"
               aria-controls="conteudoEstabelecimento">
         <span class="painel-card-icone" aria-hidden="true">🏪</span>
         <span class="painel-card-titulo">
@@ -272,7 +359,7 @@
         <span class="painel-card-seta" aria-hidden="true">⌄</span>
       </button>
 
-      <div class="painel-card-conteudo" id="conteudoEstabelecimento">
+      <div class="painel-card-conteudo" id="conteudoEstabelecimento" hidden>
         <section id="avisoSemCadastro" class="aviso-loja" hidden>
           <strong>Cadastro não encontrado.</strong>
           <p>Cadastre os dados do estabelecimento para visualizar as informações aqui.</p>
@@ -392,7 +479,7 @@
               data-toggle-painel="conteudoLucro"
               aria-expanded="false"
               aria-controls="conteudoLucro">
-        <span class="painel-card-icone" aria-hidden="true">📊</span>
+        <span class="painel-card-icone" aria-hidden="true">💰</span>
         <span class="painel-card-titulo">
           <h2>Estimativa de lucro</h2>
           <p>Lucro bruto e líquido por período</p>
@@ -427,6 +514,7 @@
   <script src="contas-pagar.js"></script>
   <script src="fornecedores.js"></script>
   <script src="lucro.js"></script>
+  <script src="graficos.js"></script>
   <script src="alertas.js"></script>
 
   <script>
@@ -507,7 +595,7 @@
       }
 
       // ==========================================
-      // TOGGLE PAINEL
+      // TOGGLE PAINEL (Abrir/Fechar Abas)
       // ==========================================
       document.addEventListener("click", (ev) => {
         const btn = ev.target.closest("[data-toggle-painel]");
