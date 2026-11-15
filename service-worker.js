@@ -2,7 +2,7 @@
    DR. TROCO — SERVICE WORKER (PWA)
    ========================================================= */
 
-const CACHE_NAME = 'dr-troco-v30';
+const CACHE_NAME = 'dr-troco-v31';
 
 // Lista de arquivos essenciais para o app abrir offline
 const ASSETS = [
