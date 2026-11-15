@@ -89,3 +89,26 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
+// ======================================================
+// Suporte a Notificações (Web Push / Local)
+// ======================================================
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close(); // Fecha a notificação na barra
+
+  // Abre o app no painel do lojista
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      // Se o app já estiver aberto em alguma aba, foca nela
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        if (client.url.includes('painel-lojista.html') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Se não estiver aberto, abre uma nova janela
+      if (clients.openWindow) {
+        return clients.openWindow('/painel-lojista.html');
+      }
+    })
+  );
+});
