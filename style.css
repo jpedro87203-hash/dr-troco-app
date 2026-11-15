@@ -1826,3 +1826,103 @@ body .bottom-nav .nav-item.ativo {
 body .bottom-nav .nav-item:active {
   transform: scale(.96);
    }
+/* =========================================================
+   MODO ESCURO (DARK MODE)
+   ========================================================= */
+
+[data-theme="dark"] {
+  --verde: #25ad6d;
+  --verde-escuro: #168b53;
+  --verde-claro: #173b2a; /* Fundo verde escuro */
+  --verde-suave: #11291c;
+  --texto: #e2e8f0; /* Texto principal claro */
+  --texto-2: #94a3b8; /* Texto secundário */
+  --texto-3: #64748b;
+  --fundo: #0f172a; /* Fundo geral azul escuro */
+  --branco: #1e293b; /* Fundo dos cartões */
+  --borda: #334155;
+  --vermelho: #ef4444;
+  --sombra: 0 6px 22px rgba(0, 0, 0, .3);
+  --sombra-forte: 0 15px 40px rgba(0, 0, 0, .4);
+}
+
+/* Ajustes específicos para elementos que estavam fixos em branco */
+[data-theme="dark"] body { background: var(--fundo); color: var(--texto); }
+[data-theme="dark"] .card.calculadora-card { background: var(--branco); border-color: var(--borda); }
+[data-theme="dark"] .secao-venda, 
+[data-theme="dark"] .secao-troco { background: var(--branco); border-color: var(--borda); }
+[data-theme="dark"] .campo-dinheiro { background: #0f172a; border-color: #334155; }
+[data-theme="dark"] .campo-dinheiro input { color: #fff; }
+[data-theme="dark"] .payment-options .btn-payment { background: #0f172a; border-color: #334155; color: #94a3b8; }
+[data-theme="dark"] .payment-options .btn-payment.active { background: var(--verde-claro); color: var(--verde); border-color: var(--verde); }
+[data-theme="dark"] .modal-box { background: var(--branco); }
+[data-theme="dark"] .modal-produtos-venda { background: var(--branco); }
+[data-theme="dark"] .produto-card { background: #0f172a; border-color: #334155; }
+[data-theme="dark"] .produto-nome { color: #e2e8f0; }
+[data-theme="dark"] .btn-adicionar-produto { background: var(--verde-suave); border-color: var(--verde-claro); }
+[data-theme="dark"] .btn-adicionar-produto strong { color: var(--verde); }
+[data-theme="dark"] .btn-adicionar-produto small { color: var(--texto-3); }
+[data-theme="dark"] .bottom-nav, 
+[data-theme="dark"] nav.menu-inferior { background: #1e293bfa; border-color: #334155; }
+[data-theme="dark"] nav.menu-inferior > a.menu-item { color: #94a3b8; }
+[data-theme="dark"] nav.menu-inferior > a.menu-item.ativo { background: #173b2a; color: var(--verde); }
+[data-theme="dark"] .painel-card { background: var(--branco); border-color: var(--borda); }
+[data-theme="dark"] .painel-card-titulo h2 { color: #fff; }
+[data-theme="dark"] .painel-card-conteudo { color: var(--texto); }
+[data-theme="dark"] .painel-lojista { background: var(--fundo); }
+[data-theme="dark"] .informacao-lojista p { color: #fff; }
+[data-theme="dark"] .informacao-lojista { border-color: #334155; }
+[data-theme="dark"] .cabecalho-calculadora { border-color: #334155; }
+[data-theme="dark"] .cabecalho-calculadora h2 { color: #fff; }
+[data-theme="dark"] .titulo-secao h3 { color: #fff; }
+[data-theme="dark"] .app-header h1 { color: #fff; }
+[data-theme="dark"] .app-header p { color: #94a3b8; }
+[data-theme="dark"] .grafico-card { background: #0f172a; border-color: #334155; }
+[data-theme="dark"] .grafico-card h3 { color: #e2e8f0; }
+
+/* Ajustes no Histórico */
+[data-theme="dark"] .historico-card, 
+[data-theme="dark"] .historico-periodo, 
+[data-theme="dark"] .historico-pagamentos { background: var(--branco); border-color: var(--borda); }
+[data-theme="dark"] .historico-card.destaque { background: #064e3b; } 
+[data-theme="dark"] .item-historico { background: var(--branco); border-color: var(--borda); }
+[data-theme="dark"] .item-historico .titulo-lancamento { color: #fff; }
+
+/* Ajustes no Fiado */
+[data-theme="dark"] .fiado-painel, 
+[data-theme="dark"] .fiado-cliente-card, 
+[data-theme="dark"] .fiado-resumo-card { background: var(--branco); border-color: var(--borda); }
+[data-theme="dark"] .fiado-cliente-texto h3 { color: #fff; }
+[data-theme="dark"] .fiado-modal-conteudo { background: var(--branco); }
+[data-theme="dark"] .fiado-modal-conteudo h2 { color: #fff; }
+[data-theme="dark"] .fiado-campo input, 
+[data-theme="dark"] .fiado-campo select, 
+[data-theme="dark"] .fiado-campo textarea { background: #0f172a; color: #fff; border-color: #334155; }
+[data-theme="dark"] .fiado-detalhe-kpi { background: #0f172a; border-color: #334155; }
+[data-theme="dark"] .fiado-detalhe-kpi strong { color: #fff; }
+[data-theme="dark"] .fiado-movimento { background: #0f172a; border-color: #334155; }
+[data-theme="dark"] .fiado-movimento-info > strong { color: #fff; }
+
+/* Botão Flutuante de Troca de Tema */
+#btnToggleTheme {
+  position: fixed;
+  bottom: 85px;
+  right: 15px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  color: var(--texto);
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 99998;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s;
+}
+#btnToggleTheme:active {
+  transform: scale(0.9);
+}
