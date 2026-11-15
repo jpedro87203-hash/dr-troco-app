@@ -61,11 +61,12 @@
     return user;
   }
 
-  /* ---------- NOTIFICAÇÕES (NOVO) ---------- */
+  /* ---------- NOTIFICAÇÕES (CORRIGIDO) ---------- */
 
   async function solicitarPermissaoNotificacao() {
-    if (!("Notification" in window)) {
-      console.warn("Este navegador não suporta notificações de desktop.");
+    // PROTEÇÃO: Verifica se a API existe no navegador
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      console.warn("Este navegador não suporta notificações push.");
       return;
     }
 
@@ -74,15 +75,20 @@
     }
 
     if (Notification.permission !== "denied") {
-      // Pede permissão (só pode ser chamado após interação do usuário)
-      const permissao = await Notification.requestPermission();
-      if (permissao === "granted") {
-        console.log("Permissão de notificação concedida!");
+      try {
+        const permissao = await Notification.requestPermission();
+        if (permissao === "granted") {
+          console.log("Permissão de notificação concedida!");
+        }
+      } catch (e) {
+        console.warn("Erro ao pedir permissão de notificação", e);
       }
     }
   }
 
   async function dispararNotificacao(titulo, corpo) {
+    // PROTEÇÃO: Evita quebrar o código caso o navegador não suporte
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
     if (Notification.permission !== "granted") return;
 
     // Verifica o bloqueio de tempo (não notificar se já notificou nas últimas 4 horas)
@@ -109,7 +115,7 @@
       localStorage.setItem('drTroco_ultimaNotificacao', agora.toString());
 
     } catch (erro) {
-      console.error("Erro ao disparar notificação:", erro);
+      console.warn("Service Worker não pronto ou erro ao notificar:", erro);
     }
   }
 
