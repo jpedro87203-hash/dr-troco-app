@@ -628,6 +628,23 @@ body:has(.fiado-resumo) .fiado-modal-topo p { margin: 0; color: #64748b; font-si
   overflow: hidden;
   padding: 16px;
 }
+
+/* CORREÇÃO CRÍTICA DO SCROLL: A área de rolagem precisa ser o flex child */
+.modal-produtos-scroll-area {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 15px;
+}
+
+/* Esconde a barra de rolagem visualmente no mobile (opcional, mas deixa mais limpo) */
+.modal-produtos-scroll-area::-webkit-scrollbar { width: 5px; }
+.modal-produtos-scroll-area::-webkit-scrollbar-track { background: transparent; }
+.modal-produtos-scroll-area::-webkit-scrollbar-thumb { background: #cbd8d2; border-radius: 20px; }
+
 .modal-produtos-venda .btn-leitor-venda {
   flex: 0 0 auto;
   margin: 0 0 8px;
@@ -678,9 +695,8 @@ body:has(.fiado-resumo) .fiado-modal-topo p { margin: 0; color: #64748b; font-si
 .campo-busca-produto input::placeholder { color: #8b9894; }
 
 /* ===== GRID DOS PRODUTOS ===== */
+/* Retiramos o flex e overflow daqui, pois agora a div pai rola */
 .lista-produtos-estoque-venda {
-  flex: 1 1 auto;
-  min-height: 0;
   width: 100%;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -688,14 +704,7 @@ body:has(.fiado-resumo) .fiado-modal-topo p { margin: 0; color: #64748b; font-si
   gap: 7px;
   margin: 0;
   padding: 2px 1px 9px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
 }
-.lista-produtos-estoque-venda::-webkit-scrollbar { width: 5px; }
-.lista-produtos-estoque-venda::-webkit-scrollbar-track { background: transparent; }
-.lista-produtos-estoque-venda::-webkit-scrollbar-thumb { background: #cbd8d2; border-radius: 20px; }
 
 .lista-produtos-estoque-venda .produto-card {
   width: 100%;
@@ -1816,4 +1825,4 @@ body .bottom-nav .nav-item.ativo {
 
 body .bottom-nav .nav-item:active {
   transform: scale(.96);
-     }
+   }
