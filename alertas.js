@@ -1,6 +1,5 @@
 /* =========================================================
-   DR. TROCO — ALERTAS DO PAINEL + BADGE DO LOJISTA
-   Funciona em painel-lojista.html (#alertasArea) e index.html (#badgeAlertasLojista)
+   DR. TROCO — ALERTAS DO PAINEL + BADGE + NOTIFICAÇÕES PUSH
    ========================================================= */
 
 'use strict';
@@ -62,6 +61,64 @@
     return user;
   }
 
+  /* ---------- NOTIFICAÇÕES (NOVO) ---------- */
+
+  async function solicitarPermissaoNotificacao() {
+    if (!("Notification" in window)) {
+      console.warn("Este navegador não suporta notificações de desktop.");
+      return;
+    }
+
+    if (Notification.permission === "granted") {
+      return;
+    }
+
+    if (Notification.permission !== "denied") {
+      // Pede permissão (só pode ser chamado após interação do usuário)
+      const permissao = await Notification.requestPermission();
+      if (permissao === "granted") {
+        console.log("Permissão de notificação concedida!");
+      }
+    }
+  }
+
+  async function dispararNotificacao(titulo, corpo) {
+    if (Notification.permission !== "granted") return;
+
+    // Verifica o bloqueio de tempo (não notificar se já notificou nas últimas 4 horas)
+    const agora = Date.now();
+    const ultimaNotificacao = parseInt(localStorage.getItem('drTroco_ultimaNotificacao') || '0', 10);
+    const quatroHoras = 4 * 60 * 60 * 1000;
+
+    if (agora - ultimaNotificacao < quatroHoras) {
+      return; // Ainda está no período de silêncio
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      reg.showNotification(titulo, {
+        body: corpo,
+        icon: '/icons/icon-192.png', // Certifique-se que este caminho existe
+        badge: '/icons/icon-192.png',
+        vibrate: [200, 100, 200], // Padrão de vibração do celular
+        tag: 'dr-troco-alertas',
+        renotify: true
+      });
+
+      // Salva o horário para não spammar
+      localStorage.setItem('drTroco_ultimaNotificacao', agora.toString());
+
+    } catch (erro) {
+      console.error("Erro ao disparar notificação:", erro);
+    }
+  }
+
+  // Pede permissão assim que o usuário clicar em qualquer lugar da tela pela 1ª vez
+  document.addEventListener('click', function pedirPermissao() {
+    solicitarPermissaoNotificacao();
+    document.removeEventListener('click', pedirPermissao);
+  }, { once: true });
+
   /* ---------- Carregadores ---------- */
 
   async function carregarContas() {
@@ -80,7 +137,6 @@
       };
     }
 
-    // Fallback direto do Supabase (usado no index.html)
     try {
       const user = await obterUsuario();
       const { data, error } = await window.supabaseClient
@@ -227,6 +283,29 @@
 
     atualizarBadge(totalAlertas);
 
+    // DISPARAR NOTIFICAÇÃO NO CELULAR
+    if (totalAlertas > 0) {
+      let tituloNotificacao = "Dr. Troco - Avisos";
+      let corpoNotificacao = "";
+      
+      if (contas.vencidas.length > 0) {
+        corpoNotificacao += `🚨 ${contas.vencidas.length} conta(s) vencida(s). `;
+      }
+      if (estoque.semEstoque.length > 0) {
+        corpoNotificacao += `📦 ${estoque.semEstoque.length} produto(s) sem estoque. `;
+      }
+      if (fiado.antigos.length > 0) {
+        corpoNotificacao += `🧾 ${fiado.antigos.length} cliente(s) devendo há 30+ dias. `;
+      }
+      
+      // Se tiver muitos alertas, resume
+      if (corpoNotificacao.length > 80) {
+        corpoNotificacao = `Você tem ${totalAlertas} avisos pendentes no painel (contas, estoque ou fiado). Toque para ver.`;
+      }
+
+      dispararNotificacao(tituloNotificacao, corpoNotificacao);
+    }
+
     if (!area) return;
 
     const cards = [];
@@ -312,7 +391,8 @@
 
     window.DrTrocoAlertas = {
       recarregar: carregarTudo,
-      resumo: () => JSON.parse(JSON.stringify(estado.alertas))
+      resumo: () => JSON.parse(JSON.stringify(estado.alertas)),
+      pedirPermissao: solicitarPermissaoNotificacao
     };
   }
 
