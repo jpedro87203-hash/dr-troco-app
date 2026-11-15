@@ -14,7 +14,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 
-<link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     /* ===== ESTILOS GERAIS DO TOPO ===== */
     #botao-controle-licencas,
@@ -63,12 +63,140 @@
     }
 
     /* =========================================================
+       ITENS ADICIONADOS NO CARRINHO (MELHORADO)
+       ========================================================= */
+    .lista-produtos-venda {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    /* O Grid do produto: Foto | Info | Preço/Lixo */
+    .item-produto-venda {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
+      column-gap: 12px;
+      row-gap: 6px;
+      align-items: center;
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid #e1e9e5;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+
+    /* Foto ocupa as duas linhas */
+    .item-produto-imagem {
+      grid-row: 1 / 3;
+      grid-column: 1;
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f0f4f1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .item-produto-imagem img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+
+    /* Nome e Preço unitário na linha de cima */
+    .item-produto-info {
+      grid-row: 1;
+      grid-column: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .item-produto-info strong {
+      font-size: 14px;
+      color: #1f3028;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-produto-info small { display: none; /* Oculta o código para limpar o visual */ }
+    .item-produto-info span {
+      font-size: 12px;
+      color: #168b53;
+      font-weight: 800;
+    }
+
+    /* Botões + e - alinhados lado a lado na parte de baixo */
+    .item-produto-controles {
+      grid-row: 2;
+      grid-column: 2;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-quantidade {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #eaf8f1;
+      color: #168b53;
+      font-size: 18px;
+      font-weight: 900;
+      border: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .btn-quantidade:active { transform: scale(0.9); }
+    .item-produto-controles strong {
+      font-size: 14px;
+      min-width: 20px;
+      text-align: center;
+      color: #263640;
+    }
+
+    /* Subtotal e botão de lixo na direita */
+    .item-produto-subtotal {
+      grid-row: 1 / 3;
+      grid-column: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+      height: 100%;
+    }
+    .item-produto-subtotal strong {
+      font-size: 15px;
+      color: #168b53;
+      font-weight: 900;
+    }
+    .btn-remover-produto {
+      background: #fff0f0;
+      color: #d94b4b;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 16px;
+      border: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .btn-remover-produto:active { transform: scale(0.9); }
+
+
+    /* =========================================================
        MODAL DE PRODUTOS (3 COLUNAS) — ESTRUTURA DE SCROLL
        ========================================================= */
     .modal-produtos-venda {
       width: 100%;
       max-width: 760px;
-      /* ALTURA FIXA: permite que o flex:1 funcione perfeitamente */
       height: 90vh;
       height: 90dvh;
       max-height: 90vh;
@@ -80,12 +208,8 @@
       box-sizing: border-box;
     }
 
-    .modal-produtos-venda .modal-cabecalho {
-      flex-shrink: 0;
-      margin-bottom: 12px;
-    }
+    .modal-produtos-venda .modal-cabecalho { flex-shrink: 0; margin-bottom: 12px; }
 
-    /* ÁREA DE SCROLL: flex-basis 0% garante que ela respeite o limite */
     .modal-produtos-scroll-area {
       flex: 1 1 0%; 
       min-height: 0; 
@@ -117,43 +241,23 @@
     }
 
     /* =========================================================
-       CARD DE PRODUTO — FOTO PROPORCIONAL + BOTÕES +/-
+       CARD DE PRODUTO DA GRADE (MODAL) 
        ========================================================= */
     .cartao-produto-grade {
-      background: #ffffff;
-      border: 1px solid rgba(39, 57, 69, 0.08);
-      border-radius: 14px;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(28, 48, 62, 0.04);
-      box-sizing: border-box;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      transition: transform .12s ease, border-color .15s ease, background .15s ease;
+      background: #ffffff; border: 1px solid rgba(39, 57, 69, 0.08); border-radius: 14px;
+      padding: 8px; display: flex; flex-direction: column; justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(28, 48, 62, 0.04); box-sizing: border-box; cursor: pointer;
+      -webkit-tap-highlight-color: transparent; transition: transform .12s ease, border-color .15s ease, background .15s ease;
     }
-    .cartao-produto-grade:active {
-      transform: scale(.97);
-      border-color: #20a66a;
-      background: #f0faf5;
-    }
+    .cartao-produto-grade:active { transform: scale(.97); border-color: #20a66a; background: #f0faf5; }
 
-    .cartao-produto-topo {
-      display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%;
-    }
+    .cartao-produto-topo { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; }
 
-    /* PROPORÇÃO DA FOTO CORRIGIDA (Quadrada, limitada a 80px) */
     .cartao-produto-foto {
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      max-height: 80px; /* Não deixa a foto gigante no tablet */
-      border-radius: 10px;
-      overflow: hidden;
-      background: linear-gradient(135deg, #edf7f1, #e4f1ea);
+      width: 100%; aspect-ratio: 1 / 1; max-height: 80px; border-radius: 10px;
+      overflow: hidden; background: linear-gradient(135deg, #edf7f1, #e4f1ea);
       display: flex; align-items: center; justify-content: center;
-      color: #16834d; font-size: 20px; font-weight: 900;
-      margin-bottom: 6px; flex-shrink: 0;
+      color: #16834d; font-size: 20px; font-weight: 900; margin-bottom: 6px; flex-shrink: 0;
     }
     .cartao-produto-foto img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -168,11 +272,7 @@
     .cartao-produto-info small { color: #8a969e; font-size: 9px; font-weight: 700; width: 100%; }
     .cartao-produto-preco { color: #16834d; font-size: 13px; font-weight: 900; width: 100%; margin-top: 1px; }
 
-    /* BOTÕES + E - REATIVADOS */
-    .cartao-produto-acoes {
-      margin-top: 8px;
-      width: 100%;
-    }
+    .cartao-produto-acoes { margin-top: 8px; width: 100%; }
     
     .controle-qtd-card {
       display: flex; align-items: center; justify-content: space-between;
@@ -187,16 +287,12 @@
     }
     .controle-qtd-card button:active { transform: scale(0.92); }
     .controle-qtd-card button:disabled { opacity: 0.3; }
-    .controle-qtd-card span {
-      font-size: 12px; font-weight: 900; color: #263746;
-    }
+    .controle-qtd-card span { font-size: 12px; font-weight: 900; color: #263746; }
 
-    /* Botão manual oculto, mas no DOM */
     #btnAdicionarManualVenda { display: none !important; }
 
     .modal-acoes-venda {
-      flex-shrink: 0;
-      display: flex; flex-direction: column; gap: 8px;
+      flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;
       margin-top: 10px; padding-top: 10px; border-top: 1px solid #edf2f5;
     }
 
@@ -209,6 +305,39 @@
       font-weight: 900; cursor: pointer; text-align: center; align-items: center; justify-content: center;
       gap: 8px; box-shadow: 0 4px 10px rgba(30, 158, 145, 0.25);
     }
+
+    /* =========================================================
+       BARRA DE AÇÕES FLUTUANTE (Fixa no rodapé)
+       ========================================================= */
+    .acoes-venda-fixa {
+      position: fixed;
+      bottom: 78px; /* Logo acima do menu inferior */
+      left: 0; right: 0; margin: 0 auto;
+      width: 100%; max-width: 760px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.08);
+      border-top: 1px solid #e5e5e5;
+      z-index: 9998;
+      display: flex;
+      gap: 10px;
+      transform: translateY(150%);
+      transition: transform 0.3s ease;
+    }
+    .acoes-venda-fixa.ativa { transform: translateY(0); }
+    .acoes-venda-fixa button {
+      flex: 1; min-height: 50px; font-size: 15px; font-weight: 900; border-radius: 14px;
+    }
+    .acoes-venda-fixa .btn-limpar {
+      flex: 0 0 100px; background: #fff0f0; color: #d94b4b; border: 1px solid #f0d8d8;
+    }
+    .acoes-venda-fixa .btn-finalizar {
+      background: linear-gradient(135deg, #25aa6a, #168d54); color: #fff; border: 0;
+      box-shadow: 0 4px 12px rgba(32, 167, 103, 0.2);
+    }
+
+    /* Adiciona espaço no final do body para a barra não cobrir o conteúdo */
+    body { padding-bottom: 160px !important; }
   </style>
 </head>
 <body class="pagina-calculadora">
@@ -265,7 +394,7 @@
           <div class="resumo-venda-topo"><span>Total da venda</span><strong id="totalCobrar">R$ 0,00</strong></div>
           <div class="resumo-venda-info">
             <span id="quantidadeItensVenda">0 itens</span>
-            <button type="button" id="btnLimparVenda" class="btn-limpar-venda">Limpar venda</button>
+            <!-- Botão Limpar foi movido para a barra fixa -->
           </div>
         </section>
 
@@ -339,11 +468,14 @@
             </div>
           </div>
         </section>
-
-        <button type="button" id="btnRegistrarVenda" class="btn-primary btn-registrar-venda"><span>✓</span><span>Registrar Venda</span></button>
-        <button type="button" id="btnCancelarVenda" class="btn-cancelar-venda">Cancelar / Limpar venda</button>
       </section>
     </main>
+  </div>
+
+  <!-- BARRA DE AÇÕES FLUTUANTE (Fixa) -->
+  <div class="acoes-venda-fixa" id="acoesVendaFixa">
+    <button type="button" id="btnLimparVenda" class="btn-limpar">Limpar</button>
+    <button type="button" id="btnRegistrarVenda" class="btn-finalizar">✓ Registrar Venda</button>
   </div>
 
   <!-- MODAL DE PRODUTOS -->
@@ -442,34 +574,73 @@
   <script src="estoque-supabase.js"></script>
   <script src="script.js"></script>
   <script src="alertas.js"></script>
-    <script src="suporte.js"></script>
-</body>
+  <script src="suporte.js"></script>
 
   <script>
+    // =========================================================
+    // LÓGICA DA BARRA FLUTUANTE (Mostrar/Esconder)
+    // =========================================================
     document.addEventListener('DOMContentLoaded', function () {
+      const lista = document.getElementById('listaProdutosVenda');
+      const barra = document.getElementById('acoesVendaFixa');
+      
+      if (lista && barra) {
+        // Observa mudanças no carrinho para mostrar ou esconder a barra
+        const observer = new MutationObserver(() => {
+          const temItens = Array.from(lista.children).some(
+            c => c.id !== 'produtosVendaVazio' && c.style.display !== 'none'
+          );
+          
+          // Também verifica se o input de valor avulso tem valor
+          const valorAvulso = Number(document.getElementById('valorConta')?.value || 0);
+          
+          if (temItens || valorAvulso > 0) {
+            barra.classList.add('ativa');
+          } else {
+            barra.classList.remove('ativa');
+          }
+        });
+        
+        observer.observe(lista, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+        document.getElementById('valorConta')?.addEventListener('input', () => {
+          const temItens = lista.children.length > 1 || (lista.children.length === 1 && lista.children[0].id !== 'produtosVendaVazio');
+          const valorAvulso = Number(document.getElementById('valorConta')?.value || 0);
+          
+          if (temItens || valorAvulso > 0) {
+            barra.classList.add('ativa');
+          } else {
+            barra.classList.remove('ativa');
+          }
+        });
+      }
+
+      // SAIR DA CONTA
       const botaoSair = document.getElementById('botao-sair-conta');
-      if (!botaoSair) return;
-      botaoSair.addEventListener('click', async function () {
-        if (!confirm('Deseja realmente sair da sua conta?')) return;
-        botaoSair.disabled = true;
-        try {
-          const cliente = window.supabaseClient;
-          if (!cliente) throw new Error('Cliente Supabase não encontrado.');
-          const { error } = await cliente.auth.signOut();
-          if (error) throw error;
-          window.location.replace('login.html');
-        } catch (erro) {
-          console.error('Erro ao sair:', erro);
-          alert('Não foi possível sair da conta. Tente novamente.');
-          botaoSair.disabled = false;
-        }
-      });
+      if (botaoSair) {
+        botaoSair.addEventListener('click', async function () {
+          if (!confirm('Deseja realmente sair da sua conta?')) return;
+          botaoSair.disabled = true;
+          try {
+            const cliente = window.supabaseClient;
+            if (!cliente) throw new Error('Cliente Supabase não encontrado.');
+            const { error } = await cliente.auth.signOut();
+            if (error) throw error;
+            window.location.replace('login.html');
+          } catch (erro) {
+            console.error('Erro ao sair:', erro);
+            alert('Não foi possível sair da conta. Tente novamente.');
+            botaoSair.disabled = false;
+          }
+        });
+      }
+
+      // REGISTRO DO PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('service-worker.js').catch((err) => console.error('PWA SW:', err));
+        });
+      }
     });
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js').catch((err) => console.error('PWA SW:', err));
-      });
-    }
   </script>
 </body>
-        </html>
+  </html>
