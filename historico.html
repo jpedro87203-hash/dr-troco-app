@@ -8,6 +8,9 @@
     <title>Histórico — Dr. Troco</title>
 
     <link rel="stylesheet" href="style.css">
+
+    <!-- A TAG STYLE ESTAVA FALTANDO AQUI -->
+    <style>
         /* HISTÓRICO — DR. TROCO */
 
         * {
@@ -484,7 +487,6 @@
         }
 
         /* MENU INFERIOR */
-
         body nav.menu-inferior {
             position: fixed;
             left: 50%;
@@ -493,8 +495,9 @@
             transform: translateX(-50%);
             z-index: 99999;
 
+            /* CORRIGIDO PARA 5 COLUNAS (Calculadora, Fluxo, Histórico, Estoque, Fiado) */
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             align-items: stretch;
 
             width: 100%;
@@ -857,4 +860,4 @@
 <script src="fiado.js"></script> 
 <script src="historico.js"></script>
 </body>
-</html>
+    </html>
