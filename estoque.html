@@ -17,7 +17,6 @@
     <title>Dr. Troco — Estoque</title>
 
     <link rel="stylesheet" href="style.css">
-    >
 
     <style>
 
@@ -1844,6 +1843,13 @@
             </div>
             
             <div id="containerHistoricoMovimentacoes" style="display: none; margin-top: 16px; flex-direction: column; gap: 10px;">
+                
+                <!-- FILTRO DE DATA -->
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <input type="date" id="filtroDataHistorico" style="flex: 1; min-width: 0; height: 42px; padding: 0 12px; border: 1px solid #dce6e1; border-radius: 10px; background: #f8faf9; color: #263640; font-family: inherit;">
+                    <button type="button" id="btnLimparFiltroHistorico" style="background: #f0f4f2; color: #52635b; border: 1px solid #dce6e1; border-radius: 10px; padding: 0 16px; font-weight: bold; cursor: pointer;">Limpar</button>
+                </div>
+
                 <div id="listaHistoricoMovimentacoes" style="display: flex; flex-direction: column; gap: 10px;">
                     <!-- As movimentações filtradas aparecem aqui -->
                 </div>
@@ -2634,9 +2640,9 @@
     <script src="auth-guard.js"></script>
     <script src="protecao.js"></script>
     <script src="estoque.js"></script>
-      <script src="suporte.js"></script>
+    <script src="suporte.js"></script>
     
 
 </body>
 
-    </html>
+            </html>
