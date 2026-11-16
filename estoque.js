@@ -20,6 +20,7 @@ let produtoSelecionadoMovimento = null;
 
 let tipoMovimentoAtual = "entrada";
 let filtroAtual = "todos";
+let filtroDataHistorico = ""; // NOVO: Filtro de data para o histórico
 
 /* =========================================================
 LEITOR DE CÓDIGO DE BARRAS — CONTROLE
@@ -33,7 +34,7 @@ let codigoBarrasLido = "";
 
 let abrindoLeitorCodigo = false;
 let sessaoLeitorCodigo = 0;
-let produtoModalAbertoAntesLeitor = false; // <-- NOVO: Lembra se o cadastro estava aberto
+let produtoModalAbertoAntesLeitor = false; 
 
 /* =========================================================
 UTILITÁRIOS
@@ -210,7 +211,6 @@ async function carregarProdutos() {
     estoquePronto = false;
     preservarEstoqueLegado();
 
-    // 1. Carrega do cache local primeiro para exibir imediatamente (evita tela vazia)
     try {
         const chaveLocal = chaveEstoqueDoComercio();
         const dadosLocais = chaveLocal ? localStorage.getItem(chaveLocal) : null;
@@ -238,7 +238,6 @@ async function carregarProdutos() {
 
         const listaRemota = await window.EstoqueSupabase.carregarProdutos();
         
-        // Proteção: Só substitui se a nuvem retornar dados válidos ou se o cache local estiver vazio
         if (Array.isArray(listaRemota) && listaRemota.length > 0) {
             produtos = listaRemota.map(normalizarProduto);
             salvarProdutos();
@@ -1055,7 +1054,7 @@ function alternarHistoricoMovimentacoes() {
     const botao = document.getElementById("btnToggleHistorico");
     if (!container || !botao) return;
 
-    if (container.style.display === "none") {
+    if (container.style.display === "none" || !container.style.display) {
         container.style.display = "flex";
         botao.textContent = "Ocultar ▲";
         renderizarHistoricoMovimentacoes();
@@ -1071,16 +1070,21 @@ function renderizarHistoricoMovimentacoes() {
 
     const todasMovimentacoes = carregarMovimentacoes();
 
-    // Filtra para mostrar APENAS "entrada" e "saida"
+    // Filtra para mostrar APENAS "entrada" e "saida" e pela DATA selecionada
     const movimentacoes = todasMovimentacoes.filter(mov => {
         const tipo = String(mov.tipo || "").toLowerCase();
-        return tipo === "entrada" || tipo === "saida";
+        const ehEntradaOuSaida = tipo === "entrada" || tipo === "saida";
+        const passaData = !filtroDataHistorico || String(mov.data || "").trim() === filtroDataHistorico;
+        return ehEntradaOuSaida && passaData;
     }).slice().reverse(); // Mais recentes primeiro
 
     if (!movimentacoes.length) {
+        const msg = filtroDataHistorico 
+            ? "Nenhuma entrada ou saída registada nesta data." 
+            : "Nenhuma entrada ou saída registada ainda.";
         container.innerHTML = `
             <div style="text-align: center; padding: 20px; color: #78848b; font-size: 13px;">
-                Nenhuma entrada ou saída registada ainda.
+                ${msg}
             </div>`;
         return;
     }
@@ -1243,7 +1247,6 @@ function pararLeitorCodigo() {
         video.style.display = "none";
     }
     
-    // Restaura a mensagem para o próximo uso
     if (msg) msg.style.display = "flex";
     if (moldura) moldura.style.display = "none";
 
@@ -1298,7 +1301,7 @@ async function iniciarDeteccaoCodigoBarras() {
 function codigoEncontrado(codigo) {
     codigoBarrasLido = codigo;
     pararLeitorCodigo();
-    fecharLeitorCodigo(); // Fecha o leitor e restaura o modal de cadastro
+    fecharLeitorCodigo();
 
     const campoCodigo = document.getElementById("codigoProduto");
     if (campoCodigo) {
@@ -1311,7 +1314,6 @@ async function abrirLeitorCodigo() {
     if (abrindoLeitorCodigo) return;
     abrindoLeitorCodigo = true;
 
-    // LEMBRA SE O MODAL DE PRODUTO ESTAVA ABERTO
     const modalProduto = document.getElementById("modalProduto");
     produtoModalAbertoAntesLeitor = modalProduto ? modalProduto.classList.contains("aberto") : false;
 
@@ -1329,7 +1331,6 @@ async function abrirLeitorCodigo() {
         if (video) {
             video.srcObject = stream;
             
-            // Força a exibição do vídeo e esconde a mensagem
             video.style.setProperty('display', 'block', 'important');
             if (msg) msg.style.display = 'none';
             if (moldura) moldura.style.display = 'block';
@@ -1340,7 +1341,7 @@ async function abrirLeitorCodigo() {
     } catch (e) {
         console.error("Erro ao abrir câmera:", e);
         alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
-        fecharLeitorCodigo(); // Restaura o modal de produto se der erro
+        fecharLeitorCodigo(); 
     } finally {
         abrindoLeitorCodigo = false;
     }
@@ -1357,7 +1358,6 @@ function fecharLeitorCodigo() {
         }
     }
 
-    // RESTAURA O MODAL DE CADASTRO SE ELE ESTAVA ABERTO ANTES
     if (produtoModalAbertoAntesLeitor) {
         const modalProduto = document.getElementById("modalProduto");
         if (modalProduto) {
@@ -1457,7 +1457,6 @@ function exportarRelatorioEstoquePDF() {
 
     let movimentacoes = carregarMovimentacoes();
 
-    // FILTRA APENAS ENTRADAS E SAÍDAS E A DATA SELECIONADA
     movimentacoes = movimentacoes.filter(mov => {
         const tipo = String(mov?.tipo || "").toLowerCase();
         const ehEntradaOuSaida = tipo === "entrada" || tipo === "saida";
@@ -1465,9 +1464,6 @@ function exportarRelatorioEstoquePDF() {
         return ehEntradaOuSaida && passaData;
     });
 
-    // =====================================================
-    // CONSOLIDAÇÃO: AGRUPA MOVIMENTAÇÕES POR PRODUTO
-    // =====================================================
     const mapaGrupos = new Map();
 
     movimentacoes.forEach(mov => {
@@ -1549,7 +1545,6 @@ function exportarRelatorioEstoquePDF() {
             </tr>`;
     }).join("");
 
-    // Linhas consolidadas: uma linha por produto
     const linhasMovimentacoesConsolidadas = gruposConsolidados.map(grupo => {
         const qtdMov = grupo.entradas + grupo.saidas;
         const saldo = grupo.entradas - grupo.saidas;
@@ -1685,6 +1680,26 @@ ${gruposConsolidados.length ? `
 CONFIGURAÇÕES E INICIALIZAÇÃO
 ========================================================= */
 
+function configurarFiltroHistorico() {
+    const inputData = document.getElementById("filtroDataHistorico");
+    const btnLimpar = document.getElementById("btnLimparFiltroHistorico");
+
+    if (inputData) {
+        inputData.addEventListener("change", (e) => {
+            filtroDataHistorico = e.target.value;
+            renderizarHistoricoMovimentacoes();
+        });
+    }
+
+    if (btnLimpar) {
+        btnLimpar.addEventListener("click", () => {
+            filtroDataHistorico = "";
+            if (inputData) inputData.value = "";
+            renderizarHistoricoMovimentacoes();
+        });
+    }
+}
+
 function configurarBotoes() {
     const cadastrar = document.getElementById("btnCadastrarProduto");
     const entrada = document.getElementById("btnEntradaEstoque");
@@ -1699,6 +1714,7 @@ function configurarBotoes() {
     const fecharLeitor = document.getElementById("btnFecharLeitorCodigo");
     
     configurarBotaoExportarPDF();
+    configurarFiltroHistorico(); // <-- NOVO AQUI
 
     if (cadastrar) cadastrar.addEventListener("click", abrirCadastroProduto);
     if (entrada) entrada.addEventListener("click", () => abrirMovimento("entrada"));
@@ -1823,4 +1839,4 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", inicializarEstoque);
 } else {
     inicializarEstoque();
-    }
+}
