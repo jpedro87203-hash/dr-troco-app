@@ -518,8 +518,6 @@
       return { ok: false, motivo: 'cliente ausente' };
     }
 
-    // Pagamentos iniciais do PDV já geram movimentação pelo script.js.
-    // Não duplicar.
     if (mov.origem === 'pdv') {
       return { ok: true, pulado: true, motivo: 'origem=pdv' };
     }
@@ -530,7 +528,6 @@
 
     const idCaixa = chaveMovCaixaFiado(mov.id);
 
-    // Verifica duplicidade no cache
     try {
       const existentes = typeof window.DrTrocoDados.movimentacoes === 'function'
         ? window.DrTrocoDados.movimentacoes()
@@ -723,6 +720,17 @@
     const cliente = buscarClienteInterno(id);
     if (!cliente) { mostrarNotificacao('Cliente não encontrado.', true); return; }
 
+    // ========================================================
+    // TRAVA DE SEGURANÇA (PIN)
+    // ========================================================
+    if (window.DrTrocoSeguranca && typeof window.DrTrocoSeguranca.verificarPIN === 'function') {
+      try {
+        await window.DrTrocoSeguranca.verificarPIN('Excluir Cliente do Fiado');
+      } catch (e) {
+        return; // Cancela a exclusão se o PIN falhar
+      }
+    }
+
     const saldo = obterSaldo(cliente);
     let msg = `Deseja excluir o cliente "${cliente.nome}"?`;
     if (saldo > 0) msg += `\n\nSaldo devedor atual: ${formatarDinheiro(saldo)}.`;
@@ -872,7 +880,6 @@
       cliente.movimentacoes.push(salvo);
       cliente.atualizadoEm = agoraISO();
 
-      // Registra entrada no caixa (best-effort — não bloqueia se falhar)
       try {
         const rCaixa = await registrarEntradaCaixaFiado(salvo, cliente);
         if (!rCaixa.ok && !rCaixa.pulado) {
@@ -992,12 +999,23 @@
 
     const mov = cliente.movimentacoes[idx];
     const tipo = mov.tipo === 'pagamento' ? 'pagamento' : 'compra fiado';
+
+    // ========================================================
+    // TRAVA DE SEGURANÇA (PIN)
+    // ========================================================
+    if (window.DrTrocoSeguranca && typeof window.DrTrocoSeguranca.verificarPIN === 'function') {
+      try {
+        await window.DrTrocoSeguranca.verificarPIN(`Excluir ${tipo}`);
+      } catch (e) {
+        return; // Cancela a exclusão se o PIN falhar
+      }
+    }
+
     if (!confirmar(`Excluir este lançamento de ${tipo}? O saldo do cliente será recalculado.`)) return;
 
     try {
       await removerMovimentacao(movId);
 
-      // Se for pagamento, remove também a entrada correspondente no caixa
       if (mov.tipo === 'pagamento') {
         await removerEntradaCaixaFiado(movId);
       }
