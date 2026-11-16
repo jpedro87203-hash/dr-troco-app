@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#168b53">
   <title>Dr. Troco - Painel do Lojista</title>
   <link rel="stylesheet" href="style.css">
-<script src="theme.js"></script> <!-- ADICIONE ESTA LINHA -->
+
   <!-- Biblioteca para os gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -201,7 +201,7 @@
       margin-top: 20px;
     }
 
-    .painel-acoes a {
+    .painel-acoes a, .painel-acoes button {
       display: block;
       padding: 14px;
       text-align: center;
@@ -500,6 +500,11 @@
         ✏️ Editar dados do estabelecimento
       </a>
 
+      <!-- BOTÃO DE CADASTRAR PIN -->
+      <button type="button" id="btnConfigurarPin" class="botao-voltar-loja" style="cursor:pointer; font-family:inherit;">
+        🔐 Criar / Alterar PIN de Segurança
+      </button>
+
       <a class="botao-voltar-loja" href="index.html">
         ← Voltar para a calculadora
       </a>
@@ -516,6 +521,7 @@
   <script src="lucro.js"></script>
   <script src="graficos.js"></script>
   <script src="alertas.js"></script>
+  <script src="seguranca.js"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -607,6 +613,18 @@
         const aberto = btn.getAttribute("aria-expanded") === "true";
         btn.setAttribute("aria-expanded", String(!aberto));
         alvo.hidden = aberto;
+      });
+
+      // ==========================================
+      // CONFIGURAR PIN DE SEGURANÇA
+      // ==========================================
+      document.getElementById('btnConfigurarPin')?.addEventListener('click', async () => {
+        try {
+          await window.DrTrocoSeguranca.cadastrarPIN();
+          alert('PIN de Segurança configurado com sucesso!');
+        } catch (e) {
+          console.log('Cadastro de PIN cancelado.');
+        }
       });
     });
   </script>
