@@ -1152,6 +1152,20 @@ async function estornarEstoque(venda) {
 async function excluirRegistro(registro) {
     if (!registro) return;
 
+    // ========================================================
+    // TRAVA DE SEGURANÇA (PIN DE 4 DÍGITOS)
+    // ========================================================
+    if (window.DrTrocoSeguranca && typeof window.DrTrocoSeguranca.verificarPIN === 'function') {
+        try {
+            const motivo = registro.categoria === "venda" 
+                ? "Autorizar Exclusão de Venda" 
+                : "Autorizar Exclusão de Movimentação";
+            await window.DrTrocoSeguranca.verificarPIN(motivo);
+        } catch (e) {
+            return; // Se o PIN falhar ou for cancelado, a exclusão para aqui.
+        }
+    }
+
     const nomeTipo = registro.categoria === "venda" ? "esta venda" :
         (registro.categoria === "entrada" ? "esta entrada" : "esta saída");
 
