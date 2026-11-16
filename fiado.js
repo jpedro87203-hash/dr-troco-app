@@ -893,6 +893,35 @@
       mostrarNotificacao('Pagamento registrado: ' + formatarDinheiro(valorC));
       renderizarTudo();
       abrirDetalhes(cliente.id);
+
+      // ======================================================
+      // NOVO: ENVIAR RECIBO DE PAGAMENTO VIA WHATSAPP
+      // ======================================================
+      const novoSaldo = obterSaldo(cliente);
+      const dataFormatada = new Date().toLocaleDateString('pt-BR');
+      const formasNomes = { dinheiro: 'Dinheiro', pix: 'Pix', debito: 'Débito', credito: 'Crédito' };
+      
+      let msgZap = `*Dr. Troco - Recibo de Pagamento*\n`;
+      msgZap += `Data: ${dataFormatada}\n`;
+      msgZap += `Cliente: ${cliente.nome}\n`;
+      msgZap += `--------------------------------\n`;
+      msgZap += `Valor Pago: *${formatarDinheiro(valorC)}*\n`;
+      msgZap += `Forma: ${formasNomes[forma] || forma}\n`;
+      msgZap += `*Saldo Devedor Restante: ${formatarDinheiro(novoSaldo)}*\n`;
+      msgZap += `--------------------------------\nObrigado! 🙏`;
+
+      const enviarZap = confirm('Pagamento registrado!\n\nDeseja enviar o recibo via WhatsApp?');
+      
+      if (enviarZap) {
+        let numFinal = "";
+        if (cliente.telefone) {
+            const num = String(cliente.telefone).replace(/\D/g, '');
+            numFinal = num.length <= 11 ? '55' + num : num;
+        }
+        window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(msgZap)}`, '_blank');
+      }
+      // ======================================================
+
     } catch (err) {
       console.error('[Fiado]', err);
       mostrarNotificacao(err.message || 'Falha ao registrar pagamento.', true);
