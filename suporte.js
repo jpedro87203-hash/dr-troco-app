@@ -8,9 +8,9 @@
   if (window.__drTrocoSuporteInicializado) return;
   window.__drTrocoSuporteInicializado = true;
 
-  // ⚠️ CONFIGURE AQUI OS SEUS DADOS DE ATENDIMENTO
-  const WHATSAPP_SUPORTE = "98988-415030"; // Coloque o DDI + DDD + Número (ex: 55 para Brasil)
-  const EMAIL_SUPORTE = "jpedro87203@gmail.com"; // Coloque o seu e-mail real
+  // ⚠️ CONFIGURADO: DDI 55 + DDD 98 + Número (sem hífens)
+  const WHATSAPP_SUPORTE = "5598988415030"; 
+  const EMAIL_SUPORTE = "jpedro87203@gmail.com";
 
   // ==========================================
   // 1. CRIAR ESTILOS DO BOTÃO E DO MODAL
@@ -19,8 +19,8 @@
   style.innerHTML = `
     #btn-suporte-flutuante {
       position: fixed;
-      bottom: 85px; /* Fica acima do menu inferior */
-      left: 15px;
+      bottom: 150px; /* Subiu para ficar acima da barra de vendas */
+      right: 15px;   /* Mudou para o lado direito da tela */
       width: 48px;
       height: 48px;
       border-radius: 50%;
@@ -164,7 +164,6 @@
       estado: "Não informado"
     };
 
-    // Tenta buscar do Supabase primeiro
     try {
       const client = window.supabaseClient;
       if (client) {
@@ -190,7 +189,7 @@
               dados.cidade = detalhesRes.data.cidade || dados.cidade;
               dados.estado = detalhesRes.data.estado || dados.estado;
             }
-            return dados; // Retorna os dados do Supabase com sucesso
+            return dados;
           }
         }
       }
@@ -198,7 +197,6 @@
       console.warn("Falha ao buscar dados no Supabase, usando cache local.", e);
     }
 
-    // Fallback: Se falhar (offline) ou não achar, tenta o localStorage
     try {
       const est = JSON.parse(localStorage.getItem('drTroco_estabelecimento') || '{}');
       if (est.nomeEstabelecimento) dados.nome = est.nomeEstabelecimento;
@@ -220,16 +218,13 @@
     const btnWa = document.getElementById('linkSupWhatsApp');
     const btnEm = document.getElementById('linkSupEmail');
     
-    // Reseta o modal
     document.getElementById('modalSuporte').classList.add('aberto');
     textoEl.textContent = "Buscando seus dados...";
     btnWa.style.display = 'none';
     btnEm.style.display = 'none';
 
-    // Busca os dados
     const dados = await obterDadosLoja();
 
-    // Monta a mensagem
     const texto = `Olá, equipe Dr. Troco! Preciso de suporte.\n\n` +
                   `🏪 *Dados da Loja:*\n` +
                   `*Nome:* ${dados.nome}\n` +
@@ -241,11 +236,9 @@
     const textoCodificado = encodeURIComponent(texto);
     const assuntoCodificado = encodeURIComponent(`Suporte Dr. Troco - ${dados.nome}`);
 
-    // Atualiza os links
     btnWa.href = `https://wa.me/${WHATSAPP_SUPORTE}?text=${textoCodificado}`;
     btnEm.href = `mailto:${EMAIL_SUPORTE}?subject=${assuntoCodificado}&body=${textoCodificado}`;
 
-    // Exibe os botões
     textoEl.textContent = "Nossa equipe está pronta para te atender. Escolha como deseja falar com o suporte:";
     btnWa.style.display = 'flex';
     btnEm.style.display = 'flex';
