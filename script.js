@@ -1544,22 +1544,53 @@ async function confirmarVenda() {
 
     fecharModalOverlay(modalConfirmarVenda);
 
+    let statusMsg = "";
     if (vendaOk) {
-        alert(isFiado
-            ? `Venda fiada registrada para ${clienteFiado.nome}!`
-            : 'Venda registrada com sucesso!');
+        statusMsg = isFiado ? `Venda fiada registrada para ${clienteFiado.nome}!` : 'Venda registrada com sucesso!';
     } else if (offlineDetectado) {
-        alert(
-            'Você está offline. A venda foi salva no aparelho e o estoque foi baixado localmente.\n\n' +
-            'Quando a conexão voltar, a venda será sincronizada.'
-        );
+        statusMsg = 'Você está offline. A venda foi salva no aparelho e o estoque foi baixado localmente.';
     } else {
-        alert(
-            'A venda foi salva no aparelho, mas o envio para a nuvem falhou.\n\n' +
-            'Motivo: ' + motivoFalha + '\n\n' +
-            'Ela será sincronizada automaticamente quando a conexão voltar.'
-        );
+        statusMsg = 'A venda foi salva no aparelho, mas o envio para a nuvem falhou. Motivo: ' + motivoFalha;
     }
+
+    // ======================================================
+    // NOVO: GERAR E ENVIAR COMPROVANTE VIA WHATSAPP
+    // ======================================================
+    let msgZap = `*Dr. Troco - Comprovante*\n`;
+    msgZap += `Data: ${dataHora.data} às ${dataHora.hora.substring(0, 5)}\n`;
+    msgZap += `--------------------------------\n`;
+
+    venda.produtos.forEach(p => {
+        msgZap += `▪️ ${p.quantidade}x ${p.nome} - ${formatarReal(p.preco * p.quantidade)}\n`;
+    });
+    if (venda.valorAvulso > 0) {
+        msgZap += `▪️ Venda Avulsa - ${formatarReal(venda.valorAvulso)}\n`;
+    }
+
+    msgZap += `--------------------------------\n`;
+    msgZap += `*Total: ${formatarReal(venda.total)}*\n`;
+    msgZap += `Pagamento: ${nomeFormaPagamento(venda.formaPagamento)}\n`;
+
+    if (isFiado) {
+        msgZap += `Pago na hora: ${formatarReal(venda.fiado.totalPago)}\n`;
+        msgZap += `*Saldo Devedor Restante: ${formatarReal(venda.fiado.saldoDevedor)}*\n`;
+    } else if (venda.formaPagamento === 'dinheiro') {
+        msgZap += `Recebido: ${formatarReal(venda.valorRecebido)}\n`;
+        msgZap += `Troco: ${formatarReal(venda.troco)}\n`;
+    }
+    msgZap += `--------------------------------\nObrigado pela preferência! 🙏`;
+
+    const enviarZap = confirm(`${statusMsg}\n\nDeseja enviar o comprovante para o cliente via WhatsApp?`);
+
+    if (enviarZap) {
+        let numFinal = "";
+        if (isFiado && clienteFiado && clienteFiado.telefone) {
+            const num = String(clienteFiado.telefone).replace(/\D/g, '');
+            numFinal = num.length <= 11 ? '55' + num : num;
+        }
+        window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(msgZap)}`, '_blank');
+    }
+    // ======================================================
 
     vendaEmProcessamento = false;
     if (btnConfirmarVenda) btnConfirmarVenda.disabled = false;
@@ -1719,4 +1750,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciarCalculadora, { once: true });
 } else {
     iniciarCalculadora();
-                              }
+    }
