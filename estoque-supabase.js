@@ -1,4 +1,3 @@
-
 // ======================================================
 // DR. TROCO — INTEGRAÇÃO DO ESTOQUE COM SUPABASE
 // ======================================================
@@ -141,6 +140,8 @@ window.EstoqueSupabase = (() => {
       nome: p.nome,
       codigo: p.codigo,
       preco: p.preco,
+      precoCusto: p.preco_custo, // NOVO
+      qtdEmbalagem: p.qtd_embalagem, // NOVO
       tipo: p.tipo,
       estoqueMinimo: p.estoque_minimo,
       quantidade: p.quantidade,
@@ -170,6 +171,8 @@ window.EstoqueSupabase = (() => {
       nome: produto.nome,
       codigo: produto.codigo || null,
       preco: Number(produto.preco) || 0,
+      preco_custo: Number(produto.precoCusto) || 0, // NOVO
+      qtd_embalagem: Number(produto.qtdEmbalagem) || 1, // NOVO
       tipo: produto.tipo || null,
       estoque_minimo: Number(produto.estoqueMinimo) || 0,
       quantidade: Number(produto.quantidade) || 0,
@@ -294,8 +297,6 @@ window.EstoqueSupabase = (() => {
 
   // ----------------------------------------------------
   // CARREGAR HISTÓRICO DE MOVIMENTAÇÕES
-  // Aceita filtro por data inicial e data final.
-  // Carrega em páginas para não limitar o histórico.
   // ----------------------------------------------------
 
   async function carregarMovimentacoes(opcoes = {}) {
@@ -307,25 +308,15 @@ window.EstoqueSupabase = (() => {
 
     const formatoData = /^\d{4}-\d{2}-\d{2}$/;
 
-    if (
-      dataInicial &&
-      !formatoData.test(dataInicial)
-    ) {
+    if (dataInicial && !formatoData.test(dataInicial)) {
       throw new Error("Data inicial inválida.");
     }
 
-    if (
-      dataFinal &&
-      !formatoData.test(dataFinal)
-    ) {
+    if (dataFinal && !formatoData.test(dataFinal)) {
       throw new Error("Data final inválida.");
     }
 
-    if (
-      dataInicial &&
-      dataFinal &&
-      dataInicial > dataFinal
-    ) {
+    if (dataInicial && dataFinal && dataInicial > dataFinal) {
       throw new Error(
         "A data inicial não pode ser posterior à data final."
       );
@@ -371,7 +362,6 @@ window.EstoqueSupabase = (() => {
       }
 
       const pagina = data || [];
-
       registros = registros.concat(pagina);
 
       if (pagina.length < tamanhoPagina) {
