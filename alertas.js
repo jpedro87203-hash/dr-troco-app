@@ -14,6 +14,50 @@
 
   if (!area && !badge) return;
 
+  let audioCtxAlerta = null;
+  let ultimoSomTocado = 0; // Evita que o som toque repetidamente em curto espaço de tempo
+
+  // ======================================================
+  // FUNÇÃO PARA TOCAR O SOM DO ALERTA
+  // ======================================================
+  function tocarSomAlerta() {
+    const agoraTimestamp = Date.now();
+    // Só toca o som se passaram pelo menos 5 segundos desde o último aviso
+    if (agoraTimestamp - ultimoSomTocado < 5000) return;
+
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      
+      if (!audioCtxAlerta) audioCtxAlerta = new AudioCtx();
+      if (audioCtxAlerta.state === 'suspended') audioCtxAlerta.resume();
+
+      const tempo = audioCtxAlerta.currentTime;
+      
+      // Toca duas notas rápidas (tipo um "bip-bip" de atenção)
+      [880, 1100].forEach((frequencia, index) => {
+        const osc = audioCtxAlerta.createOscillator();
+        const ganho = audioCtxAlerta.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(frequencia, tempo + (index * 0.15));
+
+        ganho.gain.setValueAtTime(0.0001, tempo + (index * 0.15));
+        ganho.gain.exponentialRampToValueAtTime(0.2, tempo + (index * 0.15) + 0.02);
+        ganho.gain.exponentialRampToValueAtTime(0.0001, tempo + (index * 0.15) + 0.15);
+
+        osc.connect(ganho);
+        ganho.connect(audioCtxAlerta.destination);
+        osc.start(tempo + (index * 0.15));
+        osc.stop(tempo + (index * 0.15) + 0.15);
+      });
+
+      ultimoSomTocado = agoraTimestamp;
+    } catch (e) {
+      console.log('Navegador bloqueou o áudio automático.', e);
+    }
+  }
+
   const estado = {
     carregando: false,
     usuario: null,
@@ -61,10 +105,9 @@
     return user;
   }
 
-  /* ---------- NOTIFICAÇÕES (CORRIGIDO) ---------- */
+  /* ---------- NOTIFICAÇÕES ---------- */
 
   async function solicitarPermissaoNotificacao() {
-    // PROTEÇÃO: Verifica se a API existe no navegador
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
       console.warn("Este navegador não suporta notificações push.");
       return;
@@ -87,31 +130,28 @@
   }
 
   async function dispararNotificacao(titulo, corpo) {
-    // PROTEÇÃO: Evita quebrar o código caso o navegador não suporte
     if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
     if (Notification.permission !== "granted") return;
 
-    // Verifica o bloqueio de tempo (não notificar se já notificou nas últimas 4 horas)
     const agora = Date.now();
     const ultimaNotificacao = parseInt(localStorage.getItem('drTroco_ultimaNotificacao') || '0', 10);
     const quatroHoras = 4 * 60 * 60 * 1000;
 
     if (agora - ultimaNotificacao < quatroHoras) {
-      return; // Ainda está no período de silêncio
+      return;
     }
 
     try {
       const reg = await navigator.serviceWorker.ready;
       reg.showNotification(titulo, {
         body: corpo,
-        icon: '/icons/icon-192.png', // Certifique-se que este caminho existe
+        icon: '/icons/icon-192.png',
         badge: '/icons/icon-192.png',
-        vibrate: [200, 100, 200], // Padrão de vibração do celular
+        vibrate: [200, 100, 200],
         tag: 'dr-troco-alertas',
         renotify: true
       });
 
-      // Salva o horário para não spammar
       localStorage.setItem('drTroco_ultimaNotificacao', agora.toString());
 
     } catch (erro) {
@@ -119,7 +159,6 @@
     }
   }
 
-  // Pede permissão assim que o usuário clicar em qualquer lugar da tela pela 1ª vez
   document.addEventListener('click', function pedirPermissao() {
     solicitarPermissaoNotificacao();
     document.removeEventListener('click', pedirPermissao);
@@ -289,6 +328,13 @@
 
     atualizarBadge(totalAlertas);
 
+    // ======================================================
+    // NOVO: TOCAR O SOM SE HOUVER ALERTAS
+    // ======================================================
+    if (totalAlertas > 0) {
+      tocarSomAlerta();
+    }
+
     // DISPARAR NOTIFICAÇÃO NO CELULAR
     if (totalAlertas > 0) {
       let tituloNotificacao = "Dr. Troco - Avisos";
@@ -375,6 +421,8 @@
         validade: { vencidos: estoque.vencidos || [], vencendo: estoque.vencendo || [] },
         fiado: { antigos: fiado.antigos || [], totalDevido: fiado.totalDevido || 0 }
       };
+      
+      estado.carregando = false; // Libera antes de renderizar para o som funcionar
       renderizar();
     } catch (err) {
       console.error('[Alertas] Erro ao carregar:', err);
