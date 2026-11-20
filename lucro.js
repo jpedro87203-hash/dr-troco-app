@@ -88,7 +88,6 @@
   }
 
   async function garantirDados() {
-    // Aguarda fornecedores e contas carregarem (APIs expostas pelos módulos)
     const tarefas = [];
     if (window.DrTrocoFornecedores?.carregar) tarefas.push(window.DrTrocoFornecedores.carregar());
     if (window.DrTrocoContas?.carregar) tarefas.push(window.DrTrocoContas.carregar());
