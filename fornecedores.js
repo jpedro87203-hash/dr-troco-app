@@ -468,6 +468,12 @@
         line-height:1.5; margin-bottom:14px; }
       .frn-carregando { padding:20px; text-align:center; color:#718076;
         font-size:13px; }
+      .frn-margem-box {
+        background:#eaf8f1; border:1px solid #cfeadb; padding:12px;
+        border-radius:10px; font-size:13px; color:#168b53;
+        text-align:center; display:grid; gap:4px;
+      }
+      .frn-margem-detalhe { font-size:12px; color:#4b5f53; font-weight:600; }
     `;
     document.head.appendChild(s);
   }
@@ -647,7 +653,7 @@
   }
 
   // ======================================================
-  // NOVA LÓGICA DE COMPRA (FARDO/CAIXA)
+  // COMPRA (FARDO/CAIXA) + PREÇO DE VENDA E MARGEM
   // ======================================================
   function abrirFormularioCompra(fornecedorId) {
     const fornecedor = estado.dados.find(f => f.id === fornecedorId);
@@ -669,7 +675,6 @@
           <datalist id="frnListaProdutos">${opcoes}</datalist>
         </div>
 
-        <!-- NOVOS CAMPOS DE EMBALAGEM -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div class="frn-campo">
               <label for="frnQtdFardos">Qtd. de fardos/caixas *</label>
@@ -681,15 +686,23 @@
             </div>
         </div>
 
-        <div class="frn-campo">
-          <label for="frnPrecoFardo">Preço do fardo/caixa (R$) *</label>
-          <input id="frnPrecoFardo" type="number" min="0.01" step="0.01"
-            inputmode="decimal" required placeholder="0,00">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="frn-campo">
+              <label for="frnPrecoFardo">Preço do fardo/caixa (R$) *</label>
+              <input id="frnPrecoFardo" type="number" min="0.01" step="0.01"
+                inputmode="decimal" required placeholder="0,00">
+            </div>
+            <div class="frn-campo">
+              <label for="frnPrecoVendaUnid">Preço de venda unid. (R$)</label>
+              <input id="frnPrecoVendaUnid" type="number" min="0" step="0.01"
+                inputmode="decimal" placeholder="Opcional">
+            </div>
         </div>
 
-        <div style="background: #eaf8f1; padding: 12px; border-radius: 10px; font-size: 13px; color: #168b53; font-weight: bold; text-align: center; margin-bottom: 5px;">
-            Total a pagar: R$ <span id="frnTotalCalculado">0,00</span><br>
-            <small style="font-weight: normal; color: #607166;">(Custo por unidade: R$ <span id="frnCustoUnitario">0,00</span>)</small>
+        <div class="frn-margem-box">
+            <strong>Total a pagar: R$ <span id="frnTotalCalculado">0,00</span></strong>
+            <span class="frn-margem-detalhe">Custo por unidade: R$ <span id="frnCustoUnitario">0,00</span> (<span id="frnTotalUnidades">1</span> un.)</span>
+            <span class="frn-margem-detalhe" id="frnInfoMargem">Informe o preço de venda para calcular a margem</span>
         </div>
 
         <div class="frn-campo">
@@ -712,24 +725,57 @@
       compraFornecedorId = null;
     });
 
-    // Cálculo em tempo real do total e custo unitário
+    const inputProduto = $('frnProduto');
     const inputFardos = $('frnQtdFardos');
     const inputUnidades = $('frnQtdUnidadesFardo');
     const inputPrecoFardo = $('frnPrecoFardo');
+    const inputPrecoVenda = $('frnPrecoVendaUnid');
+    const infoMargem = $('frnInfoMargem');
 
     function atualizarCalculosCompra() {
         const qtdFardos = Number(inputFardos.value) || 0;
-        const unidFardo = Number(inputUnidades.value) || 1;
+        const unidFardo = Math.max(1, Number(inputUnidades.value) || 1);
         const precoFardo = Number(inputPrecoFardo.value) || 0;
+        const precoVenda = Number(inputPrecoVenda.value) || 0;
 
+        const totalUnidades = qtdFardos * unidFardo;
         const total = qtdFardos * precoFardo;
         const custoUnit = precoFardo / unidFardo;
 
-        $('frnTotalCalculado').textContent = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-        $('frnCustoUnitario').textContent = custoUnit.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        $('frnTotalCalculado').textContent = total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        $('frnCustoUnitario').textContent = custoUnit.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        $('frnTotalUnidades').textContent = totalUnidades;
+
+        if (custoUnit > 0 && precoVenda > 0) {
+            const lucroUnit = precoVenda - custoUnit;
+            const margemPct = (lucroUnit / precoVenda) * 100;
+            const markupPct = (lucroUnit / custoUnit) * 100;
+            const lucroTotalLote = lucroUnit * totalUnidades;
+            const cor = lucroUnit >= 0 ? '#168b53' : '#b42318';
+
+            infoMargem.style.color = cor;
+            infoMargem.innerHTML = `Lucro/un.: <b>${formatarReal(lucroUnit)}</b> · Margem: <b>${margemPct.toFixed(1)}%</b> (Markup ${markupPct.toFixed(0)}%) · Lucro lote: <b>${formatarReal(lucroTotalLote)}</b>`;
+        } else if (custoUnit > 0) {
+            const sugestao30 = custoUnit * 1.3;
+            infoMargem.style.color = '#4b5f53';
+            infoMargem.textContent = `Sugestão (+30% markup): ${formatarReal(sugestao30)} / un.`;
+        } else {
+            infoMargem.style.color = '#4b5f53';
+            infoMargem.textContent = 'Informe o preço de venda para calcular a margem';
+        }
     }
 
-    [inputFardos, inputUnidades, inputPrecoFardo].forEach(el => el.addEventListener('input', atualizarCalculosCompra));
+    inputProduto.addEventListener('change', () => {
+        const prodExistente = listarProdutosEstoque().find(p => normalizar(p.nome) === normalizar(inputProduto.value));
+        if (prodExistente && Number(prodExistente.preco) > 0 && !inputPrecoVenda.value) {
+            inputPrecoVenda.value = Number(prodExistente.preco).toFixed(2);
+            atualizarCalculosCompra();
+        }
+    });
+
+    [inputFardos, inputUnidades, inputPrecoFardo, inputPrecoVenda].forEach(el =>
+      el.addEventListener('input', atualizarCalculosCompra)
+    );
 
     $('frnFormCompra').addEventListener('submit', salvarCompra);
     $('frnProduto').focus();
@@ -742,6 +788,7 @@
     const qtdFardos = Number($('frnQtdFardos').value);
     const qtdUnidadesFardo = Number($('frnQtdUnidadesFardo').value);
     const precoFardo = Number($('frnPrecoFardo').value);
+    const precoVendaUnid = Number($('frnPrecoVendaUnid')?.value) || 0;
     const dataCompra = $('frnData').value;
     const observacao = $('frnObs').value.trim();
 
@@ -759,6 +806,8 @@
     btn.disabled = true;
     btn.textContent = 'Salvando...';
 
+    let produtoJaExistia = false;
+
     try {
       // 1. Salva a compra no fornecedor
       await inserirCompra(compraFornecedorId, {
@@ -769,21 +818,26 @@
         observacao
       });
 
-      // 2. REPOSIÇÃO AUTOMÁTICA NO ESTOQUE
+      // 2. REPOSIÇÃO AUTOMÁTICA NO ESTOQUE + ATUALIZAÇÃO DE CUSTO E PREÇO DE VENDA
       try {
         const chaveEstoque = obterChaveEstoque();
         let estoque = listarProdutosEstoque();
         const produtoNomeNorm = normalizar(produto);
-        let index = estoque.findIndex(p => normalizar(p.nome) === produtoNomeNorm);
+        const index = estoque.findIndex(p => normalizar(p.nome) === produtoNomeNorm);
+        produtoJaExistia = index >= 0;
 
         const dataHora = obterDataHoraAtual();
 
-        if (index >= 0) {
-          // Produto já existe: soma a quantidade
+        if (produtoJaExistia) {
           const prod = estoque[index];
           const qtdAnt = Number(prod.quantidade) || 0;
           const qtdNova = qtdAnt + quantidadeTotal;
           prod.quantidade = qtdNova;
+          prod.precoCusto = Number(precoUnitarioCalculado.toFixed(4));
+          prod.qtdEmbalagem = 1;
+          if (precoVendaUnid > 0) {
+            prod.preco = Number(precoVendaUnid.toFixed(2));
+          }
           prod.atualizadoEm = new Date().toISOString();
 
           localStorage.setItem(chaveEstoque, JSON.stringify(estoque));
@@ -802,14 +856,17 @@
             });
           }
         } else {
-          // Produto não existe: cadastra automaticamente
+          const precoVendaFinal = precoVendaUnid > 0
+            ? Number(precoVendaUnid.toFixed(2))
+            : Number((precoUnitarioCalculado * 1.3).toFixed(2));
+
           const novoProduto = {
             id: 'prod_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8),
             nome: produto,
             codigo: '',
-            preco: precoUnitarioCalculado, 
-            precoCusto: precoUnitarioCalculado, // Salva o custo unitário real
-            qtdEmbalagem: 1, // Comprado por unidade no estoque
+            preco: precoVendaFinal,
+            precoCusto: Number(precoUnitarioCalculado.toFixed(4)),
+            qtdEmbalagem: 1,
             tipo: 'nao_perecivel',
             estoqueMinimo: 5,
             quantidade: quantidadeTotal,
@@ -838,7 +895,7 @@
               hora: dataHora.hora
             });
           }
-          alert(`Compra registrada!\n\nO produto "${produto}" não existia e foi cadastrado automaticamente no estoque com ${quantidadeTotal} unidades.`);
+          alert(`Compra registrada!\n\nO produto "${produto}" foi cadastrado no estoque com ${quantidadeTotal} unidades (Custo: ${formatarReal(precoUnitarioCalculado)} | Venda: ${formatarReal(precoVendaFinal)}).`);
         }
       } catch (errEstoque) {
         console.error('[Fornecedores] Falha ao atualizar estoque:', errEstoque);
@@ -848,8 +905,8 @@
       compraFornecedorId = null;
       renderizar();
       
-      if (index >= 0) {
-         alert('Compra registrada e estoque reposto com sucesso!');
+      if (produtoJaExistia) {
+         alert('Compra registrada, custo atualizado e estoque reposto com sucesso!');
       }
 
     } catch (err) {
