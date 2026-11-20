@@ -202,10 +202,8 @@
 
         estado.pronto = true;
 
-        // Migração oportunista do localStorage (se ainda houver dados antigos)
         await migrarLocaisSeNecessario();
 
-        // Cache local (apenas espelho)
         try { localStorage.setItem(CHAVE_LOCAL, JSON.stringify(estado.dados)); } catch (e) {}
 
         return estado.dados;
@@ -214,7 +212,6 @@
         console.error('[Fornecedores] Falha ao carregar:', err);
         estado.erro = err;
 
-        // fallback localStorage
         if (estado.dados.length === 0) {
           try {
             const bruto = localStorage.getItem(CHAVE_LOCAL);
@@ -290,10 +287,8 @@
       }
     }
 
-    // Recarrega dados pós-migração
     if (idsFornecedores.size > estado.dados.length || idsCompras.size > 0) {
       estado.pronto = false;
-      // chama recarregamento interno (sem migrar de novo)
       const [fResp, cResp] = await Promise.all([
         supa.from(TAB_FORN).select('*').eq('usuario_id', user.id).order('nome', { ascending: true }),
         supa.from(TAB_COMPRAS).select('*').eq('usuario_id', user.id).order('data', { ascending: true })
@@ -361,7 +356,6 @@
 
   async function removerFornecedor(id) {
     await getUsuario();
-    // deletar compras primeiro (por segurança, caso cascade não exista)
     const { error: e1 } = await getSupa().from(TAB_COMPRAS)
       .delete().eq('fornecedor_id', String(id)).eq('usuario_id', estado.usuario.id);
     if (e1) throw new Error('Falha ao excluir compras: ' + e1.message);
@@ -382,8 +376,8 @@
     const nova = {
       id: 'compra-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
       produto: String(compra.produto).trim(),
-      quantidade: Number(compra.quantidade) || 0,
-      precoUnitario: Number(compra.precoUnitario) || 0,
+      quantidade: Number(compra.quantidade) || 0, // Quantidade total de unidades
+      precoUnitario: Number(compra.precoUnitario) || 0, // Custo por unidade
       data: compra.data || dataHojeISO(),
       observacao: String(compra.observacao || '').trim()
     };
@@ -548,7 +542,7 @@
             <span class="frn-compra-nome">${escaparHTML(c.produto)}</span>
             <span class="frn-compra-total">${formatarReal(Number(c.quantidade) * Number(c.precoUnitario))}</span>
           </div>
-          <span>${Number(c.quantidade)} × ${formatarReal(c.precoUnitario)} · ${formatarData(c.data)}</span>
+          <span>${Number(c.quantidade)} un. × ${formatarReal(c.precoUnitario)} · ${formatarData(c.data)}</span>
           ${c.observacao ? `<div style="margin-top:4px">${escaparHTML(c.observacao)}</div>` : ''}
         </div>`).join('');
 
@@ -652,6 +646,9 @@
     }
   }
 
+  // ======================================================
+  // NOVA LÓGICA DE COMPRA (FARDO/CAIXA)
+  // ======================================================
   function abrirFormularioCompra(fornecedorId) {
     const fornecedor = estado.dados.find(f => f.id === fornecedorId);
     if (!fornecedor) return;
@@ -671,15 +668,30 @@
             placeholder="Ex.: Arroz 5kg">
           <datalist id="frnListaProdutos">${opcoes}</datalist>
         </div>
-        <div class="frn-campo">
-          <label for="frnQtd">Quantidade *</label>
-          <input id="frnQtd" type="number" min="1" step="1" required value="1">
+
+        <!-- NOVOS CAMPOS DE EMBALAGEM -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="frn-campo">
+              <label for="frnQtdFardos">Qtd. de fardos/caixas *</label>
+              <input id="frnQtdFardos" type="number" min="1" step="1" required value="1">
+            </div>
+            <div class="frn-campo">
+              <label for="frnQtdUnidadesFardo">Unid. por fardo *</label>
+              <input id="frnQtdUnidadesFardo" type="number" min="1" step="1" required value="1">
+            </div>
         </div>
+
         <div class="frn-campo">
-          <label for="frnPreco">Preço unitário de compra (R$) *</label>
-          <input id="frnPreco" type="number" min="0.01" step="0.01"
+          <label for="frnPrecoFardo">Preço do fardo/caixa (R$) *</label>
+          <input id="frnPrecoFardo" type="number" min="0.01" step="0.01"
             inputmode="decimal" required placeholder="0,00">
         </div>
+
+        <div style="background: #eaf8f1; padding: 12px; border-radius: 10px; font-size: 13px; color: #168b53; font-weight: bold; text-align: center; margin-bottom: 5px;">
+            Total a pagar: R$ <span id="frnTotalCalculado">0,00</span><br>
+            <small style="font-weight: normal; color: #607166;">(Custo por unidade: R$ <span id="frnCustoUnitario">0,00</span>)</small>
+        </div>
+
         <div class="frn-campo">
           <label for="frnData">Data da compra</label>
           <input id="frnData" type="date" value="${dataHojeISO()}" required>
@@ -699,22 +711,48 @@
       area.innerHTML = '';
       compraFornecedorId = null;
     });
+
+    // Cálculo em tempo real do total e custo unitário
+    const inputFardos = $('frnQtdFardos');
+    const inputUnidades = $('frnQtdUnidadesFardo');
+    const inputPrecoFardo = $('frnPrecoFardo');
+
+    function atualizarCalculosCompra() {
+        const qtdFardos = Number(inputFardos.value) || 0;
+        const unidFardo = Number(inputUnidades.value) || 1;
+        const precoFardo = Number(inputPrecoFardo.value) || 0;
+
+        const total = qtdFardos * precoFardo;
+        const custoUnit = precoFardo / unidFardo;
+
+        $('frnTotalCalculado').textContent = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        $('frnCustoUnitario').textContent = custoUnit.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    }
+
+    [inputFardos, inputUnidades, inputPrecoFardo].forEach(el => el.addEventListener('input', atualizarCalculosCompra));
+
     $('frnFormCompra').addEventListener('submit', salvarCompra);
     $('frnProduto').focus();
   }
 
   async function salvarCompra(evento) {
     evento.preventDefault();
+    
     const produto = $('frnProduto').value.trim();
-    const quantidade = Number($('frnQtd').value);
-    const precoUnitario = Number($('frnPreco').value);
+    const qtdFardos = Number($('frnQtdFardos').value);
+    const qtdUnidadesFardo = Number($('frnQtdUnidadesFardo').value);
+    const precoFardo = Number($('frnPrecoFardo').value);
     const dataCompra = $('frnData').value;
     const observacao = $('frnObs').value.trim();
 
     if (!produto) { alert('Informe o produto.'); return; }
-    if (!(quantidade > 0)) { alert('Quantidade inválida.'); return; }
-    if (!(precoUnitario > 0)) { alert('Preço inválido.'); return; }
+    if (!(qtdFardos > 0)) { alert('Quantidade de fardos inválida.'); return; }
+    if (!(qtdUnidadesFardo > 0)) { alert('Quantidade por fardo inválida.'); return; }
+    if (!(precoFardo > 0)) { alert('Preço do fardo inválido.'); return; }
     if (!dataCompra) { alert('Informe a data.'); return; }
+
+    const quantidadeTotal = qtdFardos * qtdUnidadesFardo;
+    const precoUnitarioCalculado = precoFardo / qtdUnidadesFardo;
 
     const btn = evento.target.querySelector('button[type="submit"]');
     const textoOriginal = btn.textContent;
@@ -724,7 +762,11 @@
     try {
       // 1. Salva a compra no fornecedor
       await inserirCompra(compraFornecedorId, {
-        produto, quantidade, precoUnitario, data: dataCompra, observacao
+        produto, 
+        quantidade: quantidadeTotal, 
+        precoUnitario: precoUnitarioCalculado, 
+        data: dataCompra, 
+        observacao
       });
 
       // 2. REPOSIÇÃO AUTOMÁTICA NO ESTOQUE
@@ -740,20 +782,19 @@
           // Produto já existe: soma a quantidade
           const prod = estoque[index];
           const qtdAnt = Number(prod.quantidade) || 0;
-          const qtdNova = qtdAnt + quantidade;
+          const qtdNova = qtdAnt + quantidadeTotal;
           prod.quantidade = qtdNova;
           prod.atualizadoEm = new Date().toISOString();
 
           localStorage.setItem(chaveEstoque, JSON.stringify(estoque));
 
-          // Sincroniza com o Supabase
           if (window.EstoqueSupabase && typeof window.EstoqueSupabase.salvarProduto === 'function') {
             await window.EstoqueSupabase.salvarProduto(prod);
             await window.EstoqueSupabase.salvarMovimentacao({
               produtoId: prod.id,
               produtoNome: prod.nome,
               tipo: 'entrada',
-              quantidade: quantidade,
+              quantidade: quantidadeTotal,
               quantidadeAnterior: qtdAnt,
               quantidadeNova: qtdNova,
               data: dataHora.dataChave,
@@ -766,10 +807,12 @@
             id: 'prod_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8),
             nome: produto,
             codigo: '',
-            preco: precoUnitario, // usa o preço de compra como preço de venda inicial
+            preco: precoUnitarioCalculado, 
+            precoCusto: precoUnitarioCalculado, // Salva o custo unitário real
+            qtdEmbalagem: 1, // Comprado por unidade no estoque
             tipo: 'nao_perecivel',
             estoqueMinimo: 5,
-            quantidade: quantidade,
+            quantidade: quantidadeTotal,
             validade: '',
             foto: '',
             criadoEm: new Date().toISOString(),
@@ -778,7 +821,6 @@
           estoque.push(novoProduto);
           localStorage.setItem(chaveEstoque, JSON.stringify(estoque));
 
-          // Sincroniza com o Supabase
           if (window.EstoqueSupabase && typeof window.EstoqueSupabase.salvarProduto === 'function') {
             const salvo = await window.EstoqueSupabase.salvarProduto(novoProduto);
             if (salvo && salvo.id && salvo.id !== novoProduto.id) {
@@ -789,14 +831,14 @@
               produtoId: novoProduto.id,
               produtoNome: novoProduto.nome,
               tipo: 'cadastro',
-              quantidade: quantidade,
+              quantidade: quantidadeTotal,
               quantidadeAnterior: 0,
-              quantidadeNova: quantidade,
+              quantidadeNova: quantidadeTotal,
               data: dataHora.dataChave,
               hora: dataHora.hora
             });
           }
-          alert(`Compra registrada!\n\nO produto "${produto}" não existia e foi cadastrado automaticamente no estoque com ${quantidade} unidades.`);
+          alert(`Compra registrada!\n\nO produto "${produto}" não existia e foi cadastrado automaticamente no estoque com ${quantidadeTotal} unidades.`);
         }
       } catch (errEstoque) {
         console.error('[Fornecedores] Falha ao atualizar estoque:', errEstoque);
@@ -806,9 +848,8 @@
       compraFornecedorId = null;
       renderizar();
       
-      // Se não caiu no alerta de "produto novo", avisa que deu tudo certo
-      if (produtoNomeNorm === normalizar(produto)) {
-         alert('Compra registrada e estoque atualizado com sucesso!');
+      if (index >= 0) {
+         alert('Compra registrada e estoque reposto com sucesso!');
       }
 
     } catch (err) {
