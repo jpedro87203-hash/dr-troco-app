@@ -20,7 +20,7 @@ let produtoSelecionadoMovimento = null;
 
 let tipoMovimentoAtual = "entrada";
 let filtroAtual = "todos";
-let filtroDataHistorico = ""; // NOVO: Filtro de data para o histórico
+let filtroDataHistorico = ""; 
 
 /* =========================================================
 LEITOR DE CÓDIGO DE BARRAS — CONTROLE
@@ -347,6 +347,8 @@ function normalizarProduto(produto) {
         nome: String(produto.nome ?? produto.nomeProduto ?? "").trim(),
         codigo: String(codigoSalvo).trim(),
         preco: numeroSeguro(produto.preco ?? produto.precoUnitario ?? produto.precoProduto),
+        precoCusto: numeroSeguro(produto.precoCusto ?? produto.preco_custo ?? 0), // NOVO
+        qtdEmbalagem: Math.max(1, Math.floor(numeroSeguro(produto.qtdEmbalagem ?? produto.qtd_embalagem ?? 1))), // NOVO
         tipo,
         estoqueMinimo: Math.max(0, Math.floor(numeroSeguro(produto.estoqueMinimo ?? produto.estoque_minimo, 5))),
         quantidade: Math.max(0, Math.floor(numeroSeguro(produto.quantidade ?? produto.estoque ?? produto.quantidadeInicial))),
@@ -506,6 +508,9 @@ function abrirCadastroProduto() {
     const preview = document.getElementById("previewFoto");
     const previewImg = document.getElementById("previewFotoImg");
     const campoCodigo = document.getElementById("codigoProduto");
+    const campoCusto = document.getElementById("precoCustoProduto");
+    const campoEmbalagem = document.getElementById("qtdEmbalagemProduto");
+    const campoMargem = document.getElementById("margemLucroProduto");
 
     if (produtoId) produtoId.value = "";
     if (titulo) titulo.textContent = "Cadastrar produto";
@@ -518,6 +523,10 @@ function abrirCadastroProduto() {
     if (validade) validade.value = "";
     if (preview) preview.style.display = "none";
     if (previewImg) previewImg.src = "";
+    
+    if (campoCusto) campoCusto.value = "0";
+    if (campoEmbalagem) campoEmbalagem.value = "1";
+    if (campoMargem) campoMargem.value = "";
 
     window._estoqueFotoSelecionada = undefined;
     codigoBarrasLido = "";
@@ -542,6 +551,10 @@ function abrirEdicaoProduto(id) {
     const titulo = document.getElementById("tituloModalProduto");
     const preview = document.getElementById("previewFoto");
     const previewImg = document.getElementById("previewFotoImg");
+    
+    const campoCusto = document.getElementById("precoCustoProduto");
+    const campoEmbalagem = document.getElementById("qtdEmbalagemProduto");
+    const campoMargem = document.getElementById("margemLucroProduto");
 
     if (produtoId) produtoId.value = produto.id;
     if (nome) nome.value = produto.nome;
@@ -557,6 +570,16 @@ function abrirEdicaoProduto(id) {
     }
     if (validade) validade.value = produto.validade || "";
     if (titulo) titulo.textContent = "Editar produto";
+
+    if (campoCusto) campoCusto.value = produto.precoCusto || 0;
+    if (campoEmbalagem) campoEmbalagem.value = produto.qtdEmbalagem || 1;
+    
+    if (campoMargem) {
+        const custoUnit = (produto.precoCusto || 0) / Math.max(1, produto.qtdEmbalagem || 1);
+        campoMargem.value = produto.preco > 0 
+            ? (((produto.preco - custoUnit) / produto.preco) * 100).toFixed(1) 
+            : "";
+    }
 
     if (produto.foto && preview && previewImg) {
         previewImg.src = produto.foto;
@@ -581,6 +604,8 @@ async function salvarProduto(event) {
     const codigoCampo = campoCodigo ? String(campoCodigo.value || "").trim() : "";
     const codigo = codigoCampo || String(codigoBarrasLido || "").trim();
     const preco = numeroSeguro(document.getElementById("precoProduto")?.value);
+    const precoCusto = numeroSeguro(document.getElementById("precoCustoProduto")?.value);
+    const qtdEmbalagem = Math.max(1, Math.floor(numeroSeguro(document.getElementById("qtdEmbalagemProduto")?.value)));
     const tipo = document.getElementById("tipoProduto")?.value || "nao_perecivel";
     const estoqueMinimo = Math.max(0, Math.floor(numeroSeguro(document.getElementById("estoqueMinimo")?.value, 5)));
     const quantidadeInput = document.getElementById("quantidadeInicial");
@@ -609,7 +634,7 @@ async function salvarProduto(event) {
             return;
         }
         produtos[indice] = {
-            ...produtos[indice], nome, codigo: String(codigo), preco, tipo,
+            ...produtos[indice], nome, codigo: String(codigo), preco, precoCusto, qtdEmbalagem, tipo,
             estoqueMinimo, validade, atualizadoEm: new Date().toISOString()
         };
         if (window._estoqueFotoSelecionada !== undefined) {
@@ -619,7 +644,7 @@ async function salvarProduto(event) {
     } else {
         eraNovo = true;
         produtoSalvo = {
-            id: gerarId(), nome, codigo: String(codigo), preco, tipo,
+            id: gerarId(), nome, codigo: String(codigo), preco, precoCusto, qtdEmbalagem, tipo,
             estoqueMinimo, quantidade, validade,
             foto: window._estoqueFotoSelecionada || "",
             criadoEm: new Date().toISOString(), atualizadoEm: new Date().toISOString()
@@ -662,6 +687,45 @@ async function salvarProduto(event) {
         renderizarProdutos();
         renderizarHistoricoMovimentacoes();
     }
+}
+
+/* =========================================================
+CÁLCULO AUTOMÁTICO DE MARGEM
+========================================================= */
+function configurarCalculoMargem() {
+    const precoCustoInput = document.getElementById("precoCustoProduto");
+    const qtdEmbalagemInput = document.getElementById("qtdEmbalagemProduto");
+    const precoVendaInput = document.getElementById("precoProduto");
+    const margemInput = document.getElementById("margemLucroProduto");
+
+    if (!precoCustoInput || !precoVendaInput || !margemInput) return;
+
+    function obterCustoUnitario() {
+        const custoTotal = numeroSeguro(precoCustoInput.value);
+        const qtd = Math.max(1, numeroSeguro(qtdEmbalagemInput?.value) || 1);
+        return custoTotal / qtd;
+    }
+
+    margemInput.addEventListener("input", () => {
+        const custoUnitario = obterCustoUnitario();
+        const margem = numeroSeguro(margemInput.value);
+        if (custoUnitario > 0 && margem < 100) {
+            const precoVenda = custoUnitario / (1 - (margem / 100));
+            precoVendaInput.value = precoVenda.toFixed(2);
+        }
+    });
+
+    precoVendaInput.addEventListener("input", () => {
+        const custoUnitario = obterCustoUnitario();
+        const venda = numeroSeguro(precoVendaInput.value);
+        if (venda > 0) {
+            const margem = ((venda - custoUnitario) / venda) * 100;
+            margemInput.value = margem.toFixed(1);
+        }
+    });
+
+    precoCustoInput.addEventListener("input", () => precoVendaInput.dispatchEvent(new Event('input')));
+    qtdEmbalagemInput?.addEventListener("input", () => precoVendaInput.dispatchEvent(new Event('input')));
 }
 
 /* =========================================================
@@ -915,6 +979,16 @@ function abrirDetalhes(id) {
         : `<div class="estoque-inicial">${escaparHTML(inicial)}</div>`;
     const validade = produto.validade ? formatarDataBR(produto.validade) : "Não informada";
     const tipo = produto.tipo === "perecivel" ? "Perecível" : "Não perecível";
+    
+    // Cálculo de Custo Unitário e Margem
+    const precoCusto = numeroSeguro(produto.precoCusto);
+    const qtdEmb = Math.max(1, numeroSeguro(produto.qtdEmbalagem));
+    const custoUnitario = precoCusto / qtdEmb;
+    
+    const margem = produto.preco > 0 
+        ? (((produto.preco - custoUnitario) / produto.preco) * 100).toFixed(1) 
+        : "0.0";
+    const corMargem = margem >= 0 ? '#147844' : '#a33a3a';
 
     container.innerHTML = `
         <div class="estoque-detalhes-topo">
@@ -926,9 +1000,14 @@ function abrirDetalhes(id) {
             </div>
         </div>
         <div class="estoque-status-detalhes ${status.classe}">${status.texto}</div>
+        
         <div class="estoque-detalhes">
             <div class="estoque-detalhe"><small>Quantidade</small><strong>${numeroSeguro(produto.quantidade)} un.</strong></div>
             <div class="estoque-detalhe"><small>Estoque mínimo</small><strong>${numeroSeguro(produto.estoqueMinimo)} un.</strong></div>
+            
+            <div class="estoque-detalhe"><small>Custo Unitário</small><strong>${formatarReal(custoUnitario)}</strong></div>
+            <div class="estoque-detalhe"><small>Margem de Lucro</small><strong style="color:${corMargem}">${margem}%</strong></div>
+            
             <div class="estoque-detalhe"><small>Tipo</small><strong>${tipo}</strong></div>
             <div class="estoque-detalhe"><small>Validade</small><strong>${validade}</strong></div>
             <div class="estoque-detalhe"><small>Valor em estoque</small><strong>${formatarReal(numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade))}</strong></div>
@@ -1070,13 +1149,12 @@ function renderizarHistoricoMovimentacoes() {
 
     const todasMovimentacoes = carregarMovimentacoes();
 
-    // Filtra para mostrar APENAS "entrada" e "saida" e pela DATA selecionada
     const movimentacoes = todasMovimentacoes.filter(mov => {
         const tipo = String(mov.tipo || "").toLowerCase();
         const ehEntradaOuSaida = tipo === "entrada" || tipo === "saida";
         const passaData = !filtroDataHistorico || String(mov.data || "").trim() === filtroDataHistorico;
         return ehEntradaOuSaida && passaData;
-    }).slice().reverse(); // Mais recentes primeiro
+    }).slice().reverse(); 
 
     if (!movimentacoes.length) {
         const msg = filtroDataHistorico 
@@ -1714,7 +1792,8 @@ function configurarBotoes() {
     const fecharLeitor = document.getElementById("btnFecharLeitorCodigo");
     
     configurarBotaoExportarPDF();
-    configurarFiltroHistorico(); // <-- NOVO AQUI
+    configurarFiltroHistorico(); 
+    configurarCalculoMargem(); // <-- NOVO
 
     if (cadastrar) cadastrar.addEventListener("click", abrirCadastroProduto);
     if (entrada) entrada.addEventListener("click", () => abrirMovimento("entrada"));
@@ -1839,4 +1918,4 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", inicializarEstoque);
 } else {
     inicializarEstoque();
-}
+            }
