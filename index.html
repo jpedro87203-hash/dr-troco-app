@@ -71,7 +71,7 @@
       gap: 10px;
       margin-top: 10px;
     }
-    
+
     /* O Grid do produto: Foto | Info | Preço/Lixo */
     .item-produto-venda {
       display: grid;
@@ -190,7 +190,6 @@
     }
     .btn-remover-produto:active { transform: scale(0.9); }
 
-
     /* =========================================================
        MODAL DE PRODUTOS (3 COLUNAS) — ESTRUTURA DE SCROLL
        ========================================================= */
@@ -211,8 +210,8 @@
     .modal-produtos-venda .modal-cabecalho { flex-shrink: 0; margin-bottom: 12px; }
 
     .modal-produtos-scroll-area {
-      flex: 1 1 0%; 
-      min-height: 0; 
+      flex: 1 1 0%;
+      min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
       overscroll-behavior: contain;
@@ -241,7 +240,7 @@
     }
 
     /* =========================================================
-       CARD DE PRODUTO DA GRADE (MODAL) 
+       CARD DE PRODUTO DA GRADE (MODAL)
        ========================================================= */
     .cartao-produto-grade {
       background: #ffffff; border: 1px solid rgba(39, 57, 69, 0.08); border-radius: 14px;
@@ -273,7 +272,7 @@
     .cartao-produto-preco { color: #16834d; font-size: 13px; font-weight: 900; width: 100%; margin-top: 1px; }
 
     .cartao-produto-acoes { margin-top: 8px; width: 100%; }
-    
+
     .controle-qtd-card {
       display: flex; align-items: center; justify-content: space-between;
       background: #f4f8fa; border: 1px solid #dbe4e8; border-radius: 8px;
@@ -578,34 +577,147 @@
 
   <script>
     // =========================================================
+    // HELPER DE MARGEM E CUSTO UNITÁRIO PARA VENDA (drTroco)
+    // =========================================================
+    window.DrTrocoMargem = (function () {
+      function num(v, d = 0) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : d;
+      }
+
+      function normalizar(txt) {
+        return String(txt || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .toLowerCase();
+      }
+
+      function lerEstoqueLocal() {
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('drTroco_estoque_') && !k.includes('_backup_')) {
+              const arr = JSON.parse(localStorage.getItem(k) || '[]');
+              if (Array.isArray(arr) && arr.length) return arr;
+            }
+          }
+          const base = JSON.parse(localStorage.getItem('drTroco_estoque') || '[]');
+          return Array.isArray(base) ? base : [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function custoUnitarioProduto(prod) {
+        if (!prod) return 0;
+        const custo = num(prod.precoCusto ?? prod.preco_custo ?? 0);
+        const emb = Math.max(1, Math.floor(num(prod.qtdEmbalagem ?? prod.qtd_embalagem ?? 1)));
+        // Se veio de compra por fardo (ex: precoCusto já unitário e qtdEmbalagem = 1), custo / 1 = custo.
+        // Se foi cadastrado com custo do fardo e qtdEmbalagem > 1, divide pelo tamanho da embalagem.
+        return custo > 0 ? custo / emb : 0;
+      }
+
+      function buscarProdutoNoEstoque(item) {
+        const lista = lerEstoqueLocal();
+        if (!lista.length || !item) return null;
+        if (item.id || item.produtoId) {
+          const alvoId = String(item.id || item.produtoId);
+          const porId = lista.find(p => String(p.id) === alvoId);
+          if (porId) return porId;
+        }
+        if (item.codigo) {
+          const porCod = lista.find(p => String(p.codigo || '').trim() === String(item.codigo).trim());
+          if (porCod) return porCod;
+        }
+        if (item.nome) {
+          const alvoNome = normalizar(item.nome);
+          return lista.find(p => normalizar(p.nome) === alvoNome) || null;
+        }
+        return null;
+      }
+
+      function calcularItemVenda(item) {
+        const qtd = Math.max(0, num(item?.quantidade ?? 1));
+        const precoVenda = num(item?.preco ?? item?.precoUnitario ?? 0);
+        const prodEstoque = buscarProdutoNoEstoque(item);
+        const custoUnitario = item?.custoUnitario !== undefined
+          ? num(item.custoUnitario)
+          : custoUnitarioProduto(prodEstoque);
+
+        const subtotalVenda = precoVenda * qtd;
+        const subtotalCusto = custoUnitario * qtd;
+        const lucroItem = subtotalVenda - subtotalCusto;
+        const margemPct = subtotalVenda > 0 ? (lucroItem / subtotalVenda) * 100 : 0;
+
+        return {
+          ...item,
+          custoUnitario: Number(custoUnitario.toFixed(4)),
+          subtotalCusto: Number(subtotalCusto.toFixed(2)),
+          lucroItem: Number(lucroItem.toFixed(2)),
+          margemPct: Number(margemPct.toFixed(1))
+        };
+      }
+
+      function enriquecerItens(itens) {
+        if (!Array.isArray(itens)) return [];
+        return itens.map(calcularItemVenda);
+      }
+
+      function resumirVenda(itens, valorAvulso = 0) {
+        const enriquecidos = enriquecerItens(itens);
+        const totalItensVenda = enriquecidos.reduce((acc, i) => acc + (num(i.preco) * num(i.quantidade || 1)), 0);
+        const totalCusto = enriquecidos.reduce((acc, i) => acc + num(i.subtotalCusto), 0);
+        const totalVenda = totalItensVenda + num(valorAvulso);
+        const lucroBruto = totalVenda - totalCusto;
+        const margemPct = totalVenda > 0 ? (lucroBruto / totalVenda) * 100 : 0;
+
+        return {
+          itens: enriquecidos,
+          totalVenda: Number(totalVenda.toFixed(2)),
+          totalCusto: Number(totalCusto.toFixed(2)),
+          lucroBruto: Number(lucroBruto.toFixed(2)),
+          margemPct: Number(margemPct.toFixed(1))
+        };
+      }
+
+      return {
+        custoUnitarioProduto,
+        calcularItemVenda,
+        enriquecerItens,
+        resumirVenda
+      };
+    })();
+
+    // =========================================================
     // LÓGICA DA BARRA FLUTUANTE (Mostrar/Esconder)
     // =========================================================
     document.addEventListener('DOMContentLoaded', function () {
       const lista = document.getElementById('listaProdutosVenda');
       const barra = document.getElementById('acoesVendaFixa');
-      
+
       if (lista && barra) {
         // Observa mudanças no carrinho para mostrar ou esconder a barra
         const observer = new MutationObserver(() => {
           const temItens = Array.from(lista.children).some(
             c => c.id !== 'produtosVendaVazio' && c.style.display !== 'none'
           );
-          
+
           // Também verifica se o input de valor avulso tem valor
           const valorAvulso = Number(document.getElementById('valorConta')?.value || 0);
-          
+
           if (temItens || valorAvulso > 0) {
             barra.classList.add('ativa');
           } else {
             barra.classList.remove('ativa');
           }
         });
-        
+
         observer.observe(lista, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
         document.getElementById('valorConta')?.addEventListener('input', () => {
           const temItens = lista.children.length > 1 || (lista.children.length === 1 && lista.children[0].id !== 'produtosVendaVazio');
           const valorAvulso = Number(document.getElementById('valorConta')?.value || 0);
-          
+
           if (temItens || valorAvulso > 0) {
             barra.classList.add('ativa');
           } else {
@@ -643,4 +755,4 @@
     });
   </script>
 </body>
-  </html>
+</html>
