@@ -140,8 +140,8 @@ window.EstoqueSupabase = (() => {
       nome: p.nome,
       codigo: p.codigo,
       preco: p.preco,
-      precoCusto: p.preco_custo, // NOVO
-      qtdEmbalagem: p.qtd_embalagem, // NOVO
+      precoCusto: p.preco_custo, // CUSTO REAL DO PRODUTO
+      qtdEmbalagem: p.qtd_embalagem, // QTD DO FARDO
       tipo: p.tipo,
       estoqueMinimo: p.estoque_minimo,
       quantidade: p.quantidade,
