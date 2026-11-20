@@ -104,6 +104,36 @@
     return new Map();
   }
 
+  // Converte o custo cadastrado no estoque para custo de UMA unidade.
+  // precoCusto representa o custo da embalagem inteira.
+  function obterCustoUnitarioEstoque(produto) {
+    if (!produto) return 0;
+
+    const custo = Number(produto.precoCusto ?? produto.preco_custo ?? 0);
+    const embalagemInformada = Number(
+      produto.qtdEmbalagem ?? produto.qtd_embalagem ?? 1
+    );
+    const quantidadeEmbalagem =
+      Number.isFinite(embalagemInformada) && embalagemInformada > 0
+        ? embalagemInformada
+        : 1;
+
+    if (!Number.isFinite(custo) || custo <= 0) return 0;
+    return custo / quantidadeEmbalagem;
+  }
+
+  function obterDataISO(valor) {
+    if (!valor) return '';
+    const texto = String(valor).trim();
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(texto)) return texto.slice(0, 10);
+
+    const brasileira = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (brasileira) return `${brasileira[3]}-${brasileira[2]}-${brasileira[1]}`;
+
+    return '';
+  }
+
   function calcularLucro(inicio, fim) {
     const vendas = obterVendas();
     const estoque = obterEstoque();
@@ -111,17 +141,15 @@
     const mapaCustos = construirMapaCustos();
 
     const estoqueMap = new Map();
-    estoque.forEach(p => estoqueMap.set(String(p.id), p));
+    estoque.forEach(p => {
+      if (p?.id !== undefined && p?.id !== null) {
+        estoqueMap.set(String(p.id), p);
+      }
+    });
 
     const vendasPeriodo = vendas.filter(v => {
-      const data = v.dataChave || v.data;
-      if (!data) return false;
-      let iso = data;
-      if (/^\d{2}\/\d{2}\/\d{4}$/.test(iso)) {
-        const [d, m, a] = iso.split('/');
-        iso = `${a}-${m}-${d}`;
-      }
-      return iso >= inicio && iso <= fim;
+      const iso = obterDataISO(v.dataChave || v.data);
+      return iso && iso >= inicio && iso <= fim;
     });
 
     let totalVendido = 0;
@@ -129,40 +157,73 @@
     const semCusto = new Map();
 
     vendasPeriodo.forEach(venda => {
-      const total = Number(venda.total || venda.valorConta || 0);
-      totalVendido += total;
+      const total = Number(venda.total ?? venda.valorConta ?? 0);
+      if (Number.isFinite(total)) totalVendido += total;
 
-      (venda.produtos || []).forEach(item => {
+      const itens = Array.isArray(venda.produtos) ? venda.produtos : [];
+
+      itens.forEach(item => {
         const qtd = Number(item.quantidade) || 0;
-        const prodEstoque = estoqueMap.get(String(item.id));
-        let custoUnit = 0;
-        let fonte = 'sem_custo';
+        if (qtd <= 0) return;
 
-        if (prodEstoque && Number(prodEstoque.precoCusto) > 0) {
-          custoUnit = Number(prodEstoque.precoCusto);
-          fonte = 'estoque';
-        } else {
-          const noMapa = mapaCustos.get(normalizar(item.nome));
-          if (noMapa && noMapa.preco > 0) {
-            custoUnit = noMapa.preco;
-            fonte = 'fornecedor';
+        const idProduto = item.id ?? item.produtoId ?? item.produto_id;
+        const prodEstoque = idProduto !== undefined && idProduto !== null
+          ? estoqueMap.get(String(idProduto))
+          : null;
+
+        let custoUnit = 0;
+
+        // 1. Prioridade: custo unitário gravado na própria venda.
+        // Isso preserva o lucro histórico mesmo após alteração no estoque.
+        const custoHistorico = Number(
+          item.custoUnitario ?? item.custo_unitario ?? 0
+        );
+        if (Number.isFinite(custoHistorico) && custoHistorico > 0) {
+          custoUnit = custoHistorico;
+        }
+
+        // 2. Fallback: custo unitário atual do estoque.
+        if (custoUnit <= 0 && prodEstoque) {
+          custoUnit = obterCustoUnitarioEstoque(prodEstoque);
+        }
+
+        // 3. Último fallback: última compra do fornecedor.
+        // fornecedores.js já registra precoUnitario por unidade.
+        if (custoUnit <= 0) {
+          const chaveProduto = normalizar(
+            item.nome || item.produto || prodEstoque?.nome
+          );
+          const noMapa = mapaCustos.get(chaveProduto);
+          const custoFornecedor = Number(noMapa?.preco || 0);
+
+          if (Number.isFinite(custoFornecedor) && custoFornecedor > 0) {
+            custoUnit = custoFornecedor;
           }
         }
 
-        if (fonte === 'sem_custo') {
-          const chave = item.nome || 'Desconhecido';
+        if (custoUnit <= 0) {
+          const chave = String(
+            item.nome || item.produto || prodEstoque?.nome || 'Desconhecido'
+          );
           const atual = semCusto.get(chave) || 0;
           semCusto.set(chave, atual + (Number(item.preco) || 0) * qtd);
         }
+
         custoTotal += custoUnit * qtd;
       });
     });
 
-    const contasPeriodo = contas.filter(c =>
-      c.paga && c.dataPagamento &&
-      c.dataPagamento >= inicio && c.dataPagamento <= fim
-    );
-    const totalContas = contasPeriodo.reduce((s, c) => s + Number(c.valor || 0), 0);
+    const contasPeriodo = (Array.isArray(contas) ? contas : []).filter(c => {
+      const dataPagamento = obterDataISO(c.dataPagamento || c.data_pagamento);
+      return Boolean(c.paga) &&
+        dataPagamento >= inicio &&
+        dataPagamento <= fim;
+    });
+
+    const totalContas = contasPeriodo.reduce((s, c) => {
+      const valor = Number(c.valor || 0);
+      return s + (Number.isFinite(valor) ? valor : 0);
+    }, 0);
 
     return {
       totalVendido,
@@ -337,8 +398,10 @@
         </div>
       </div>
       <div class="lcr-nota">
-        <b>Como é calculado:</b> custo de cada produto = última compra registrada
-        em <b>Fornecedores</b>. Vendas fiadas contam como venda do período.
+        <b>Como é calculado:</b> o sistema prioriza o custo unitário salvo
+        no momento da venda. Se não existir, usa o custo unitário do estoque
+        (custo da embalagem dividido pela quantidade) e, por último, a última
+        compra registrada em <b>Fornecedores</b>. Vendas fiadas contam como venda do período.
       </div>
     `;
   }
