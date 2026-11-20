@@ -137,7 +137,7 @@ const obterEstoque = () => lerListaLocalStorage(obterChaveEstoqueComercio());
 const salvarEstoque = (estoque) => salvarListaLocalStorage(obterChaveEstoqueComercio(), estoque);
 
 // ------------------------------------------------------------
-// Utilitários
+// Utilitários & Cálculo de Custo / Margem
 // ------------------------------------------------------------
 const numeroSeguro = (valor) => {
     const num = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '').replace(',', '.'));
@@ -153,6 +153,63 @@ const formatarReal = (valor) => (Number.isFinite(Number(valor)) ? Number(valor) 
 const escaparHTML = (texto) => String(texto ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const escaparAtributo = (texto) => escaparHTML(texto);
+
+function obterCustoUnitarioItem(itemOuProduto) {
+    if (!itemOuProduto) return 0;
+    if (window.DrTrocoMargem && typeof window.DrTrocoMargem.custoUnitarioProduto === 'function') {
+        const custoHelper = window.DrTrocoMargem.custoUnitarioProduto(itemOuProduto);
+        if (custoHelper > 0) return custoHelper;
+    }
+    if (itemOuProduto.custoUnitario !== undefined && Number(itemOuProduto.custoUnitario) > 0) {
+        return numeroSeguro(itemOuProduto.custoUnitario);
+    }
+    const custo = numeroSeguro(itemOuProduto.precoCusto ?? itemOuProduto.preco_custo ?? 0);
+    const emb = Math.max(1, Math.floor(numeroSeguro(itemOuProduto.qtdEmbalagem ?? itemOuProduto.qtd_embalagem ?? 1) || 1));
+    return custo > 0 ? custo / emb : 0;
+}
+
+function calcularMetricasItensVenda(itens, valorAvulso = 0) {
+    if (window.DrTrocoMargem && typeof window.DrTrocoMargem.resumirVenda === 'function') {
+        return window.DrTrocoMargem.resumirVenda(itens, valorAvulso);
+    }
+
+    const estoque = obterEstoque();
+    const enriquecidos = (itens || []).map(p => {
+        const qtd = numeroSeguro(p.quantidade);
+        const precoVenda = numeroSeguro(p.preco);
+        const prodEst = estoque.find(e => String(e.id) === String(p.id));
+        const custoUnitario = p.custoUnitario !== undefined && Number(p.custoUnitario) > 0
+            ? numeroSeguro(p.custoUnitario)
+            : obterCustoUnitarioItem(prodEst || p);
+
+        const subtotalVenda = Math.round(precoVenda * qtd * 100) / 100;
+        const subtotalCusto = Math.round(custoUnitario * qtd * 100) / 100;
+        const lucroItem = Math.round((subtotalVenda - subtotalCusto) * 100) / 100;
+        const margemPct = subtotalVenda > 0 ? Number(((lucroItem / subtotalVenda) * 100).toFixed(1)) : 0;
+
+        return {
+            ...p,
+            custoUnitario: Number(custoUnitario.toFixed(4)),
+            subtotalCusto,
+            lucroItem,
+            margemPct
+        };
+    });
+
+    const totalItensVenda = enriquecidos.reduce((acc, i) => acc + (numeroSeguro(i.preco) * numeroSeguro(i.quantidade)), 0);
+    const totalCusto = enriquecidos.reduce((acc, i) => acc + numeroSeguro(i.subtotalCusto), 0);
+    const totalVenda = totalItensVenda + numeroSeguro(valorAvulso);
+    const lucroBruto = totalVenda - totalCusto;
+    const margemPct = totalVenda > 0 ? (lucroBruto / totalVenda) * 100 : 0;
+
+    return {
+        itens: enriquecidos,
+        totalVenda: Number(totalVenda.toFixed(2)),
+        totalCusto: Number(totalCusto.toFixed(2)),
+        lucroBruto: Number(lucroBruto.toFixed(2)),
+        margemPct: Number(margemPct.toFixed(1))
+    };
+}
 
 function mostrarElemento(elemento, mostrar, display = 'block') {
     if (!elemento) return;
@@ -766,6 +823,7 @@ function adicionarProdutoVenda(id) {
 
     const disponivel = numeroSeguro(itemEstoque.quantidade);
     const existente = produtosVenda.find(p => String(p.id) === String(id));
+    const custoUnitario = obterCustoUnitarioItem(itemEstoque);
 
     if (existente) {
         if (existente.quantidade >= disponivel) {
@@ -779,6 +837,7 @@ function adicionarProdutoVenda(id) {
             nome: itemEstoque.nome || 'Produto',
             codigo: itemEstoque.codigo || '',
             preco: numeroSeguro(itemEstoque.preco),
+            custoUnitario: Number(custoUnitario.toFixed(4)),
             foto: itemEstoque.foto || '',
             quantidade: 1,
             estoqueDisponivel: disponivel
@@ -1037,6 +1096,7 @@ function calcularResumoVenda() {
     const totalProdutos = calcularTotaisProdutos();
     const valorAvulso = numeroSeguro(valorContaInput?.value);
     const total = Math.round((totalProdutos + valorAvulso) * 100) / 100;
+    const metricasMargem = calcularMetricasItensVenda(produtosVenda, valorAvulso);
 
     let recebido = total, troco = 0, clienteNome = '', pagamentoInicial = 0, saldoDevedor = 0, formaPagamentoRecebido = '';
 
@@ -1051,7 +1111,23 @@ function calcularResumoVenda() {
         saldoDevedor = Math.max(0, Math.round((total - pagamentoInicial) * 100) / 100);
     }
 
-    return { valorConta: valorAvulso, valorAvulso, totalProdutos, total, recebido, troco, formaPagamento, clienteNome, pagamentoInicial, saldoDevedor, formaPagamentoRecebido };
+    return {
+        valorConta: valorAvulso,
+        valorAvulso,
+        totalProdutos,
+        total,
+        recebido,
+        troco,
+        formaPagamento,
+        clienteNome,
+        pagamentoInicial,
+        saldoDevedor,
+        formaPagamentoRecebido,
+        totalCusto: metricasMargem.totalCusto,
+        lucroBruto: metricasMargem.lucroBruto,
+        margemPct: metricasMargem.margemPct,
+        itensComMargem: metricasMargem.itens
+    };
 }
 
 function validarResumoVenda(resumo) {
@@ -1127,6 +1203,10 @@ function criarResumoConfirmacao(resumo) {
     }
 
     html += `<div class="resumo-confirmacao-total"><span>Total</span><strong>${formatarReal(resumo.total)}</strong></div>`;
+    if (resumo.totalCusto > 0) {
+        const corLucro = resumo.lucroBruto >= 0 ? '#168b53' : '#b42318';
+        html += `<div class="resumo-confirmacao-linha" style="font-size:12px;color:#52635b;"><span>Lucro estimado (${resumo.margemPct.toFixed(1)}%)</span><strong style="color:${corLucro};">${formatarReal(resumo.lucroBruto)}</strong></div>`;
+    }
     if (resumo.formaPagamento === 'dinheiro') {
         html += `<div class="resumo-confirmacao-linha"><span>Recebido</span><strong>${formatarReal(resumo.recebido)}</strong></div>`;
         html += `<div class="resumo-confirmacao-linha troco"><span>Troco</span><strong>${formatarReal(resumo.troco)}</strong></div>`;
@@ -1150,16 +1230,8 @@ async function reverterEstoqueSupabase(estoqueBaixado) {
     for (const item of estoqueBaixado) {
         try {
             await window.EstoqueSupabase.salvarProduto({
-                id: item.produtoOriginal.id,
-                nome: item.produtoOriginal.nome,
-                codigo: item.produtoOriginal.codigo,
-                preco: item.produtoOriginal.preco,
-                tipo: item.produtoOriginal.tipo,
-                estoqueMinimo: item.produtoOriginal.estoqueMinimo,
-                quantidade: numeroSeguro(item.produtoOriginal.quantidade),
-                validade: item.produtoOriginal.validade,
-                foto: item.produtoOriginal.foto,
-                criadoEm: item.produtoOriginal.criadoEm
+                ...item.produtoOriginal,
+                quantidade: numeroSeguro(item.produtoOriginal.quantidade)
             });
         } catch (e) {
             console.error('[Venda/rollback] Falha ao reverter estoque de', item.id, e);
@@ -1281,16 +1353,8 @@ async function confirmarVenda() {
                 const qtdNova = Math.max(0, qtdAnt - numeroSeguro(item.quantidade));
 
                 await window.EstoqueSupabase.salvarProduto({
-                    id: prodOriginal.id,
-                    nome: prodOriginal.nome,
-                    codigo: prodOriginal.codigo,
-                    preco: prodOriginal.preco,
-                    tipo: prodOriginal.tipo,
-                    estoqueMinimo: prodOriginal.estoqueMinimo,
-                    quantidade: qtdNova,
-                    validade: prodOriginal.validade,
-                    foto: prodOriginal.foto,
-                    criadoEm: prodOriginal.criadoEm
+                    ...prodOriginal,
+                    quantidade: qtdNova
                 });
 
                 await window.EstoqueSupabase.salvarMovimentacao({
@@ -1409,6 +1473,27 @@ async function confirmarVenda() {
     });
     localStorage.setItem(chaveMovEstoque, JSON.stringify(movimentacoesEstoque));
 
+    const itensVendaFinal = (resumo.itensComMargem || produtosVenda).map(p => {
+        const subtotal = Math.round(numeroSeguro(p.preco) * numeroSeguro(p.quantidade) * 100) / 100;
+        const custoUnit = numeroSeguro(p.custoUnitario ?? obterCustoUnitarioItem(p));
+        const subtotalCusto = Math.round(custoUnit * numeroSeguro(p.quantidade) * 100) / 100;
+        const lucroItem = Math.round((subtotal - subtotalCusto) * 100) / 100;
+        const margemPct = subtotal > 0 ? Number(((lucroItem / subtotal) * 100).toFixed(1)) : 0;
+
+        return {
+            id: p.id,
+            nome: p.nome,
+            codigo: p.codigo,
+            preco: p.preco,
+            custoUnitario: Number(custoUnit.toFixed(4)),
+            quantidade: p.quantidade,
+            subtotal,
+            subtotalCusto,
+            lucroItem,
+            margemPct
+        };
+    });
+
     const venda = {
         id: idVenda,
         data: dataHora.dataChave,
@@ -1419,14 +1504,14 @@ async function confirmarVenda() {
         valorConta: resumo.valorConta,
         valorAvulso: resumo.valorAvulso,
         totalProdutos: resumo.totalProdutos,
+        totalCusto: resumo.totalCusto,
+        lucroBruto: resumo.lucroBruto,
+        margemPct: resumo.margemPct,
         valorBase: resumo.total,
         total: resumo.total,
         valorRecebido: isFiado ? resumo.pagamentoInicial : resumo.recebido,
         troco: isFiado ? 0 : resumo.troco,
-        produtos: produtosVenda.map(p => ({
-            id: p.id, nome: p.nome, codigo: p.codigo, preco: p.preco, quantidade: p.quantidade,
-            subtotal: Math.round(numeroSeguro(p.preco) * numeroSeguro(p.quantidade) * 100) / 100
-        }))
+        produtos: itensVendaFinal
     };
 
     try {
