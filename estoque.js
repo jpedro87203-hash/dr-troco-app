@@ -347,8 +347,8 @@ function normalizarProduto(produto) {
         nome: String(produto.nome ?? produto.nomeProduto ?? "").trim(),
         codigo: String(codigoSalvo).trim(),
         preco: numeroSeguro(produto.preco ?? produto.precoUnitario ?? produto.precoProduto),
-        precoCusto: numeroSeguro(produto.precoCusto ?? produto.preco_custo ?? 0), // NOVO
-        qtdEmbalagem: Math.max(1, Math.floor(numeroSeguro(produto.qtdEmbalagem ?? produto.qtd_embalagem ?? 1))), // NOVO
+        precoCusto: numeroSeguro(produto.precoCusto ?? produto.preco_custo ?? 0), // Margem de Custo
+        qtdEmbalagem: Math.max(1, Math.floor(numeroSeguro(produto.qtdEmbalagem ?? produto.qtd_embalagem ?? 1))), // Qtd Fardo
         tipo,
         estoqueMinimo: Math.max(0, Math.floor(numeroSeguro(produto.estoqueMinimo ?? produto.estoque_minimo, 5))),
         quantidade: Math.max(0, Math.floor(numeroSeguro(produto.quantidade ?? produto.estoque ?? produto.quantidadeInicial))),
@@ -690,7 +690,7 @@ async function salvarProduto(event) {
 }
 
 /* =========================================================
-CÁLCULO AUTOMÁTICO DE MARGEM
+CÁLCULO AUTOMÁTICO DE MARGEM (INTEGRADO)
 ========================================================= */
 function configurarCalculoMargem() {
     const precoCustoInput = document.getElementById("precoCustoProduto");
@@ -1793,7 +1793,7 @@ function configurarBotoes() {
     
     configurarBotaoExportarPDF();
     configurarFiltroHistorico(); 
-    configurarCalculoMargem(); // <-- NOVO
+    configurarCalculoMargem(); // <-- ATIVANDO O CÁLCULO AUTOMÁTICO AQUI
 
     if (cadastrar) cadastrar.addEventListener("click", abrirCadastroProduto);
     if (entrada) entrada.addEventListener("click", () => abrirMovimento("entrada"));
@@ -1918,4 +1918,4 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", inicializarEstoque);
 } else {
     inicializarEstoque();
-            }
+        }
