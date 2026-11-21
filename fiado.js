@@ -39,15 +39,15 @@
     lista:    $('fiadoListaClientes'),
     filtrosSituacao: $('fiadoFiltrosSituacao'),
 
-    modalCadastro:     $('modalCadastroFiado'),
-    formCadastro:      $('formCadastroCliente'),
-    nome:              $('fiadoNomeCliente'),
-    telefone:          $('fiadoTelefoneCliente'),
-    endereco:          $('fiadoEnderecoCliente'),
-    limiteCredito:     $('fiadoLimiteCliente'),
-    situacao:          $('fiadoSituacaoCliente'),
-    observacoes:       $('fiadoObservacoesCliente'),
-    btnFecharCadastro: $('btnFecharCadastroFiado'),
+    modalCadastro:       $('modalCadastroFiado'),
+    formCadastro:        $('formCadastroCliente'),
+    nome:                $('fiadoNomeCliente'),
+    telefone:            $('fiadoTelefoneCliente'),
+    endereco:            $('fiadoEnderecoCliente'),
+    limiteCredito:       $('fiadoLimiteCliente'),
+    situacao:            $('fiadoSituacaoCliente'),
+    observacoes:         $('fiadoObservacoesCliente'),
+    btnFecharCadastro:   $('btnFecharCadastroFiado'),
     btnCancelarCadastro: $('btnCancelarCadastroFiado'),
 
     modalDetalhes:       $('modalDetalhesFiado'),
@@ -65,16 +65,13 @@
     periodoExtrato: $('fiadoPeriodoExtrato'),
     parcelasLista:  $('fiadoParcelasCliente'),
     historico:      $('fiadoHistoricoCliente'),
-    auditoriaLista: $('fiadoAuditoriaCliente'),
 
-    btnComprar:         $('btnAdicionarDividaFiado'),
-    btnPagamento:       $('btnRegistrarPagamentoFiado'),
-    btnEditarCliente:   $('btnEditarClienteFiado'),
-    btnBloquearCliente: $('btnBloquearClienteFiado'),
-    btnArquivarCliente: $('btnArquivarClienteFiado'),
-    btnWhatsApp:        $('btnCobrarWhatsAppFiado'),
-    btnPDF:             $('btnExportarFiadoPDF'),
-    btnExcluirCliente:  $('btnExcluirClienteFiado'),
+    btnComprar:        $('btnAdicionarDividaFiado'),
+    btnPagamento:      $('btnRegistrarPagamentoFiado'),
+    btnEditarCliente:  $('btnEditarClienteFiado'),
+    btnWhatsApp:       $('btnCobrarWhatsAppFiado'),
+    btnPDF:            $('btnExportarFiadoPDF'),
+    btnExcluirCliente: $('btnExcluirClienteFiado'),
 
     btnFecharDetalhes:  $('btnFecharDetalhesFiado'),
     btnFecharDetalhes2: $('btnFecharDetalhesFiado2'),
@@ -236,13 +233,6 @@
     return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  function formatarDataHoraCurta(iso) {
-    if (!iso) return '';
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return String(iso);
-    return `${formatarData(dataLocalISO(d))} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-  }
-
   function formatarMes(mes) {
     if (!/^\d{4}-\d{2}$/.test(String(mes))) return String(mes || '');
     const [ano, n] = mes.split('-');
@@ -314,22 +304,8 @@
   }
 
   /* ==========================================================
-     AUDITORIA E COBRANÇAS (COM FALLBACK SEGURO NO CLIENTE)
+     REGISTRO INTERNO DE COBRANÇAS E METADADOS
   ========================================================== */
-
-  function registrarAuditoriaLocal(cliente, acao, detalhes = {}, operador = obterNomeOperador()) {
-    if (!cliente) return null;
-    if (!Array.isArray(cliente.auditoria)) cliente.auditoria = [];
-    const registro = {
-      id: gerarId(),
-      acao,
-      dataHora: agoraISO(),
-      operador,
-      detalhes
-    };
-    cliente.auditoria.unshift(registro);
-    return registro;
-  }
 
   function registrarCobrancaLocal(cliente, dados = {}) {
     if (!cliente) return null;
@@ -346,11 +322,6 @@
       status: dados.status || 'gerada'
     };
     cliente.cobrancas.unshift(registro);
-    registrarAuditoriaLocal(cliente, 'cobranca_gerada', {
-      canal: registro.canal,
-      valorCentavos: registro.valorCentavos,
-      diasAtraso: registro.diasAtraso
-    }, registro.operador);
     return registro;
   }
 
@@ -396,8 +367,7 @@
       criadoEm: row.criado_em || agoraISO(),
       atualizadoEm: row.atualizado_em || row.criado_em || agoraISO(),
       movimentacoes: [],
-      cobrancas: Array.isArray(row.cobrancas) ? row.cobrancas : [],
-      auditoria: Array.isArray(row.auditoria) ? row.auditoria : []
+      cobrancas: Array.isArray(row.cobrancas) ? row.cobrancas : []
     };
   }
 
@@ -528,7 +498,7 @@
       resp = await rodar(basico);
     }
     if (resp.error) throw resp.error;
-    return clienteDoBanco({ ...resp.data, cobrancas: c.cobrancas, auditoria: c.auditoria });
+    return clienteDoBanco({ ...resp.data, cobrancas: c.cobrancas });
   }
 
   async function persistirMovimentacaoSegura(clienteId, mov, modo = 'insert') {
@@ -642,7 +612,6 @@
     item.criadoEm = item.criadoEm || item.dataCadastro || agoraISO();
     item.atualizadoEm = item.atualizadoEm || item.criadoEm;
     item.cobrancas = Array.isArray(item.cobrancas) ? item.cobrancas : [];
-    item.auditoria = Array.isArray(item.auditoria) ? item.auditoria : [];
 
     const movs = Array.isArray(item.movimentacoes) ? item.movimentacoes : [];
     item.movimentacoes = movs.map(m => {
@@ -762,10 +731,6 @@
       atualizadoEm: agoraISO(),
       movimentacoes: []
     });
-    registrarAuditoriaLocal(novo, 'cliente_cadastrado', {
-      nome: novo.nome,
-      limiteCreditoCentavos: novo.limiteCreditoCentavos
-    });
     try {
       return await persistirClienteSeguro(novo, 'insert');
     } catch (error) {
@@ -789,53 +754,11 @@
       observacoes: dados.observacoes !== undefined ? String(dados.observacoes).trim() : (atual?.observacoes || ''),
       atualizadoEm: agoraISO()
     });
-    if (atual) {
-      registrarAuditoriaLocal(mesclado, 'cliente_editado', {
-        nome: mesclado.nome,
-        limiteCreditoCentavos: mesclado.limiteCreditoCentavos,
-        situacao: mesclado.situacao,
-        arquivado: mesclado.arquivado
-      });
-    }
     try {
       return await persistirClienteSeguro(mesclado, 'update');
     } catch (error) {
       throw new Error('Falha ao editar cliente: ' + error.message);
     }
-  }
-
-  async function alternarBloqueioCliente(id, bloquear = null) {
-    const cliente = buscarClienteInterno(id);
-    if (!cliente) throw new Error('Cliente não encontrado.');
-    const novaSituacao = bloquear === null
-      ? (cliente.situacao === 'bloqueado' ? 'ativo' : 'bloqueado')
-      : (bloquear ? 'bloqueado' : 'ativo');
-    const atualizado = await atualizarCliente(id, { situacao: novaSituacao });
-    cliente.situacao = atualizado.situacao;
-    cliente.atualizadoEm = atualizado.atualizadoEm;
-    registrarAuditoriaLocal(cliente, novaSituacao === 'bloqueado' ? 'cliente_bloqueado' : 'cliente_desbloqueado', {
-      situacao: novaSituacao
-    });
-    salvarCacheLocal();
-    renderizarTudo();
-    mostrarNotificacao(novaSituacao === 'bloqueado' ? 'Cliente bloqueado para novas compras.' : 'Cliente desbloqueado.');
-    return clonar(cliente);
-  }
-
-  async function alternarArquivamentoCliente(id, arquivar = null) {
-    const cliente = buscarClienteInterno(id);
-    if (!cliente) throw new Error('Cliente não encontrado.');
-    const novoArquivado = arquivar === null ? !cliente.arquivado : Boolean(arquivar);
-    const atualizado = await atualizarCliente(id, { arquivado: novoArquivado });
-    cliente.arquivado = atualizado.arquivado;
-    cliente.atualizadoEm = atualizado.atualizadoEm;
-    registrarAuditoriaLocal(cliente, novoArquivado ? 'cliente_arquivado' : 'cliente_desarquivado', {
-      arquivado: novoArquivado
-    });
-    salvarCacheLocal();
-    renderizarTudo();
-    mostrarNotificacao(novoArquivado ? 'Cliente arquivado (histórico preservado).' : 'Cliente reativado.');
-    return clonar(cliente);
   }
 
   async function removerCliente(id) {
@@ -845,7 +768,7 @@
     const { data: movs, error: e1 } = await supa.from(TAB_MOVS)
       .select('id').eq('cliente_id', String(id)).eq('usuario_id', usuarioAtual.id).limit(1);
     if (e1) throw new Error('Falha ao verificar movimentações: ' + e1.message);
-    if (movs && movs.length > 0) throw new Error('Este cliente possui movimentações. Arquive o cliente para preservar o histórico.');
+    if (movs && movs.length > 0) throw new Error('Este cliente possui movimentações e não pode ser excluído.');
 
     const { error: e2 } = await supa.from(TAB_CLIENTES)
       .delete().eq('id', String(id)).eq('usuario_id', usuarioAtual.id);
@@ -1047,7 +970,7 @@
 
   function validarNovaCompra(cliente, valorCentavos, { ignorarBloqueio = false, ignorarLimite = false } = {}) {
     if (!cliente) return { ok: false, erro: 'Cliente não encontrado.' };
-    if (cliente.arquivado) return { ok: false, erro: 'Cliente arquivado. Reative antes de registrar novas compras.' };
+    if (cliente.arquivado) return { ok: false, erro: 'Cliente arquivado. Não é possível registrar novas compras.' };
     if (!ignorarBloqueio && cliente.situacao === 'bloqueado') {
       return { ok: false, erro: `Cliente "${cliente.nome}" está bloqueado para novas compras.` };
     }
@@ -1199,14 +1122,6 @@
       compra.parcelas[idxP] = atualizada;
       await atualizarMovimentacao(cliente.id, compra);
 
-      registrarAuditoriaLocal(cliente, 'pagamento_parcela', {
-        pagamentoId: salvoPag.id,
-        parcelaId: parcela.id,
-        parcelaNumero: parcela.numero,
-        valorCentavos: valorC,
-        forma
-      }, operador);
-
       const rCaixa = await registrarEntradaCaixaFiado(salvoPag, cliente);
       cliente.atualizadoEm = agoraISO();
       salvarCacheLocal();
@@ -1248,11 +1163,6 @@
     });
 
     await atualizarMovimentacao(cliente.id, compra);
-    registrarAuditoriaLocal(cliente, 'parcela_alterada', {
-      parcelaId,
-      vencimentoAnterior: anterior,
-      vencimentoNovo: novoVencimentoISO
-    }, operador);
     cliente.atualizadoEm = agoraISO();
     salvarCacheLocal();
     renderizarTudo();
@@ -1481,7 +1391,6 @@
     const saldo = obterSaldo(cliente);
     let msg = `Deseja excluir o cliente "${cliente.nome}"?`;
     if (saldo > 0) msg += `\n\nSaldo devedor atual: ${formatarDinheiro(saldo)}.`;
-    msg += '\n\nDica: para preservar o histórico financeiro sem apagar, você pode apenas arquivar o cliente.';
     if (!confirmar(msg)) return;
 
     try {
@@ -1602,11 +1511,6 @@
         const salvo = await inserirMovimentacao(cliente.id, mov);
         cliente.movimentacoes.push(salvo);
         cliente.atualizadoEm = agoraISO();
-        registrarAuditoriaLocal(cliente, 'compra_registrada', {
-          movimentoId: salvo.id,
-          valorCentavos: valorC,
-          parcelas: qtdParcelas
-        }, operador);
         salvarCacheLocal();
       });
       fecharModal(modal);
@@ -1623,7 +1527,7 @@
     const cliente = buscarClienteInterno(clienteSelecionadoId);
     if (!cliente) { mostrarNotificacao('Selecione um cliente.', true); return; }
     if (cliente.arquivado) {
-      mostrarNotificacao('Cliente arquivado. Reative antes de registrar compras.', true);
+      mostrarNotificacao('Cliente arquivado. Não é possível registrar compras.', true);
       return;
     }
     if (cliente.situacao === 'bloqueado') {
@@ -1701,11 +1605,6 @@
         salvo = await inserirMovimentacao(cliente.id, mov);
         cliente.movimentacoes.push(salvo);
         cliente.atualizadoEm = agoraISO();
-        registrarAuditoriaLocal(cliente, 'pagamento_registrado', {
-          movimentoId: salvo.id,
-          valorCentavos: valorC,
-          forma
-        }, operador);
         salvarCacheLocal();
         rCaixa = await registrarEntradaCaixaFiado(salvo, cliente);
       });
@@ -1808,12 +1707,6 @@
         const reg = await inserirMovimentacao(cliente.id, mov);
         cliente.movimentacoes.push(reg);
         cliente.atualizadoEm = agoraISO();
-        registrarAuditoriaLocal(cliente, 'compra_pdv', {
-          movimentoId: reg.id,
-          vendaId: reg.vendaId,
-          valorCentavos: valorC,
-          parcelas: qtdParcelas
-        }, operador);
         salvarCacheLocal();
         return reg;
       });
@@ -1860,12 +1753,6 @@
         const reg = await inserirMovimentacao(cliente.id, mov);
         cliente.movimentacoes.push(reg);
         cliente.atualizadoEm = agoraISO();
-        registrarAuditoriaLocal(cliente, 'pagamento_api', {
-          movimentoId: reg.id,
-          vendaId: reg.vendaId,
-          valorCentavos: valorC,
-          forma
-        }, operador);
         salvarCacheLocal();
         return reg;
       });
@@ -1925,7 +1812,7 @@
       }
     }
 
-    if (!confirmar(`Cancelar este lançamento de ${tipo}? O registro ficará preservado no histórico/auditoria e o saldo será recalculado.`)) return;
+    if (!confirmar(`Cancelar este lançamento de ${tipo}? O registro ficará preservado no histórico e o saldo será recalculado.`)) return;
 
     const operador = obterNomeOperador();
     try {
@@ -1954,18 +1841,12 @@
         }
 
         cliente.atualizadoEm = agoraISO();
-        registrarAuditoriaLocal(cliente, 'movimento_cancelado', {
-          movimentoId: mov.id,
-          tipo: mov.tipo,
-          valorCentavos: valorMovimentoCentavos(mov),
-          motivo
-        }, operador);
         salvarCacheLocal();
       });
 
       renderizarTudo();
       if (elementos.modalDetalhes?.classList.contains('aberto')) renderizarDetalhes(cliente);
-      mostrarNotificacao('Lançamento cancelado e estornado com rastreabilidade.');
+      mostrarNotificacao('Lançamento cancelado e estornado.');
     } catch (err) {
       console.error('[Fiado]', err);
       mostrarNotificacao(err.message || 'Falha ao cancelar lançamento.', true);
@@ -1990,12 +1871,6 @@
           m.canceladoEm = agoraISO();
           m.canceladoPor = operador;
           m.motivoCancelamento = motivo;
-          registrarAuditoriaLocal(c, 'venda_estornada', {
-            vendaId: String(vendaId),
-            movimentoId: m.id,
-            valorCentavos: valorMovimentoCentavos(m),
-            motivo
-          }, operador);
           alterouLocal = true;
         }
       });
@@ -2020,7 +1895,7 @@
   }
 
   /* ==========================================================
-     COBRANÇAS, RELATÓRIOS E AUDITORIA
+     COBRANÇAS E RELATÓRIOS
   ========================================================== */
 
   function clienteEhInadimplente(c, hojeISO = dataLocalISO()) {
@@ -2057,8 +1932,7 @@
           diasAtraso: maiorAtraso || diasDesdeCompra,
           parcelasVencidas: vencidas.length,
           parcelasProximas: proximas.length,
-          proximoVencimento: parcelas[0]?.vencimento || ultimaCompra || null,
-          historicoCobrancas: clonar(c.cobrancas || [])
+          proximoVencimento: parcelas[0]?.vencimento || ultimaCompra || null
         });
       }
     });
@@ -2112,9 +1986,6 @@
       status: 'aberta_no_whatsapp'
     });
     salvarCacheLocal();
-    if (clienteSelecionadoId && String(clienteSelecionadoId) === String(cliente.id) && elementos.modalDetalhes?.classList.contains('aberto')) {
-      renderizarAuditoria(cliente);
-    }
 
     const url = `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
     window.open(url, '_blank', 'noopener');
@@ -2148,7 +2019,6 @@
           <div class="fiado-movimento-info">
             <strong>${escaparHTML(item.clienteNome)}</strong>
             <small>${escaparHTML(item.telefone || 'Sem telefone')} · ${escaparHTML(statusTxt)}</small>
-            <small>Cobranças registradas: ${item.historicoCobrancas.length}</small>
             <div class="fiado-movimento-acoes" style="gap:7px;flex-wrap:wrap;">
               <button type="button" class="fiado-btn fiado-btn-whatsapp" style="min-height:36px;padding:7px 11px;grid-column:auto;"
                 data-acao="cobrar-item"
@@ -2449,16 +2319,6 @@
       if (c.arquivado) partes.push('ARQUIVADO');
       elementos.detalhesTelefone.textContent = partes.join(' · ');
     }
-    if (elementos.btnBloquearCliente) {
-      elementos.btnBloquearCliente.textContent = c.situacao === 'bloqueado'
-        ? '🔓 Desbloquear cliente'
-        : '🔒 Bloquear cliente';
-    }
-    if (elementos.btnArquivarCliente) {
-      elementos.btnArquivarCliente.textContent = c.arquivado
-        ? '♻ Reativar cliente'
-        : '🗄 Arquivar cliente';
-    }
     if (elementos.mesReferencia && !elementos.mesReferencia.value) elementos.mesReferencia.value = mesAtual();
     renderizarDetalhes(c);
     abrirModal(elementos.modalDetalhes);
@@ -2483,7 +2343,6 @@
     renderizarResumoMensal(c);
     renderizarParcelas(c);
     renderizarHistorico(c);
-    renderizarAuditoria(c);
   }
 
   function renderizarParcelas(c) {
@@ -2533,44 +2392,6 @@
           <div class="fiado-movimento-valor ${restP === 0 ? 'fiado-valor-pago' : 'fiado-valor-divida'}">${formatarDinheiro(p.valorCentavos)}</div>
         </article>`;
     }).join('');
-  }
-
-  function renderizarAuditoria(c) {
-    if (!elementos.auditoriaLista) return;
-    const cobrancas = (c.cobrancas || []).map(cb => ({
-      tipo: 'cobrança',
-      dataHora: cb.dataHora,
-      operador: cb.operador || 'Operador',
-      titulo: `Cobrança (${cb.canal || 'whatsapp'}) — ${formatarDinheiro(cb.valorCentavos)}`,
-      detalhe: cb.diasAtraso > 0 ? `Atraso: ${cb.diasAtraso} dia(s)` : 'Lembrete de conta'
-    }));
-
-    const logs = (c.auditoria || []).map(a => ({
-      tipo: 'auditoria',
-      dataHora: a.dataHora,
-      operador: a.operador || 'Operador',
-      titulo: `Evento: ${a.acao}`,
-      detalhe: JSON.stringify(a.detalhes || {})
-    }));
-
-    const combinado = [...cobrancas, ...logs].sort((a, b) =>
-      new Date(b.dataHora || 0).getTime() - new Date(a.dataHora || 0).getTime()
-    );
-
-    if (!combinado.length) {
-      elementos.auditoriaLista.innerHTML = '<div class="fiado-vazio"><p>Nenhum registro de cobrança ou auditoria ainda.</p></div>';
-      return;
-    }
-
-    elementos.auditoriaLista.innerHTML = combinado.slice(0, 25).map(item => `
-      <article class="fiado-movimento">
-        <div class="fiado-movimento-info">
-          <strong>${escaparHTML(item.titulo)}</strong>
-          <small>${escaparHTML(formatarDataHoraCurta(item.dataHora))} · Op.: ${escaparHTML(item.operador)}</small>
-          <small>${escaparHTML(item.detalhe)}</small>
-        </div>
-      </article>`
-    ).join('');
   }
 
   function renderizarResumoMensal(c) {
@@ -2816,7 +2637,7 @@
       }
       fecharModal(modal);
       renderizarModalCobrancas();
-      mostrarNotificacao('Cobrança registrada e WhatsApp aberto.');
+      mostrarNotificacao('WhatsApp aberto com a mensagem de cobrança.');
     });
     return modal;
   }
@@ -2954,28 +2775,6 @@
       abrirCadastroCliente(c);
     });
   }
-  if (elementos.btnBloquearCliente) {
-    elementos.btnBloquearCliente.addEventListener('click', async () => {
-      if (!clienteSelecionadoId) return;
-      try {
-        await alternarBloqueioCliente(clienteSelecionadoId);
-        abrirDetalhes(clienteSelecionadoId);
-      } catch (err) {
-        mostrarNotificacao(err.message || 'Falha ao alterar bloqueio.', true);
-      }
-    });
-  }
-  if (elementos.btnArquivarCliente) {
-    elementos.btnArquivarCliente.addEventListener('click', async () => {
-      if (!clienteSelecionadoId) return;
-      try {
-        await alternarArquivamentoCliente(clienteSelecionadoId);
-        abrirDetalhes(clienteSelecionadoId);
-      } catch (err) {
-        mostrarNotificacao(err.message || 'Falha ao alterar arquivamento.', true);
-      }
-    });
-  }
   if (elementos.btnWhatsApp) elementos.btnWhatsApp.addEventListener('click', cobrarWhatsApp);
   if (elementos.formPagamento) elementos.formPagamento.addEventListener('submit', registrarPagamentoManual);
   if (elementos.btnPDF) elementos.btnPDF.addEventListener('click', exportarPDF);
@@ -3094,8 +2893,6 @@
     listarClientes,
     listarClientesComSaldo,
     saldoDevedor: saldoDevedorAPI,
-    alternarBloqueioCliente,
-    alternarArquivamentoCliente,
     listarCobrancasPendentes,
     montarMensagemCobranca,
     enviarCobrancaWhatsApp,
