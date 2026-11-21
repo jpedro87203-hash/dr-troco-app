@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#168b53">
-  <meta name="description" content="Controle de clientes, compras fiado, pagamentos e saldos no Dr. Troco.">
+  <meta name="description" content="Controle de clientes, compras fiado, pagamentos, parcelas, cobranças e relatórios no Dr. Troco.">
   <title>Dr. Troco — Fiado</title>
   <link rel="stylesheet" href="style.css">
 
@@ -34,7 +34,7 @@
     body.pagina-fiado *, body.pagina-fiado *::before, body.pagina-fiado *::after { box-sizing: border-box; }
     body.pagina-fiado button, body.pagina-fiado input, body.pagina-fiado select, body.pagina-fiado textarea { font: inherit; }
     body.pagina-fiado button { -webkit-tap-highlight-color: transparent; }
-    .fiado-container { width: min(790px, 100%); margin: 0 auto; padding: 0 15px 26px; }
+    .fiado-container { width: min(820px, 100%); margin: 0 auto; padding: 0 15px 26px; }
 
     /* Cabeçalho */
     .fiado-topo { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 24px 2px 20px; }
@@ -46,15 +46,19 @@
     .fiado-topo-icone { display: grid; place-items: center; flex: 0 0 54px; width: 54px; height: 54px; border-radius: 18px; background: linear-gradient(145deg, #2bbb77, #168b53); color: #fff; font-size: 27px; box-shadow: 0 8px 20px #168b532b; }
 
     /* Cards do resumo */
-    .fiado-grade-resumo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 23px; }
+    .fiado-grade-resumo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .fiado-grade-indicadores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 22px; }
     .fiado-resumo-card { position: relative; display: block; min-width: 0; padding: 15px 13px; overflow: hidden; border: 1px solid var(--f-borda); border-radius: 17px; background: #fff; text-align: left; box-shadow: 0 4px 14px #1b342808; cursor: pointer; transition: transform .15s, box-shadow .15s; }
     .fiado-resumo-card:active { transform: scale(.985); }
     .fiado-resumo-card::before { position: absolute; top: 0; right: 0; left: 0; height: 4px; background: var(--f-verde); content: ""; }
     .fiado-resumo-card.aberto::before { background: #dc954c; }
+    .fiado-resumo-card.alerta::before { background: var(--f-vermelho); }
     .fiado-resumo-card span { display: block; min-height: 31px; margin-bottom: 8px; color: var(--f-muted); font-size: 11px; font-weight: 800; line-height: 1.4; }
     .fiado-resumo-card strong { display: block; color: var(--f-texto); font-size: clamp(13px, 3.4vw, 19px); font-weight: 900; line-height: 1.3; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
     .fiado-resumo-card.aberto { border-color: #f0dfcc; background: #fffdf9; }
     .fiado-resumo-card.aberto strong { color: var(--f-laranja); }
+    .fiado-resumo-card.alerta { border-color: #f2d8d9; background: #fffafa; }
+    .fiado-resumo-card.alerta strong { color: var(--f-vermelho); }
 
     /* Seções e atalhos */
     .fiado-secao-cabecalho { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 23px 2px 11px; }
@@ -74,7 +78,10 @@
     /* Lista de clientes */
     .fiado-painel { min-width: 0; margin-bottom: 16px; padding: 16px; border: 1px solid var(--f-borda); border-radius: 19px; background: #fff; box-shadow: 0 4px 16px #1b342808; }
     .fiado-painel > .fiado-secao-cabecalho { margin: 0 0 14px; }
-    .fiado-filtro { display: flex; align-items: center; gap: 9px; margin: 0 0 13px; }
+    .fiado-filtro { display: flex; align-items: center; gap: 9px; margin: 0 0 10px; }
+    .fiado-chips-filtro { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 14px; }
+    .fiado-chip { min-height: 34px; padding: 6px 12px; border: 1px solid var(--f-borda); border-radius: 999px; background: #f8faf9; color: #47594f; font-size: 11.5px; font-weight: 800; cursor: pointer; }
+    .fiado-chip.ativo { border-color: #168b53; background: var(--f-verde-claro); color: var(--f-verde-escuro); }
     .fiado-campo { min-width: 0; }
     .fiado-campo label { display: block; margin-bottom: 6px; color: #34483d; font-size: 12px; font-weight: 800; line-height: 1.4; }
     .fiado-campo input, .fiado-campo select, .fiado-campo textarea, .fiado-filtro input { display: block; width: 100%; min-width: 0; min-height: 47px; padding: 12px 13px; border: 1px solid #dce6e0; border-radius: 12px; outline: none; background: #f8faf9; color: var(--f-texto); font-size: 15px; transition: border-color .18s, box-shadow .18s, background .18s; }
@@ -121,7 +128,7 @@
     .fiado-modal { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 12px; overflow-y: auto; background: #0f1e17ad; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
     .fiado-modal.aberto { display: flex; }
     .fiado-modal-conteudo { width: min(650px, 100%); max-height: calc(100dvh - 24px); overflow-x: hidden; overflow-y: auto; padding: 21px; border: 1px solid #ffffffcc; border-radius: 22px; background: #fff; box-shadow: 0 25px 70px #0003; overscroll-behavior: contain; }
-    #modalDetalhesFiado .fiado-modal-conteudo { width: min(710px, 100%); }
+    #modalDetalhesFiado .fiado-modal-conteudo, #modalRelatoriosFiado .fiado-modal-conteudo, #modalCobrancasFiado .fiado-modal-conteudo { width: min(740px, 100%); }
     .fiado-modal-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 19px; }
     .fiado-modal-topo > div { min-width: 0; }
     .fiado-modal-topo h2 { margin: 0 0 6px; color: #1d2d24; font-size: 21px; font-weight: 900; line-height: 1.3; letter-spacing: -.3px; overflow-wrap: anywhere; }
@@ -131,7 +138,7 @@
     .fiado-form > .fiado-btn { width: 100%; }
 
     /* Detalhes do cliente: saldo em primeiro plano */
-    .fiado-detalhes-kpis { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 9px; margin-bottom: 20px; }
+    .fiado-detalhes-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-bottom: 12px; }
     .fiado-detalhe-kpi { min-width: 0; padding: 13px 11px; border: 1px solid var(--f-borda); border-radius: 14px; background: #f8faf9; }
     .fiado-detalhe-kpi span { display: block; margin-bottom: 7px; color: var(--f-muted); font-size: 10.5px; font-weight: 800; line-height: 1.4; }
     .fiado-detalhe-kpi strong { display: block; color: var(--f-texto); font-size: clamp(12px, 3.1vw, 16px); font-weight: 900; line-height: 1.35; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
@@ -158,10 +165,10 @@
     .fiado-acoes-modal .fiado-btn { width: 100%; min-width: 0; min-height: 45px; padding: 10px 8px; font-size: 12px; }
     #btnRegistrarPagamentoFiado { min-height: 48px; }
     #btnExcluirClienteFiado { grid-column: 1 / -1; min-height: 40px; margin-top: 2px; background: #fff8f8; }
-    #btnFecharDetalhesFiado2 { width: 100%; margin-top: 9px; }
+    #btnFecharDetalhesFiado2 { width: 100%; margin-top: 9px; min-height: 42px; border: 1px solid #e5ebe7; border-radius: 12px; background: #f2f6f3; color: #53635b; font-size: 12.5px; font-weight: 800; cursor: pointer; }
 
     /* Histórico recolhível */
-    .fiado-historico-bloco { margin-top: 19px; border: 1px solid var(--f-borda); border-radius: 15px; background: #fff; overflow: hidden; }
+    .fiado-historico-bloco { margin-top: 14px; border: 1px solid var(--f-borda); border-radius: 15px; background: #fff; overflow: hidden; }
     .fiado-historico-bloco > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; color: #24372c; background: #f8faf9; font-size: 13px; font-weight: 900; cursor: pointer; list-style: none; }
     .fiado-historico-bloco > summary::-webkit-details-marker { display: none; }
     .fiado-historico-bloco > summary::after { content: "+"; display: grid; place-items: center; flex: 0 0 27px; width: 27px; height: 27px; border-radius: 9px; background: #eaf8f1; color: #168b53; font-size: 19px; line-height: 1; }
@@ -234,7 +241,7 @@
     }
     @media print {
       body.pagina-fiado { padding: 0; background: #fff; }
-      body.pagina-fiado .bottom-nav, body.pagina-fiado .fiado-topo, body.pagina-fiado .fiado-grade-resumo, body.pagina-fiado .fiado-painel, body.pagina-fiado .fiado-atalhos, body.pagina-fiado .fiado-modal, body.pagina-fiado .fiado-notificacao { display: none !important; }
+      body.pagina-fiado .bottom-nav, body.pagina-fiado .fiado-topo, body.pagina-fiado .fiado-grade-resumo, body.pagina-fiado .fiado-grade-indicadores, body.pagina-fiado .fiado-painel, body.pagina-fiado .fiado-atalhos, body.pagina-fiado .fiado-modal, body.pagina-fiado .fiado-notificacao { display: none !important; }
     }
   </style>
 </head>
@@ -244,23 +251,34 @@
       <div class="fiado-topo-texto">
         <div class="fiado-marca"><span class="fiado-marca-icone" aria-hidden="true">🧾</span> DR. TROCO</div>
         <h1>Fiado</h1>
-        <p>Clientes, compras, pagamentos e saldos em um só lugar.</p>
+        <p>Clientes, compras, parcelas, pagamentos, cobranças e relatórios.</p>
       </div>
       <div class="fiado-topo-icone" aria-hidden="true">🧾</div>
     </header>
 
-    <section class="fiado-grade-resumo" aria-label="Resumo do fiado">
+    <section class="fiado-grade-resumo" aria-label="Resumo financeiro do fiado">
       <button class="fiado-resumo-card" type="button" data-rolar-para="painelClientes" aria-label="Ver clientes cadastrados">
-        <span>Clientes cadastrados</span>
+        <span>Clientes ativos</span>
         <strong id="fiadoTotalClientes">0</strong>
       </button>
       <button class="fiado-resumo-card" type="button" data-rolar-para="painelClientes" aria-label="Consultar pagamentos recebidos">
         <span>Total recebido</span>
         <strong id="fiadoTotalRecebido">R$ 0,00</strong>
       </button>
-      <button class="fiado-resumo-card aberto" type="button" data-rolar-para="painelClientes" aria-label="Consultar saldos em aberto">
-        <span>Saldo em aberto</span>
+      <button class="fiado-resumo-card aberto" type="button" data-rolar-para="painelClientes" aria-label="Consultar total a receber">
+        <span>Total a receber</span>
         <strong id="fiadoTotalAberto">R$ 0,00</strong>
+      </button>
+    </section>
+
+    <section class="fiado-grade-indicadores" aria-label="Indicadores de vencimento e inadimplência">
+      <button class="fiado-resumo-card alerta" type="button" data-abrir-cobrancas aria-label="Consultar total vencido e cobranças">
+        <span>Total vencido</span>
+        <strong id="fiadoTotalVencido">R$ 0,00</strong>
+      </button>
+      <button class="fiado-resumo-card alerta" type="button" data-abrir-cobrancas aria-label="Consultar clientes inadimplentes">
+        <span>Clientes inadimplentes</span>
+        <strong id="fiadoClientesInadimplentes">0</strong>
       </button>
     </section>
 
@@ -271,42 +289,76 @@
       <div class="fiado-atalhos">
         <button type="button" class="fiado-atalho principal" data-abrir-cadastro>
           <span class="fiado-atalho-icone" aria-hidden="true">＋</span>
-          <span class="fiado-atalho-texto"><strong>Cadastrar cliente</strong><small>Adicionar à lista do fiado</small></span>
+          <span class="fiado-atalho-texto"><strong>Cadastrar cliente</strong><small>Nome, telefone, endereço e limite</small></span>
         </button>
         <button type="button" class="fiado-atalho" data-rolar-para="painelClientes">
           <span class="fiado-atalho-icone" aria-hidden="true">👥</span>
-          <span class="fiado-atalho-texto"><strong>Ver clientes</strong><small>Consultar saldo e histórico</small></span>
+          <span class="fiado-atalho-texto"><strong>Ver clientes</strong><small>Consultar saldo, parcelas e histórico</small></span>
+        </button>
+        <button type="button" class="fiado-atalho" data-abrir-cobrancas>
+          <span class="fiado-atalho-icone" aria-hidden="true">💬</span>
+          <span class="fiado-atalho-texto"><strong>Cobranças</strong><small>Vencidas, a vencer e WhatsApp</small></span>
+        </button>
+        <button type="button" class="fiado-atalho" data-abrir-relatorios>
+          <span class="fiado-atalho-icone" aria-hidden="true">📊</span>
+          <span class="fiado-atalho-texto"><strong>Relatórios</strong><small>Período, inadimplência e PDF</small></span>
         </button>
       </div>
     </section>
 
     <section id="painelClientes" class="fiado-painel" aria-labelledby="tituloClientesFiado">
       <div class="fiado-secao-cabecalho">
-        <div><h2 id="tituloClientesFiado">Clientes do fiado</h2><p>Abra um cliente para consultar a conta.</p></div>
+        <div><h2 id="tituloClientesFiado">Clientes do fiado</h2><p>Abra um cliente para consultar conta, parcelas e auditoria.</p></div>
       </div>
       <div class="fiado-filtro">
-        <input id="fiadoBuscaCliente" type="search" placeholder="⌕  Buscar por nome ou telefone" aria-label="Buscar cliente por nome ou telefone">
+        <input id="fiadoBuscaCliente" type="search" placeholder="⌕  Buscar por nome, telefone ou endereço" aria-label="Buscar cliente por nome, telefone ou endereço">
         <span id="fiadoContagemClientes" class="fiado-contagem" aria-live="polite">0 clientes</span>
+      </div>
+      <div id="fiadoFiltrosSituacao" class="fiado-chips-filtro" role="group" aria-label="Filtrar clientes por situação">
+        <button type="button" class="fiado-chip ativo" data-filtro-situacao="todos">Todos</button>
+        <button type="button" class="fiado-chip" data-filtro-situacao="ativo">Ativos</button>
+        <button type="button" class="fiado-chip" data-filtro-situacao="bloqueado">Bloqueados</button>
+        <button type="button" class="fiado-chip" data-filtro-situacao="inadimplente">Inadimplentes</button>
+        <button type="button" class="fiado-chip" data-filtro-situacao="arquivado">Arquivados</button>
       </div>
       <div id="fiadoListaClientes" class="fiado-lista-clientes" aria-live="polite"></div>
     </section>
   </main>
 
-  <!-- MODAL: CADASTRO DE CLIENTE -->
+  <!-- MODAL: CADASTRO / EDIÇÃO DE CLIENTE (SEM CPF, ENDEREÇO OPCIONAL) -->
   <div id="modalCadastroFiado" class="fiado-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="tituloCadastroFiado">
     <div class="fiado-modal-conteudo">
       <div class="fiado-modal-topo">
-        <div><h2 id="tituloCadastroFiado">Cadastrar cliente</h2><p>Cadastre quem poderá comprar fiado.</p></div>
+        <div><h2 id="tituloCadastroFiado">Cadastrar cliente</h2><p>Endereço opcional · Sem cadastro de CPF.</p></div>
         <button id="btnFecharCadastroFiado" type="button" class="fiado-btn-fechar" aria-label="Fechar cadastro">×</button>
       </div>
       <form id="formCadastroCliente" class="fiado-form">
         <div class="fiado-campo">
-          <label for="fiadoNomeCliente">Nome do cliente *</label>
+          <label for="fiadoNomeCliente">Nome completo *</label>
           <input id="fiadoNomeCliente" name="nome" type="text" maxlength="100" autocomplete="name" placeholder="Digite o nome completo" required>
         </div>
         <div class="fiado-campo">
-          <label for="fiadoTelefoneCliente">Telefone (opcional)</label>
+          <label for="fiadoTelefoneCliente">Telefone / WhatsApp</label>
           <input id="fiadoTelefoneCliente" name="telefone" type="tel" maxlength="30" autocomplete="tel" placeholder="WhatsApp ou contato">
+        </div>
+        <div class="fiado-campo">
+          <label for="fiadoEnderecoCliente">Endereço (opcional)</label>
+          <input id="fiadoEnderecoCliente" name="endereco" type="text" maxlength="180" placeholder="Rua, número, bairro">
+        </div>
+        <div class="fiado-campo">
+          <label for="fiadoLimiteCliente">Limite de crédito (R$ — opcional)</label>
+          <input id="fiadoLimiteCliente" name="limiteCredito" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00 (sem limite se vazio)">
+        </div>
+        <div class="fiado-campo">
+          <label for="fiadoSituacaoCliente">Situação</label>
+          <select id="fiadoSituacaoCliente" name="situacao">
+            <option value="ativo">Ativo</option>
+            <option value="bloqueado">Bloqueado</option>
+          </select>
+        </div>
+        <div class="fiado-campo">
+          <label for="fiadoObservacoesCliente">Observações (opcional)</label>
+          <textarea id="fiadoObservacoesCliente" name="observacoes" rows="2" maxlength="300" placeholder="Referências ou observações"></textarea>
         </div>
         <button class="fiado-btn fiado-btn-principal" type="submit">＋ Salvar cliente</button>
         <button id="btnCancelarCadastroFiado" class="fiado-btn fiado-btn-neutro" type="button">Cancelar</button>
@@ -326,6 +378,12 @@
         <div class="fiado-detalhe-kpi saldo"><span>Saldo devedor</span><strong id="fiadoDetalhesSaldo">R$ 0,00</strong></div>
         <div class="fiado-detalhe-kpi"><span>Total comprado</span><strong id="fiadoDetalhesCompras">R$ 0,00</strong></div>
         <div class="fiado-detalhe-kpi"><span>Total pago</span><strong id="fiadoDetalhesPago">R$ 0,00</strong></div>
+      </section>
+
+      <section class="fiado-detalhes-kpis" aria-label="Limite e compras pendentes do cliente">
+        <div class="fiado-detalhe-kpi"><span>Limite de crédito</span><strong id="fiadoDetalhesLimite">Sem limite</strong></div>
+        <div class="fiado-detalhe-kpi"><span>Crédito disponível</span><strong id="fiadoDetalhesDisponivel">Livre</strong></div>
+        <div class="fiado-detalhe-kpi"><span>Compras pendentes</span><strong id="fiadoDetalhesPendentesQtd">0</strong></div>
       </section>
 
       <section aria-labelledby="tituloResumoMensalFiado">
@@ -352,8 +410,11 @@
       <div class="fiado-acoes-modal" aria-label="Ações da conta do cliente">
         <button id="btnAdicionarDividaFiado" type="button" class="fiado-btn fiado-btn-secundario">＋ Registrar compra</button>
         <button id="btnRegistrarPagamentoFiado" type="button" class="fiado-btn fiado-btn-principal">＋ Registrar pagamento</button>
-        <button id="btnCobrarWhatsAppFiado" type="button" class="fiado-btn fiado-btn-whatsapp">💬 Cobrar no WhatsApp</button>
+        <button id="btnEditarClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">✎ Editar cliente</button>
+        <button id="btnBloquearClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">🔒 Bloquear / Desbloquear</button>
+        <button id="btnArquivarClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">🗄 Arquivar / Reativar</button>
         <button id="btnExportarFiadoPDF" type="button" class="fiado-btn fiado-btn-secundario">▤ Gerar extrato PDF</button>
+        <button id="btnCobrarWhatsAppFiado" type="button" class="fiado-btn fiado-btn-whatsapp">💬 Cobrar no WhatsApp</button>
         <button id="btnExcluirClienteFiado" type="button" class="fiado-btn fiado-btn-perigo">Excluir cliente</button>
       </div>
 
@@ -365,9 +426,20 @@
       >
         Fechar detalhes
       </button>
+
+      <details class="fiado-historico-bloco">
+        <summary>Parcelas da conta</summary>
+        <div id="fiadoParcelasCliente" class="fiado-historico" aria-live="polite"></div>
+      </details>
+
       <details class="fiado-historico-bloco">
         <summary>Histórico de movimentações</summary>
         <div id="fiadoHistoricoCliente" class="fiado-historico" aria-live="polite"></div>
+      </details>
+
+      <details class="fiado-historico-bloco">
+        <summary>Histórico de cobranças e auditoria</summary>
+        <div id="fiadoAuditoriaCliente" class="fiado-historico" aria-live="polite"></div>
       </details>
     </div>
   </div>
@@ -381,13 +453,55 @@
       </div>
       <form id="formPagamentoFiado" class="fiado-form">
         <div class="fiado-campo"><label for="fiadoValorPagamento">Valor recebido (R$) *</label><input id="fiadoValorPagamento" name="valor" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required></div>
-        <div class="fiado-campo"><label for="fiadoFormaPagamento">Forma de pagamento *</label><select id="fiadoFormaPagamento" name="forma" required><option value="dinheiro">Dinheiro</option><option value="pix">Pix</option><option value="debito">Cartão de débito</option><option value="credito">Cartão de crédito</option></select></div>
+        <div class="fiado-campo"><label for="fiadoFormaPagamento">Forma de pagamento *</label><select id="fiadoFormaPagamento" name="forma" required><option value="dinheiro">Dinheiro</option><option value="pix">Pix</option><option value="debito">Cartão de débito</option><option value="credito">Cartão de crédito</option><option value="transferencia">Transferência</option></select></div>
         <div class="fiado-campo"><label for="fiadoObservacaoPagamento">Observação (opcional)</label><textarea id="fiadoObservacaoPagamento" name="observacao" rows="3" maxlength="300" placeholder="Detalhes deste pagamento"></textarea></div>
         <div class="fiado-acoes-modal">
           <button type="submit" class="fiado-btn fiado-btn-principal">Salvar pagamento</button>
           <button id="btnCancelarPagamentoFiado" type="button" class="fiado-btn fiado-btn-neutro">Cancelar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: COBRANÇAS -->
+  <div id="modalCobrancasFiado" class="fiado-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="tituloCobrancasFiado">
+    <div class="fiado-modal-conteudo">
+      <div class="fiado-modal-topo">
+        <div><h2 id="tituloCobrancasFiado">Cobranças de clientes</h2><p>Parcelas vencidas, próximas do vencimento e envio manual pelo WhatsApp.</p></div>
+        <button id="btnFecharCobrancasFiado" type="button" class="fiado-btn-fechar" aria-label="Fechar cobranças">×</button>
+      </div>
+      <div id="fiadoListaCobrancas" class="fiado-historico" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: RELATÓRIOS -->
+  <div id="modalRelatoriosFiado" class="fiado-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="tituloRelatoriosFiado">
+    <div class="fiado-modal-conteudo">
+      <div class="fiado-modal-topo">
+        <div><h2 id="tituloRelatoriosFiado">Relatórios do fiado</h2><p>Filtre por período e cliente, consulte totais e exporte em PDF.</p></div>
+        <button id="btnFecharRelatoriosFiado" type="button" class="fiado-btn-fechar" aria-label="Fechar relatórios">×</button>
+      </div>
+      <form id="formFiltroRelatorioFiado" class="fiado-form">
+        <div class="fiado-campo">
+          <label for="fiadoRelatorioCliente">Cliente</label>
+          <select id="fiadoRelatorioCliente"><option value="">Todos os clientes</option></select>
+        </div>
+        <div class="fiado-resumo-mensal">
+          <div class="fiado-campo">
+            <label for="fiadoRelatorioDataInicio">Data inicial</label>
+            <input id="fiadoRelatorioDataInicio" type="date">
+          </div>
+          <div class="fiado-campo">
+            <label for="fiadoRelatorioDataFim">Data final</label>
+            <input id="fiadoRelatorioDataFim" type="date">
+          </div>
+        </div>
+        <div class="fiado-acoes-modal">
+          <button type="submit" class="fiado-btn fiado-btn-principal">Atualizar relatório</button>
+          <button id="btnImprimirRelatorioFiado" type="button" class="fiado-btn fiado-btn-secundario">▤ Imprimir / PDF</button>
+        </div>
+      </form>
+      <div id="fiadoConteudoRelatorio" class="fiado-historico" style="margin-top:16px;" aria-live="polite"></div>
     </div>
   </div>
 
@@ -401,52 +515,11 @@
     <a href="fiado.html" class="nav-item ativo" aria-current="page"><span class="nav-icon" aria-hidden="true">🧾</span><span>Fiado</span></a>
   </nav>
 
-  
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
-<script src="auth-guard.js"></script>
-<script src="dados-supabase.js"></script> 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="dados-supabase.js"></script>
   <script src="seguranca.js"></script>
-<script src="fiado.js"></script>
-  <script>
-    // Interações de apresentação. As rotinas financeiras ficam em fiado.js.
-    (() => {
-      'use strict';
-      const modal = document.getElementById('modalCadastroFiado');
-      const campoNome = document.getElementById('fiadoNomeCliente');
-      const btnFechar = document.getElementById('btnFecharCadastroFiado');
-      const btnCancelar = document.getElementById('btnCancelarCadastroFiado');
-      if (!modal) return;
-
-      const abrirCadastro = () => {
-        modal.classList.add('aberto');
-        modal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-        window.setTimeout(() => campoNome && campoNome.focus(), 80);
-      };
-      const fecharCadastro = () => {
-        modal.classList.remove('aberto');
-        modal.setAttribute('aria-hidden', 'true');
-        const outroModalAberto = document.querySelector('.fiado-modal.aberto');
-        if (!outroModalAberto) document.body.style.overflow = '';
-      };
-
-      document.querySelectorAll('[data-abrir-cadastro]').forEach(botao => botao.addEventListener('click', abrirCadastro));
-      if (btnFechar) btnFechar.addEventListener('click', fecharCadastro);
-      if (btnCancelar) btnCancelar.addEventListener('click', fecharCadastro);
-      modal.addEventListener('click', evento => { if (evento.target === modal) fecharCadastro(); });
-
-      document.querySelectorAll('[data-rolar-para]').forEach(botao => {
-        botao.addEventListener('click', () => {
-          const destino = document.getElementById(botao.getAttribute('data-rolar-para'));
-          if (destino) destino.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-      });
-
-      document.addEventListener('keydown', evento => {
-        if (evento.key === 'Escape' && modal.classList.contains('aberto')) fecharCadastro();
-      });
-    })();
-  </script>
+  <script src="fiado.js"></script>
 </body>
 </html>
