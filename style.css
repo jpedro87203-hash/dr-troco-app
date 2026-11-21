@@ -629,7 +629,6 @@ body:has(.fiado-resumo) .fiado-modal-topo p { margin: 0; color: #64748b; font-si
   padding: 16px;
 }
 
-/* CORREÇÃO CRÍTICA DO SCROLL: A área de rolagem precisa ser o flex child */
 .modal-produtos-scroll-area {
   flex: 1 1 0%;
   min-height: 0;
@@ -640,7 +639,6 @@ body:has(.fiado-resumo) .fiado-modal-topo p { margin: 0; color: #64748b; font-si
   padding-bottom: 15px;
 }
 
-/* Esconde a barra de rolagem visualmente no mobile (opcional, mas deixa mais limpo) */
 .modal-produtos-scroll-area::-webkit-scrollbar { width: 5px; }
 .modal-produtos-scroll-area::-webkit-scrollbar-track { background: transparent; }
 .modal-produtos-scroll-area::-webkit-scrollbar-thumb { background: #cbd8d2; border-radius: 20px; }
@@ -695,7 +693,6 @@ body:has(.fiado-resumo) .fiado-modal-topo p { margin: 0; color: #64748b; font-si
 .campo-busca-produto input::placeholder { color: #8b9894; }
 
 /* ===== GRID DOS PRODUTOS ===== */
-/* Retiramos o flex e overflow daqui, pois agora a div pai rola */
 .lista-produtos-estoque-venda {
   width: 100%;
   display: grid;
@@ -1188,16 +1185,18 @@ body:has(.fiado-resumo) .fiado-modal-topo p { margin: 0; color: #64748b; font-si
   .area-leitor-venda { min-height: 230px; }
 }
 
-/* ===== NAVEGAÇÃO INFERIOR (menu-inferior — 5 abas) ===== */
+/* ===== NAVEGAÇÃO INFERIOR (menu-inferior — rolagem horizontal) ===== */
 body nav.menu-inferior {
   position: fixed !important;
   left: 50% !important;
   right: auto !important;
   bottom: 0 !important;
   transform: translateX(-50%) !important;
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  display: flex !important;
+  flex-direction: row !important;
   align-items: stretch;
+  justify-content: flex-start;
+  gap: 4px;
   width: 100% !important;
   max-width: 760px !important;
   min-height: 64px;
@@ -1205,22 +1204,28 @@ body nav.menu-inferior {
   border-top: 1px solid #dfe8e3;
   background: rgba(255, 255, 255, .97);
   box-shadow: 0 -5px 20px rgba(30, 50, 42, .08);
-  overflow: visible !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   z-index: 99999 !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+body nav.menu-inferior::-webkit-scrollbar {
+  display: none;
+}
 body nav.menu-inferior > a.menu-item {
-  display: flex !important;
-  flex: none !important;
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 4px;
-  width: 100% !important;
-  min-width: 0 !important;
+  min-width: 74px !important;
   margin: 0 !important;
-  padding: 4px 0 !important;
+  padding: 4px 10px !important;
   border-radius: 11px;
   color: #7c8985;
   font-size: 20px;
@@ -1249,6 +1254,7 @@ body nav.menu-inferior > a.menu-item.ativo { color: var(--verde); background: #e
 body nav.menu-inferior > a.menu-item:active { transform: scale(.96); }
 
 @media (max-width: 360px) {
+  body nav.menu-inferior > a.menu-item { min-width: 66px !important; padding: 4px 8px !important; }
   body nav.menu-inferior > a.menu-item small { font-size: 9px !important; }
 }
 
@@ -1756,7 +1762,7 @@ body:has(.fiado-resumo) .fiado-notificacao.erro { background: #b91c1c; }
 }
 
 /* =========================================================
-   COMPATIBILIDADE — .bottom-nav com visual de menu-inferior
+   COMPATIBILIDADE — .bottom-nav (rolagem horizontal)
    (usado pelo fiado.html)
 ========================================================= */
 body .bottom-nav {
@@ -1765,9 +1771,11 @@ body .bottom-nav {
   right: auto !important;
   bottom: 0 !important;
   transform: translateX(-50%) !important;
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  display: flex !important;
+  flex-direction: row !important;
   align-items: stretch;
+  justify-content: flex-start;
+  gap: 4px;
   width: 100% !important;
   max-width: 760px !important;
   min-height: 64px;
@@ -1777,23 +1785,30 @@ body .bottom-nav {
   border-top: 1px solid #dfe8e3;
   background: rgba(255, 255, 255, .97);
   box-shadow: 0 -5px 20px rgba(30, 50, 42, .08);
-  overflow: visible;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   z-index: 99999 !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+body .bottom-nav::-webkit-scrollbar {
+  display: none;
+}
 
 body .bottom-nav .nav-item {
-  display: flex;
+  display: inline-flex;
+  flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  width: 100%;
-  min-width: 0;
+  min-width: 74px;
   min-height: auto;
   margin: 0;
-  padding: 4px 0;
+  padding: 4px 10px;
   border-radius: 11px;
   color: #7c8985;
   text-decoration: none;
@@ -1825,5 +1840,4 @@ body .bottom-nav .nav-item.ativo {
 
 body .bottom-nav .nav-item:active {
   transform: scale(.96);
-   }
 }
