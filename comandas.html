@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+
+  <meta name="theme-color" content="#168b53">
+  <meta name="description" content="Dr. Troco - Controle de comandas e QR Code por mesa.">
+
+  <title>Dr. Troco - Comandas</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .comandas-app {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-bottom: 104px;
+    }
+
+    .comandas-topo-card {
+      background: #ffffff;
+      border: 1px solid #e1e9e5;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .comandas-topo-card h2 {
+      margin: 0;
+      font-size: 18px;
+      color: #1f3028;
+    }
+
+    .comandas-topo-card p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .comandas-metricas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .comanda-metrica {
+      background: #ffffff;
+      border: 1px solid #e1e9e5;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .comanda-metrica span {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .comanda-metrica strong {
+      font-size: 20px;
+      color: #168b53;
+      font-weight: 900;
+    }
+
+    .comandas-acoes-grade {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .btn-comanda-primario {
+      background: linear-gradient(135deg, #25aa6a, #168b53);
+      color: #ffffff;
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-comanda-secundario {
+      background: #ffffff;
+      color: #1f3028;
+      border: 1px solid #d5e2db;
+      border-radius: 14px;
+      padding: 13px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .comandas-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .comanda-card {
+      background: #ffffff;
+      border: 1px solid #e1e9e5;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .comanda-card-topo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .comanda-mesa-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #eaf8f1;
+      color: #168b53;
+      font-weight: 900;
+      font-size: 13px;
+      padding: 6px 10px;
+      border-radius: 10px;
+    }
+
+    .comanda-total-destaque {
+      font-size: 17px;
+      font-weight: 900;
+      color: #1f3028;
+    }
+
+    .comanda-card-meta {
+      font-size: 12px;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .comanda-card-acoes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .comanda-card-acoes button {
+      padding: 9px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      border: 1px solid #d5e2db;
+      background: #f8faf9;
+      color: #1f3028;
+    }
+
+    .comanda-card-acoes button.fechar {
+      background: #168b53;
+      border-color: #168b53;
+      color: #ffffff;
+    }
+
+    .comanda-vazio {
+      background: #ffffff;
+      border: 1px dashed #cbd5e1;
+      border-radius: 16px;
+      padding: 26px 18px;
+      text-align: center;
+      color: #64748b;
+    }
+
+    .comanda-vazio strong {
+      display: block;
+      color: #1f3028;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .comanda-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 10050;
+    }
+
+    .comanda-modal-backdrop.aberto {
+      display: flex;
+    }
+
+    .comanda-modal-box {
+      width: 100%;
+      max-width: 540px;
+      max-height: 88vh;
+      overflow-y: auto;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+    }
+
+    .comanda-modal-cabecalho {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .comanda-modal-cabecalho h3 {
+      margin: 0;
+      font-size: 17px;
+      color: #1f3028;
+    }
+
+    .btn-fechar-x {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .comanda-campo {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .comanda-campo label {
+      font-size: 12px;
+      font-weight: 800;
+      color: #334155;
+    }
+
+    .comanda-campo input,
+    .comanda-campo select {
+      height: 44px;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 0 12px;
+      font-size: 14px;
+      color: #1f3028;
+      background: #ffffff;
+    }
+
+    .qr-grid-mesas {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .qr-mesa-card {
+      border: 1px solid #e1e9e5;
+      border-radius: 14px;
+      padding: 10px;
+      text-align: center;
+      background: #f9fbfa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .qr-mesa-card strong {
+      font-size: 14px;
+      color: #1f3028;
+    }
+
+    .qr-mesa-card small {
+      font-size: 11px;
+      color: #64748b;
+      word-break: break-all;
+    }
+
+    .comanda-itens-extrato {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 12px 0;
+      border-top: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 10px 0;
+    }
+
+    .comanda-item-linha {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .comanda-aviso {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #168b53;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 11000;
+      display: none;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .comanda-aviso.visivel {
+      display: block;
+    }
+
+    .comanda-aviso.erro {
+      background: #b42318;
+    }
+  </style>
+</head>
+<body class="pagina-comandas">
+  <div id="comandaAviso" class="comanda-aviso" role="status" aria-live="polite"></div>
+
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-logo">🍽️</div>
+      <div>
+        <h1>Dr. Troco</h1>
+        <p>Comandas &amp; QR Code</p>
+      </div>
+      <a href="painel-lojista.html" class="botao-estabelecimento" aria-label="Painel" title="Painel">👤</a>
+    </header>
+
+    <main class="comandas-app">
+      <section class="comandas-topo-card">
+        <div>
+          <h2>Comandas por Mesa</h2>
+          <p>Associe QR Codes fixos às mesas, adicione itens e confira o consumo no fechamento.</p>
+        </div>
+        <button type="button" id="btnAbrirNovaComanda" class="btn-comanda-primario">＋ Nova comanda</button>
+      </section>
+
+      <section class="comandas-metricas">
+        <div class="comanda-metrica">
+          <span>Comandas abertas</span>
+          <strong id="comandasQtdAbertas">0</strong>
+        </div>
+        <div class="comanda-metrica">
+          <span>Total em aberto</span>
+          <strong id="comandasTotalAberto">R$ 0,00</strong>
+        </div>
+      </section>
+
+      <section class="comandas-acoes-grade">
+        <button type="button" id="btnLerQrComanda" class="btn-comanda-primario">📷 Ler QR Code</button>
+        <button type="button" id="btnAbrirQrMesas" class="btn-comanda-secundario">🔲 QR das Mesas</button>
+      </section>
+
+      <section id="listaComandasAbertas" class="comandas-lista">
+        <div class="comanda-vazio">
+          <strong>Carregando comandas...</strong>
+          <span>Aguarde um instante.</span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: ABRIR COMANDA / VINCULAR MESA -->
+  <div id="modalAbrirComanda" class="comanda-modal-backdrop" aria-hidden="true">
+    <div class="comanda-modal-box">
+      <div class="comanda-modal-cabecalho">
+        <h3>Nova comanda / Mesa</h3>
+        <button type="button" class="btn-fechar-x" data-fechar-modal="modalAbrirComanda" aria-label="Fechar">×</button>
+      </div>
+      <form id="formAbrirComanda">
+        <div class="comanda-campo">
+          <label for="inputNumeroMesa">Número ou nome da mesa *</label>
+          <input type="text" id="inputNumeroMesa" placeholder="Ex.: Mesa 01 ou 01" required>
+        </div>
+        <div class="comanda-campo">
+          <label for="inputCodigoQrMesa">Código do QR Code (fixo da mesa)</label>
+          <input type="text" id="inputCodigoQrMesa" placeholder="Gerado automaticamente se vazio (ex.: DRTROCO-MESA-01)">
+        </div>
+        <div class="comanda-campo">
+          <label for="inputClienteComanda">Identificação / Cliente (opcional)</label>
+          <input type="text" id="inputClienteComanda" placeholder="Ex.: João ou Grupo">
+        </div>
+        <div class="comandas-acoes-grade">
+          <button type="button" class="btn-comanda-secundario" data-fechar-modal="modalAbrirComanda">Cancelar</button>
+          <button type="submit" class="btn-comanda-primario">Abrir comanda</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: QR CODES DAS MESAS (IMPRESSÃO) -->
+  <div id="modalQrMesas" class="comanda-modal-backdrop" aria-hidden="true">
+    <div class="comanda-modal-box">
+      <div class="comanda-modal-cabecalho">
+        <h3>QR Codes fixos das mesas</h3>
+        <button type="button" class="btn-fechar-x" data-fechar-modal="modalQrMesas" aria-label="Fechar">×</button>
+      </div>
+      <p style="font-size:12px;color:#64748b;margin:0 0 10px;">
+        Cada mesa mantém um código fixo. Você pode imprimir para fixar na mesa e reaproveitar sempre.
+      </p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="number" id="inputQtdMesasGerar" min="1" max="100" value="6" style="flex:1;height:40px;border:1px solid #cbd5e1;border-radius:10px;padding:0 10px;">
+        <button type="button" id="btnGerarLoteMesas" class="btn-comanda-secundario" style="padding:8px 12px;">Gerar mesas</button>
+        <button type="button" id="btnImprimirQrMesas" class="btn-comanda-primario" style="padding:8px 12px;">🖨️ Imprimir</button>
+      </div>
+      <div id="gridQrMesas" class="qr-grid-mesas"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: LEITOR QR CODE -->
+  <div id="modalLeitorQrComanda" class="comanda-modal-backdrop" aria-hidden="true">
+    <div class="comanda-modal-box">
+      <div class="comanda-modal-cabecalho">
+        <h3>Ler QR Code da mesa/comanda</h3>
+        <button type="button" class="btn-fechar-x" id="btnFecharLeitorQr" aria-label="Fechar">×</button>
+      </div>
+      <video id="videoQrComanda" autoplay muted playsinline style="width:100%;max-height:260px;background:#0f172a;border-radius:12px;"></video>
+      <p id="statusLeitorQr" style="font-size:12px;color:#64748b;margin:8px 0;">Aponte a câmera para o QR Code da mesa.</p>
+      <div class="comanda-campo" style="margin-top:8px;">
+        <label for="inputQrManual">Ou digite/cole o código do QR Code</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="inputQrManual" placeholder="Ex.: DRTROCO-MESA-01" style="flex:1;">
+          <button type="button" id="btnConfirmarQrManual" class="btn-comanda-primario" style="padding:0 14px;">Buscar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DETALHES / ITENS / FECHAMENTO DA COMANDA -->
+  <div id="modalDetalhesComanda" class="comanda-modal-backdrop" aria-hidden="true">
+    <div class="comanda-modal-box">
+      <div class="comanda-modal-cabecalho">
+        <h3 id="detalheComandaTitulo">Comanda</h3>
+        <button type="button" class="btn-fechar-x" data-fechar-modal="modalDetalhesComanda" aria-label="Fechar">×</button>
+      </div>
+      <div id="detalheComandaSubtitulo" style="font-size:12px;color:#64748b;margin-bottom:10px;"></div>
+
+      <form id="formAdicionarItemComanda" style="display:grid;grid-template-columns:1fr 72px 105px auto;gap:6px;align-items:end;margin-bottom:10px;">
+        <div class="comanda-campo" style="margin:0;">
+          <label for="itemNomeComanda">Item</label>
+          <input type="text" id="itemNomeComanda" placeholder="Ex.: Coca lata" required>
+        </div>
+        <div class="comanda-campo" style="margin:0;">
+          <label for="itemQtdComanda">Qtd</label>
+          <input type="number" id="itemQtdComanda" min="1" value="1" required>
+        </div>
+        <div class="comanda-campo" style="margin:0;">
+          <label for="itemValorComanda">Valor (R$)</label>
+          <input type="number" id="itemValorComanda" min="0.01" step="0.01" placeholder="0,00" required>
+        </div>
+        <button type="submit" class="btn-comanda-primario" style="height:44px;padding:0 12px;">＋</button>
+      </form>
+
+      <div id="detalheComandaItens" class="comanda-itens-extrato"></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <strong>Total consumido</strong>
+        <strong id="detalheComandaTotal" style="font-size:18px;color:#168b53;">R$ 0,00</strong>
+      </div>
+
+      <div class="comanda-campo">
+        <label for="formaPagamentoFechamento">Fechar comanda como</label>
+        <select id="formaPagamentoFechamento">
+          <option value="dinheiro">Dinheiro</option>
+          <option value="pix">Pix</option>
+          <option value="debito">Débito</option>
+          <option value="credito">Crédito</option>
+          <option value="fiado">Enviar para o Fiado</option>
+        </select>
+      </div>
+
+      <div class="comandas-acoes-grade">
+        <button type="button" id="btnFecharComandaConta" class="btn-comanda-primario">✓ Fechar conta</button>
+        <button type="button" class="btn-comanda-secundario" data-fechar-modal="modalDetalhesComanda">Voltar</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="menu-inferior">
+    <a href="index.html" class="menu-item"><span>🧮</span><small>Calculadora</small></a>
+    <a href="fluxo.html" class="menu-item"><span>📊</span><small>Fluxo</small></a>
+    <a href="historico.html" class="menu-item"><span>📋</span><small>Histórico</small></a>
+    <a href="estoque.html" class="menu-item"><span>📦</span><small>Estoque</small></a>
+    <a href="fiado.html" class="menu-item"><span>🧾</span><small>Fiado</small></a>
+    <a href="comandas.html" class="menu-item ativo"><span>🍽️</span><small>Comandas</small></a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="protecao.js"></script>
+  <script src="fiado.js"></script>
+  <script src="dados-supabase.js"></script>
+  <script src="comandas.js"></script>
+</body>
+</html>
