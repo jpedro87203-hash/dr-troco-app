@@ -20,7 +20,7 @@ let produtoSelecionadoMovimento = null;
 
 let tipoMovimentoAtual = "entrada";
 let filtroAtual = "todos";
-let filtroDataHistorico = ""; 
+let filtroDataHistorico = "";
 
 /* =========================================================
 LEITOR DE CÓDIGO DE BARRAS — CONTROLE
@@ -34,7 +34,7 @@ let codigoBarrasLido = "";
 
 let abrindoLeitorCodigo = false;
 let sessaoLeitorCodigo = 0;
-let produtoModalAbertoAntesLeitor = false; 
+let produtoModalAbertoAntesLeitor = false;
 
 /* =========================================================
 UTILITÁRIOS
@@ -73,18 +73,18 @@ function obterDataHoje() {
 function obterDataHoraAtual() {
     const agora = new Date();
     const horaAtual = agora.getHours();
-    
+
     if (horaAtual >= 0 && horaAtual < 6) {
         agora.setDate(agora.getDate() - 1);
     }
 
-    const dia = String(agora.getDate()).padStart(2, '0');
-    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const dia = String(agora.getDate()).padStart(2, "0");
+    const mes = String(agora.getMonth() + 1).padStart(2, "0");
     const ano = agora.getFullYear();
 
-    const hora = String(new Date().getHours()).padStart(2, '0');
-    const minuto = String(new Date().getMinutes()).padStart(2, '0');
-    const segundo = String(new Date().getSeconds()).padStart(2, '0');
+    const hora = String(new Date().getHours()).padStart(2, "0");
+    const minuto = String(new Date().getMinutes()).padStart(2, "0");
+    const segundo = String(new Date().getSeconds()).padStart(2, "0");
 
     return {
         data: `${dia}/${mes}/${ano}`,
@@ -237,7 +237,7 @@ async function carregarProdutos() {
         }
 
         const listaRemota = await window.EstoqueSupabase.carregarProdutos();
-        
+
         if (Array.isArray(listaRemota) && listaRemota.length > 0) {
             produtos = listaRemota.map(normalizarProduto);
             salvarProdutos();
@@ -335,6 +335,132 @@ async function persistirProdutoNaNuvem(produto) {
 }
 
 /* =========================================================
+INTEGRAÇÃO COM COMANDAS (BAIXA APENAS NO FECHAMENTO)
+========================================================= */
+
+async function garantirProdutosCarregadosParaComanda() {
+    if (produtos.length > 0 && estoquePronto) return;
+    if (!comercioIdEstoque && window.EstoqueSupabase && typeof window.EstoqueSupabase.obterComercioId === "function") {
+        try {
+            comercioIdEstoque = await window.EstoqueSupabase.obterComercioId();
+        } catch (_) {}
+    }
+    if (!produtos.length && comercioIdEstoque) {
+        try {
+            const raw = localStorage.getItem(`${CHAVE_ESTOQUE}_${comercioIdEstoque}`);
+            if (raw) {
+                const arr = JSON.parse(raw);
+                if (Array.isArray(arr)) produtos = arr.map(normalizarProduto);
+            }
+        } catch (_) {}
+    }
+    if (!produtos.length && window.EstoqueSupabase && typeof window.EstoqueSupabase.carregarProdutos === "function") {
+        try {
+            const remotos = await window.EstoqueSupabase.carregarProdutos();
+            if (Array.isArray(remotos)) {
+                produtos = remotos.map(normalizarProduto);
+                estoquePronto = true;
+                if (comercioIdEstoque) salvarProdutos();
+            }
+        } catch (_) {}
+    }
+}
+
+async function listarProdutosParaComanda() {
+    await garantirProdutosCarregadosParaComanda();
+    return produtos.map(p => ({ ...p }));
+}
+
+async function darBaixaFechamentoComanda(itensComanda, referenciaComanda = "") {
+    if (!Array.isArray(itensComanda) || !itensComanda.length) {
+        return { ok: true, baixados: 0 };
+    }
+
+    await garantirProdutosCarregadosParaComanda();
+
+    const agregados = new Map();
+    itensComanda.forEach(item => {
+        if (!item || !item.produtoId) return;
+        const pid = String(item.produtoId);
+        const qtd = Math.max(1, Math.floor(numeroSeguro(item.quantidade, 1)));
+        const atual = agregados.get(pid) || { produtoId: pid, nome: item.nome || "Produto", quantidade: 0 };
+        atual.quantidade += qtd;
+        agregados.set(pid, atual);
+    });
+
+    if (!agregados.size) {
+        return { ok: true, baixados: 0 };
+    }
+
+    const dataHora = obterDataHoraAtual();
+    let baixados = 0;
+
+    for (const entry of agregados.values()) {
+        const prod = produtos.find(p => String(p.id) === String(entry.produtoId));
+        if (!prod) continue;
+
+        const anterior = Math.max(0, Math.floor(numeroSeguro(prod.quantidade)));
+        const nova = Math.max(0, anterior - entry.quantidade);
+        const qtdEfetiva = anterior - nova;
+
+        prod.quantidade = nova;
+        prod.atualizadoEm = new Date().toISOString();
+
+        if (window.EstoqueSupabase && typeof window.EstoqueSupabase.salvarProduto === "function") {
+            try {
+                await window.EstoqueSupabase.salvarProduto(prod);
+            } catch (e) {
+                console.warn("Aviso ao persistir baixa de comanda no Supabase:", e);
+            }
+        }
+
+        if (qtdEfetiva > 0) {
+            const mov = {
+                id: gerarId(),
+                produtoId: prod.id,
+                produtoNome: prod.nome,
+                tipo: "saida",
+                quantidade: qtdEfetiva,
+                quantidadeAnterior: anterior,
+                quantidadeNova: nova,
+                observacao: referenciaComanda ? `Fechamento ${referenciaComanda}` : "Fechamento de comanda",
+                data: dataHora.dataChave,
+                hora: dataHora.hora
+            };
+
+            if (window.EstoqueSupabase && typeof window.EstoqueSupabase.salvarMovimentacao === "function") {
+                try {
+                    await window.EstoqueSupabase.salvarMovimentacao(mov);
+                } catch (_) {}
+            }
+
+            const chaveMov = chaveMovimentacoesDoComercio();
+            if (chaveMov) {
+                const listaMov = carregarMovimentacoes();
+                listaMov.push(mov);
+                localStorage.setItem(chaveMov, JSON.stringify(listaMov));
+            }
+            baixados++;
+        }
+    }
+
+    if (comercioIdEstoque) {
+        salvarProdutos();
+    }
+
+    atualizarKPIs();
+    renderizarProdutos();
+    renderizarHistoricoMovimentacoes();
+
+    return { ok: true, baixados };
+}
+
+window.DrTrocoEstoque = {
+    listarProdutosParaComanda,
+    darBaixaFechamentoComanda
+};
+
+/* =========================================================
 NORMALIZAÇÃO
 ========================================================= */
 
@@ -347,8 +473,8 @@ function normalizarProduto(produto) {
         nome: String(produto.nome ?? produto.nomeProduto ?? "").trim(),
         codigo: String(codigoSalvo).trim(),
         preco: numeroSeguro(produto.preco ?? produto.precoUnitario ?? produto.precoProduto),
-        precoCusto: numeroSeguro(produto.precoCusto ?? produto.preco_custo ?? 0), // Margem de Custo
-        qtdEmbalagem: Math.max(1, Math.floor(numeroSeguro(produto.qtdEmbalagem ?? produto.qtd_embalagem ?? 1))), // Qtd Fardo
+        precoCusto: numeroSeguro(produto.precoCusto ?? produto.preco_custo ?? 0),
+        qtdEmbalagem: Math.max(1, Math.floor(numeroSeguro(produto.qtdEmbalagem ?? produto.qtd_embalagem ?? 1))),
         tipo,
         estoqueMinimo: Math.max(0, Math.floor(numeroSeguro(produto.estoqueMinimo ?? produto.estoque_minimo, 5))),
         quantidade: Math.max(0, Math.floor(numeroSeguro(produto.quantidade ?? produto.estoque ?? produto.quantidadeInicial))),
@@ -523,7 +649,7 @@ function abrirCadastroProduto() {
     if (validade) validade.value = "";
     if (preview) preview.style.display = "none";
     if (previewImg) previewImg.src = "";
-    
+
     if (campoCusto) campoCusto.value = "0";
     if (campoEmbalagem) campoEmbalagem.value = "1";
     if (campoMargem) campoMargem.value = "";
@@ -551,7 +677,7 @@ function abrirEdicaoProduto(id) {
     const titulo = document.getElementById("tituloModalProduto");
     const preview = document.getElementById("previewFoto");
     const previewImg = document.getElementById("previewFotoImg");
-    
+
     const campoCusto = document.getElementById("precoCustoProduto");
     const campoEmbalagem = document.getElementById("qtdEmbalagemProduto");
     const campoMargem = document.getElementById("margemLucroProduto");
@@ -573,11 +699,11 @@ function abrirEdicaoProduto(id) {
 
     if (campoCusto) campoCusto.value = produto.precoCusto || 0;
     if (campoEmbalagem) campoEmbalagem.value = produto.qtdEmbalagem || 1;
-    
+
     if (campoMargem) {
         const custoUnit = (produto.precoCusto || 0) / Math.max(1, produto.qtdEmbalagem || 1);
-        campoMargem.value = produto.preco > 0 
-            ? (((produto.preco - custoUnit) / produto.preco) * 100).toFixed(1) 
+        campoMargem.value = produto.preco > 0
+            ? (((produto.preco - custoUnit) / produto.preco) * 100).toFixed(1)
             : "";
     }
 
@@ -724,8 +850,8 @@ function configurarCalculoMargem() {
         }
     });
 
-    precoCustoInput.addEventListener("input", () => precoVendaInput.dispatchEvent(new Event('input')));
-    qtdEmbalagemInput?.addEventListener("input", () => precoVendaInput.dispatchEvent(new Event('input')));
+    precoCustoInput.addEventListener("input", () => precoVendaInput.dispatchEvent(new Event("input")));
+    qtdEmbalagemInput?.addEventListener("input", () => precoVendaInput.dispatchEvent(new Event("input")));
 }
 
 /* =========================================================
@@ -979,16 +1105,15 @@ function abrirDetalhes(id) {
         : `<div class="estoque-inicial">${escaparHTML(inicial)}</div>`;
     const validade = produto.validade ? formatarDataBR(produto.validade) : "Não informada";
     const tipo = produto.tipo === "perecivel" ? "Perecível" : "Não perecível";
-    
-    // Cálculo de Custo Unitário e Margem
+
     const precoCusto = numeroSeguro(produto.precoCusto);
     const qtdEmb = Math.max(1, numeroSeguro(produto.qtdEmbalagem));
     const custoUnitario = precoCusto / qtdEmb;
-    
-    const margem = produto.preco > 0 
-        ? (((produto.preco - custoUnitario) / produto.preco) * 100).toFixed(1) 
+
+    const margem = produto.preco > 0
+        ? (((produto.preco - custoUnitario) / produto.preco) * 100).toFixed(1)
         : "0.0";
-    const corMargem = margem >= 0 ? '#147844' : '#a33a3a';
+    const corMargem = margem >= 0 ? "#147844" : "#a33a3a";
 
     container.innerHTML = `
         <div class="estoque-detalhes-topo">
@@ -1000,14 +1125,14 @@ function abrirDetalhes(id) {
             </div>
         </div>
         <div class="estoque-status-detalhes ${status.classe}">${status.texto}</div>
-        
+
         <div class="estoque-detalhes">
             <div class="estoque-detalhe"><small>Quantidade</small><strong>${numeroSeguro(produto.quantidade)} un.</strong></div>
             <div class="estoque-detalhe"><small>Estoque mínimo</small><strong>${numeroSeguro(produto.estoqueMinimo)} un.</strong></div>
-            
+
             <div class="estoque-detalhe"><small>Custo Unitário</small><strong>${formatarReal(custoUnitario)}</strong></div>
             <div class="estoque-detalhe"><small>Margem de Lucro</small><strong style="color:${corMargem}">${margem}%</strong></div>
-            
+
             <div class="estoque-detalhe"><small>Tipo</small><strong>${tipo}</strong></div>
             <div class="estoque-detalhe"><small>Validade</small><strong>${validade}</strong></div>
             <div class="estoque-detalhe"><small>Valor em estoque</small><strong>${formatarReal(numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade))}</strong></div>
@@ -1154,11 +1279,11 @@ function renderizarHistoricoMovimentacoes() {
         const ehEntradaOuSaida = tipo === "entrada" || tipo === "saida";
         const passaData = !filtroDataHistorico || String(mov.data || "").trim() === filtroDataHistorico;
         return ehEntradaOuSaida && passaData;
-    }).slice().reverse(); 
+    }).slice().reverse();
 
     if (!movimentacoes.length) {
-        const msg = filtroDataHistorico 
-            ? "Nenhuma entrada ou saída registada nesta data." 
+        const msg = filtroDataHistorico
+            ? "Nenhuma entrada ou saída registada nesta data."
             : "Nenhuma entrada ou saída registada ainda.";
         container.innerHTML = `
             <div style="text-align: center; padding: 20px; color: #78848b; font-size: 13px;">
@@ -1186,7 +1311,7 @@ function renderizarHistoricoMovimentacoes() {
 
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <strong style="font-size: 14px; color: #253542;">Qtd: ${numeroSeguro(mov.quantidade)}</strong>
-                    
+
                     <div style="display: flex; gap: 6px;">
                         <button type="button" onclick="editarMovimentoEstoque('${mov.id}')" style="background: #eef4f8; border: 1px solid #ccd6dd; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12px; font-weight: bold; color: #3b5998;" title="Editar Quantidade">✏️ Editar</button>
                         <button type="button" onclick="excluirMovimentoEstoque('${mov.id}')" style="background: #fdf2f2; border: 1px solid #f5c6cb; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12px; font-weight: bold; color: #d9534f;" title="Excluir e Estornar">🗑️ Excluir</button>
@@ -1218,7 +1343,7 @@ async function excluirMovimentoEstoque(idMovimento) {
             produto.quantidade = numeroSeguro(produto.quantidade) + qtdMov;
         }
         produto.atualizadoEm = new Date().toISOString();
-        
+
         try {
             await persistirProdutoNaNuvem(produto);
         } catch (e) {
@@ -1324,7 +1449,7 @@ function pararLeitorCodigo() {
         video.srcObject = null;
         video.style.display = "none";
     }
-    
+
     if (msg) msg.style.display = "flex";
     if (moldura) moldura.style.display = "none";
 
@@ -1400,7 +1525,7 @@ async function abrirLeitorCodigo() {
             video: { facingMode: { ideal: "environment" } }
         });
         streamLeitorCodigo = stream;
-        
+
         abrirModal("modalLeitorCodigo");
         const video = document.getElementById("videoLeitorCodigo");
         const msg = document.getElementById("mensagemLeitorCodigo");
@@ -1408,10 +1533,10 @@ async function abrirLeitorCodigo() {
 
         if (video) {
             video.srcObject = stream;
-            
-            video.style.setProperty('display', 'block', 'important');
-            if (msg) msg.style.display = 'none';
-            if (moldura) moldura.style.display = 'block';
+
+            video.style.setProperty("display", "block", "important");
+            if (msg) msg.style.display = "none";
+            if (moldura) moldura.style.display = "block";
 
             await video.play();
             iniciarDeteccaoCodigoBarras();
@@ -1419,7 +1544,7 @@ async function abrirLeitorCodigo() {
     } catch (e) {
         console.error("Erro ao abrir câmera:", e);
         alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
-        fecharLeitorCodigo(); 
+        fecharLeitorCodigo();
     } finally {
         abrindoLeitorCodigo = false;
     }
@@ -1428,7 +1553,7 @@ async function abrirLeitorCodigo() {
 function fecharLeitorCodigo() {
     pararLeitorCodigo();
     const modal = document.getElementById("modalLeitorCodigo");
-    
+
     if (modal) {
         modal.classList.remove("aberto");
         if (!document.querySelector(".estoque-modal.aberto")) {
@@ -1790,10 +1915,10 @@ function configurarBotoes() {
     const form = document.getElementById("formProduto");
     const lerCodigo = document.getElementById("btnLerCodigoBarras");
     const fecharLeitor = document.getElementById("btnFecharLeitorCodigo");
-    
+
     configurarBotaoExportarPDF();
-    configurarFiltroHistorico(); 
-    configurarCalculoMargem(); // <-- ATIVANDO O CÁLCULO AUTOMÁTICO AQUI
+    configurarFiltroHistorico();
+    configurarCalculoMargem();
 
     if (cadastrar) cadastrar.addEventListener("click", abrirCadastroProduto);
     if (entrada) entrada.addEventListener("click", () => abrirMovimento("entrada"));
@@ -1918,4 +2043,4 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", inicializarEstoque);
 } else {
     inicializarEstoque();
-        }
+}
