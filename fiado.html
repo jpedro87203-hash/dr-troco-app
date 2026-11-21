@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#168b53">
   <meta name="description" content="Controle de clientes, compras fiado, pagamentos, parcelas, cobranças e relatórios no Dr. Troco.">
   <title>Dr. Troco — Fiado</title>
@@ -24,8 +24,8 @@
       --f-laranja: #a95b18;
       --f-vermelho: #c43d42;
       margin: 0;
-      min-height: 100vh;
-      padding: 0 0 calc(104px + env(safe-area-inset-bottom));
+      min-height: 100dvh;
+      padding: 0 0 calc(108px + env(safe-area-inset-bottom, 0px));
       color: var(--f-texto);
       background: var(--f-fundo);
       font-family: Arial, Helvetica, sans-serif;
@@ -84,8 +84,8 @@
     .fiado-chip.ativo { border-color: #168b53; background: var(--f-verde-claro); color: var(--f-verde-escuro); }
     .fiado-campo { min-width: 0; }
     .fiado-campo label { display: block; margin-bottom: 6px; color: #34483d; font-size: 12px; font-weight: 800; line-height: 1.4; }
-    .fiado-campo input, .fiado-campo select, .fiado-campo textarea, .fiado-filtro input { display: block; width: 100%; min-width: 0; min-height: 47px; padding: 12px 13px; border: 1px solid #dce6e0; border-radius: 12px; outline: none; background: #f8faf9; color: var(--f-texto); font-size: 15px; transition: border-color .18s, box-shadow .18s, background .18s; }
-    .fiado-campo textarea { min-height: 82px; resize: vertical; }
+    .fiado-campo input, .fiado-campo select, .fiado-campo textarea, .fiado-filtro input { display: block; width: 100%; min-width: 0; min-height: 46px; padding: 11px 13px; border: 1px solid #dce6e0; border-radius: 12px; outline: none; background: #f8faf9; color: var(--f-texto); font-size: 15px; transition: border-color .18s, box-shadow .18s, background .18s; }
+    .fiado-campo textarea { min-height: 66px; resize: vertical; }
     .fiado-campo input:focus, .fiado-campo select:focus, .fiado-campo textarea:focus, .fiado-filtro input:focus { border-color: var(--f-verde); background: #fff; box-shadow: 0 0 0 3px #20a7671a; }
     .fiado-filtro input { flex: 1; min-height: 47px; border-radius: 13px; }
     .fiado-contagem { color: var(--f-muted); font-size: 11px; font-weight: 800; white-space: nowrap; }
@@ -108,7 +108,7 @@
     .fiado-vazio p { margin: 0; font-size: 12px; line-height: 1.6; }
 
     /* Botões */
-    .fiado-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 45px; padding: 11px 14px; border: 1px solid transparent; border-radius: 12px; font-size: 12.5px; font-weight: 800; line-height: 1.35; text-align: center; text-decoration: none; cursor: pointer; touch-action: manipulation; transition: transform .12s ease, filter .12s ease; }
+    .fiado-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 10px 13px; border: 1px solid transparent; border-radius: 12px; font-size: 12.5px; font-weight: 800; line-height: 1.3; text-align: center; text-decoration: none; cursor: pointer; touch-action: manipulation; transition: transform .12s ease, filter .12s ease; }
     .fiado-btn:active { transform: scale(.98); }
     .fiado-btn-principal { color: #fff; background: linear-gradient(135deg, #25ad6d, #168b53); box-shadow: 0 4px 10px #20a76722; }
     .fiado-btn-secundario { color: #148751; border-color: #cfeadb; background: #eaf8f1; }
@@ -124,17 +124,42 @@
     }
     .fiado-btn-whatsapp:active { transform: scale(.98); }
 
-    /* Modais */
-    .fiado-modal { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 12px; overflow-y: auto; background: #0f1e17ad; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+    /* Modais — sempre acima da barra inferior e com respiro para teclado */
+    .fiado-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10050;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 12px calc(20px + env(safe-area-inset-bottom, 0px));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #0f1e17ad;
+      -webkit-backdrop-filter: blur(5px);
+      backdrop-filter: blur(5px);
+    }
     .fiado-modal.aberto { display: flex; }
-    .fiado-modal-conteudo { width: min(650px, 100%); max-height: calc(100dvh - 24px); overflow-x: hidden; overflow-y: auto; padding: 21px; border: 1px solid #ffffffcc; border-radius: 22px; background: #fff; box-shadow: 0 25px 70px #0003; overscroll-behavior: contain; }
+    .fiado-modal-conteudo {
+      width: min(650px, 100%);
+      max-height: calc(100dvh - 28px - env(safe-area-inset-bottom, 0px));
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 20px 20px calc(26px + env(safe-area-inset-bottom, 0px));
+      border: 1px solid #ffffffcc;
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: 0 25px 70px #0003;
+      overscroll-behavior: contain;
+    }
     #modalDetalhesFiado .fiado-modal-conteudo, #modalRelatoriosFiado .fiado-modal-conteudo, #modalCobrancasFiado .fiado-modal-conteudo { width: min(740px, 100%); }
-    .fiado-modal-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 19px; }
+    .fiado-modal-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
     .fiado-modal-topo > div { min-width: 0; }
-    .fiado-modal-topo h2 { margin: 0 0 6px; color: #1d2d24; font-size: 21px; font-weight: 900; line-height: 1.3; letter-spacing: -.3px; overflow-wrap: anywhere; }
-    .fiado-modal-topo p { margin: 0; color: var(--f-muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
-    .fiado-btn-fechar { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; border: 1px solid #e5ebe7; border-radius: 13px; background: #f3f7f5; color: #526158; font-size: 24px; cursor: pointer; }
-    .fiado-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 13px; }
+    .fiado-modal-topo h2 { margin: 0 0 5px; color: #1d2d24; font-size: 20px; font-weight: 900; line-height: 1.25; letter-spacing: -.3px; overflow-wrap: anywhere; }
+    .fiado-modal-topo p { margin: 0; color: var(--f-muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+    .fiado-btn-fechar { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border: 1px solid #e5ebe7; border-radius: 13px; background: #f3f7f5; color: #526158; font-size: 23px; cursor: pointer; }
+    .fiado-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding-bottom: 8px; }
     .fiado-form > .fiado-btn { width: 100%; }
 
     /* Detalhes do cliente: saldo em primeiro plano */
@@ -161,11 +186,11 @@
     .fiado-extrato-opcoes { margin-top: 16px; padding: 14px; border: 1px solid #e1eae5; border-radius: 15px; background: #f8faf9; }
     .fiado-extrato-opcoes p { margin: 0 0 11px; color: var(--f-muted); font-size: 11.5px; line-height: 1.55; }
     .fiado-extrato-opcoes p strong { color: var(--f-texto); font-size: 13px; }
-    .fiado-acoes-modal { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 16px; }
-    .fiado-acoes-modal .fiado-btn { width: 100%; min-width: 0; min-height: 45px; padding: 10px 8px; font-size: 12px; }
+    .fiado-acoes-modal { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 14px; }
+    .fiado-acoes-modal .fiado-btn { width: 100%; min-width: 0; min-height: 44px; padding: 10px 9px; font-size: 12px; overflow-wrap: anywhere; }
     #btnRegistrarPagamentoFiado { min-height: 48px; }
-    #btnExcluirClienteFiado { grid-column: 1 / -1; min-height: 40px; margin-top: 2px; background: #fff8f8; }
-    #btnFecharDetalhesFiado2 { width: 100%; margin-top: 9px; min-height: 42px; border: 1px solid #e5ebe7; border-radius: 12px; background: #f2f6f3; color: #53635b; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+    #btnExcluirClienteFiado { grid-column: 1 / -1; min-height: 42px; margin-top: 2px; background: #fff8f8; }
+    #btnFecharDetalhesFiado2 { width: 100%; margin-top: 10px; min-height: 44px; border: 1px solid #e5ebe7; border-radius: 12px; background: #f2f6f3; color: #53635b; font-size: 12.5px; font-weight: 800; cursor: pointer; }
 
     /* Histórico recolhível */
     .fiado-historico-bloco { margin-top: 14px; border: 1px solid var(--f-borda); border-radius: 15px; background: #fff; overflow: hidden; }
@@ -174,18 +199,18 @@
     .fiado-historico-bloco > summary::after { content: "+"; display: grid; place-items: center; flex: 0 0 27px; width: 27px; height: 27px; border-radius: 9px; background: #eaf8f1; color: #168b53; font-size: 19px; line-height: 1; }
     .fiado-historico-bloco[open] > summary::after { content: "−"; }
     .fiado-historico-bloco > .fiado-historico { display: grid; gap: 8px; padding: 11px; }
-    .fiado-movimento { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-width: 0; padding: 12px; border: 1px solid var(--f-borda); border-radius: 12px; background: #fff; }
+    .fiado-movimento { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; min-width: 0; padding: 12px; border: 1px solid var(--f-borda); border-radius: 12px; background: #fff; }
     .fiado-movimento-info { flex: 1; min-width: 0; }
     .fiado-movimento-info > strong { display: block; color: var(--f-texto); font-size: 12.5px; font-weight: 800; line-height: 1.45; overflow-wrap: anywhere; }
     .fiado-movimento-info small { display: block; margin-top: 4px; color: var(--f-muted); font-size: 10.5px; line-height: 1.45; overflow-wrap: anywhere; }
-    .fiado-movimento-valor { flex-shrink: 0; max-width: 45%; font-size: 12px; font-weight: 900; line-height: 1.45; text-align: right; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    .fiado-movimento-valor { flex-shrink: 0; max-width: 48%; font-size: 12px; font-weight: 900; line-height: 1.45; text-align: right; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
     .fiado-valor-pago { color: #148751; }
     .fiado-valor-divida { color: var(--f-laranja); }
     .fiado-movimento-acoes { display: flex; justify-content: flex-start; margin-top: 8px; }
-    .fiado-btn-mini { min-height: 30px; padding: 6px 10px; border: 1px solid #f0dede; border-radius: 8px; background: #fff7f7; color: var(--f-vermelho); font-size: 10.5px; font-weight: 800; cursor: pointer; }
+    .fiado-btn-mini { min-height: 32px; padding: 6px 10px; border: 1px solid #f0dede; border-radius: 8px; background: #fff7f7; color: var(--f-vermelho); font-size: 11px; font-weight: 800; cursor: pointer; }
     .fiado-saldo-apos { display: block; margin-top: 7px; padding: 7px 9px; border-radius: 8px; background: var(--f-verde-claro); color: #53635b; font-size: 11px; line-height: 1.4; }
     .fiado-saldo-apos strong { color: var(--f-verde-escuro); }
-    .fiado-notificacao { position: fixed; z-index: 10001; right: 15px; bottom: calc(88px + env(safe-area-inset-bottom)); left: 15px; width: min(470px, calc(100% - 30px)); margin: auto; padding: 13px 15px; border-radius: 13px; background: #168b53; color: #fff; font-size: 12.5px; font-weight: 700; line-height: 1.5; box-shadow: 0 8px 25px #0003; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .2s, transform .2s, visibility .2s; }
+    .fiado-notificacao { position: fixed; z-index: 10060; right: 15px; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); left: 15px; width: min(470px, calc(100% - 30px)); margin: auto; padding: 13px 15px; border-radius: 13px; background: #168b53; color: #fff; font-size: 12.5px; font-weight: 700; line-height: 1.5; box-shadow: 0 8px 25px #0003; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .2s, transform .2s, visibility .2s; }
     .fiado-notificacao.visivel { opacity: 1; visibility: visible; transform: translateY(0); }
     .fiado-notificacao.erro { background: #c43d42; }
 
@@ -203,28 +228,35 @@
       .fiado-topo { padding-top: 19px; }
       .fiado-grade-resumo { gap: 6px; }
       .fiado-resumo-card { padding: 12px 9px; border-radius: 14px; }
-      .fiado-resumo-card span { min-height: 30px; font-size: 9.5px; }
+      .fiado-resumo-card span { min-height: 30px; font-size: 10px; }
       .fiado-resumo-card strong { font-size: 12px; }
       .fiado-atalhos { gap: 7px; }
       .fiado-atalho { gap: 8px; min-height: 73px; padding: 10px; }
       .fiado-atalho-icone { flex-basis: 34px; width: 34px; height: 34px; font-size: 17px; }
       .fiado-atalho-texto strong { font-size: 11.5px; }
-      .fiado-atalho-texto small { font-size: 9.5px; }
+      .fiado-atalho-texto small { font-size: 10px; }
       .fiado-painel { padding: 12px; }
       .fiado-filtro { align-items: stretch; flex-direction: column; }
       .fiado-contagem { align-self: flex-end; }
-      .fiado-modal { align-items: flex-end; padding: 7px; }
-      .fiado-modal-conteudo { max-height: calc(100dvh - 14px); padding: 15px; border-radius: 20px; }
+      .fiado-modal {
+        align-items: flex-start;
+        padding: 10px 8px calc(24px + env(safe-area-inset-bottom, 0px));
+      }
+      .fiado-modal-conteudo {
+        max-height: calc(100dvh - 20px - env(safe-area-inset-bottom, 0px));
+        padding: 16px 14px calc(28px + env(safe-area-inset-bottom, 0px));
+        border-radius: 20px;
+      }
       .fiado-detalhes-kpis { gap: 5px; }
       .fiado-detalhe-kpi { padding: 10px 7px; }
-      .fiado-detalhe-kpi span { font-size: 9px; }
-      .fiado-detalhe-kpi strong { font-size: 11px; }
+      .fiado-detalhe-kpi span { font-size: 9.5px; }
+      .fiado-detalhe-kpi strong { font-size: 11.5px; }
       .fiado-detalhe-kpi.saldo strong { font-size: 14px; }
       .fiado-mensal-filtro { align-items: stretch; }
       .fiado-mensal-filtro .fiado-campo { width: 100%; }
       .fiado-movimento { gap: 8px; }
-      .fiado-acoes-modal { gap: 7px; }
-      .fiado-acoes-modal .fiado-btn { padding: 9px 6px; font-size: 11px; }
+      .fiado-acoes-modal { gap: 8px; }
+      .fiado-acoes-modal .fiado-btn { padding: 10px 8px; font-size: 11.5px; }
     }
     @media (max-width: 340px) {
       .fiado-grade-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -235,6 +267,7 @@
       .fiado-detalhe-kpi span { font-size: 10.5px; }
       .fiado-detalhe-kpi strong, .fiado-detalhe-kpi.saldo strong { font-size: 15px; }
       .fiado-resumo-mensal { grid-template-columns: 1fr; }
+      .fiado-acoes-modal { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) {
       body.pagina-fiado *, body.pagina-fiado *::before, body.pagina-fiado *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
@@ -454,7 +487,7 @@
       <form id="formPagamentoFiado" class="fiado-form">
         <div class="fiado-campo"><label for="fiadoValorPagamento">Valor recebido (R$) *</label><input id="fiadoValorPagamento" name="valor" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required></div>
         <div class="fiado-campo"><label for="fiadoFormaPagamento">Forma de pagamento *</label><select id="fiadoFormaPagamento" name="forma" required><option value="dinheiro">Dinheiro</option><option value="pix">Pix</option><option value="debito">Cartão de débito</option><option value="credito">Cartão de crédito</option><option value="transferencia">Transferência</option></select></div>
-        <div class="fiado-campo"><label for="fiadoObservacaoPagamento">Observação (opcional)</label><textarea id="fiadoObservacaoPagamento" name="observacao" rows="3" maxlength="300" placeholder="Detalhes deste pagamento"></textarea></div>
+        <div class="fiado-campo"><label for="fiadoObservacaoPagamento">Observação (opcional)</label><textarea id="fiadoObservacaoPagamento" name="observacao" rows="2" maxlength="300" placeholder="Detalhes deste pagamento"></textarea></div>
         <div class="fiado-acoes-modal">
           <button type="submit" class="fiado-btn fiado-btn-principal">Salvar pagamento</button>
           <button id="btnCancelarPagamentoFiado" type="button" class="fiado-btn fiado-btn-neutro">Cancelar</button>
