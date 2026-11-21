@@ -31,15 +31,24 @@
     totalClientes: $('fiadoTotalClientes'),
     totalRecebido: $('fiadoTotalRecebido'),
     totalAberto:   $('fiadoTotalAberto'),
+    totalVencido:  $('fiadoTotalVencido'),
+    clientesInadimplentes: $('fiadoClientesInadimplentes'),
 
     busca:    $('fiadoBuscaCliente'),
     contagem: $('fiadoContagemClientes'),
     lista:    $('fiadoListaClientes'),
+    filtrosSituacao: $('fiadoFiltrosSituacao'),
 
-    modalCadastro: $('modalCadastroFiado'),
-    formCadastro:  $('formCadastroCliente'),
-    nome:          $('fiadoNomeCliente'),
-    telefone:      $('fiadoTelefoneCliente'),
+    modalCadastro:     $('modalCadastroFiado'),
+    formCadastro:      $('formCadastroCliente'),
+    nome:              $('fiadoNomeCliente'),
+    telefone:          $('fiadoTelefoneCliente'),
+    endereco:          $('fiadoEnderecoCliente'),
+    limiteCredito:     $('fiadoLimiteCliente'),
+    situacao:          $('fiadoSituacaoCliente'),
+    observacoes:       $('fiadoObservacoesCliente'),
+    btnFecharCadastro: $('btnFecharCadastroFiado'),
+    btnCancelarCadastro: $('btnCancelarCadastroFiado'),
 
     modalDetalhes:       $('modalDetalhesFiado'),
     detalhesNome:        $('fiadoDetalhesNome'),
@@ -47,14 +56,22 @@
     detalhesSaldo:       $('fiadoDetalhesSaldo'),
     detalhesCompras:     $('fiadoDetalhesCompras'),
     detalhesPago:        $('fiadoDetalhesPago'),
+    detalhesLimite:      $('fiadoDetalhesLimite'),
+    detalhesDisponivel:  $('fiadoDetalhesDisponivel'),
+    detalhesPendentesQtd: $('fiadoDetalhesPendentesQtd'),
 
     mesReferencia:  $('fiadoMesReferencia'),
     resumoMensal:   $('fiadoResumoMensal'),
     periodoExtrato: $('fiadoPeriodoExtrato'),
+    parcelasLista:  $('fiadoParcelasCliente'),
     historico:      $('fiadoHistoricoCliente'),
+    auditoriaLista: $('fiadoAuditoriaCliente'),
 
     btnComprar:        $('btnAdicionarDividaFiado'),
     btnPagamento:      $('btnRegistrarPagamentoFiado'),
+    btnEditarCliente:  $('btnEditarClienteFiado'),
+    btnBloquearCliente: $('btnBloquearClienteFiado'),
+    btnArquivarCliente: $('btnArquivarClienteFiado'),
     btnWhatsApp:       $('btnCobrarWhatsAppFiado'),
     btnPDF:            $('btnExportarFiadoPDF'),
     btnExcluirCliente: $('btnExcluirClienteFiado'),
@@ -71,11 +88,25 @@
     btnFecharPagamento:   $('btnFecharPagamentoFiado'),
     btnCancelarPagamento: $('btnCancelarPagamentoFiado'),
 
+    modalCobrancas:       $('modalCobrancasFiado'),
+    btnFecharCobrancas:   $('btnFecharCobrancasFiado'),
+    listaCobrancas:       $('fiadoListaCobrancas'),
+
+    modalRelatorios:      $('modalRelatoriosFiado'),
+    btnFecharRelatorios:  $('btnFecharRelatoriosFiado'),
+    formRelatorio:        $('formFiltroRelatorioFiado'),
+    relatorioCliente:     $('fiadoRelatorioCliente'),
+    relatorioInicio:      $('fiadoRelatorioDataInicio'),
+    relatorioFim:         $('fiadoRelatorioDataFim'),
+    btnImprimirRelatorio: $('btnImprimirRelatorioFiado'),
+    conteudoRelatorio:    $('fiadoConteudoRelatorio'),
+
     notificacao: $('fiadoNotificacao')
   };
 
   let clientes = [];
   let clienteSelecionadoId = null;
+  let filtroSituacaoAtual = 'todos';
   let usuarioAtual = null;
   let carregando = false;
   let pronto = false;
@@ -203,6 +234,13 @@
     const d = new Date(valor);
     if (Number.isNaN(d.getTime())) return '';
     return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function formatarDataHoraCurta(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return String(iso);
+    return `${formatarData(dataLocalISO(d))} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   }
 
   function formatarMes(mes) {
@@ -989,7 +1027,7 @@
 
   function obterCreditoDisponivel(c) {
     const limite = obterLimiteCredito(c);
-    if (limite <= 0) return null; // null indica sem limite configurado
+    if (limite <= 0) return null;
     return Math.max(0, limite - obterSaldo(c));
   }
 
@@ -1254,6 +1292,14 @@
     if (!document.querySelector('.fiado-modal.aberto')) document.body.style.overflow = '';
   }
 
+  function fecharCadastro() {
+    fecharModal(elementos.modalCadastro);
+    if (elementos.formCadastro) {
+      delete elementos.formCadastro.dataset.editarId;
+      elementos.formCadastro.reset();
+    }
+  }
+
   function fecharDetalhes() { fecharModal(elementos.modalDetalhes); clienteSelecionadoId = null; }
   function fecharPagamento() {
     fecharModal(elementos.modalPagamento);
@@ -1276,7 +1322,13 @@
   function garantirCamposExtrasCadastro() {
     const form = elementos.formCadastro;
     if (!form) return;
-    if ($('fiadoEnderecoCliente')) return;
+    if ($('fiadoEnderecoCliente')) {
+      elementos.endereco = $('fiadoEnderecoCliente');
+      elementos.limiteCredito = $('fiadoLimiteCliente');
+      elementos.situacao = $('fiadoSituacaoCliente');
+      elementos.observacoes = $('fiadoObservacoesCliente');
+      return;
+    }
 
     const submitBtn = form.querySelector('[type="submit"]');
     const wrapper = document.createElement('div');
@@ -1306,6 +1358,11 @@
     `;
     if (submitBtn) form.insertBefore(wrapper, submitBtn);
     else form.appendChild(wrapper);
+
+    elementos.endereco = $('fiadoEnderecoCliente');
+    elementos.limiteCredito = $('fiadoLimiteCliente');
+    elementos.situacao = $('fiadoSituacaoCliente');
+    elementos.observacoes = $('fiadoObservacoesCliente');
   }
 
   function abrirCadastroCliente(cliente = null) {
@@ -1314,10 +1371,10 @@
     elementos.formCadastro.reset();
     const titulo = $('tituloCadastroFiado');
     const btnSalvar = elementos.formCadastro.querySelector('[type="submit"]');
-    const campoEnd = $('fiadoEnderecoCliente');
-    const campoLim = $('fiadoLimiteCliente');
-    const campoSit = $('fiadoSituacaoCliente');
-    const campoObs = $('fiadoObservacoesCliente');
+    const campoEnd = elementos.endereco || $('fiadoEnderecoCliente');
+    const campoLim = elementos.limiteCredito || $('fiadoLimiteCliente');
+    const campoSit = elementos.situacao || $('fiadoSituacaoCliente');
+    const campoObs = elementos.observacoes || $('fiadoObservacoesCliente');
 
     if (cliente) {
       elementos.nome.value = cliente.nome;
@@ -1343,11 +1400,11 @@
     garantirCamposExtrasCadastro();
     const nome = elementos.nome.value.trim();
     const telefone = elementos.telefone.value.trim();
-    const endereco = $('fiadoEnderecoCliente')?.value.trim() || '';
-    const limiteBruto = $('fiadoLimiteCliente')?.value;
+    const endereco = (elementos.endereco || $('fiadoEnderecoCliente'))?.value.trim() || '';
+    const limiteBruto = (elementos.limiteCredito || $('fiadoLimiteCliente'))?.value;
     const limiteCreditoCentavos = limiteBruto && String(limiteBruto).trim() !== '' ? paraCentavos(limiteBruto) : 0;
-    const situacao = $('fiadoSituacaoCliente')?.value === 'bloqueado' ? 'bloqueado' : 'ativo';
-    const observacoes = $('fiadoObservacoesCliente')?.value.trim() || '';
+    const situacao = (elementos.situacao || $('fiadoSituacaoCliente'))?.value === 'bloqueado' ? 'bloqueado' : 'ativo';
+    const observacoes = (elementos.observacoes || $('fiadoObservacoesCliente'))?.value.trim() || '';
     const idEdicao = elementos.formCadastro.dataset.editarId;
 
     if (!nome) { mostrarNotificacao('Digite o nome do cliente.', true); elementos.nome.focus(); return; }
@@ -1372,8 +1429,11 @@
         const local = buscarClienteInterno(idEdicao);
         if (local) Object.assign(local, atualizado);
         salvarCacheLocal();
-        fecharModal(elementos.modalCadastro);
+        fecharCadastro();
         mostrarNotificacao('Dados do cliente atualizados!');
+        if (clienteSelecionadoId && String(clienteSelecionadoId) === String(idEdicao) && elementos.modalDetalhes?.classList.contains('aberto')) {
+          abrirDetalhes(idEdicao);
+        }
       } else {
         const novo = await inserirCliente({
           nome,
@@ -1386,7 +1446,7 @@
         clientes.push(novo);
         clientes.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
         salvarCacheLocal();
-        fecharModal(elementos.modalCadastro);
+        fecharCadastro();
         mostrarNotificacao('Cliente cadastrado com sucesso!');
       }
       renderizarTudo();
@@ -1550,6 +1610,10 @@
   function abrirCompra() {
     const cliente = buscarClienteInterno(clienteSelecionadoId);
     if (!cliente) { mostrarNotificacao('Selecione um cliente.', true); return; }
+    if (cliente.arquivado) {
+      mostrarNotificacao('Cliente arquivado. Reative antes de registrar compras.', true);
+      return;
+    }
     if (cliente.situacao === 'bloqueado') {
       mostrarNotificacao(`Cliente "${cliente.nome}" está bloqueado para novas compras.`, true);
       return;
@@ -1562,13 +1626,20 @@
     abrirModal(modal, $('fiadoValorDivida'));
   }
 
-  function abrirPagamento() {
+  function abrirPagamento(valorSugeridoCentavos = null, descricaoSugerida = '') {
     sincronizarSelectFormas();
     const cliente = buscarClienteInterno(clienteSelecionadoId);
     if (!cliente) { mostrarNotificacao('Selecione um cliente.', true); return; }
-    if (obterSaldo(cliente) <= 0) { mostrarNotificacao('Este cliente não possui saldo devedor.', true); return; }
+    const saldo = obterSaldo(cliente);
+    if (saldo <= 0) { mostrarNotificacao('Este cliente não possui saldo devedor.', true); return; }
     if (elementos.formPagamento) elementos.formPagamento.reset();
     sincronizarSelectFormas();
+    if (elementos.valorPagamento && Number(valorSugeridoCentavos) > 0) {
+      elementos.valorPagamento.value = (Math.min(Number(valorSugeridoCentavos), saldo) / 100).toFixed(2);
+    }
+    if (elementos.observacaoPagamento && descricaoSugerida) {
+      elementos.observacaoPagamento.value = descricaoSugerida;
+    }
     abrirModal(elementos.modalPagamento, elementos.valorPagamento);
   }
 
@@ -1657,7 +1728,7 @@
           const num = String(cliente.telefone).replace(/\D/g, '');
           numFinal = num.length <= 11 ? '55' + num : num;
         }
-        window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(msgZap)}`, '_blank');
+        window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(msgZap)}`, '_blank', 'noopener');
       }
     } catch (err) {
       console.error('[Fiado]', err);
@@ -1940,6 +2011,16 @@
      COBRANÇAS, RELATÓRIOS E AUDITORIA
   ========================================================== */
 
+  function clienteEhInadimplente(c, hojeISO = dataLocalISO()) {
+    if (c.arquivado) return false;
+    const saldo = obterSaldo(c);
+    if (saldo <= 0) return false;
+    const temParcelaVencida = listarParcelasCliente(c).some(p => p.valorRestanteCentavos > 0 && p.diasAtraso > 0);
+    if (temParcelaVencida) return true;
+    const ultimaCompra = obterUltimaDataPorTipo(c, 'divida');
+    return ultimaCompra ? calcularDiasAtraso(ultimaCompra, hojeISO) >= 30 : false;
+  }
+
   function listarCobrancasPendentes() {
     const hoje = dataLocalISO();
     const itens = [];
@@ -2019,10 +2100,58 @@
       status: 'aberta_no_whatsapp'
     });
     salvarCacheLocal();
+    if (clienteSelecionadoId && String(clienteSelecionadoId) === String(cliente.id) && elementos.modalDetalhes?.classList.contains('aberto')) {
+      renderizarAuditoria(cliente);
+    }
 
     const url = `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
     window.open(url, '_blank', 'noopener');
     return { ok: true, url };
+  }
+
+  function abrirModalCobrancas() {
+    renderizarModalCobrancas();
+    abrirModal(elementos.modalCobrancas);
+  }
+
+  function renderizarModalCobrancas() {
+    if (!elementos.listaCobrancas) return;
+    const itens = listarCobrancasPendentes();
+    if (!itens.length) {
+      elementos.listaCobrancas.innerHTML = `
+        <div class="fiado-vazio">
+          <div aria-hidden="true">✅</div>
+          <h3>Nenhuma cobrança pendente</h3>
+          <p>Não há clientes com saldo em aberto no momento.</p>
+        </div>`;
+      return;
+    }
+
+    elementos.listaCobrancas.innerHTML = itens.map(item => {
+      const statusTxt = item.diasAtraso > 0
+        ? `Vencida há ${item.diasAtraso} dia(s)`
+        : (item.proximoVencimento ? `Venc. ${formatarData(item.proximoVencimento)}` : 'Em aberto');
+      return `
+        <article class="fiado-movimento">
+          <div class="fiado-movimento-info">
+            <strong>${escaparHTML(item.clienteNome)}</strong>
+            <small>${escaparHTML(item.telefone || 'Sem telefone')} · ${escaparHTML(statusTxt)}</small>
+            <small>Cobranças registradas: ${item.historicoCobrancas.length}</small>
+            <div class="fiado-movimento-acoes" style="gap:7px;flex-wrap:wrap;">
+              <button type="button" class="fiado-btn fiado-btn-whatsapp" style="min-height:36px;padding:7px 11px;grid-column:auto;"
+                data-acao="cobrar-item"
+                data-id="${escaparHTML(item.clienteId)}"
+                data-valor="${item.saldoCentavos}"
+                data-atraso="${item.diasAtraso}"
+                data-vencimento="${escaparHTML(item.proximoVencimento || '')}">💬 Cobrar WhatsApp</button>
+              <button type="button" class="fiado-btn fiado-btn-secundario" style="min-height:36px;padding:7px 11px;"
+                data-acao="abrir-cliente-cobranca"
+                data-id="${escaparHTML(item.clienteId)}">Abrir conta</button>
+            </div>
+          </div>
+          <div class="fiado-movimento-valor fiado-valor-divida">${formatarDinheiro(item.saldoCentavos)}</div>
+        </article>`;
+    }).join('');
   }
 
   function gerarRelatorio({ clienteId = null, dataInicio = null, dataFim = null } = {}) {
@@ -2102,6 +2231,57 @@
     };
   }
 
+  function obterFiltrosRelatorioUI() {
+    return {
+      clienteId: elementos.relatorioCliente?.value || null,
+      dataInicio: elementos.relatorioInicio?.value || null,
+      dataFim: elementos.relatorioFim?.value || null
+    };
+  }
+
+  function renderizarModalRelatorios() {
+    if (!elementos.conteudoRelatorio) return;
+    if (elementos.relatorioCliente) {
+      const atual = elementos.relatorioCliente.value;
+      const opcoes = ['<option value="">Todos os clientes</option>'].concat(
+        [...clientes]
+          .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+          .map(c => `<option value="${escaparHTML(c.id)}">${escaparHTML(c.nome)}</option>`)
+      );
+      elementos.relatorioCliente.innerHTML = opcoes.join('');
+      if (atual) elementos.relatorioCliente.value = atual;
+    }
+
+    const rel = gerarRelatorio(obterFiltrosRelatorioUI());
+    const topDevedoresHTML = rel.maioresDevedores.length
+      ? rel.maioresDevedores.slice(0, 8).map(d =>
+          `<div class="fiado-movimento"><div class="fiado-movimento-info"><strong>${escaparHTML(d.nome)}</strong><small>${escaparHTML(d.telefone || 'Sem telefone')} · ${escaparHTML(d.situacao)}</small></div><div class="fiado-movimento-valor fiado-valor-divida">${formatarDinheiro(d.saldoCentavos)}</div></div>`
+        ).join('')
+      : '<div class="fiado-vazio"><p>Nenhum cliente com saldo pendente no filtro atual.</p></div>';
+
+    elementos.conteudoRelatorio.innerHTML = `
+      <div class="fiado-resumo-mensal">
+        <div class="fiado-mes-item"><span>Total vendido</span><strong>${formatarDinheiro(rel.totais.totalVendidoCentavos)}</strong></div>
+        <div class="fiado-mes-item"><span>Total recebido</span><strong>${formatarDinheiro(rel.totais.totalRecebidoCentavos)}</strong></div>
+        <div class="fiado-mes-item"><span>Total pendente</span><strong>${formatarDinheiro(rel.totais.totalPendenteCentavos)}</strong></div>
+        <div class="fiado-mes-item final"><span>Total vencido</span><strong>${formatarDinheiro(rel.totais.totalVencidoCentavos)}</strong></div>
+      </div>
+      <h3 class="fiado-secao-titulo">Maiores devedores</h3>
+      <div style="display:grid;gap:8px;">${topDevedoresHTML}</div>
+    `;
+  }
+
+  function abrirModalRelatorios() {
+    if (elementos.relatorioInicio && !elementos.relatorioInicio.value) {
+      elementos.relatorioInicio.value = `${mesAtual()}-01`;
+    }
+    if (elementos.relatorioFim && !elementos.relatorioFim.value) {
+      elementos.relatorioFim.value = dataLocalISO();
+    }
+    renderizarModalRelatorios();
+    abrirModal(elementos.modalRelatorios);
+  }
+
   function imprimirRelatorioPDF(filtros = {}) {
     const rel = gerarRelatorio(filtros);
     const periodoLabel = `${filtros.dataInicio ? formatarData(filtros.dataInicio) : 'Início'} até ${filtros.dataFim ? formatarData(filtros.dataFim) : 'Hoje'}`;
@@ -2162,10 +2342,25 @@
     const ativos = clientes.filter(c => !c.arquivado);
     const qtd = ativos.length;
     const recebido = clientes.reduce((t, c) => t + totalPago(c), 0);
-    const aberto = clientes.reduce((t, c) => t + obterSaldo(c), 0);
+    const aberto = clientes.reduce((t, c) => t + Math.max(0, obterSaldo(c)), 0);
+    const cobrancas = listarCobrancasPendentes();
+    const vencido = cobrancas.reduce((t, item) => t + (Number(item.totalVencidoCentavos) || 0), 0);
+    const inadimplentes = clientes.filter(c => clienteEhInadimplente(c)).length;
+
     if (elementos.totalClientes) elementos.totalClientes.textContent = String(qtd);
     if (elementos.totalRecebido) elementos.totalRecebido.textContent = formatarDinheiro(recebido);
     if (elementos.totalAberto) elementos.totalAberto.textContent = formatarDinheiro(aberto);
+    if (elementos.totalVencido) elementos.totalVencido.textContent = formatarDinheiro(vencido);
+    if (elementos.clientesInadimplentes) elementos.clientesInadimplentes.textContent = String(inadimplentes);
+  }
+
+  function correspondeFiltroSituacao(c) {
+    if (filtroSituacaoAtual === 'todos') return !c.arquivado;
+    if (filtroSituacaoAtual === 'arquivado') return Boolean(c.arquivado);
+    if (filtroSituacaoAtual === 'bloqueado') return !c.arquivado && c.situacao === 'bloqueado';
+    if (filtroSituacaoAtual === 'inadimplente') return clienteEhInadimplente(c);
+    if (filtroSituacaoAtual === 'ativo') return !c.arquivado && c.situacao !== 'bloqueado';
+    return !c.arquivado;
   }
 
   function renderizarClientes() {
@@ -2173,11 +2368,13 @@
     const busca = normalizarTexto(elementos.busca?.value || '');
     const filtrados = clientes
       .filter(c => {
-        if (c.arquivado && !busca) return false;
+        if (!busca && !correspondeFiltroSituacao(c)) return false;
+        if (busca && filtroSituacaoAtual !== 'arquivado' && c.arquivado) return false;
+        if (busca && filtroSituacaoAtual !== 'todos' && !correspondeFiltroSituacao(c)) return false;
         const n = normalizarTexto(c.nome);
         const t = normalizarTexto(c.telefone);
         const e = normalizarTexto(c.endereco);
-        return n.includes(busca) || t.includes(busca) || e.includes(busca);
+        return !busca || n.includes(busca) || t.includes(busca) || e.includes(busca);
       })
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
@@ -2188,7 +2385,7 @@
     if (!filtrados.length) {
       const vazio = busca
         ? { icone: '🔎', titulo: 'Nenhum cliente encontrado', desc: 'Tente outro nome, telefone ou endereço.' }
-        : { icone: '👥', titulo: 'Nenhum cliente cadastrado', desc: 'Toque em “Cadastrar cliente” para começar.' };
+        : { icone: '👥', titulo: 'Nenhum cliente neste filtro', desc: 'Toque em “Cadastrar cliente” ou troque o filtro.' };
       elementos.lista.innerHTML = `
         <div class="fiado-vazio">
           <div aria-hidden="true">${vazio.icone}</div>
@@ -2201,7 +2398,10 @@
     elementos.lista.innerHTML = filtrados.map(c => {
       const saldo = obterSaldo(c);
       const tel = c.telefone || 'Telefone não informado';
-      const statusTag = c.arquivado ? ' · Arquivado' : (c.situacao === 'bloqueado' ? ' · Bloqueado' : '');
+      const inadimplente = clienteEhInadimplente(c);
+      const statusTag = c.arquivado
+        ? ' · Arquivado'
+        : (c.situacao === 'bloqueado' ? ' · Bloqueado' : (inadimplente ? ' · Inadimplente' : ''));
       return `
         <article class="fiado-cliente-card">
           <div class="fiado-cliente-info">
@@ -2209,7 +2409,7 @@
             <div class="fiado-cliente-texto">
               <h3>${escaparHTML(c.nome)}${escaparHTML(statusTag)}</h3>
               <p>${escaparHTML(tel)}</p>
-              <small>${obterMovimentacoes(c).length} movimentações</small>
+              <small>${obterMovimentacoes(c).length} movimentações${c.endereco ? ' · ' + escaparHTML(c.endereco) : ''}</small>
             </div>
           </div>
           <div class="fiado-cliente-saldo">
@@ -2237,6 +2437,16 @@
       if (c.arquivado) partes.push('ARQUIVADO');
       elementos.detalhesTelefone.textContent = partes.join(' · ');
     }
+    if (elementos.btnBloquearCliente) {
+      elementos.btnBloquearCliente.textContent = c.situacao === 'bloqueado'
+        ? '🔓 Desbloquear cliente'
+        : '🔒 Bloquear cliente';
+    }
+    if (elementos.btnArquivarCliente) {
+      elementos.btnArquivarCliente.textContent = c.arquivado
+        ? '♻ Reativar cliente'
+        : '🗄 Arquivar cliente';
+    }
     if (elementos.mesReferencia && !elementos.mesReferencia.value) elementos.mesReferencia.value = mesAtual();
     renderizarDetalhes(c);
     abrirModal(elementos.modalDetalhes);
@@ -2247,11 +2457,108 @@
     const compras = totalComprado(c);
     const pago = totalPago(c);
     const saldo = obterSaldo(c);
+    const limite = obterLimiteCredito(c);
+    const disponivel = obterCreditoDisponivel(c);
+    const pendentesQtd = quantidadeComprasPendentes(c);
+
     if (elementos.detalhesSaldo) elementos.detalhesSaldo.textContent = formatarDinheiro(saldo);
     if (elementos.detalhesCompras) elementos.detalhesCompras.textContent = formatarDinheiro(compras);
     if (elementos.detalhesPago) elementos.detalhesPago.textContent = formatarDinheiro(pago);
+    if (elementos.detalhesLimite) elementos.detalhesLimite.textContent = limite > 0 ? formatarDinheiro(limite) : 'Sem limite';
+    if (elementos.detalhesDisponivel) elementos.detalhesDisponivel.textContent = disponivel === null ? 'Livre' : formatarDinheiro(disponivel);
+    if (elementos.detalhesPendentesQtd) elementos.detalhesPendentesQtd.textContent = String(pendentesQtd);
+
     renderizarResumoMensal(c);
+    renderizarParcelas(c);
     renderizarHistorico(c);
+    renderizarAuditoria(c);
+  }
+
+  function renderizarParcelas(c) {
+    if (!elementos.parcelasLista) return;
+    const parcelas = listarParcelasCliente(c);
+    if (!parcelas.length) {
+      elementos.parcelasLista.innerHTML = `
+        <div class="fiado-vazio">
+          <p>Nenhuma compra parcelada ou com vencimento cadastrado para este cliente.</p>
+        </div>`;
+      return;
+    }
+
+    elementos.parcelasLista.innerHTML = parcelas.map(p => {
+      const pagoP = Number(p.valorPagoCentavos) || 0;
+      const restP = Number(p.valorRestanteCentavos) || 0;
+      const statusLabel = {
+        paga: 'Paga',
+        parcial: 'Parcial',
+        pendente: 'Pendente',
+        vencida: `Vencida (${p.diasAtraso}d)`,
+        vencida_parcial: `Vencida parcial (${p.diasAtraso}d)`
+      }[p.status] || p.status;
+
+      return `
+        <article class="fiado-movimento">
+          <div class="fiado-movimento-info">
+            <strong>Parcela ${p.numero}/${p.totalParcelas} — ${escaparHTML(statusLabel)}</strong>
+            <small>Vencimento: ${escaparHTML(formatarData(p.vencimento))} · ${escaparHTML(p.descricaoCompra)}</small>
+            <small>Pago: ${formatarDinheiro(pagoP)} · Restante: ${formatarDinheiro(restP)}</small>
+            ${restP > 0 ? `
+              <div class="fiado-movimento-acoes" style="gap:6px;flex-wrap:wrap;">
+                <button type="button" class="fiado-btn fiado-btn-principal" style="min-height:32px;padding:5px 10px;font-size:11px;"
+                  data-acao="pagar-parcela"
+                  data-mov-id="${escaparHTML(p.movimentacaoId)}"
+                  data-parcela-id="${escaparHTML(p.id)}"
+                  data-restante="${restP}"
+                  data-numero="${p.numero}"
+                  data-total="${p.totalParcelas}">Pagar parcela</button>
+                <button type="button" class="fiado-btn fiado-btn-neutro" style="min-height:32px;padding:5px 10px;font-size:11px;"
+                  data-acao="alterar-vencimento"
+                  data-mov-id="${escaparHTML(p.movimentacaoId)}"
+                  data-parcela-id="${escaparHTML(p.id)}"
+                  data-vencimento="${escaparHTML(p.vencimento)}">Alterar vencimento</button>
+              </div>` : ''}
+          </div>
+          <div class="fiado-movimento-valor ${restP === 0 ? 'fiado-valor-pago' : 'fiado-valor-divida'}">${formatarDinheiro(p.valorCentavos)}</div>
+        </article>`;
+    }).join('');
+  }
+
+  function renderizarAuditoria(c) {
+    if (!elementos.auditoriaLista) return;
+    const cobrancas = (c.cobrancas || []).map(cb => ({
+      tipo: 'cobrança',
+      dataHora: cb.dataHora,
+      operador: cb.operador || 'Operador',
+      titulo: `Cobrança (${cb.canal || 'whatsapp'}) — ${formatarDinheiro(cb.valorCentavos)}`,
+      detalhe: cb.diasAtraso > 0 ? `Atraso: ${cb.diasAtraso} dia(s)` : 'Lembrete de conta'
+    }));
+
+    const logs = (c.auditoria || []).map(a => ({
+      tipo: 'auditoria',
+      dataHora: a.dataHora,
+      operador: a.operador || 'Operador',
+      titulo: `Evento: ${a.acao}`,
+      detalhe: JSON.stringify(a.detalhes || {})
+    }));
+
+    const combinado = [...cobrancas, ...logs].sort((a, b) =>
+      new Date(b.dataHora || 0).getTime() - new Date(a.dataHora || 0).getTime()
+    );
+
+    if (!combinado.length) {
+      elementos.auditoriaLista.innerHTML = '<div class="fiado-vazio"><p>Nenhum registro de cobrança ou auditoria ainda.</p></div>';
+      return;
+    }
+
+    elementos.auditoriaLista.innerHTML = combinado.slice(0, 25).map(item => `
+      <article class="fiado-movimento">
+        <div class="fiado-movimento-info">
+          <strong>${escaparHTML(item.titulo)}</strong>
+          <small>${escaparHTML(formatarDataHoraCurta(item.dataHora))} · Op.: ${escaparHTML(item.operador)}</small>
+          <small>${escaparHTML(item.detalhe)}</small>
+        </div>
+      </article>`
+    ).join('');
   }
 
   function renderizarResumoMensal(c) {
@@ -2483,19 +2790,24 @@
       ev.preventDefault();
       const cid = modal.dataset.clienteId;
       const texto = $('fiadoMensagemCobranca')?.value || '';
-      const res = enviarCobrancaWhatsApp(cid, texto);
+      const meta = {
+        valorCentavos: Number(modal.dataset.valorCentavos) || 0,
+        diasAtraso: Number(modal.dataset.diasAtraso) || 0,
+        vencimento: modal.dataset.vencimento || null
+      };
+      const res = enviarCobrancaWhatsApp(cid, texto, meta);
       if (!res.ok) {
         mostrarNotificacao(res.erro, true);
         return;
       }
       fecharModal(modal);
+      renderizarModalCobrancas();
       mostrarNotificacao('Cobrança registrada e WhatsApp aberto.');
     });
     return modal;
   }
 
-  function cobrarWhatsApp() {
-    const cliente = buscarClienteInterno(clienteSelecionadoId);
+  function abrirModalMensagemCliente(cliente, opcoes = {}) {
     if (!cliente) { mostrarNotificacao('Cliente não encontrado.', true); return; }
     const saldo = obterSaldo(cliente);
     if (saldo <= 0) { mostrarNotificacao('Este cliente não possui saldo devedor.', true); return; }
@@ -2510,15 +2822,56 @@
 
     const modal = criarModalCobranca();
     modal.dataset.clienteId = cliente.id;
+    modal.dataset.valorCentavos = String(opcoes.valorCentavos || saldo);
+    modal.dataset.diasAtraso = String(opcoes.diasAtraso || 0);
+    modal.dataset.vencimento = String(opcoes.vencimento || '');
     const campoMsg = $('fiadoMensagemCobranca');
-    if (campoMsg) campoMsg.value = montarMensagemCobranca(cliente);
+    if (campoMsg) campoMsg.value = montarMensagemCobranca(cliente, opcoes);
     abrirModal(modal, campoMsg);
+  }
+
+  function cobrarWhatsApp() {
+    const cliente = buscarClienteInterno(clienteSelecionadoId);
+    abrirModalMensagemCliente(cliente);
   }
 
   /* ==========================================================
      EVENTOS
   ========================================================== */
 
+  document.querySelectorAll('[data-abrir-cadastro]').forEach(btn => {
+    btn.addEventListener('click', () => abrirCadastroCliente());
+  });
+
+  document.querySelectorAll('[data-abrir-cobrancas]').forEach(btn => {
+    btn.addEventListener('click', abrirModalCobrancas);
+  });
+
+  document.querySelectorAll('[data-abrir-relatorios]').forEach(btn => {
+    btn.addEventListener('click', abrirModalRelatorios);
+  });
+
+  document.querySelectorAll('[data-rolar-para]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const alvo = $(btn.getAttribute('data-rolar-para'));
+      if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  if (elementos.filtrosSituacao) {
+    elementos.filtrosSituacao.addEventListener('click', ev => {
+      const chip = ev.target.closest('[data-filtro-situacao]');
+      if (!chip) return;
+      filtroSituacaoAtual = chip.dataset.filtroSituacao || 'todos';
+      elementos.filtrosSituacao.querySelectorAll('[data-filtro-situacao]').forEach(el => {
+        el.classList.toggle('ativo', el === chip);
+      });
+      renderizarClientes();
+    });
+  }
+
+  if (elementos.btnFecharCadastro) elementos.btnFecharCadastro.addEventListener('click', fecharCadastro);
+  if (elementos.btnCancelarCadastro) elementos.btnCancelarCadastro.addEventListener('click', fecharCadastro);
   if (elementos.formCadastro) elementos.formCadastro.addEventListener('submit', salvarCliente);
   if (elementos.busca) elementos.busca.addEventListener('input', renderizarClientes);
 
@@ -2527,6 +2880,46 @@
       const btn = ev.target.closest('[data-acao]');
       if (!btn) return;
       if (btn.dataset.acao === 'detalhes') abrirDetalhes(btn.dataset.id);
+    });
+  }
+
+  if (elementos.parcelasLista) {
+    elementos.parcelasLista.addEventListener('click', async ev => {
+      const btn = ev.target.closest('[data-acao]');
+      if (!btn || !clienteSelecionadoId) return;
+      const acao = btn.dataset.acao;
+      const movId = btn.dataset.movId;
+      const parcelaId = btn.dataset.parcelaId;
+
+      if (acao === 'pagar-parcela') {
+        const restanteC = Number(btn.dataset.restante) || 0;
+        const num = btn.dataset.numero;
+        const tot = btn.dataset.total;
+        const digitado = window.prompt(
+          `Valor a pagar da parcela ${num}/${tot} (restante ${formatarDinheiro(restanteC)}):`,
+          (restanteC / 100).toFixed(2)
+        );
+        if (digitado === null) return;
+        try {
+          const r = await registrarPagamentoParcela(clienteSelecionadoId, movId, parcelaId, digitado, 'dinheiro');
+          if (r && r.sucesso) {
+            mostrarNotificacao('Pagamento da parcela registrado!');
+            abrirDetalhes(clienteSelecionadoId);
+          }
+        } catch (err) {
+          mostrarNotificacao(err.message || 'Erro ao pagar parcela.', true);
+        }
+      } else if (acao === 'alterar-vencimento') {
+        const atualVenc = btn.dataset.vencimento || dataLocalISO();
+        const novoVenc = window.prompt('Novo vencimento (AAAA-MM-DD):', atualVenc);
+        if (!novoVenc) return;
+        try {
+          await alterarVencimentoParcela(clienteSelecionadoId, movId, parcelaId, novoVenc.trim());
+          abrirDetalhes(clienteSelecionadoId);
+        } catch (err) {
+          mostrarNotificacao(err.message || 'Erro ao alterar vencimento.', true);
+        }
+      }
     });
   }
 
@@ -2539,7 +2932,36 @@
   }
 
   if (elementos.btnComprar) elementos.btnComprar.addEventListener('click', abrirCompra);
-  if (elementos.btnPagamento) elementos.btnPagamento.addEventListener('click', abrirPagamento);
+  if (elementos.btnPagamento) elementos.btnPagamento.addEventListener('click', () => abrirPagamento());
+  if (elementos.btnEditarCliente) {
+    elementos.btnEditarCliente.addEventListener('click', () => {
+      const c = buscarClienteInterno(clienteSelecionadoId);
+      if (!c) { mostrarNotificacao('Cliente não encontrado.', true); return; }
+      abrirCadastroCliente(c);
+    });
+  }
+  if (elementos.btnBloquearCliente) {
+    elementos.btnBloquearCliente.addEventListener('click', async () => {
+      if (!clienteSelecionadoId) return;
+      try {
+        await alternarBloqueioCliente(clienteSelecionadoId);
+        abrirDetalhes(clienteSelecionadoId);
+      } catch (err) {
+        mostrarNotificacao(err.message || 'Falha ao alterar bloqueio.', true);
+      }
+    });
+  }
+  if (elementos.btnArquivarCliente) {
+    elementos.btnArquivarCliente.addEventListener('click', async () => {
+      if (!clienteSelecionadoId) return;
+      try {
+        await alternarArquivamentoCliente(clienteSelecionadoId);
+        abrirDetalhes(clienteSelecionadoId);
+      } catch (err) {
+        mostrarNotificacao(err.message || 'Falha ao alterar arquivamento.', true);
+      }
+    });
+  }
   if (elementos.btnWhatsApp) elementos.btnWhatsApp.addEventListener('click', cobrarWhatsApp);
   if (elementos.formPagamento) elementos.formPagamento.addEventListener('submit', registrarPagamentoManual);
   if (elementos.btnPDF) elementos.btnPDF.addEventListener('click', exportarPDF);
@@ -2553,6 +2975,43 @@
   if (elementos.btnFecharDetalhes2) elementos.btnFecharDetalhes2.addEventListener('click', fecharDetalhes);
   if (elementos.btnFecharPagamento) elementos.btnFecharPagamento.addEventListener('click', fecharPagamento);
   if (elementos.btnCancelarPagamento) elementos.btnCancelarPagamento.addEventListener('click', fecharPagamento);
+
+  if (elementos.btnFecharCobrancas) {
+    elementos.btnFecharCobrancas.addEventListener('click', () => fecharModal(elementos.modalCobrancas));
+  }
+  if (elementos.listaCobrancas) {
+    elementos.listaCobrancas.addEventListener('click', ev => {
+      const btn = ev.target.closest('[data-acao]');
+      if (!btn) return;
+      const cid = btn.dataset.id;
+      if (btn.dataset.acao === 'cobrar-item') {
+        const cliente = buscarClienteInterno(cid);
+        abrirModalMensagemCliente(cliente, {
+          valorCentavos: Number(btn.dataset.valor) || 0,
+          diasAtraso: Number(btn.dataset.atraso) || 0,
+          vencimento: btn.dataset.vencimento || null
+        });
+      } else if (btn.dataset.acao === 'abrir-cliente-cobranca') {
+        fecharModal(elementos.modalCobrancas);
+        abrirDetalhes(cid);
+      }
+    });
+  }
+
+  if (elementos.btnFecharRelatorios) {
+    elementos.btnFecharRelatorios.addEventListener('click', () => fecharModal(elementos.modalRelatorios));
+  }
+  if (elementos.formRelatorio) {
+    elementos.formRelatorio.addEventListener('submit', ev => {
+      ev.preventDefault();
+      renderizarModalRelatorios();
+    });
+  }
+  if (elementos.btnImprimirRelatorio) {
+    elementos.btnImprimirRelatorio.addEventListener('click', () => {
+      imprimirRelatorioPDF(obterFiltrosRelatorioUI());
+    });
+  }
 
   if (elementos.mesReferencia) {
     elementos.mesReferencia.addEventListener('change', () => {
@@ -2576,7 +3035,8 @@
   async function inicializar() {
     if (elementos.mesReferencia && !elementos.mesReferencia.value) elementos.mesReferencia.value = mesAtual();
 
-    renderizarTudoInicial();
+    garantirCamposExtrasCadastro();
+    sincronizarSelectFormas();
 
     const ok = await carregarTudo();
 
@@ -2594,8 +3054,13 @@
       }
       renderizarTudoInicial();
     } else {
+      renderizarTudoInicial();
       console.warn('[Fiado] Modo offline — exibindo cache local.');
-      mostrarNotificacao('Não foi possível conectar ao Supabase. Os dados exibidos podem estar desatualizados.', true);
+      if (erroCarregamento && String(erroCarregamento.message || '').includes('não autenticado')) {
+        mostrarNotificacao('Faça login para sincronizar os dados do Fiado com o Supabase.', true);
+      } else {
+        mostrarNotificacao('Não foi possível conectar ao Supabase. Os dados exibidos podem estar desatualizados.', true);
+      }
     }
 
     console.log('Dr. Troco — módulo Fiado (Supabase) inicializado.');
