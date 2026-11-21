@@ -10,7 +10,7 @@
 
   <style>
     /* =====================================================
-       DR. TROCO — FIADO | visual atualizado e responsivo
+       DR. TROCO — FIADO | visual limpo e responsivo
        IDs preservados para compatibilidade com fiado.js
        ===================================================== */
     body.pagina-fiado {
@@ -37,78 +37,78 @@
     .fiado-container { width: min(820px, 100%); margin: 0 auto; padding: 0 15px 26px; }
 
     /* Cabeçalho */
-    .fiado-topo { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 24px 2px 20px; }
+    .fiado-topo { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 22px 2px 18px; }
     .fiado-topo-texto { min-width: 0; }
-    .fiado-marca { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; color: var(--f-verde-escuro); font-size: 11px; font-weight: 900; letter-spacing: 1px; }
-    .fiado-marca-icone { display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid #cfeadb; border-radius: 10px; background: var(--f-verde-claro); font-size: 16px; }
-    .fiado-topo h1 { margin: 0; color: #18271f; font-size: clamp(27px, 6vw, 34px); line-height: 1.1; font-weight: 900; letter-spacing: -1px; }
-    .fiado-topo p { margin: 7px 0 0; color: var(--f-muted); font-size: 13px; line-height: 1.5; }
-    .fiado-topo-icone { display: grid; place-items: center; flex: 0 0 54px; width: 54px; height: 54px; border-radius: 18px; background: linear-gradient(145deg, #2bbb77, #168b53); color: #fff; font-size: 27px; box-shadow: 0 8px 20px #168b532b; }
+    .fiado-marca { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: var(--f-verde-escuro); font-size: 11px; font-weight: 900; letter-spacing: 1px; }
+    .fiado-marca-icone { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #cfeadb; border-radius: 10px; background: var(--f-verde-claro); font-size: 15px; }
+    .fiado-topo h1 { margin: 0; color: #18271f; font-size: clamp(26px, 6vw, 33px); line-height: 1.1; font-weight: 900; letter-spacing: -1px; }
+    .fiado-topo p { margin: 6px 0 0; color: var(--f-muted); font-size: 12.5px; line-height: 1.45; }
+    .fiado-topo-icone { display: grid; place-items: center; flex: 0 0 52px; width: 52px; height: 52px; border-radius: 18px; background: linear-gradient(145deg, #2bbb77, #168b53); color: #fff; font-size: 26px; box-shadow: 0 8px 20px #168b532b; }
 
     /* Cards do resumo */
-    .fiado-grade-resumo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
-    .fiado-grade-indicadores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 22px; }
-    .fiado-resumo-card { position: relative; display: block; min-width: 0; padding: 15px 13px; overflow: hidden; border: 1px solid var(--f-borda); border-radius: 17px; background: #fff; text-align: left; box-shadow: 0 4px 14px #1b342808; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+    .fiado-grade-resumo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .fiado-grade-indicadores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .fiado-resumo-card { position: relative; display: block; min-width: 0; padding: 14px 12px; overflow: hidden; border: 1px solid var(--f-borda); border-radius: 16px; background: #fff; text-align: left; box-shadow: 0 4px 14px #1b342808; cursor: pointer; transition: transform .15s, box-shadow .15s; }
     .fiado-resumo-card:active { transform: scale(.985); }
     .fiado-resumo-card::before { position: absolute; top: 0; right: 0; left: 0; height: 4px; background: var(--f-verde); content: ""; }
     .fiado-resumo-card.aberto::before { background: #dc954c; }
     .fiado-resumo-card.alerta::before { background: var(--f-vermelho); }
-    .fiado-resumo-card span { display: block; min-height: 31px; margin-bottom: 8px; color: var(--f-muted); font-size: 11px; font-weight: 800; line-height: 1.4; }
-    .fiado-resumo-card strong { display: block; color: var(--f-texto); font-size: clamp(13px, 3.4vw, 19px); font-weight: 900; line-height: 1.3; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    .fiado-resumo-card span { display: block; min-height: 28px; margin-bottom: 6px; color: var(--f-muted); font-size: 11px; font-weight: 800; line-height: 1.35; }
+    .fiado-resumo-card strong { display: block; color: var(--f-texto); font-size: clamp(13px, 3.4vw, 18px); font-weight: 900; line-height: 1.25; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
     .fiado-resumo-card.aberto { border-color: #f0dfcc; background: #fffdf9; }
     .fiado-resumo-card.aberto strong { color: var(--f-laranja); }
     .fiado-resumo-card.alerta { border-color: #f2d8d9; background: #fffafa; }
     .fiado-resumo-card.alerta strong { color: var(--f-vermelho); }
 
     /* Seções e atalhos */
-    .fiado-secao-cabecalho { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 23px 2px 11px; }
-    .fiado-secao-cabecalho h2 { margin: 0; color: #1d2d24; font-size: 17px; font-weight: 900; line-height: 1.3; }
-    .fiado-secao-cabecalho p { margin: 4px 0 0; color: var(--f-muted); font-size: 12px; line-height: 1.5; }
-    .fiado-atalhos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 23px; }
-    .fiado-atalho { display: flex; align-items: center; gap: 11px; width: 100%; min-width: 0; min-height: 76px; padding: 13px; border: 1px solid var(--f-borda); border-radius: 16px; background: #fff; color: var(--f-texto); text-align: left; cursor: pointer; box-shadow: 0 4px 13px #1b342807; transition: transform .12s, border-color .12s; }
+    .fiado-secao-cabecalho { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 20px 2px 10px; }
+    .fiado-secao-cabecalho h2 { margin: 0; color: #1d2d24; font-size: 16.5px; font-weight: 900; line-height: 1.3; }
+    .fiado-secao-cabecalho p { margin: 3px 0 0; color: var(--f-muted); font-size: 12px; line-height: 1.45; }
+    .fiado-atalhos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .fiado-atalho { display: flex; align-items: center; gap: 11px; width: 100%; min-width: 0; min-height: 72px; padding: 12px; border: 1px solid var(--f-borda); border-radius: 16px; background: #fff; color: var(--f-texto); text-align: left; cursor: pointer; box-shadow: 0 4px 13px #1b342807; transition: transform .12s, border-color .12s; }
     .fiado-atalho:active { transform: scale(.985); }
     .fiado-atalho:focus-visible, .fiado-btn:focus-visible, .fiado-btn-fechar:focus-visible, .fiado-btn-mini:focus-visible, .fiado-resumo-card:focus-visible { outline: 3px solid #20a76745; outline-offset: 2px; }
-    .fiado-atalho-icone { display: grid; place-items: center; flex: 0 0 41px; width: 41px; height: 41px; border-radius: 13px; background: var(--f-verde-claro); color: var(--f-verde-escuro); font-size: 21px; }
+    .fiado-atalho-icone { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; border-radius: 13px; background: var(--f-verde-claro); color: var(--f-verde-escuro); font-size: 20px; }
     .fiado-atalho-texto { display: block; min-width: 0; }
-    .fiado-atalho-texto strong { display: block; font-size: 13px; font-weight: 900; line-height: 1.35; }
-    .fiado-atalho-texto small { display: block; margin-top: 4px; color: var(--f-muted); font-size: 11px; line-height: 1.4; }
+    .fiado-atalho-texto strong { display: block; font-size: 13px; font-weight: 900; line-height: 1.3; }
+    .fiado-atalho-texto small { display: block; margin-top: 3px; color: var(--f-muted); font-size: 11px; line-height: 1.35; }
     .fiado-atalho.principal { border-color: #c7e7d5; background: #eaf8f1; }
     .fiado-atalho.principal .fiado-atalho-icone { background: var(--f-verde-escuro); color: #fff; }
 
     /* Lista de clientes */
-    .fiado-painel { min-width: 0; margin-bottom: 16px; padding: 16px; border: 1px solid var(--f-borda); border-radius: 19px; background: #fff; box-shadow: 0 4px 16px #1b342808; }
-    .fiado-painel > .fiado-secao-cabecalho { margin: 0 0 14px; }
+    .fiado-painel { min-width: 0; margin-bottom: 16px; padding: 15px; border: 1px solid var(--f-borda); border-radius: 19px; background: #fff; box-shadow: 0 4px 16px #1b342808; }
+    .fiado-painel > .fiado-secao-cabecalho { margin: 0 0 12px; }
     .fiado-filtro { display: flex; align-items: center; gap: 9px; margin: 0 0 10px; }
     .fiado-chips-filtro { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 14px; }
     .fiado-chip { min-height: 34px; padding: 6px 12px; border: 1px solid var(--f-borda); border-radius: 999px; background: #f8faf9; color: #47594f; font-size: 11.5px; font-weight: 800; cursor: pointer; }
     .fiado-chip.ativo { border-color: #168b53; background: var(--f-verde-claro); color: var(--f-verde-escuro); }
     .fiado-campo { min-width: 0; }
-    .fiado-campo label { display: block; margin-bottom: 6px; color: #34483d; font-size: 12px; font-weight: 800; line-height: 1.4; }
-    .fiado-campo input, .fiado-campo select, .fiado-campo textarea, .fiado-filtro input { display: block; width: 100%; min-width: 0; min-height: 46px; padding: 11px 13px; border: 1px solid #dce6e0; border-radius: 12px; outline: none; background: #f8faf9; color: var(--f-texto); font-size: 15px; transition: border-color .18s, box-shadow .18s, background .18s; }
-    .fiado-campo textarea { min-height: 66px; resize: vertical; }
+    .fiado-campo label { display: block; margin-bottom: 5px; color: #34483d; font-size: 12px; font-weight: 800; line-height: 1.35; }
+    .fiado-campo input, .fiado-campo select, .fiado-campo textarea, .fiado-filtro input { display: block; width: 100%; min-width: 0; min-height: 45px; padding: 10px 12px; border: 1px solid #dce6e0; border-radius: 12px; outline: none; background: #f8faf9; color: var(--f-texto); font-size: 15px; transition: border-color .18s, box-shadow .18s, background .18s; }
+    .fiado-campo textarea { min-height: 64px; resize: vertical; }
     .fiado-campo input:focus, .fiado-campo select:focus, .fiado-campo textarea:focus, .fiado-filtro input:focus { border-color: var(--f-verde); background: #fff; box-shadow: 0 0 0 3px #20a7671a; }
-    .fiado-filtro input { flex: 1; min-height: 47px; border-radius: 13px; }
+    .fiado-filtro input { flex: 1; min-height: 46px; border-radius: 13px; }
     .fiado-contagem { color: var(--f-muted); font-size: 11px; font-weight: 800; white-space: nowrap; }
     .fiado-lista-clientes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-    .fiado-cliente-card { display: flex; flex-direction: column; align-items: stretch; gap: 11px; min-width: 0; padding: 13px; border: 1px solid var(--f-borda); border-radius: 15px; background: #fff; transition: border-color .18s, box-shadow .18s; }
+    .fiado-cliente-card { display: flex; flex-direction: column; align-items: stretch; gap: 10px; min-width: 0; padding: 13px; border: 1px solid var(--f-borda); border-radius: 15px; background: #fff; transition: border-color .18s, box-shadow .18s; }
     .fiado-cliente-card:focus-within { border-color: #b7dfc8; box-shadow: 0 4px 15px #20a76712; }
     .fiado-cliente-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .fiado-avatar { display: grid; place-items: center; flex: 0 0 43px; width: 43px; height: 43px; border-radius: 14px; background: var(--f-verde-claro); font-size: 20px; }
+    .fiado-avatar { display: grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; border-radius: 14px; background: var(--f-verde-claro); font-size: 19px; }
     .fiado-cliente-texto { flex: 1; min-width: 0; }
-    .fiado-cliente-texto h3 { margin: 0 0 4px; color: var(--f-texto); font-size: 14px; font-weight: 900; line-height: 1.35; overflow-wrap: anywhere; }
-    .fiado-cliente-texto p { margin: 0 0 3px; color: var(--f-muted); font-size: 11.5px; line-height: 1.4; overflow-wrap: anywhere; }
+    .fiado-cliente-texto h3 { margin: 0 0 3px; color: var(--f-texto); font-size: 14px; font-weight: 900; line-height: 1.3; overflow-wrap: anywhere; }
+    .fiado-cliente-texto p { margin: 0 0 2px; color: var(--f-muted); font-size: 11.5px; line-height: 1.35; overflow-wrap: anywhere; }
     .fiado-cliente-texto small { color: var(--f-muted); font-size: 10.5px; }
-    .fiado-cliente-saldo { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 11px; border: 1px solid #f0e4d6; border-radius: 11px; background: #fffaf4; }
+    .fiado-cliente-saldo { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 11px; border: 1px solid #f0e4d6; border-radius: 11px; background: #fffaf4; }
     .fiado-cliente-saldo span { color: #87613b; font-size: 11px; font-weight: 700; }
     .fiado-cliente-saldo strong { color: var(--f-laranja); font-size: 14px; font-weight: 900; text-align: right; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
-    .fiado-cliente-card > .fiado-btn { width: 100%; min-height: 42px; }
-    .fiado-vazio { grid-column: 1 / -1; padding: 28px 16px; border: 1px dashed #d5e3db; border-radius: 15px; background: #fafcfb; color: var(--f-muted); text-align: center; }
-    .fiado-vazio > div { margin-bottom: 8px; font-size: 31px; }
-    .fiado-vazio h3 { margin: 0 0 6px; color: var(--f-texto); font-size: 14px; font-weight: 900; }
-    .fiado-vazio p { margin: 0; font-size: 12px; line-height: 1.6; }
+    .fiado-cliente-card > .fiado-btn { width: 100%; min-height: 41px; }
+    .fiado-vazio { grid-column: 1 / -1; padding: 24px 14px; border: 1px dashed #d5e3db; border-radius: 15px; background: #fafcfb; color: var(--f-muted); text-align: center; }
+    .fiado-vazio > div { margin-bottom: 6px; font-size: 28px; }
+    .fiado-vazio h3 { margin: 0 0 4px; color: var(--f-texto); font-size: 14px; font-weight: 900; }
+    .fiado-vazio p { margin: 0; font-size: 12px; line-height: 1.5; }
 
     /* Botões */
-    .fiado-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 10px 13px; border: 1px solid transparent; border-radius: 12px; font-size: 12.5px; font-weight: 800; line-height: 1.3; text-align: center; text-decoration: none; cursor: pointer; touch-action: manipulation; transition: transform .12s ease, filter .12s ease; }
+    .fiado-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 43px; padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; font-size: 12.5px; font-weight: 800; line-height: 1.25; text-align: center; text-decoration: none; cursor: pointer; touch-action: manipulation; transition: transform .12s ease, filter .12s ease; }
     .fiado-btn:active { transform: scale(.98); }
     .fiado-btn-principal { color: #fff; background: linear-gradient(135deg, #25ad6d, #168b53); box-shadow: 0 4px 10px #20a76722; }
     .fiado-btn-secundario { color: #148751; border-color: #cfeadb; background: #eaf8f1; }
@@ -122,7 +122,6 @@
       box-shadow: 0 4px 12px rgba(37, 211, 102, .25);
       font-weight: 800;
     }
-    .fiado-btn-whatsapp:active { transform: scale(.98); }
 
     /* Modais — sempre acima da barra inferior e com respiro para teclado */
     .fiado-modal {
@@ -146,7 +145,7 @@
       overflow-x: hidden;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 20px 20px calc(26px + env(safe-area-inset-bottom, 0px));
+      padding: 18px 18px calc(26px + env(safe-area-inset-bottom, 0px));
       border: 1px solid #ffffffcc;
       border-radius: 22px;
       background: #fff;
@@ -154,62 +153,67 @@
       overscroll-behavior: contain;
     }
     #modalDetalhesFiado .fiado-modal-conteudo, #modalRelatoriosFiado .fiado-modal-conteudo, #modalCobrancasFiado .fiado-modal-conteudo { width: min(740px, 100%); }
-    .fiado-modal-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .fiado-modal-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
     .fiado-modal-topo > div { min-width: 0; }
-    .fiado-modal-topo h2 { margin: 0 0 5px; color: #1d2d24; font-size: 20px; font-weight: 900; line-height: 1.25; letter-spacing: -.3px; overflow-wrap: anywhere; }
-    .fiado-modal-topo p { margin: 0; color: var(--f-muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
-    .fiado-btn-fechar { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border: 1px solid #e5ebe7; border-radius: 13px; background: #f3f7f5; color: #526158; font-size: 23px; cursor: pointer; }
-    .fiado-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding-bottom: 8px; }
+    .fiado-modal-topo h2 { margin: 0 0 4px; color: #1d2d24; font-size: 19px; font-weight: 900; line-height: 1.25; letter-spacing: -.3px; overflow-wrap: anywhere; }
+    .fiado-modal-topo p { margin: 0; color: var(--f-muted); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+    .fiado-btn-fechar { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border: 1px solid #e5ebe7; border-radius: 12px; background: #f3f7f5; color: #526158; font-size: 22px; cursor: pointer; }
+    .fiado-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding-bottom: 6px; }
     .fiado-form > .fiado-btn { width: 100%; }
 
-    /* Detalhes do cliente: saldo em primeiro plano */
-    .fiado-detalhes-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-bottom: 12px; }
-    .fiado-detalhe-kpi { min-width: 0; padding: 13px 11px; border: 1px solid var(--f-borda); border-radius: 14px; background: #f8faf9; }
-    .fiado-detalhe-kpi span { display: block; margin-bottom: 7px; color: var(--f-muted); font-size: 10.5px; font-weight: 800; line-height: 1.4; }
-    .fiado-detalhe-kpi strong { display: block; color: var(--f-texto); font-size: clamp(12px, 3.1vw, 16px); font-weight: 900; line-height: 1.35; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
-    .fiado-detalhe-kpi.saldo { border-color: #efd8bd; background: linear-gradient(145deg, #fffaf3, #fff5e7); }
-    .fiado-detalhe-kpi.saldo span { color: #8c633b; }
-    .fiado-detalhe-kpi.saldo strong { color: var(--f-laranja); font-size: clamp(15px, 3.8vw, 20px); }
-    .fiado-secao-titulo { margin: 21px 0 10px; color: #24372c; font-size: 15px; font-weight: 900; line-height: 1.4; }
-    .fiado-sem-juros { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 14px; padding: 12px 13px; border: 1px solid #cfeadb; border-radius: 13px; background: #effaf4; color: #16814e; font-size: 11.5px; font-weight: 600; line-height: 1.55; }
-    .fiado-mensal-filtro { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-    .fiado-mensal-filtro .fiado-campo { width: min(230px, 100%); }
-    .fiado-legenda { margin: 0; color: var(--f-muted); font-size: 11.5px; line-height: 1.5; }
-    .fiado-resumo-mensal { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-    .fiado-mes-item { min-width: 0; padding: 12px; border: 1px solid var(--f-borda); border-radius: 13px; background: #f8faf9; }
-    .fiado-mes-item span { display: block; margin-bottom: 7px; color: var(--f-muted); font-size: 10.5px; font-weight: 700; line-height: 1.4; }
-    .fiado-mes-item strong { display: block; color: var(--f-texto); font-size: 14px; font-weight: 900; line-height: 1.4; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    /* Detalhes do cliente: layout limpo e focado */
+    .fiado-detalhes-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+    .fiado-detalhe-kpi { min-width: 0; padding: 11px 12px; border: 1px solid var(--f-borda); border-radius: 13px; background: #f8faf9; }
+    .fiado-detalhe-kpi span { display: block; margin-bottom: 4px; color: var(--f-muted); font-size: 10.5px; font-weight: 800; line-height: 1.3; }
+    .fiado-detalhe-kpi strong { display: block; color: var(--f-texto); font-size: clamp(13px, 3.3vw, 15px); font-weight: 900; line-height: 1.3; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    .fiado-detalhe-kpi.saldo { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 14px; border-color: #efd8bd; background: linear-gradient(145deg, #fffaf3, #fff5e7); }
+    .fiado-detalhe-kpi.saldo span { margin: 0; font-size: 12px; color: #8c633b; }
+    .fiado-detalhe-kpi.saldo strong { color: var(--f-laranja); font-size: clamp(18px, 4.5vw, 22px); text-align: right; }
+
+    /* Ações principais em destaque */
+    .fiado-acoes-principais { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+    .fiado-acoes-principais .fiado-btn { min-height: 46px; }
+    .fiado-acoes-principais .fiado-btn-whatsapp { grid-column: 1 / -1; min-height: 44px; }
+
+    /* Blocos secundários recolhíveis */
+    .fiado-secao-titulo { margin: 16px 0 8px; color: #24372c; font-size: 14px; font-weight: 900; line-height: 1.35; }
+    .fiado-mensal-filtro { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+    .fiado-mensal-filtro .fiado-campo { width: 100%; }
+    .fiado-resumo-mensal { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .fiado-mes-item { min-width: 0; padding: 10px 11px; border: 1px solid var(--f-borda); border-radius: 12px; background: #f8faf9; }
+    .fiado-mes-item span { display: block; margin-bottom: 4px; color: var(--f-muted); font-size: 10.5px; font-weight: 700; line-height: 1.3; }
+    .fiado-mes-item strong { display: block; color: var(--f-texto); font-size: 13.5px; font-weight: 900; line-height: 1.35; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
     .fiado-mes-item.final { border-color: #cfeadb; background: #eaf8f1; }
     .fiado-mes-item.final strong { color: #148751; }
 
-    /* Extrato e ações */
-    .fiado-extrato-opcoes { margin-top: 16px; padding: 14px; border: 1px solid #e1eae5; border-radius: 15px; background: #f8faf9; }
-    .fiado-extrato-opcoes p { margin: 0 0 11px; color: var(--f-muted); font-size: 11.5px; line-height: 1.55; }
-    .fiado-extrato-opcoes p strong { color: var(--f-texto); font-size: 13px; }
-    .fiado-acoes-modal { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 14px; }
-    .fiado-acoes-modal .fiado-btn { width: 100%; min-width: 0; min-height: 44px; padding: 10px 9px; font-size: 12px; overflow-wrap: anywhere; }
-    #btnRegistrarPagamentoFiado { min-height: 48px; }
-    #btnExcluirClienteFiado { grid-column: 1 / -1; min-height: 42px; margin-top: 2px; background: #fff8f8; }
-    #btnFecharDetalhesFiado2 { width: 100%; margin-top: 10px; min-height: 44px; border: 1px solid #e5ebe7; border-radius: 12px; background: #f2f6f3; color: #53635b; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+    .fiado-extrato-linha { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin-top: 10px; }
+    .fiado-extrato-linha .fiado-campo { flex: 1 1 180px; }
+    .fiado-extrato-linha .fiado-btn { flex: 0 0 auto; min-height: 45px; }
 
-    /* Histórico recolhível */
-    .fiado-historico-bloco { margin-top: 14px; border: 1px solid var(--f-borda); border-radius: 15px; background: #fff; overflow: hidden; }
-    .fiado-historico-bloco > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; color: #24372c; background: #f8faf9; font-size: 13px; font-weight: 900; cursor: pointer; list-style: none; }
+    .fiado-acoes-modal { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+    .fiado-acoes-modal .fiado-btn { width: 100%; min-width: 0; min-height: 42px; padding: 9px 8px; font-size: 12px; }
+    #btnExcluirClienteFiado { grid-column: 1 / -1; min-height: 40px; }
+    #btnFecharDetalhesFiado2 { width: 100%; margin-top: 12px; min-height: 42px; border: 1px solid #e5ebe7; border-radius: 12px; background: #f2f6f3; color: #53635b; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+
+    .fiado-historico-bloco { margin-top: 10px; border: 1px solid var(--f-borda); border-radius: 14px; background: #fff; overflow: hidden; }
+    .fiado-historico-bloco > summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; color: #24372c; background: #f8faf9; font-size: 12.5px; font-weight: 900; cursor: pointer; list-style: none; }
     .fiado-historico-bloco > summary::-webkit-details-marker { display: none; }
-    .fiado-historico-bloco > summary::after { content: "+"; display: grid; place-items: center; flex: 0 0 27px; width: 27px; height: 27px; border-radius: 9px; background: #eaf8f1; color: #168b53; font-size: 19px; line-height: 1; }
+    .fiado-historico-bloco > summary::after { content: "+"; display: grid; place-items: center; flex: 0 0 25px; width: 25px; height: 25px; border-radius: 8px; background: #eaf8f1; color: #168b53; font-size: 18px; line-height: 1; }
     .fiado-historico-bloco[open] > summary::after { content: "−"; }
-    .fiado-historico-bloco > .fiado-historico { display: grid; gap: 8px; padding: 11px; }
-    .fiado-movimento { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; min-width: 0; padding: 12px; border: 1px solid var(--f-borda); border-radius: 12px; background: #fff; }
+    .fiado-historico-bloco > .fiado-historico, .fiado-historico-bloco > .fiado-bloco-interno { display: grid; gap: 8px; padding: 11px; }
+
+    .fiado-movimento { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; min-width: 0; padding: 11px; border: 1px solid var(--f-borda); border-radius: 12px; background: #fff; }
     .fiado-movimento-info { flex: 1; min-width: 0; }
-    .fiado-movimento-info > strong { display: block; color: var(--f-texto); font-size: 12.5px; font-weight: 800; line-height: 1.45; overflow-wrap: anywhere; }
-    .fiado-movimento-info small { display: block; margin-top: 4px; color: var(--f-muted); font-size: 10.5px; line-height: 1.45; overflow-wrap: anywhere; }
-    .fiado-movimento-valor { flex-shrink: 0; max-width: 48%; font-size: 12px; font-weight: 900; line-height: 1.45; text-align: right; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    .fiado-movimento-info > strong { display: block; color: var(--f-texto); font-size: 12.5px; font-weight: 800; line-height: 1.4; overflow-wrap: anywhere; }
+    .fiado-movimento-info small { display: block; margin-top: 3px; color: var(--f-muted); font-size: 10.5px; line-height: 1.4; overflow-wrap: anywhere; }
+    .fiado-movimento-valor { flex-shrink: 0; max-width: 46%; font-size: 12px; font-weight: 900; line-height: 1.4; text-align: right; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
     .fiado-valor-pago { color: #148751; }
     .fiado-valor-divida { color: var(--f-laranja); }
-    .fiado-movimento-acoes { display: flex; justify-content: flex-start; margin-top: 8px; }
-    .fiado-btn-mini { min-height: 32px; padding: 6px 10px; border: 1px solid #f0dede; border-radius: 8px; background: #fff7f7; color: var(--f-vermelho); font-size: 11px; font-weight: 800; cursor: pointer; }
-    .fiado-saldo-apos { display: block; margin-top: 7px; padding: 7px 9px; border-radius: 8px; background: var(--f-verde-claro); color: #53635b; font-size: 11px; line-height: 1.4; }
+    .fiado-movimento-acoes { display: flex; justify-content: flex-start; margin-top: 7px; }
+    .fiado-btn-mini { min-height: 30px; padding: 5px 10px; border: 1px solid #f0dede; border-radius: 8px; background: #fff7f7; color: var(--f-vermelho); font-size: 10.5px; font-weight: 800; cursor: pointer; }
+    .fiado-saldo-apos { display: block; margin-top: 6px; padding: 6px 9px; border-radius: 8px; background: var(--f-verde-claro); color: #53635b; font-size: 11px; line-height: 1.35; }
     .fiado-saldo-apos strong { color: var(--f-verde-escuro); }
+
     .fiado-notificacao { position: fixed; z-index: 10060; right: 15px; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); left: 15px; width: min(470px, calc(100% - 30px)); margin: auto; padding: 13px 15px; border-radius: 13px; background: #168b53; color: #fff; font-size: 12.5px; font-weight: 700; line-height: 1.5; box-shadow: 0 8px 25px #0003; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .2s, transform .2s, visibility .2s; }
     .fiado-notificacao.visivel { opacity: 1; visibility: visible; transform: translateY(0); }
     .fiado-notificacao.erro { background: #c43d42; }
@@ -221,17 +225,19 @@
       .fiado-lista-clientes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fiado-cliente-card { padding: 14px; }
       .fiado-modal { padding: 18px; }
-      .fiado-modal-conteudo { max-height: calc(100dvh - 36px); padding: 23px; }
+      .fiado-modal-conteudo { max-height: calc(100dvh - 36px); padding: 22px; }
+      .fiado-detalhes-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .fiado-detalhe-kpi.saldo { grid-column: 1 / -1; }
     }
     @media (max-width: 430px) {
       .fiado-container { padding-right: 10px; padding-left: 10px; }
-      .fiado-topo { padding-top: 19px; }
+      .fiado-topo { padding-top: 18px; }
       .fiado-grade-resumo { gap: 6px; }
-      .fiado-resumo-card { padding: 12px 9px; border-radius: 14px; }
-      .fiado-resumo-card span { min-height: 30px; font-size: 10px; }
+      .fiado-resumo-card { padding: 11px 9px; border-radius: 14px; }
+      .fiado-resumo-card span { min-height: 28px; font-size: 10px; }
       .fiado-resumo-card strong { font-size: 12px; }
       .fiado-atalhos { gap: 7px; }
-      .fiado-atalho { gap: 8px; min-height: 73px; padding: 10px; }
+      .fiado-atalho { gap: 8px; min-height: 68px; padding: 10px; }
       .fiado-atalho-icone { flex-basis: 34px; width: 34px; height: 34px; font-size: 17px; }
       .fiado-atalho-texto strong { font-size: 11.5px; }
       .fiado-atalho-texto small { font-size: 10px; }
@@ -244,30 +250,18 @@
       }
       .fiado-modal-conteudo {
         max-height: calc(100dvh - 20px - env(safe-area-inset-bottom, 0px));
-        padding: 16px 14px calc(28px + env(safe-area-inset-bottom, 0px));
+        padding: 15px 14px calc(28px + env(safe-area-inset-bottom, 0px));
         border-radius: 20px;
       }
-      .fiado-detalhes-kpis { gap: 5px; }
-      .fiado-detalhe-kpi { padding: 10px 7px; }
-      .fiado-detalhe-kpi span { font-size: 9.5px; }
-      .fiado-detalhe-kpi strong { font-size: 11.5px; }
-      .fiado-detalhe-kpi.saldo strong { font-size: 14px; }
-      .fiado-mensal-filtro { align-items: stretch; }
-      .fiado-mensal-filtro .fiado-campo { width: 100%; }
-      .fiado-movimento { gap: 8px; }
-      .fiado-acoes-modal { gap: 8px; }
-      .fiado-acoes-modal .fiado-btn { padding: 10px 8px; font-size: 11.5px; }
+      .fiado-acoes-principais { grid-template-columns: 1fr; }
+      .fiado-extrato-linha .fiado-btn { width: 100%; }
     }
     @media (max-width: 340px) {
       .fiado-grade-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fiado-resumo-card.aberto { grid-column: 1 / -1; }
       .fiado-atalho { align-items: flex-start; flex-direction: column; }
-      .fiado-detalhes-kpis { grid-template-columns: 1fr; }
-      .fiado-detalhe-kpi { padding: 11px; }
-      .fiado-detalhe-kpi span { font-size: 10.5px; }
-      .fiado-detalhe-kpi strong, .fiado-detalhe-kpi.saldo strong { font-size: 15px; }
-      .fiado-resumo-mensal { grid-template-columns: 1fr; }
-      .fiado-acoes-modal { grid-template-columns: 1fr; }
+      .fiado-detalhes-kpis, .fiado-resumo-mensal, .fiado-acoes-modal { grid-template-columns: 1fr; }
+      .fiado-detalhe-kpi.saldo { flex-direction: column; align-items: flex-start; }
     }
     @media (prefers-reduced-motion: reduce) {
       body.pagina-fiado *, body.pagina-fiado *::before, body.pagina-fiado *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
@@ -411,54 +405,49 @@
         <div class="fiado-detalhe-kpi saldo"><span>Saldo devedor</span><strong id="fiadoDetalhesSaldo">R$ 0,00</strong></div>
         <div class="fiado-detalhe-kpi"><span>Total comprado</span><strong id="fiadoDetalhesCompras">R$ 0,00</strong></div>
         <div class="fiado-detalhe-kpi"><span>Total pago</span><strong id="fiadoDetalhesPago">R$ 0,00</strong></div>
-      </section>
-
-      <section class="fiado-detalhes-kpis" aria-label="Limite e compras pendentes do cliente">
         <div class="fiado-detalhe-kpi"><span>Limite de crédito</span><strong id="fiadoDetalhesLimite">Sem limite</strong></div>
         <div class="fiado-detalhe-kpi"><span>Crédito disponível</span><strong id="fiadoDetalhesDisponivel">Livre</strong></div>
-        <div class="fiado-detalhe-kpi"><span>Compras pendentes</span><strong id="fiadoDetalhesPendentesQtd">0</strong></div>
+        <div class="fiado-detalhe-kpi" style="grid-column: 1 / -1;"><span>Compras pendentes</span><strong id="fiadoDetalhesPendentesQtd">0</strong></div>
       </section>
 
-      <section aria-labelledby="tituloResumoMensalFiado">
-        <h3 id="tituloResumoMensalFiado" class="fiado-secao-titulo">Resumo mensal</h3>
-        <p class="fiado-sem-juros"><span aria-hidden="true">✓</span><span><strong>Sem juros.</strong> O saldo pendente passa para o próximo mês.</span></p>
-        <div class="fiado-mensal-filtro">
-          <p class="fiado-legenda">Escolha o mês que deseja consultar.</p>
-          <div class="fiado-campo"><label for="fiadoMesReferencia">Mês de referência</label><input id="fiadoMesReferencia" type="month"></div>
-        </div>
-        <div id="fiadoResumoMensal" class="fiado-resumo-mensal" aria-live="polite"></div>
-      </section>
+      <div class="fiado-acoes-principais" aria-label="Ações principais da conta">
+        <button id="btnRegistrarPagamentoFiado" type="button" class="fiado-btn fiado-btn-principal">＋ Registrar pagamento</button>
+        <button id="btnAdicionarDividaFiado" type="button" class="fiado-btn fiado-btn-secundario">＋ Registrar compra</button>
+        <button id="btnCobrarWhatsAppFiado" type="button" class="fiado-btn fiado-btn-whatsapp">💬 Cobrar no WhatsApp</button>
+      </div>
 
-      <section class="fiado-extrato-opcoes" aria-label="Opções de extrato">
-        <p><strong>Extrato do cliente</strong><br>Gere um relatório para imprimir ou salvar como PDF.</p>
+      <div class="fiado-extrato-linha" aria-label="Extrato do cliente">
         <div class="fiado-campo">
           <label for="fiadoPeriodoExtrato">Período do extrato</label>
           <select id="fiadoPeriodoExtrato">
-            <option value="mes">Somente o mês selecionado</option>
+            <option value="mes">Mês selecionado</option>
             <option value="todos">Todo o histórico</option>
           </select>
         </div>
-      </section>
-
-      <div class="fiado-acoes-modal" aria-label="Ações da conta do cliente">
-        <button id="btnAdicionarDividaFiado" type="button" class="fiado-btn fiado-btn-secundario">＋ Registrar compra</button>
-        <button id="btnRegistrarPagamentoFiado" type="button" class="fiado-btn fiado-btn-principal">＋ Registrar pagamento</button>
-        <button id="btnEditarClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">✎ Editar cliente</button>
-        <button id="btnBloquearClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">🔒 Bloquear / Desbloquear</button>
-        <button id="btnArquivarClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">🗄 Arquivar / Reativar</button>
-        <button id="btnExportarFiadoPDF" type="button" class="fiado-btn fiado-btn-secundario">▤ Gerar extrato PDF</button>
-        <button id="btnCobrarWhatsAppFiado" type="button" class="fiado-btn fiado-btn-whatsapp">💬 Cobrar no WhatsApp</button>
-        <button id="btnExcluirClienteFiado" type="button" class="fiado-btn fiado-btn-perigo">Excluir cliente</button>
+        <button id="btnExportarFiadoPDF" type="button" class="fiado-btn fiado-btn-secundario">▤ Gerar PDF</button>
       </div>
 
-      <button
-        type="button"
-        id="btnFecharDetalhesFiado2"
-        class="btn-fechar-detalhes-secundario"
-        aria-label="Fechar detalhes"
-      >
-        Fechar detalhes
-      </button>
+      <details class="fiado-historico-bloco">
+        <summary>Resumo mensal</summary>
+        <div class="fiado-bloco-interno">
+          <div class="fiado-mensal-filtro">
+            <div class="fiado-campo"><label for="fiadoMesReferencia">Mês de referência</label><input id="fiadoMesReferencia" type="month"></div>
+          </div>
+          <div id="fiadoResumoMensal" class="fiado-resumo-mensal" aria-live="polite"></div>
+        </div>
+      </details>
+
+      <details class="fiado-historico-bloco">
+        <summary>Mais ações da conta</summary>
+        <div class="fiado-bloco-interno">
+          <div class="fiado-acoes-modal">
+            <button id="btnEditarClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">✎ Editar cliente</button>
+            <button id="btnBloquearClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">🔒 Bloquear / Desbloquear</button>
+            <button id="btnArquivarClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">🗄 Arquivar / Reativar</button>
+            <button id="btnExcluirClienteFiado" type="button" class="fiado-btn fiado-btn-perigo">Excluir cliente</button>
+          </div>
+        </div>
+      </details>
 
       <details class="fiado-historico-bloco">
         <summary>Parcelas da conta</summary>
@@ -474,6 +463,15 @@
         <summary>Histórico de cobranças e auditoria</summary>
         <div id="fiadoAuditoriaCliente" class="fiado-historico" aria-live="polite"></div>
       </details>
+
+      <button
+        type="button"
+        id="btnFecharDetalhesFiado2"
+        class="btn-fechar-detalhes-secundario"
+        aria-label="Fechar detalhes"
+      >
+        Fechar detalhes
+      </button>
     </div>
   </div>
 
