@@ -335,7 +335,7 @@
 
     <section id="painelClientes" class="fiado-painel" aria-labelledby="tituloClientesFiado">
       <div class="fiado-secao-cabecalho">
-        <div><h2 id="tituloClientesFiado">Clientes do fiado</h2><p>Abra um cliente para consultar conta, parcelas e auditoria.</p></div>
+        <div><h2 id="tituloClientesFiado">Clientes do fiado</h2><p>Abra um cliente para consultar conta, parcelas e histórico.</p></div>
       </div>
       <div class="fiado-filtro">
         <input id="fiadoBuscaCliente" type="search" placeholder="⌕  Buscar por nome, telefone ou endereço" aria-label="Buscar cliente por nome, telefone ou endereço">
@@ -442,8 +442,6 @@
         <div class="fiado-bloco-interno">
           <div class="fiado-acoes-modal">
             <button id="btnEditarClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">✎ Editar cliente</button>
-            <button id="btnBloquearClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">🔒 Bloquear / Desbloquear</button>
-            <button id="btnArquivarClienteFiado" type="button" class="fiado-btn fiado-btn-neutro">🗄 Arquivar / Reativar</button>
             <button id="btnExcluirClienteFiado" type="button" class="fiado-btn fiado-btn-perigo">Excluir cliente</button>
           </div>
         </div>
@@ -457,11 +455,6 @@
       <details class="fiado-historico-bloco">
         <summary>Histórico de movimentações</summary>
         <div id="fiadoHistoricoCliente" class="fiado-historico" aria-live="polite"></div>
-      </details>
-
-      <details class="fiado-historico-bloco">
-        <summary>Histórico de cobranças e auditoria</summary>
-        <div id="fiadoAuditoriaCliente" class="fiado-historico" aria-live="polite"></div>
       </details>
 
       <button
