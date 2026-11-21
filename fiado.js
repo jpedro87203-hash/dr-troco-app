@@ -67,14 +67,14 @@
     historico:      $('fiadoHistoricoCliente'),
     auditoriaLista: $('fiadoAuditoriaCliente'),
 
-    btnComprar:        $('btnAdicionarDividaFiado'),
-    btnPagamento:      $('btnRegistrarPagamentoFiado'),
-    btnEditarCliente:  $('btnEditarClienteFiado'),
+    btnComprar:         $('btnAdicionarDividaFiado'),
+    btnPagamento:       $('btnRegistrarPagamentoFiado'),
+    btnEditarCliente:   $('btnEditarClienteFiado'),
     btnBloquearCliente: $('btnBloquearClienteFiado'),
     btnArquivarCliente: $('btnArquivarClienteFiado'),
-    btnWhatsApp:       $('btnCobrarWhatsAppFiado'),
-    btnPDF:            $('btnExportarFiadoPDF'),
-    btnExcluirCliente: $('btnExcluirClienteFiado'),
+    btnWhatsApp:        $('btnCobrarWhatsAppFiado'),
+    btnPDF:             $('btnExportarFiadoPDF'),
+    btnExcluirCliente:  $('btnExcluirClienteFiado'),
 
     btnFecharDetalhes:  $('btnFecharDetalhesFiado'),
     btnFecharDetalhes2: $('btnFecharDetalhesFiado2'),
@@ -1300,18 +1300,28 @@
     }
   }
 
-  function fecharDetalhes() { fecharModal(elementos.modalDetalhes); clienteSelecionadoId = null; }
+  function fecharDetalhes() {
+    fecharModal(elementos.modalDetalhes);
+    if (!document.querySelector('.fiado-modal.aberto')) clienteSelecionadoId = null;
+  }
+
   function fecharPagamento() {
     fecharModal(elementos.modalPagamento);
     if (elementos.formPagamento) elementos.formPagamento.reset();
   }
+
   function fecharTodosModais() {
     document.querySelectorAll('.fiado-modal.aberto').forEach(fecharModal);
     clienteSelecionadoId = null;
   }
 
   document.querySelectorAll('.fiado-modal').forEach(modal => {
-    modal.addEventListener('click', ev => { if (ev.target === modal) fecharModal(modal); });
+    modal.addEventListener('click', ev => {
+      if (ev.target === modal) {
+        fecharModal(modal);
+        if (modal === elementos.modalDetalhes) clienteSelecionadoId = null;
+      }
+    });
   });
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape') fecharTodosModais(); });
 
@@ -1334,7 +1344,7 @@
     const wrapper = document.createElement('div');
     wrapper.id = 'fiadoCamposExtrasCadastro';
     wrapper.style.display = 'grid';
-    wrapper.style.gap = '13px';
+    wrapper.style.gap = '12px';
     wrapper.innerHTML = `
       <div class="fiado-campo">
         <label for="fiadoEnderecoCliente">Endereço (opcional)</label>
@@ -1532,10 +1542,12 @@
           </div>
           <div class="fiado-campo">
             <label for="fiadoDescricaoDivida">Descrição / produtos (opcional)</label>
-            <textarea id="fiadoDescricaoDivida" name="descricao" maxlength="300" rows="3" placeholder="Ex.: 2x Refrigerante, 1x Pão"></textarea>
+            <textarea id="fiadoDescricaoDivida" name="descricao" maxlength="300" rows="2" placeholder="Ex.: 2x Refrigerante, 1x Pão"></textarea>
           </div>
-          <button type="submit" class="fiado-btn fiado-btn-principal">Salvar compra</button>
-          <button type="button" class="fiado-btn fiado-btn-neutro" data-fechar-compra>Cancelar</button>
+          <div class="fiado-acoes-modal">
+            <button type="submit" class="fiado-btn fiado-btn-principal">Salvar compra</button>
+            <button type="button" class="fiado-btn fiado-btn-neutro" data-fechar-compra>Cancelar</button>
+          </div>
         </form>
       </div>`;
     document.body.appendChild(modal);
@@ -2777,10 +2789,12 @@
         <form id="formCobrancaFiado" class="fiado-form">
           <div class="fiado-campo">
             <label for="fiadoMensagemCobranca">Mensagem de cobrança</label>
-            <textarea id="fiadoMensagemCobranca" name="mensagem" rows="7" required></textarea>
+            <textarea id="fiadoMensagemCobranca" name="mensagem" rows="6" required></textarea>
           </div>
-          <button type="submit" class="fiado-btn fiado-btn-whatsapp">💬 Autorizar e abrir WhatsApp</button>
-          <button type="button" class="fiado-btn fiado-btn-neutro" data-fechar-cobranca>Cancelar</button>
+          <div class="fiado-acoes-modal">
+            <button type="submit" class="fiado-btn fiado-btn-whatsapp" style="grid-column:auto;">💬 Abrir WhatsApp</button>
+            <button type="button" class="fiado-btn fiado-btn-neutro" data-fechar-cobranca>Cancelar</button>
+          </div>
         </form>
       </div>`;
     document.body.appendChild(modal);
