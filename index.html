@@ -562,6 +562,7 @@
     <a href="historico.html" class="menu-item"><span>📋</span><small>Histórico</small></a>
     <a href="estoque.html" class="menu-item"><span>📦</span><small>Estoque</small></a>
     <a href="fiado.html" class="menu-item"><span>🧾</span><small>Fiado</small></a>
+    <a href="comandas.html" class="menu-item"><span>🍽️</span><small>Comandas</small></a>
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -613,8 +614,6 @@
         if (!prod) return 0;
         const custo = num(prod.precoCusto ?? prod.preco_custo ?? 0);
         const emb = Math.max(1, Math.floor(num(prod.qtdEmbalagem ?? prod.qtd_embalagem ?? 1)));
-        // Se veio de compra por fardo (ex: precoCusto já unitário e qtdEmbalagem = 1), custo / 1 = custo.
-        // Se foi cadastrado com custo do fardo e qtdEmbalagem > 1, divide pelo tamanho da embalagem.
         return custo > 0 ? custo / emb : 0;
       }
 
@@ -697,13 +696,11 @@
       const barra = document.getElementById('acoesVendaFixa');
 
       if (lista && barra) {
-        // Observa mudanças no carrinho para mostrar ou esconder a barra
         const observer = new MutationObserver(() => {
           const temItens = Array.from(lista.children).some(
             c => c.id !== 'produtosVendaVazio' && c.style.display !== 'none'
           );
 
-          // Também verifica se o input de valor avulso tem valor
           const valorAvulso = Number(document.getElementById('valorConta')?.value || 0);
 
           if (temItens || valorAvulso > 0) {
