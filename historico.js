@@ -1,5 +1,5 @@
 /* =====================================================
-DR. TROCO — HISTÓRICO (CORRIGIDO)
+DR. TROCO — HISTÓRICO (BLINDADO CONTRA DUPLICATAS)
 Compatível com historico.html
 Sincronizado com Supabase via DrTrocoDados (fallback local)
 ===================================================== */
@@ -12,7 +12,7 @@ const CHAVE_MOVIMENTACOES = "drTroco_movimentacoes";
 const CHAVE_SALDOS = "drTroco_saldosIniciais";
 const CHAVE_SESSOES = "drTroco_sessoesCaixa";
 const CHAVE_CONFIG_CAIXA = "drTroco_configCaixa";
-const CHAVE_VENDAS_EXCLUIDAS = "drTroco_vendas_excluidas"; // NOVO: Evita que a venda volte
+const CHAVE_VENDAS_EXCLUIDAS = "drTroco_vendas_excluidas";
 
 const $ = (id) => document.getElementById(id);
 
@@ -143,7 +143,7 @@ async function verificarFechamentoAutomatico() {
 setInterval(() => { verificarFechamentoAutomatico(); }, 30000);
 
 /* =========================
-   FUNÇÕES BÁSICAS
+   FUNÇÕES BÁSICAS E ASSINATURAS
 ========================= */
 
 function lerJSON(chave, padrao = []) {
@@ -174,13 +174,22 @@ function lerVendas() {
     return Array.isArray(dados) ? dados : [];
 }
 
-// NOVO: Função de limpeza de cache de exclusão (mantém o celular leve)
+// NOVO: Gera uma assinatura única para a venda para bloquear duplicatas mesmo com IDs diferentes
+function obterAssinaturaVenda(v) {
+    if (!v) return '';
+    const data = obterDataISO(v);
+    const hora = obterHora(v);
+    const valor = obterValorVenda(v).toFixed(2);
+    const desc = obterDescricao(v);
+    const origem = v.origem || 'direta';
+    return `${data}|${hora}|${valor}|${desc}|${origem}`;
+}
+
 function limparCacheExclusoesAntigas() {
     try {
         const excluidas = lerJSON(CHAVE_VENDAS_EXCLUIDAS, []);
-        if (excluidas.length > 50) {
-            // Se a lista negra crescer muito, limpa para não travar o celular
-            salvarJSON(CHAVE_VENDAS_EXCLUIDAS, excluidas.slice(-20));
+        if (excluidas.length > 100) {
+            salvarJSON(CHAVE_VENDAS_EXCLUIDAS, excluidas.slice(-50));
         }
     } catch(e) {}
 }
@@ -191,10 +200,13 @@ function mesclarVendasComandasPendentes(vendasAntesSync) {
     
     const pendentesComanda = (Array.isArray(vendasAntesSync) ? vendasAntesSync : []).filter(v => {
         if (!v || v.origem !== "comanda") return false;
-        // Ignora se a venda já foi excluída pelo usuário
-        if (vendasExcluidas.includes(String(v.id))) return false;
-        // Ignora se já está localmente
-        return !atuais.some(a => String(a.id) === String(v.id));
+        
+        const assinatura = obterAssinaturaVenda(v);
+        // Ignora se a venda (ou sua assinatura) foi excluída pelo usuário
+        if (vendasExcluidas.includes(String(v.id)) || vendasExcluidas.includes(assinatura)) return false;
+        
+        // Ignora se já está localmente (por ID ou por Assinatura idêntica)
+        return !atuais.some(a => String(a.id) === String(v.id) || obterAssinaturaVenda(a) === assinatura);
     });
     
     if (pendentesComanda.length) {
@@ -327,7 +339,7 @@ function criarId() {
 }
 
 /* ==========================================================
-   GESTÃO DE CAIXA (ABRIR / FECHAR) NO HISTÓRICO
+   GESTÃO DE CAIXA
 ========================================================== */
 
 if (elementos.btnAbrirCaixaHistorico) {
@@ -515,8 +527,32 @@ function obterSaldoInicial(dataISO) {
 }
 
 /* =========================
-   LISTA DE LANÇAMENTOS
+   LISTA DE LANÇAMENTOS (COM FILTRO DE DUPLICATAS VISUAIS)
 ========================= */
+
+function obterRegistrosDoDia(dataISO) {
+    const vendasBrutas = lerVendas().map(criarRegistroVenda).filter(r => r.dataISO === dataISO);
+    
+    // BLINDAGEM: Remove duplicatas visuais baseadas na Assinatura (mesmo que os IDs sejam diferentes)
+    const vendasUnicas = [];
+    const assinaturasVistas = new Set();
+    
+    for (const venda of vendasBrutas) {
+        const assinatura = obterAssinaturaVenda(venda.original);
+        if (!assinaturasVistas.has(assinatura)) {
+            assinaturasVistas.add(assinatura);
+            vendasUnicas.push(venda);
+        }
+    }
+
+    const movimentacoes = lerMovimentacoes().map(criarRegistroMovimentacao).filter(registro => registro.dataISO === dataISO);
+
+    return [...vendasUnicas, ...movimentacoes].sort((a, b) => {
+        const horaA = a.hora || "";
+        const horaB = b.hora || "";
+        return horaB.localeCompare(horaA);
+    });
+}
 
 function criarRegistroVenda(venda, indice) {
     return {
@@ -545,17 +581,6 @@ function criarRegistroMovimentacao(movimento, indice) {
         descricao: obterDescricao(movimento),
         hora: obterHora(movimento)
     };
-}
-
-function obterRegistrosDoDia(dataISO) {
-    const vendas = lerVendas().map(criarRegistroVenda).filter(registro => registro.dataISO === dataISO);
-    const movimentacoes = lerMovimentacoes().map(criarRegistroMovimentacao).filter(registro => registro.dataISO === dataISO);
-
-    return [...vendas, ...movimentacoes].sort((a, b) => {
-        const horaA = a.hora || "";
-        const horaB = b.hora || "";
-        return horaB.localeCompare(horaA);
-    });
 }
 
 function calcularTotaisParaData(dataISO) {
@@ -840,7 +865,7 @@ elementos.btnFecharDetalhes?.addEventListener("click", fecharDetalhes);
 elementos.modalDetalhes?.addEventListener("click", evento => { if (evento.target === elementos.modalDetalhes) fecharDetalhes(); });
 
 /* =========================
-   FUNÇÃO DE ESTORNO DE ESTOQUE (LOCAL + SUPABASE)
+   FUNÇÃO DE ESTORNO DE ESTOQUE
 ========================= */
 
 function obterComercioIdLocalHistorico() {
@@ -860,9 +885,10 @@ async function estornarEstoque(venda) {
         return { ok: true, produtosEstornados: 0, erros: [] };
     }
 
-    // TRAVA DE SEGURANÇA: Evita estornar o mesmo ID duas vezes
+    // TRAVA DE SEGURANÇA DUPLA (ID e Assinatura)
     const vendasExcluidas = lerJSON(CHAVE_VENDAS_EXCLUIDAS, []);
-    if (vendasExcluidas.includes(String(venda.id))) {
+    const assinatura = obterAssinaturaVenda(venda);
+    if (vendasExcluidas.includes(String(venda.id)) || vendasExcluidas.includes(assinatura)) {
         console.warn('[Estorno] Venda já foi estornada anteriormente. Ignorando...');
         return { ok: true, produtosEstornados: 0, erros: [] };
     }
@@ -948,6 +974,7 @@ async function excluirRegistro(registro) {
 
     const nomeTipo = registro.categoria === "venda" ? "esta venda" : (registro.categoria === "entrada" ? "esta entrada" : "esta saída");
     const idParaExcluir = registro.id ?? registro.original?.id ?? registro.original?.vendaId;
+    const assinaturaParaExcluir = obterAssinaturaVenda(registro.original);
 
     let avisoEstoque = '';
     let avisoFiado = '';
@@ -1007,35 +1034,27 @@ async function excluirRegistro(registro) {
             if (movFiado) await window.DrTrocoDados.excluirMovimentacao(movFiado.id);
         }
 
-        // 4. Remove do LocalStorage e coloca na Lista Negra
-        const vendasLocais = lerVendas();
-        const original = registro.original;
-        let indiceLocal = vendasLocais.findIndex(item =>
-            String(item.id ?? item.vendaId) === String(original?.id ?? original?.vendaId) &&
-            (original?.id !== undefined || original?.vendaId !== undefined)
-        );
-        if (indiceLocal < 0) {
-            indiceLocal = vendasLocais.findIndex(item =>
-                obterDataISO(item) === registro.dataISO &&
-                obterValorVenda(item) === registro.valor &&
-                obterPagamento(item) === registro.forma &&
-                obterDescricao(item) === registro.descricao
-            );
-        }
-        if (indiceLocal >= 0) {
-            vendasLocais.splice(indiceLocal, 1);
-            salvarJSON(CHAVE_VENDAS, vendasLocais);
-        }
-
-        // Adiciona à Lista Negra para não sincronizar de volta
+        // 4. ADICIONA À LISTA NEGRA (ID e Assinatura) ANTES de apagar local
         const vendasExcluidas = lerJSON(CHAVE_VENDAS_EXCLUIDAS, []);
         if (!vendasExcluidas.includes(String(idParaExcluir))) {
             vendasExcluidas.push(String(idParaExcluir));
-            salvarJSON(CHAVE_VENDAS_EXCLUIDAS, vendasExcluidas);
-            limparCacheExclusoesAntigas();
         }
+        if (assinaturaParaExcluir && !vendasExcluidas.includes(assinaturaParaExcluir)) {
+            vendasExcluidas.push(assinaturaParaExcluir);
+        }
+        salvarJSON(CHAVE_VENDAS_EXCLUIDAS, vendasExcluidas);
+        limparCacheExclusoesAntigas();
 
-        // 5. Exclui no Supabase (Agora sim, para TODAS as vendas, inclusive comandas!)
+        // 5. Remove do LocalStorage por ID ou Assinatura
+        const vendasLocais = lerVendas();
+        const novasVendasLocais = vendasLocais.filter(v => {
+            if (String(v.id ?? v.vendaId) === String(idParaExcluir)) return false;
+            if (obterAssinaturaVenda(v) === assinaturaParaExcluir) return false;
+            return true;
+        });
+        salvarJSON(CHAVE_VENDAS, novasVendasLocais);
+
+        // 6. Exclui no Supabase
         if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirVenda === 'function') {
             const r = await window.DrTrocoDados.excluirVenda(idParaExcluir);
             if (!r || !r.ok) {
