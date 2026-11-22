@@ -173,6 +173,16 @@ function lerVendas() {
     return Array.isArray(dados) ? dados : [];
 }
 
+function mesclarVendasComandasPendentes(vendasAntesSync) {
+    const atuais = lerVendas();
+    const pendentesComanda = (Array.isArray(vendasAntesSync) ? vendasAntesSync : []).filter(
+        v => v && v.origem === "comanda" && !atuais.some(a => String(a.id) === String(v.id))
+    );
+    if (pendentesComanda.length) {
+        salvarJSON(CHAVE_VENDAS, [...pendentesComanda, ...atuais]);
+    }
+}
+
 function lerMovimentacoes() {
     const dados = lerJSON(CHAVE_MOVIMENTACOES, []);
     return Array.isArray(dados) ? dados : [];
@@ -1152,9 +1162,6 @@ async function estornarEstoque(venda) {
 async function excluirRegistro(registro) {
     if (!registro) return;
 
-    // ========================================================
-    // TRAVA DE SEGURANÇA (PIN DE 4 DÍGITOS)
-    // ========================================================
     if (window.DrTrocoSeguranca && typeof window.DrTrocoSeguranca.verificarPIN === 'function') {
         try {
             const motivo = registro.categoria === "venda" 
@@ -1162,7 +1169,7 @@ async function excluirRegistro(registro) {
                 : "Autorizar Exclusão de Movimentação";
             await window.DrTrocoSeguranca.verificarPIN(motivo);
         } catch (e) {
-            return; // Se o PIN falhar ou for cancelado, a exclusão para aqui.
+            return;
         }
     }
 
@@ -1203,7 +1210,6 @@ async function excluirRegistro(registro) {
     if (!confirmado) return;
 
     if (registro.categoria === "venda") {
-        // 1. Estornar estoque
         if (vendaCompleta && vendaCompleta.produtos.length > 0) {
             try {
                 const resultado = await estornarEstoque(vendaCompleta);
@@ -1217,7 +1223,6 @@ async function excluirRegistro(registro) {
             }
         }
 
-        // 2. Estornar Fiado
         if (vendaCompleta && (registro.original?.fiado || registro.original?.clienteId)) {
             if (window.DrTrocoFiado && typeof window.DrTrocoFiado.estornarVendaFiado === 'function') {
                 try {
@@ -1229,7 +1234,6 @@ async function excluirRegistro(registro) {
             }
         }
 
-        // 3. Estornar Caixa (Pagamento Inicial)
         if (window.DrTrocoDados && typeof window.DrTrocoDados.movimentacoes === 'function' && typeof window.DrTrocoDados.excluirMovimentacao === 'function') {
             const movs = window.DrTrocoDados.movimentacoes();
             const movFiado = movs.find(m => String(m.vendaId) === String(idParaExcluir) && m.origem === 'pagamento_fiado_inicial');
@@ -1238,40 +1242,32 @@ async function excluirRegistro(registro) {
             }
         }
 
-        // 4. Excluir a venda
-        if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirVenda === 'function') {
+        const vendasLocais = lerVendas();
+        const original = registro.original;
+        let indiceLocal = vendasLocais.findIndex(item =>
+            String(item.id ?? item.vendaId) === String(original?.id ?? original?.vendaId) &&
+            (original?.id !== undefined || original?.vendaId !== undefined)
+        );
+        if (indiceLocal < 0) {
+            indiceLocal = vendasLocais.findIndex(item =>
+                obterDataISO(item) === registro.dataISO &&
+                obterValorVenda(item) === registro.valor &&
+                obterPagamento(item) === registro.forma &&
+                obterDescricao(item) === registro.descricao
+            );
+        }
+        if (indiceLocal >= 0) {
+            vendasLocais.splice(indiceLocal, 1);
+            salvarJSON(CHAVE_VENDAS, vendasLocais);
+        }
+
+        if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirVenda === 'function' && original?.origem !== 'comanda') {
             const r = await window.DrTrocoDados.excluirVenda(idParaExcluir);
             if (!r || !r.ok) {
-                alert('Erro ao excluir venda no Supabase: ' + ((r && r.erro) || ''));
-                return;
+                console.warn('[Histórico] Aviso ao excluir venda no Supabase:', r && r.erro);
             }
-        } else {
-            const vendas = lerVendas();
-            const original = registro.original;
-            let indice = vendas.findIndex(item =>
-                String(item.id ?? item.vendaId) === String(original?.id ?? original?.vendaId) &&
-                (original?.id !== undefined || original?.vendaId !== undefined)
-            );
-
-            if (indice < 0) {
-                indice = vendas.findIndex(item =>
-                    obterDataISO(item) === registro.dataISO &&
-                    obterValorVenda(item) === registro.valor &&
-                    obterPagamento(item) === registro.forma &&
-                    obterDescricao(item) === registro.descricao
-                );
-            }
-
-            if (indice < 0) {
-                alert("Não foi possível localizar esta venda para excluir.");
-                return;
-            }
-
-            vendas.splice(indice, 1);
-            if (!salvarJSON(CHAVE_VENDAS, vendas)) return;
         }
     } else {
-        // Entradas e saídas manuais
         if (window.DrTrocoDados && typeof window.DrTrocoDados.excluirMovimentacao === 'function') {
             const r = await window.DrTrocoDados.excluirMovimentacao(idParaExcluir);
             if (!r || !r.ok) {
@@ -1503,9 +1499,12 @@ atualizarInterfaceCaixa();
 atualizarHistorico();
 
 if (window.DrTrocoDados) {
+    const vendasAntesSync = lerVendas();
+
     if (typeof window.DrTrocoDados.onSync === 'function') {
         window.DrTrocoDados.onSync(() => {
             console.log('[Histórico] onSync disparado — re-renderizando');
+            mesclarVendasComandasPendentes(vendasAntesSync);
             atualizarHistorico();
             atualizarInterfaceCaixa();
         });
@@ -1515,11 +1514,13 @@ if (window.DrTrocoDados) {
         window.DrTrocoDados.sincronizar()
             .then(resultado => {
                 console.log('[Histórico] Sync finalizado. Resultado:', resultado);
+                mesclarVendasComandasPendentes(vendasAntesSync);
                 atualizarHistorico();
                 atualizarInterfaceCaixa();
             })
             .catch(err => {
                 console.warn('[Histórico] Sync falhou:', err);
+                mesclarVendasComandasPendentes(vendasAntesSync);
                 atualizarHistorico();
                 atualizarInterfaceCaixa();
             });
