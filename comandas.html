@@ -275,6 +275,169 @@
       background: #ffffff;
     }
 
+    /* Seletor visual de produtos do estoque (mesmo padrão da venda) */
+    .btn-selecionar-estoque-comanda {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border: 1px dashed #8bcdae;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f2fcf7, #eaf8f1);
+      color: #168b53;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .btn-selecionar-estoque-comanda .icone-caixa-comanda {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 11px;
+      background: #20a767;
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .btn-selecionar-estoque-comanda strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 900;
+      color: #168b53;
+    }
+
+    .btn-selecionar-estoque-comanda small {
+      display: block;
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .painel-estoque-comanda {
+      border: 1px solid #e1e9e5;
+      border-radius: 14px;
+      padding: 10px;
+      margin-bottom: 12px;
+      background: #f9fbfa;
+    }
+
+    .busca-estoque-comanda {
+      width: 100%;
+      height: 40px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 0 11px;
+      font-size: 13px;
+      background: #ffffff;
+      color: #1f3028;
+      margin-bottom: 8px;
+    }
+
+    .grade-estoque-comanda {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 460px) {
+      .grade-estoque-comanda {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .card-prod-comanda {
+      background: #ffffff;
+      border: 1px solid #e1e9e5;
+      border-radius: 12px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .card-prod-comanda .foto-prod-comanda {
+      width: 100%;
+      height: 54px;
+      border-radius: 8px;
+      background: #f2f7f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-size: 20px;
+    }
+
+    .card-prod-comanda .foto-prod-comanda img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .card-prod-comanda .nome-prod-comanda {
+      font-size: 11px;
+      font-weight: 800;
+      color: #263640;
+      line-height: 1.25;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 27px;
+    }
+
+    .card-prod-comanda .est-prod-comanda {
+      font-size: 9.5px;
+      color: #64748b;
+      font-weight: 700;
+    }
+
+    .card-prod-comanda .preco-prod-comanda {
+      font-size: 12px;
+      font-weight: 900;
+      color: #15945b;
+    }
+
+    .card-prod-comanda .acoes-qtd-comanda {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      margin-top: auto;
+    }
+
+    .card-prod-comanda .acoes-qtd-comanda button {
+      width: 26px;
+      height: 26px;
+      border: 0;
+      border-radius: 7px;
+      background: #e9f7ef;
+      color: #15945b;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-prod-comanda .acoes-qtd-comanda span {
+      font-size: 11px;
+      font-weight: 900;
+      color: #263640;
+      min-width: 14px;
+      text-align: center;
+    }
+
     .qr-grid-mesas {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
@@ -469,6 +632,24 @@
         <button type="button" class="btn-fechar-x" data-fechar-modal="modalDetalhesComanda" aria-label="Fechar">×</button>
       </div>
       <div id="detalheComandaSubtitulo" style="font-size:12px;color:#64748b;margin-bottom:10px;"></div>
+
+      <!-- Botão para abrir grade de produtos do estoque (estilo tela de venda) -->
+      <button type="button" id="btnToggleGradeEstoqueComanda" class="btn-selecionar-estoque-comanda">
+        <span class="icone-caixa-comanda">📦</span>
+        <div>
+          <strong>Selecionar produto do estoque</strong>
+          <small>Escolha pelo card com -, + e busca (baixa só ao fechar)</small>
+        </div>
+      </button>
+
+      <!-- Grade interativa de produtos do estoque -->
+      <div id="painelGradeEstoqueComanda" class="painel-estoque-comanda" style="display:none;">
+        <input type="text" id="buscaProdutoEstoqueComanda" class="busca-estoque-comanda" placeholder="Buscar produto por nome ou código...">
+        <div id="gradeProdutosEstoqueComanda" class="grade-estoque-comanda"></div>
+      </div>
+
+      <!-- Select oculto/compatível para manter integração com comandas.js -->
+      <select id="selectProdutoEstoqueComanda" style="display:none;" aria-hidden="true"></select>
 
       <form id="formAdicionarItemComanda" style="display:grid;grid-template-columns:1fr 72px 105px auto;gap:6px;align-items:end;margin-bottom:10px;">
         <div class="comanda-campo" style="margin:0;">
