@@ -123,11 +123,11 @@
       font-weight: 800;
     }
 
-    /* Modais — sempre acima da barra inferior e com respiro para teclado */
+    /* Modais — Corrigido z-index para ficar acima da barra inferior */
     .fiado-modal {
       position: fixed;
       inset: 0;
-      z-index: 10050;
+      z-index: 100005; 
       display: none;
       align-items: center;
       justify-content: center;
@@ -214,11 +214,9 @@
     .fiado-saldo-apos { display: block; margin-top: 6px; padding: 6px 9px; border-radius: 8px; background: var(--f-verde-claro); color: #53635b; font-size: 11px; line-height: 1.35; }
     .fiado-saldo-apos strong { color: var(--f-verde-escuro); }
 
-    .fiado-notificacao { position: fixed; z-index: 10060; right: 15px; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); left: 15px; width: min(470px, calc(100% - 30px)); margin: auto; padding: 13px 15px; border-radius: 13px; background: #168b53; color: #fff; font-size: 12.5px; font-weight: 700; line-height: 1.5; box-shadow: 0 8px 25px #0003; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .2s, transform .2s, visibility .2s; }
+    .fiado-notificacao { position: fixed; z-index: 100006; right: 15px; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); left: 15px; width: min(470px, calc(100% - 30px)); margin: auto; padding: 13px 15px; border-radius: 13px; background: #168b53; color: #fff; font-size: 12.5px; font-weight: 700; line-height: 1.5; box-shadow: 0 8px 25px #0003; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .2s, transform .2s, visibility .2s; }
     .fiado-notificacao.visivel { opacity: 1; visibility: visible; transform: translateY(0); }
     .fiado-notificacao.erro { background: #c43d42; }
-
-    body.pagina-fiado .bottom-nav { z-index: 9980; }
 
     @media (min-width: 560px) {
       .fiado-container { padding-right: 19px; padding-left: 19px; }
@@ -352,7 +350,7 @@
     </section>
   </main>
 
-  <!-- MODAL: CADASTRO / EDIÇÃO DE CLIENTE (SEM CPF, ENDEREÇO OPCIONAL) -->
+  <!-- MODAL: CADASTRO / EDIÇÃO DE CLIENTE -->
   <div id="modalCadastroFiado" class="fiado-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="tituloCadastroFiado">
     <div class="fiado-modal-conteudo">
       <div class="fiado-modal-topo">
@@ -531,12 +529,15 @@
 
   <div id="fiadoNotificacao" class="fiado-notificacao" role="status" aria-live="polite"></div>
 
+  <!-- NAVEGAÇÃO INFERIOR -->
   <nav class="bottom-nav" aria-label="Navegação principal">
     <a href="index.html" class="nav-item" aria-label="Nova venda"><span class="nav-icon" aria-hidden="true">🧮</span><span>Venda</span></a>
     <a href="fluxo.html" class="nav-item"><span class="nav-icon" aria-hidden="true">📊</span><span>Fluxo</span></a>
     <a href="historico.html" class="nav-item"><span class="nav-icon" aria-hidden="true">📋</span><span>Histórico</span></a>
     <a href="estoque.html" class="nav-item"><span class="nav-icon" aria-hidden="true">📦</span><span>Estoque</span></a>
     <a href="fiado.html" class="nav-item ativo" aria-current="page"><span class="nav-icon" aria-hidden="true">🧾</span><span>Fiado</span></a>
+    <!-- NOVO BOTÃO ADICIONADO AQUI -->
+    <a href="comandas.html" class="nav-item"><span class="nav-icon" aria-hidden="true">🍽️</span><span>Comandas</span></a>
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -546,4 +547,4 @@
   <script src="seguranca.js"></script>
   <script src="fiado.js"></script>
 </body>
-</html>
+  </html>
