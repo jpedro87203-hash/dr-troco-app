@@ -661,6 +661,7 @@
             <button type="button" data-acao-comanda="abrir" data-id="${escaparHTML(c.id)}">＋ Itens / Ver</button>
             <button type="button" data-acao-comanda="qr" data-id="${escaparHTML(c.id)}">🔲 QR Mesa</button>
             <button type="button" class="fechar" data-acao-comanda="fechar" data-id="${escaparHTML(c.id)}">✓ Fechar</button>
+            <button type="button" data-acao-comanda="excluir" data-id="${escaparHTML(c.id)}" style="background:#fff0f0;color:#d94b4b;border-color:#f3d6d6;">🗑 Excluir</button>
           </div>
         </article>
       `;
@@ -797,6 +798,43 @@
     renderizarItensComanda(comanda);
     renderizarGradeEstoqueComanda();
     mostrarAviso(`Adicionado à comanda: ${qtd}x ${nomeLimpo} (baixa só ao fechar)`);
+  }
+
+  async function excluirComanda(comandaId) {
+    const idx = comandas.findIndex(c => String(c.id) === String(comandaId));
+    if (idx < 0) {
+      mostrarAviso('Comanda não encontrada.', true);
+      return false;
+    }
+
+    const comanda = comandas[idx];
+    const totalC = totalComandaCentavos(comanda);
+    const clienteInfo = comanda.clienteNome ? ` (${comanda.clienteNome})` : '';
+
+    if (window.DrTrocoSeguranca && typeof window.DrTrocoSeguranca.verificarPIN === 'function') {
+      try {
+        await window.DrTrocoSeguranca.verificarPIN('Autorizar Exclusão de Comanda');
+      } catch (_) {
+        return false;
+      }
+    }
+
+    const confirmado = confirm(
+      `Deseja excluir a comanda de ${comanda.mesaNome}${clienteInfo}?\n` +
+      `Total: ${formatarDinheiro(totalC)}`
+    );
+    if (!confirmado) return false;
+
+    comandas.splice(idx, 1);
+    if (comandaAtivaId === comanda.id) {
+      comandaAtivaId = null;
+      fecharModal('modalDetalhesComanda');
+    }
+
+    salvarEstadoLocal();
+    renderizarComandas();
+    mostrarAviso(`${comanda.mesaNome} excluída.`);
+    return true;
   }
 
   async function fecharComandaConta(comandaId, formaPagamento = 'dinheiro') {
@@ -974,6 +1012,8 @@
         abrirModal('modalQrMesas');
       } else if (acao === 'fechar') {
         abrirDetalhesComanda(id);
+      } else if (acao === 'excluir') {
+        excluirComanda(id);
       }
     });
 
@@ -1071,6 +1111,7 @@
   window.DrTrocoComandas = {
     criarComanda,
     adicionarItemComanda,
+    excluirComanda,
     fecharComandaConta,
     processarCodigoQrLido,
     renderizarComandas
