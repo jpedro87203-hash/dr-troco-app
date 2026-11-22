@@ -1,16 +1,4 @@
-Encontrei o problema! O HTML está perfeito, o problema estava no JavaScript.
 
-O que estava causando o "Carregando..." infinito?
-
-Quando você abre a tela, o HTML mostra um bloco com a frase "Carregando comandas... Aguarde um instante.". O JavaScript deveria apagar esse texto e desenhar os cards das comandas.
-
-Porém, o seu comandas.js estava usando document.addEventListener('DOMContentLoaded', ...). Como o script é carregado no final do <body>, o DOMContentLoaded já tinha disparado antes do script ser lido em algumas situações, e o evento nunca era escutado pelo seu código. Assim, a tela continuava mostrando o texto estático do HTML para sempre.
-
-Para corrigir, basta rodar a inicialização direto, sem esperar o evento DOMContentLoaded.
-
-Peguei o arquivo comandas.js que te mandei anteriormente e alterei apenas as últimas linhas. Copie o código abaixo inteiro e substitua o seu comandas.js:
-
-```javascript
 /* ============================================================
    DR. TROCO — COMANDAS & QR CODE POR MESA
    Arquivo: comandas.js (CORRIGIDO)
