@@ -438,11 +438,11 @@
         .estoque-vazio span { margin-top: 5px; color: #9aa5ab; font-size: 11px; }
 
         /* =====================================================
-           MODAIS
+           MODAIS (CORRIGIDO Z-INDEX)
            ===================================================== */
         .estoque-modal {
             position: fixed;
-            z-index: 9999;
+            z-index: 100005; /* Acima da barra inferior */
             inset: 0;
             display: flex;
             align-items: flex-end;
@@ -473,8 +473,6 @@
         }
 
         .estoque-modal.aberto .estoque-modal-conteudo { transform: translateY(0); }
-
-        .estoque-modal { padding-bottom: calc(85px + env(safe-area-inset-bottom)); }
 
         @media (min-width: 600px) {
             .estoque-modal { padding: 14px; align-items: center; }
@@ -1262,6 +1260,10 @@
         <a href="fiado.html" class="menu-item">
             <span>🧾</span><small>Fiado</small>
         </a>
+        <!-- BOTÃO ADICIONADO AQUI -->
+        <a href="comandas.html" class="menu-item">
+            <span>🍽️</span><small>Comandas</small>
+        </a>
     </nav>
 
     <!-- =====================================================
@@ -1275,4 +1277,4 @@
     <script src="estoque.js"></script>
     <script src="suporte.js"></script>
 </body>
-    </html>
+            </html>
