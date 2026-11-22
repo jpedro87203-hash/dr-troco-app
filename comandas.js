@@ -1,9 +1,13 @@
+Aqui está o seu comandas.js completo, corrigido e pronto para colar.
 
+Além de resolver o problema do "Carregando infinito" (forçando a tela a desenhar antes de buscar o estoque na nuvem), eu blindei o código com um try/catch global. Se qualquer coisa falhar (por exemplo, a biblioteca de QR Code não carregar), ele vai avisar no console em vez de travar a tela inteira.
+
+Substitua todo o conteúdo do seu comandas.js por este:
 
 ```javascript
 /* ============================================================
    DR. TROCO — COMANDAS & QR CODE POR MESA
-   Arquivo: comandas.js (CORRIGIDO)
+   Arquivo: comandas.js (CORRIGIDO E OTIMIZADO)
 ============================================================ */
 'use strict';
 
@@ -113,7 +117,10 @@
 
   function mostrarAviso(msg, erro = false) {
     const el = $('comandaAviso');
-    if (!el) return;
+    if (!el) {
+      console.log(`[Comanda Aviso]: ${msg}`);
+      return;
+    }
     clearTimeout(avisoTimer);
     el.textContent = msg;
     el.classList.toggle('erro', Boolean(erro));
@@ -171,7 +178,6 @@
     );
 
     if (mesaExistente) {
-      // CORREÇÃO 5: Proteção contra sobrescrever QR Code já impresso
       if (codigoQr && mesaExistente.codigoQr !== codigoFinal) {
         const trocar = confirm(
           `A ${mesaExistente.nome} já possui o QR Code "${mesaExistente.codigoQr}".\n\n` +
@@ -232,14 +238,12 @@
     const clienteParte = comanda.clienteNome ? ` · ${comanda.clienteNome}` : '';
     const descricao = `${comanda.mesaNome}${clienteParte}${resumoItens ? ` — ${resumoItens}` : ''}`;
 
-    // CORREÇÃO 3: Enriquecer os produtos com custo e margem para o Histórico
     const produtosVenda = (comanda.itens || [])
       .filter(it => it && it.produtoId)
       .map(it => {
         const qtd = Math.max(1, Number(it.quantidade) || 1);
         const preco = Number(((Number(it.valorUnitarioCentavos) || 0) / 100).toFixed(2));
         
-        // Busca o custo no cache de estoque
         const prodEstoque = produtosEstoqueCache.find(p => String(p.id) === String(it.produtoId));
         const custoBruto = Number(prodEstoque?.precoCusto || 0);
         const qtdEmbalagem = Math.max(1, Number(prodEstoque?.qtdEmbalagem || 1));
@@ -261,7 +265,6 @@
         };
       });
 
-    // Cálculo do lucro total da comanda
     const totalCusto = produtosVenda.reduce((acc, p) => acc + p.subtotalCusto, 0);
     const lucroBruto = Number((totalReais - totalCusto).toFixed(2));
     const margemPctTotal = totalReais > 0 ? Number(((lucroBruto / totalReais) * 100).toFixed(1)) : 0;
@@ -415,7 +418,6 @@
         ? `<img src="${escaparHTML(prod.foto)}" alt="${escaparHTML(prod.nome)}">`
         : `<span>${escaparHTML(inicial)}</span>`;
 
-      // CORREÇÃO 1: Trava o botão de + se a quantidade na comanda já for igual ao estoque
       const podeAdicionar = qtdNaCmd < estDisp;
 
       return `
@@ -445,7 +447,6 @@
     );
 
     if (delta > 0) {
-      // CORREÇÃO 1: Trava de segurança no código também
       const estDisp = Math.max(0, Number(prod.quantidade) || 0);
       const qtdJaNaComanda = quantidadeNaComandaPorProdutoId(comanda, prod.id);
       if (qtdJaNaComanda + delta > estDisp) {
@@ -484,7 +485,6 @@
     }
   }
 
-  // NOVO: Verifica se o estoque atual bate com o que está na comanda antes de fechar
   async function validarEstoqueAntesDeFechar(comanda) {
     await carregarProdutosEstoqueDisponiveis();
     const faltando = [];
@@ -862,7 +862,6 @@
       return;
     }
 
-    // CORREÇÃO 1: Trava de segurança para o formulário manual também
     if (produtoId) {
       const prod = produtosEstoqueCache.find(p => String(p.id) === String(produtoId));
       if (prod) {
@@ -910,7 +909,6 @@
       }
     }
 
-    // CORREÇÃO 4: Aviso se a comanda já foi fechada e o estoque baixado
     let avisoExtra = '';
     if (comanda.status === 'fechada') {
       avisoExtra = '\n\n⚠️ Esta comanda já foi FECHADA.\nA baixa de estoque NÃO será revertida automaticamente.\nSe quiser repor o estoque, exclua a venda pelo Histórico.';
@@ -947,7 +945,6 @@
       return;
     }
 
-    // CORREÇÃO 2: Valida se o estoque atual bate com a comanda antes de fechar
     const faltando = await validarEstoqueAntesDeFechar(comanda);
     if (faltando.length) {
       const continuar = confirm(
@@ -1020,7 +1017,6 @@
       return;
     }
 
-    // CORREÇÃO 6: Aviso claro para iOS (Safari) que não suporta BarcodeDetector
     if (typeof window.BarcodeDetector !== 'function') {
       if (statusEl) statusEl.textContent = 'Este navegador não suporta leitura automática (iOS/Safari). Use o campo abaixo para digitar o código.';
       setTimeout(() => $('inputQrManual')?.focus(), 300);
@@ -1210,13 +1206,41 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', async () => {
-    carregarEstadoLocal();
-    bindEventos();
-    renderizarComandas();
-    await carregarProdutosEstoqueDisponiveis();
-    preencherSelectProdutosComanda();
-    renderizarGradeEstoqueComanda();
+  /* =========================================================
+     INICIALIZAÇÃO BLINDADA (Evita loop infinito de carregamento)
+  ========================================================= */
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      // 1. Carrega dados do LocalStorage
+      carregarEstadoLocal();
+      
+      // 2. Prepara os botões
+      bindEventos();
+      
+      // 3. Desenha as comandas na tela IMEDIATAMENTE (tira a tela de "Carregando...")
+      renderizarComandas();
+      
+      // 4. Busca estoque na nuvem em background, sem travar a tela principal
+      carregarProdutosEstoqueDisponiveis().then(() => {
+        preencherSelectProdutosComanda();
+        renderizarGradeEstoqueComanda();
+      }).catch(e => {
+        console.warn('[Comandas] Erro ao carregar estoque em background:', e);
+      });
+
+    } catch (erro) {
+      console.error('[Comandas] Erro fatal na inicialização:', erro);
+      const lista = document.getElementById('listaComandasAbertas');
+      if (lista) {
+        lista.innerHTML = `
+          <div style="text-align:center;padding:20px;color:#d94b4b;">
+            <strong>Ocorreu um erro ao carregar a tela.</strong><br>
+            <small>${erro.message}</small>
+            <br><br>
+            <button onclick="location.reload()" style="padding:8px 16px;background:#20a767;color:#fff;border:0;border-radius:8px;">Recarregar</button>
+          </div>`;
+      }
+    }
   });
 
   window.DrTrocoComandas = {
