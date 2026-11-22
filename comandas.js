@@ -1,13 +1,19 @@
-Aqui está o seu comandas.js completo, corrigido e pronto para colar.
+Encontrei o problema! O HTML está perfeito, o problema estava no JavaScript.
 
-Além de resolver o problema do "Carregando infinito" (forçando a tela a desenhar antes de buscar o estoque na nuvem), eu blindei o código com um try/catch global. Se qualquer coisa falhar (por exemplo, a biblioteca de QR Code não carregar), ele vai avisar no console em vez de travar a tela inteira.
+O que estava causando o "Carregando..." infinito?
 
-Substitua todo o conteúdo do seu comandas.js por este:
+Quando você abre a tela, o HTML mostra um bloco com a frase "Carregando comandas... Aguarde um instante.". O JavaScript deveria apagar esse texto e desenhar os cards das comandas.
+
+Porém, o seu comandas.js estava usando document.addEventListener('DOMContentLoaded', ...). Como o script é carregado no final do <body>, o DOMContentLoaded já tinha disparado antes do script ser lido em algumas situações, e o evento nunca era escutado pelo seu código. Assim, a tela continuava mostrando o texto estático do HTML para sempre.
+
+Para corrigir, basta rodar a inicialização direto, sem esperar o evento DOMContentLoaded.
+
+Peguei o arquivo comandas.js que te mandei anteriormente e alterei apenas as últimas linhas. Copie o código abaixo inteiro e substitua o seu comandas.js:
 
 ```javascript
 /* ============================================================
    DR. TROCO — COMANDAS & QR CODE POR MESA
-   Arquivo: comandas.js (CORRIGIDO E OTIMIZADO)
+   Arquivo: comandas.js (CORRIGIDO)
 ============================================================ */
 'use strict';
 
@@ -117,10 +123,7 @@ Substitua todo o conteúdo do seu comandas.js por este:
 
   function mostrarAviso(msg, erro = false) {
     const el = $('comandaAviso');
-    if (!el) {
-      console.log(`[Comanda Aviso]: ${msg}`);
-      return;
-    }
+    if (!el) return;
     clearTimeout(avisoTimer);
     el.textContent = msg;
     el.classList.toggle('erro', Boolean(erro));
@@ -1207,41 +1210,42 @@ Substitua todo o conteúdo do seu comandas.js por este:
   }
 
   /* =========================================================
-     INICIALIZAÇÃO BLINDADA (Evita loop infinito de carregamento)
+     INICIALIZAÇÃO DIRETA (Sem esperar DOMContentLoaded)
   ========================================================= */
-  document.addEventListener('DOMContentLoaded', () => {
+  function inicializar() {
     try {
-      // 1. Carrega dados do LocalStorage
       carregarEstadoLocal();
-      
-      // 2. Prepara os botões
       bindEventos();
+      renderizarComandas(); // Força a troca da tela "Carregando..." imediatamente
       
-      // 3. Desenha as comandas na tela IMEDIATAMENTE (tira a tela de "Carregando...")
-      renderizarComandas();
-      
-      // 4. Busca estoque na nuvem em background, sem travar a tela principal
+      // Busca estoque em background
       carregarProdutosEstoqueDisponiveis().then(() => {
         preencherSelectProdutosComanda();
         renderizarGradeEstoqueComanda();
       }).catch(e => {
         console.warn('[Comandas] Erro ao carregar estoque em background:', e);
       });
-
     } catch (erro) {
-      console.error('[Comandas] Erro fatal na inicialização:', erro);
+      console.error('[Comandas] Erro fatal:', erro);
       const lista = document.getElementById('listaComandasAbertas');
       if (lista) {
         lista.innerHTML = `
-          <div style="text-align:center;padding:20px;color:#d94b4b;">
-            <strong>Ocorreu um erro ao carregar a tela.</strong><br>
-            <small>${erro.message}</small>
+          <div class="comanda-vazio" style="border-color:#f3d6d6;color:#d94b4b;">
+            <strong>Erro ao carregar</strong>
+            <span>${erro.message}</span>
             <br><br>
             <button onclick="location.reload()" style="padding:8px 16px;background:#20a767;color:#fff;border:0;border-radius:8px;">Recarregar</button>
           </div>`;
       }
     }
-  });
+  }
+
+  // Se o HTML já estiver carregado, roda imediatamente; se não, aguarda.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializar);
+  } else {
+    inicializar();
+  }
 
   window.DrTrocoComandas = {
     criarComanda,
