@@ -225,12 +225,112 @@
     }
   }
 
+  function quantidadeNaComandaPorProdutoId(comanda, produtoId) {
+    if (!comanda || !Array.isArray(comanda.itens)) return 0;
+    return comanda.itens
+      .filter(it => it.produtoId && String(it.produtoId) === String(produtoId))
+      .reduce((acc, it) => acc + (Math.max(1, Number(it.quantidade) || 1)), 0);
+  }
+
+  function renderizarGradeEstoqueComanda() {
+    const grade = $('gradeProdutosEstoqueComanda');
+    if (!grade) return;
+
+    const comanda = comandas.find(c => c.id === comandaAtivaId && c.status === 'aberta');
+    const termo = String($('buscaProdutoEstoqueComanda')?.value || '').trim().toLowerCase();
+
+    const filtrados = produtosEstoqueCache.filter(prod => {
+      if (!termo) return true;
+      const nome = String(prod.nome || '').toLowerCase();
+      const codigo = String(prod.codigo || '').toLowerCase();
+      return nome.includes(termo) || codigo.includes(termo);
+    });
+
+    if (!filtrados.length) {
+      grade.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:16px;color:#64748b;font-size:12px;">
+          Nenhum produto encontrado no estoque.
+        </div>`;
+      return;
+    }
+
+    grade.innerHTML = filtrados.map(prod => {
+      const qtdNaCmd = quantidadeNaComandaPorProdutoId(comanda, prod.id);
+      const estDisp = Math.max(0, Number(prod.quantidade) || 0);
+      const precoNum = Number(prod.preco) || 0;
+      const precoFmt = precoNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const inicial = String(prod.nome || '?').trim().charAt(0).toUpperCase() || '?';
+      const fotoHtml = prod.foto
+        ? `<img src="${escaparHTML(prod.foto)}" alt="${escaparHTML(prod.nome)}">`
+        : `<span>${escaparHTML(inicial)}</span>`;
+
+      return `
+        <div class="card-prod-comanda">
+          <div class="foto-prod-comanda">${fotoHtml}</div>
+          <div class="nome-prod-comanda">${escaparHTML(prod.nome)}</div>
+          <div class="est-prod-comanda">Estoque: ${estDisp}</div>
+          <div class="preco-prod-comanda">${precoFmt}</div>
+          <div class="acoes-qtd-comanda">
+            <button type="button" data-cmd-prod-menos="${escaparHTML(prod.id)}" ${qtdNaCmd <= 0 ? 'disabled' : ''}>−</button>
+            <span>${qtdNaCmd}</span>
+            <button type="button" data-cmd-prod-mais="${escaparHTML(prod.id)}">+</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function ajustarQuantidadeProdutoNaComanda(produtoId, delta) {
+    const comanda = comandas.find(c => c.id === comandaAtivaId && c.status === 'aberta');
+    if (!comanda) return;
+
+    const prod = produtosEstoqueCache.find(p => String(p.id) === String(produtoId));
+    if (!prod) return;
+
+    const idxExistente = comanda.itens.findIndex(
+      it => it.produtoId && String(it.produtoId) === String(prod.id)
+    );
+
+    if (delta > 0) {
+      const precoCentavos = paraCentavos(Number(prod.preco) || 0);
+      if (idxExistente >= 0) {
+        comanda.itens[idxExistente].quantidade = (Number(comanda.itens[idxExistente].quantidade) || 1) + delta;
+      } else {
+        comanda.itens.push({
+          id: gerarId(),
+          produtoId: String(prod.id),
+          nome: prod.nome,
+          quantidade: delta,
+          valorUnitarioCentavos: precoCentavos,
+          adicionadoEm: new Date().toISOString()
+        });
+      }
+      salvarEstadoLocal();
+      renderizarComandas();
+      renderizarItensComanda(comanda);
+      renderizarGradeEstoqueComanda();
+    } else if (delta < 0 && idxExistente >= 0) {
+      const atual = Number(comanda.itens[idxExistente].quantidade) || 1;
+      if (atual + delta <= 0) {
+        comanda.itens.splice(idxExistente, 1);
+      } else {
+        comanda.itens[idxExistente].quantidade = atual + delta;
+      }
+      salvarEstadoLocal();
+      renderizarComandas();
+      renderizarItensComanda(comanda);
+      renderizarGradeEstoqueComanda();
+    }
+  }
+
   async function darBaixaEstoqueAoFecharComanda(comanda) {
     const itens = Array.isArray(comanda?.itens) ? comanda.itens : [];
     if (!itens.length) return;
 
     if (window.DrTrocoEstoque && typeof window.DrTrocoEstoque.darBaixaFechamentoComanda === 'function') {
       await window.DrTrocoEstoque.darBaixaFechamentoComanda(itens, comanda.mesaNome);
+      await carregarProdutosEstoqueDisponiveis();
+      preencherSelectProdutosComanda();
+      renderizarGradeEstoqueComanda();
       return;
     }
 
@@ -293,6 +393,9 @@
       if (chaveMov) {
         localStorage.setItem(chaveMov, JSON.stringify(movs));
       }
+      await carregarProdutosEstoqueDisponiveis();
+      preencherSelectProdutosComanda();
+      renderizarGradeEstoqueComanda();
     } catch (_) {}
   }
 
@@ -478,6 +581,12 @@
     if (formItem) {
       formItem.style.display = comanda.status === 'aberta' ? 'grid' : 'none';
     }
+    if ($('btnToggleGradeEstoqueComanda')) {
+      $('btnToggleGradeEstoqueComanda').style.display = comanda.status === 'aberta' ? 'flex' : 'none';
+    }
+    if ($('painelGradeEstoqueComanda') && comanda.status !== 'aberta') {
+      $('painelGradeEstoqueComanda').style.display = 'none';
+    }
     if ($('btnFecharComandaConta')) {
       $('btnFecharComandaConta').disabled = comanda.status !== 'aberta';
     }
@@ -485,6 +594,7 @@
     if (comanda.status === 'aberta') {
       await carregarProdutosEstoqueDisponiveis();
       preencherSelectProdutosComanda();
+      renderizarGradeEstoqueComanda();
     }
 
     renderizarItensComanda(comanda);
@@ -578,6 +688,7 @@
     salvarEstadoLocal();
     renderizarComandas();
     renderizarItensComanda(comanda);
+    renderizarGradeEstoqueComanda();
     mostrarAviso(`Adicionado à comanda: ${qtd}x ${nomeLimpo} (baixa só ao fechar)`);
   }
 
@@ -757,6 +868,34 @@
       }
     });
 
+    $('btnToggleGradeEstoqueComanda')?.addEventListener('click', async () => {
+      const painel = $('painelGradeEstoqueComanda');
+      if (!painel) return;
+      const vaiAbrir = painel.style.display === 'none' || !painel.style.display;
+      painel.style.display = vaiAbrir ? 'block' : 'none';
+      if (vaiAbrir) {
+        await carregarProdutosEstoqueDisponiveis();
+        renderizarGradeEstoqueComanda();
+        $('buscaProdutoEstoqueComanda')?.focus();
+      }
+    });
+
+    $('buscaProdutoEstoqueComanda')?.addEventListener('input', () => {
+      renderizarGradeEstoqueComanda();
+    });
+
+    $('gradeProdutosEstoqueComanda')?.addEventListener('click', ev => {
+      const btnMais = ev.target.closest('[data-cmd-prod-mais]');
+      if (btnMais) {
+        ajustarQuantidadeProdutoNaComanda(btnMais.getAttribute('data-cmd-prod-mais'), 1);
+        return;
+      }
+      const btnMenos = ev.target.closest('[data-cmd-prod-menos]');
+      if (btnMenos) {
+        ajustarQuantidadeProdutoNaComanda(btnMenos.getAttribute('data-cmd-prod-menos'), -1);
+      }
+    });
+
     $('selectProdutoEstoqueComanda')?.addEventListener('change', ev => {
       const pid = ev.target.value;
       if (!pid) return;
@@ -800,6 +939,7 @@
       salvarEstadoLocal();
       renderizarComandas();
       renderizarItensComanda(cmd);
+      renderizarGradeEstoqueComanda();
       mostrarAviso('Item removido da comanda.');
     });
 
@@ -816,6 +956,7 @@
     renderizarComandas();
     await carregarProdutosEstoqueDisponiveis();
     preencherSelectProdutosComanda();
+    renderizarGradeEstoqueComanda();
   });
 
   window.DrTrocoComandas = {
