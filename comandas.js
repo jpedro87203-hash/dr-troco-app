@@ -1,19 +1,6 @@
-Encontrei o problema! O HTML está perfeito, o problema estava no JavaScript.
-
-O que estava causando o "Carregando..." infinito?
-
-Quando você abre a tela, o HTML mostra um bloco com a frase "Carregando comandas... Aguarde um instante.". O JavaScript deveria apagar esse texto e desenhar os cards das comandas.
-
-Porém, o seu comandas.js estava usando document.addEventListener('DOMContentLoaded', ...). Como o script é carregado no final do <body>, o DOMContentLoaded já tinha disparado antes do script ser lido em algumas situações, e o evento nunca era escutado pelo seu código. Assim, a tela continuava mostrando o texto estático do HTML para sempre.
-
-Para corrigir, basta rodar a inicialização direto, sem esperar o evento DOMContentLoaded.
-
-Peguei o arquivo comandas.js que te mandei anteriormente e alterei apenas as últimas linhas. Copie o código abaixo inteiro e substitua o seu comandas.js:
-
-```javascript
 /* ============================================================
    DR. TROCO — COMANDAS & QR CODE POR MESA
-   Arquivo: comandas.js (CORRIGIDO)
+   Arquivo: comandas.js
 ============================================================ */
 'use strict';
 
@@ -246,12 +233,12 @@ Peguei o arquivo comandas.js que te mandei anteriormente e alterei apenas as úl
       .map(it => {
         const qtd = Math.max(1, Number(it.quantidade) || 1);
         const preco = Number(((Number(it.valorUnitarioCentavos) || 0) / 100).toFixed(2));
-        
+
         const prodEstoque = produtosEstoqueCache.find(p => String(p.id) === String(it.produtoId));
         const custoBruto = Number(prodEstoque?.precoCusto || 0);
         const qtdEmbalagem = Math.max(1, Number(prodEstoque?.qtdEmbalagem || 1));
         const custoUnit = custoBruto / qtdEmbalagem;
-        
+
         const subtotalCusto = Number((custoUnit * qtd).toFixed(2));
         const lucroItem = Number(((preco * qtd) - subtotalCusto).toFixed(2));
         const margemPct = (preco * qtd) > 0 ? Number(((lucroItem / (preco * qtd)) * 100).toFixed(1)) : 0;
@@ -260,7 +247,7 @@ Peguei o arquivo comandas.js que te mandei anteriormente e alterei apenas as úl
           id: String(it.produtoId),
           nome: it.nome,
           quantidade: qtd,
-          preco: preco,
+          preco,
           custoUnitario: Number(custoUnit.toFixed(4)),
           subtotalCusto,
           lucroItem,
@@ -1209,38 +1196,35 @@ Peguei o arquivo comandas.js que te mandei anteriormente e alterei apenas as úl
     });
   }
 
-  /* =========================================================
-     INICIALIZAÇÃO DIRETA (Sem esperar DOMContentLoaded)
-  ========================================================= */
   function inicializar() {
     try {
       carregarEstadoLocal();
       bindEventos();
-      renderizarComandas(); // Força a troca da tela "Carregando..." imediatamente
-      
-      // Busca estoque em background
-      carregarProdutosEstoqueDisponiveis().then(() => {
-        preencherSelectProdutosComanda();
-        renderizarGradeEstoqueComanda();
-      }).catch(e => {
-        console.warn('[Comandas] Erro ao carregar estoque em background:', e);
-      });
+      renderizarComandas();
+
+      carregarProdutosEstoqueDisponiveis()
+        .then(() => {
+          preencherSelectProdutosComanda();
+          renderizarGradeEstoqueComanda();
+        })
+        .catch(e => {
+          console.warn('[Comandas] Erro ao carregar estoque em background:', e);
+        });
     } catch (erro) {
-      console.error('[Comandas] Erro fatal:', erro);
-      const lista = document.getElementById('listaComandasAbertas');
+      console.error('[Comandas] Erro ao inicializar:', erro);
+      const lista = $('listaComandasAbertas');
       if (lista) {
         lista.innerHTML = `
           <div class="comanda-vazio" style="border-color:#f3d6d6;color:#d94b4b;">
             <strong>Erro ao carregar</strong>
-            <span>${erro.message}</span>
+            <span>${escaparHTML(erro.message)}</span>
             <br><br>
-            <button onclick="location.reload()" style="padding:8px 16px;background:#20a767;color:#fff;border:0;border-radius:8px;">Recarregar</button>
+            <button type="button" onclick="location.reload()" style="padding:8px 16px;background:#20a767;color:#fff;border:0;border-radius:8px;cursor:pointer;">Recarregar</button>
           </div>`;
       }
     }
   }
 
-  // Se o HTML já estiver carregado, roda imediatamente; se não, aguarda.
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', inicializar);
   } else {
@@ -1256,4 +1240,3 @@ Peguei o arquivo comandas.js que te mandei anteriormente e alterei apenas as úl
     renderizarComandas
   };
 })();
-```
