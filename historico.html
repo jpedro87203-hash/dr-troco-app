@@ -9,7 +9,6 @@
 
     <link rel="stylesheet" href="style.css">
 
-    <!-- A TAG STYLE ESTAVA FALTANDO AQUI -->
     <style>
         /* HISTÓRICO — DR. TROCO */
 
@@ -19,7 +18,6 @@
 
         body {
             margin: 0;
-            padding-bottom: 95px;
             background: #f4f7f5;
             color: #263640;
             font-family: Arial, sans-serif;
@@ -402,11 +400,11 @@
         }
 
         /* MODAIS */
-
+        /* Ajustado z-index para ficar acima da barra de navegação */
         .modal-historico {
             position: fixed;
             inset: 0;
-            z-index: 1000;
+            z-index: 100005; 
             display: none;
             align-items: center;
             justify-content: center;
@@ -484,74 +482,6 @@
             grid-template-columns: 1fr 1fr;
             gap: 9px;
             margin-top: 18px;
-        }
-
-        /* MENU INFERIOR */
-        body nav.menu-inferior {
-            position: fixed;
-            left: 50%;
-            right: auto;
-            bottom: 0;
-            transform: translateX(-50%);
-            z-index: 99999;
-
-            /* CORRIGIDO PARA 5 COLUNAS (Calculadora, Fluxo, Histórico, Estoque, Fiado) */
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            align-items: stretch;
-
-            width: 100%;
-            max-width: 760px;
-            min-height: 64px;
-            margin: 0;
-            padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
-
-            box-sizing: border-box;
-            border-top: 1px solid #e1e9e5;
-            background: rgba(255,255,255,.98);
-            box-shadow: 0 -4px 18px rgba(34,55,46,.05);
-        }
-
-        body nav.menu-inferior > a.menu-item {
-            display: flex;
-            flex: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-
-            width: 100%;
-            min-width: 0;
-            margin: 0;
-            padding: 5px 1px;
-
-            color: #819087;
-            font-size: 21px;
-            text-decoration: none;
-            text-align: center;
-
-            visibility: visible;
-            opacity: 1;
-        }
-
-        body nav.menu-inferior > a.menu-item > span,
-        body nav.menu-inferior > a.menu-item > small {
-            display: block;
-            visibility: visible;
-            opacity: 1;
-        }
-
-        body nav.menu-inferior > a.menu-item > small {
-            font-size: 10px;
-            line-height: 1.2;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        body nav.menu-inferior > a.menu-item.ativo {
-            border-radius: 14px;
-            background: #eaf8f1;
-            color: #20a767;
         }
 
         @media (max-width: 600px) {
@@ -850,6 +780,11 @@
         <span>🧾</span>
         <small>Fiado</small>
     </a>
+    <!-- NOVO BOTÃO ADICIONADO AQUI -->
+    <a href="comandas.html" class="menu-item">
+        <span>🍽️</span>
+        <small>Comandas</small>
+    </a>
 </nav>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -859,7 +794,7 @@
 <script src="estoque-supabase.js"></script>
 <script src="fiado.js"></script> 
 <script src="historico.js"></script>
-      <script src="suporte.js"></script>
-    <script src="seguranca.js"></script> 
+<script src="suporte.js"></script>
+<script src="seguranca.js"></script> 
 </body>
     </html>
