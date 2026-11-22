@@ -10,9 +10,12 @@
 
   const CHAVE_MESAS = 'drTroco_comandasMesas';
   const CHAVE_COMANDAS = 'drTroco_comandasLista';
+  const PREFIXO_ESTOQUE = 'drTroco_estoque_';
+  const PREFIXO_MOV_ESTOQUE = 'drTroco_movimentacoesEstoque_';
 
   let mesas = [];
   let comandas = [];
+  let produtosEstoqueCache = [];
   let comandaAtivaId = null;
   let streamCamera = null;
   let loopLeituraId = null;
@@ -154,6 +157,148 @@
     }
     salvarEstadoLocal();
   }
+
+  /* =========================================================
+     INTEGRAÇÃO COM ESTOQUE (SEM BAIXA AO ADICIONAR ITEM)
+  ========================================================= */
+
+  function encontrarChavesEstoqueLocal() {
+    let chaveEstoque = null;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(PREFIXO_ESTOQUE) && !k.includes('_backup_')) {
+        chaveEstoque = k;
+        break;
+      }
+    }
+    if (!chaveEstoque) return { chaveEstoque: null, chaveMov: null };
+    const sufixo = chaveEstoque.slice(PREFIXO_ESTOQUE.length);
+    return {
+      chaveEstoque,
+      chaveMov: `${PREFIXO_MOV_ESTOQUE}${sufixo}`
+    };
+  }
+
+  async function carregarProdutosEstoqueDisponiveis() {
+    if (window.DrTrocoEstoque && typeof window.DrTrocoEstoque.listarProdutosParaComanda === 'function') {
+      try {
+        const lista = await window.DrTrocoEstoque.listarProdutosParaComanda();
+        produtosEstoqueCache = Array.isArray(lista) ? lista : [];
+        return produtosEstoqueCache;
+      } catch (_) {}
+    }
+
+    const { chaveEstoque } = encontrarChavesEstoqueLocal();
+    if (!chaveEstoque) {
+      produtosEstoqueCache = [];
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(localStorage.getItem(chaveEstoque) || '[]');
+      produtosEstoqueCache = Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      produtosEstoqueCache = [];
+    }
+    return produtosEstoqueCache;
+  }
+
+  function preencherSelectProdutosComanda() {
+    const select = $('selectProdutoEstoqueComanda');
+    if (!select) return;
+
+    const valorAtual = select.value;
+    const opcoes = ['<option value="">Item avulso / manual</option>'];
+
+    produtosEstoqueCache.forEach(prod => {
+      const qtdDisp = Math.max(0, Number(prod.quantidade) || 0);
+      const precoNum = Number(prod.preco) || 0;
+      const labelPreco = precoNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      opcoes.push(
+        `<option value="${escaparHTML(prod.id)}">${escaparHTML(prod.nome)} (${labelPreco} · Est: ${qtdDisp})</option>`
+      );
+    });
+
+    select.innerHTML = opcoes.join('');
+    if (valorAtual && produtosEstoqueCache.some(p => String(p.id) === String(valorAtual))) {
+      select.value = valorAtual;
+    }
+  }
+
+  async function darBaixaEstoqueAoFecharComanda(comanda) {
+    const itens = Array.isArray(comanda?.itens) ? comanda.itens : [];
+    if (!itens.length) return;
+
+    if (window.DrTrocoEstoque && typeof window.DrTrocoEstoque.darBaixaFechamentoComanda === 'function') {
+      await window.DrTrocoEstoque.darBaixaFechamentoComanda(itens, comanda.mesaNome);
+      return;
+    }
+
+    // Fallback direto no cache local do estoque caso estoque.js não esteja incluído na página
+    const { chaveEstoque, chaveMov } = encontrarChavesEstoqueLocal();
+    if (!chaveEstoque) return;
+
+    try {
+      const listaProdutos = JSON.parse(localStorage.getItem(chaveEstoque) || '[]');
+      if (!Array.isArray(listaProdutos)) return;
+
+      const agregados = new Map();
+      itens.forEach(item => {
+        if (!item || !item.produtoId) return;
+        const pid = String(item.produtoId);
+        const qtd = Math.max(1, parseInt(item.quantidade, 10) || 1);
+        agregados.set(pid, (agregados.get(pid) || 0) + qtd);
+      });
+
+      if (!agregados.size) return;
+
+      const agora = new Date();
+      const dataChave = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+      const horaStr = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
+
+      let movs = [];
+      if (chaveMov) {
+        try {
+          const mRaw = JSON.parse(localStorage.getItem(chaveMov) || '[]');
+          if (Array.isArray(mRaw)) movs = mRaw;
+        } catch (_) {}
+      }
+
+      agregados.forEach((qtdBaixa, pid) => {
+        const prod = listaProdutos.find(p => String(p.id) === pid);
+        if (!prod) return;
+        const ant = Math.max(0, Number(prod.quantidade) || 0);
+        const nova = Math.max(0, ant - qtdBaixa);
+        const efetiva = ant - nova;
+        prod.quantidade = nova;
+        prod.atualizadoEm = new Date().toISOString();
+
+        if (efetiva > 0 && chaveMov) {
+          movs.push({
+            id: gerarId(),
+            produtoId: prod.id,
+            produtoNome: prod.nome,
+            tipo: 'saida',
+            quantidade: efetiva,
+            quantidadeAnterior: ant,
+            quantidadeNova: nova,
+            observacao: `Fechamento ${comanda.mesaNome || 'Comanda'}`,
+            data: dataChave,
+            hora: horaStr
+          });
+        }
+      });
+
+      localStorage.setItem(chaveEstoque, JSON.stringify(listaProdutos));
+      if (chaveMov) {
+        localStorage.setItem(chaveMov, JSON.stringify(movs));
+      }
+    } catch (_) {}
+  }
+
+  /* =========================================================
+     CÁLCULOS E COMANDAS
+  ========================================================= */
 
   function totalComandaCentavos(comanda) {
     if (!comanda || !Array.isArray(comanda.itens)) return 0;
@@ -312,7 +457,7 @@
     }).join('');
   }
 
-  function abrirDetalhesComanda(comandaId) {
+  async function abrirDetalhesComanda(comandaId) {
     const comanda = comandas.find(c => c.id === comandaId);
     if (!comanda) {
       mostrarAviso('Comanda não encontrada.', true);
@@ -337,6 +482,11 @@
       $('btnFecharComandaConta').disabled = comanda.status !== 'aberta';
     }
 
+    if (comanda.status === 'aberta') {
+      await carregarProdutosEstoqueDisponiveis();
+      preencherSelectProdutosComanda();
+    }
+
     renderizarItensComanda(comanda);
     abrirModal('modalDetalhesComanda');
   }
@@ -354,11 +504,12 @@
         const qtd = Math.max(1, Number(item.quantidade) || 1);
         const unitC = Number(item.valorUnitarioCentavos) || 0;
         const subC = qtd * unitC;
+        const tagEstoque = item.produtoId ? ' · Estoque (baixa no fechamento)' : ' · Avulso';
         return `
           <div class="comanda-item-linha">
             <div>
               <strong>${escaparHTML(item.nome)}</strong>
-              <small style="display:block;color:#64748b;">${qtd}x ${formatarDinheiro(unitC)}</small>
+              <small style="display:block;color:#64748b;">${qtd}x ${formatarDinheiro(unitC)}${escaparHTML(tagEstoque)}</small>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <strong>${formatarDinheiro(subC)}</strong>
@@ -399,7 +550,7 @@
     return nova;
   }
 
-  function adicionarItemComanda(comandaId, { nome, quantidade, valorUnitario }) {
+  function adicionarItemComanda(comandaId, { produtoId = null, nome, quantidade, valorUnitario }) {
     const comanda = comandas.find(c => c.id === comandaId && c.status === 'aberta');
     if (!comanda) {
       mostrarAviso('Comanda não encontrada ou já fechada.', true);
@@ -417,6 +568,7 @@
 
     comanda.itens.push({
       id: gerarId(),
+      produtoId: produtoId ? String(produtoId) : null,
       nome: nomeLimpo,
       quantidade: qtd,
       valorUnitarioCentavos: valorC,
@@ -426,7 +578,7 @@
     salvarEstadoLocal();
     renderizarComandas();
     renderizarItensComanda(comanda);
-    mostrarAviso(`Adicionado: ${qtd}x ${nomeLimpo}`);
+    mostrarAviso(`Adicionado à comanda: ${qtd}x ${nomeLimpo} (baixa só ao fechar)`);
   }
 
   async function fecharComandaConta(comandaId, formaPagamento = 'dinheiro') {
@@ -442,6 +594,8 @@
       return;
     }
 
+    await darBaixaEstoqueAoFecharComanda(comanda);
+
     comanda.status = 'fechada';
     comanda.formaPagamento = formaPagamento;
     comanda.fechadoEm = new Date().toISOString();
@@ -451,7 +605,7 @@
     renderizarComandas();
     fecharModal('modalDetalhesComanda');
     comandaAtivaId = null;
-    mostrarAviso(`${comanda.mesaNome} fechada (${formatarDinheiro(totalC)} · ${formaPagamento}).`);
+    mostrarAviso(`${comanda.mesaNome} fechada (${formatarDinheiro(totalC)} · ${formaPagamento}). Estoque atualizado.`);
   }
 
   function processarCodigoQrLido(codigoLido) {
@@ -603,14 +757,32 @@
       }
     });
 
+    $('selectProdutoEstoqueComanda')?.addEventListener('change', ev => {
+      const pid = ev.target.value;
+      if (!pid) return;
+      const prod = produtosEstoqueCache.find(p => String(p.id) === String(pid));
+      if (!prod) return;
+      if ($('itemNomeComanda')) $('itemNomeComanda').value = prod.nome || '';
+      if ($('itemValorComanda')) {
+        const precoNum = Number(prod.preco) || 0;
+        $('itemValorComanda').value = precoNum > 0 ? precoNum.toFixed(2).replace('.', ',') : '';
+      }
+      if ($('itemQtdComanda') && !String($('itemQtdComanda').value || '').trim()) {
+        $('itemQtdComanda').value = '1';
+      }
+    });
+
     $('formAdicionarItemComanda')?.addEventListener('submit', ev => {
       ev.preventDefault();
       if (!comandaAtivaId) return;
+      const produtoId = $('selectProdutoEstoqueComanda')?.value || null;
       adicionarItemComanda(comandaAtivaId, {
+        produtoId,
         nome: $('itemNomeComanda')?.value || '',
         quantidade: $('itemQtdComanda')?.value || 1,
         valorUnitario: $('itemValorComanda')?.value || 0
       });
+      if ($('selectProdutoEstoqueComanda')) $('selectProdutoEstoqueComanda').value = '';
       if ($('itemNomeComanda')) $('itemNomeComanda').value = '';
       if ($('itemQtdComanda')) $('itemQtdComanda').value = '1';
       if ($('itemValorComanda')) $('itemValorComanda').value = '';
@@ -638,10 +810,12 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     carregarEstadoLocal();
     bindEventos();
     renderizarComandas();
+    await carregarProdutosEstoqueDisponiveis();
+    preencherSelectProdutosComanda();
   });
 
   window.DrTrocoComandas = {
