@@ -1,6 +1,9 @@
+
+
+```javascript
 /* ============================================================
    DR. TROCO — COMANDAS & QR CODE POR MESA
-   Arquivo: comandas.js
+   Arquivo: comandas.js (CORRIGIDO)
 ============================================================ */
 'use strict';
 
@@ -168,6 +171,15 @@
     );
 
     if (mesaExistente) {
+      // CORREÇÃO 5: Proteção contra sobrescrever QR Code já impresso
+      if (codigoQr && mesaExistente.codigoQr !== codigoFinal) {
+        const trocar = confirm(
+          `A ${mesaExistente.nome} já possui o QR Code "${mesaExistente.codigoQr}".\n\n` +
+          `Deseja realmente trocar para "${codigoFinal}"?\n\n` +
+          `Se o QR antigo já estiver impresso na mesa, ele deixará de funcionar.`
+        );
+        if (!trocar) return mesaExistente;
+      }
       mesaExistente.nome = nomeFormatado;
       mesaExistente.codigoQr = codigoFinal;
     } else {
@@ -220,14 +232,39 @@
     const clienteParte = comanda.clienteNome ? ` · ${comanda.clienteNome}` : '';
     const descricao = `${comanda.mesaNome}${clienteParte}${resumoItens ? ` — ${resumoItens}` : ''}`;
 
+    // CORREÇÃO 3: Enriquecer os produtos com custo e margem para o Histórico
     const produtosVenda = (comanda.itens || [])
       .filter(it => it && it.produtoId)
-      .map(it => ({
-        id: String(it.produtoId),
-        nome: it.nome,
-        quantidade: Math.max(1, Number(it.quantidade) || 1),
-        preco: Number(((Number(it.valorUnitarioCentavos) || 0) / 100).toFixed(2))
-      }));
+      .map(it => {
+        const qtd = Math.max(1, Number(it.quantidade) || 1);
+        const preco = Number(((Number(it.valorUnitarioCentavos) || 0) / 100).toFixed(2));
+        
+        // Busca o custo no cache de estoque
+        const prodEstoque = produtosEstoqueCache.find(p => String(p.id) === String(it.produtoId));
+        const custoBruto = Number(prodEstoque?.precoCusto || 0);
+        const qtdEmbalagem = Math.max(1, Number(prodEstoque?.qtdEmbalagem || 1));
+        const custoUnit = custoBruto / qtdEmbalagem;
+        
+        const subtotalCusto = Number((custoUnit * qtd).toFixed(2));
+        const lucroItem = Number(((preco * qtd) - subtotalCusto).toFixed(2));
+        const margemPct = (preco * qtd) > 0 ? Number(((lucroItem / (preco * qtd)) * 100).toFixed(1)) : 0;
+
+        return {
+          id: String(it.produtoId),
+          nome: it.nome,
+          quantidade: qtd,
+          preco: preco,
+          custoUnitario: Number(custoUnit.toFixed(4)),
+          subtotalCusto,
+          lucroItem,
+          margemPct
+        };
+      });
+
+    // Cálculo do lucro total da comanda
+    const totalCusto = produtosVenda.reduce((acc, p) => acc + p.subtotalCusto, 0);
+    const lucroBruto = Number((totalReais - totalCusto).toFixed(2));
+    const margemPctTotal = totalReais > 0 ? Number(((lucroBruto / totalReais) * 100).toFixed(1)) : 0;
 
     const registroVenda = {
       id: gerarId(),
@@ -243,7 +280,10 @@
       formaPagamento,
       forma_pagamento: formaPagamento,
       produtos: produtosVenda,
-      data: momento.dataChave,
+      totalCusto,
+      lucroBruto,
+      margemPct: margemPctTotal,
+      data: momento.dataFormatada,
       dataChave: momento.dataChave,
       dataISO: momento.dataChave,
       dataFormatada: momento.dataFormatada,
@@ -375,6 +415,9 @@
         ? `<img src="${escaparHTML(prod.foto)}" alt="${escaparHTML(prod.nome)}">`
         : `<span>${escaparHTML(inicial)}</span>`;
 
+      // CORREÇÃO 1: Trava o botão de + se a quantidade na comanda já for igual ao estoque
+      const podeAdicionar = qtdNaCmd < estDisp;
+
       return `
         <div class="card-prod-comanda">
           <div class="foto-prod-comanda">${fotoHtml}</div>
@@ -384,7 +427,7 @@
           <div class="acoes-qtd-comanda">
             <button type="button" data-cmd-prod-menos="${escaparHTML(prod.id)}" ${qtdNaCmd <= 0 ? 'disabled' : ''}>−</button>
             <span>${qtdNaCmd}</span>
-            <button type="button" data-cmd-prod-mais="${escaparHTML(prod.id)}">+</button>
+            <button type="button" data-cmd-prod-mais="${escaparHTML(prod.id)}" ${!podeAdicionar ? 'disabled' : ''}>+</button>
           </div>
         </div>`;
     }).join('');
@@ -402,6 +445,14 @@
     );
 
     if (delta > 0) {
+      // CORREÇÃO 1: Trava de segurança no código também
+      const estDisp = Math.max(0, Number(prod.quantidade) || 0);
+      const qtdJaNaComanda = quantidadeNaComandaPorProdutoId(comanda, prod.id);
+      if (qtdJaNaComanda + delta > estDisp) {
+        mostrarAviso(`Estoque insuficiente: ${prod.nome} (disponível: ${estDisp}).`, true);
+        return;
+      }
+
       const precoCentavos = paraCentavos(Number(prod.preco) || 0);
       if (idxExistente >= 0) {
         comanda.itens[idxExistente].quantidade = (Number(comanda.itens[idxExistente].quantidade) || 1) + delta;
@@ -431,6 +482,33 @@
       renderizarItensComanda(comanda);
       renderizarGradeEstoqueComanda();
     }
+  }
+
+  // NOVO: Verifica se o estoque atual bate com o que está na comanda antes de fechar
+  async function validarEstoqueAntesDeFechar(comanda) {
+    await carregarProdutosEstoqueDisponiveis();
+    const faltando = [];
+    const agregados = new Map();
+
+    (comanda.itens || []).forEach(it => {
+      if (!it.produtoId) return;
+      const pid = String(it.produtoId);
+      agregados.set(pid, (agregados.get(pid) || 0) + (Number(it.quantidade) || 1));
+    });
+
+    agregados.forEach((qtd, pid) => {
+      const prod = produtosEstoqueCache.find(p => String(p.id) === pid);
+      if (!prod) {
+        faltando.push(`Produto ID ${pid} não existe mais no estoque.`);
+        return;
+      }
+      const disp = Math.max(0, Number(prod.quantidade) || 0);
+      if (qtd > disp) {
+        faltando.push(`${prod.nome}: pede ${qtd}, tem ${disp}`);
+      }
+    });
+
+    return faltando;
   }
 
   async function darBaixaEstoqueAoFecharComanda(comanda) {
@@ -784,6 +862,19 @@
       return;
     }
 
+    // CORREÇÃO 1: Trava de segurança para o formulário manual também
+    if (produtoId) {
+      const prod = produtosEstoqueCache.find(p => String(p.id) === String(produtoId));
+      if (prod) {
+        const estDisp = Math.max(0, Number(prod.quantidade) || 0);
+        const qtdJaNaComanda = quantidadeNaComandaPorProdutoId(comanda, produtoId);
+        if (qtdJaNaComanda + qtd > estDisp) {
+          mostrarAviso(`Estoque insuficiente: ${prod.nome} (disponível: ${estDisp - qtdJaNaComanda}).`, true);
+          return;
+        }
+      }
+    }
+
     comanda.itens.push({
       id: gerarId(),
       produtoId: produtoId ? String(produtoId) : null,
@@ -819,9 +910,15 @@
       }
     }
 
+    // CORREÇÃO 4: Aviso se a comanda já foi fechada e o estoque baixado
+    let avisoExtra = '';
+    if (comanda.status === 'fechada') {
+      avisoExtra = '\n\n⚠️ Esta comanda já foi FECHADA.\nA baixa de estoque NÃO será revertida automaticamente.\nSe quiser repor o estoque, exclua a venda pelo Histórico.';
+    }
+
     const confirmado = confirm(
       `Deseja excluir a comanda de ${comanda.mesaNome}${clienteInfo}?\n` +
-      `Total: ${formatarDinheiro(totalC)}`
+      `Total: ${formatarDinheiro(totalC)}${avisoExtra}`
     );
     if (!confirmado) return false;
 
@@ -848,6 +945,16 @@
     if (totalC <= 0) {
       mostrarAviso('Adicione ao menos um item antes de fechar a conta.', true);
       return;
+    }
+
+    // CORREÇÃO 2: Valida se o estoque atual bate com a comanda antes de fechar
+    const faltando = await validarEstoqueAntesDeFechar(comanda);
+    if (faltando.length) {
+      const continuar = confirm(
+        '⚠️ O estoque atual é insuficiente para:\n\n' + faltando.join('\n') +
+        '\n\nIsso pode acontecer se outro dispositivo vendeu o mesmo produto.\n\nDeseja fechar a comanda mesmo assim? (O estoque ficará zerado)'
+      );
+      if (!continuar) return;
     }
 
     await darBaixaEstoqueAoFecharComanda(comanda);
@@ -909,11 +1016,14 @@
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       if (statusEl) statusEl.textContent = 'Câmera indisponível neste dispositivo. Digite ou cole o código abaixo.';
+      setTimeout(() => $('inputQrManual')?.focus(), 300);
       return;
     }
 
+    // CORREÇÃO 6: Aviso claro para iOS (Safari) que não suporta BarcodeDetector
     if (typeof window.BarcodeDetector !== 'function') {
-      if (statusEl) statusEl.textContent = 'Leitor automático não suportado neste navegador. Digite ou cole o código abaixo.';
+      if (statusEl) statusEl.textContent = 'Este navegador não suporta leitura automática (iOS/Safari). Use o campo abaixo para digitar o código.';
+      setTimeout(() => $('inputQrManual')?.focus(), 300);
       return;
     }
 
@@ -948,6 +1058,7 @@
       loopLeituraId = requestAnimationFrame(tick);
     } catch (_) {
       if (statusEl) statusEl.textContent = 'Permissão de câmera negada ou indisponível. Use o campo manual abaixo.';
+      setTimeout(() => $('inputQrManual')?.focus(), 300);
     }
   }
 
@@ -1117,3 +1228,4 @@
     renderizarComandas
   };
 })();
+```
