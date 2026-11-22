@@ -12,7 +12,8 @@
   const CHAVE_COMANDAS = 'drTroco_comandasLista';
   const PREFIXO_ESTOQUE = 'drTroco_estoque_';
   const PREFIXO_MOV_ESTOQUE = 'drTroco_movimentacoesEstoque_';
-  const CHAVE_HISTORICO_LOCAL = 'drTroco_historicoVendas';
+  const CHAVE_VENDAS_HISTORICO = 'drTroco_vendas';
+  const CHAVE_CONFIG_CAIXA = 'drTroco_configCaixa';
 
   let mesas = [];
   let comandas = [];
@@ -66,10 +67,27 @@
     return String(cod || '').trim().toUpperCase();
   }
 
+  function obterHorarioCorteConfig() {
+    try {
+      const cfg = JSON.parse(localStorage.getItem(CHAVE_CONFIG_CAIXA) || '{"horarioCorte":"04:00"}');
+      return cfg && cfg.horarioCorte ? String(cfg.horarioCorte) : '04:00';
+    } catch (_) {
+      return '04:00';
+    }
+  }
+
   function obterDataHoraOperacional() {
     const agora = new Date();
     const referencia = new Date(agora.getTime());
-    if (referencia.getHours() >= 0 && referencia.getHours() < 6) {
+    const [horaCorte, minutoCorte] = obterHorarioCorteConfig().split(':').map(Number);
+
+    const hAtual = referencia.getHours();
+    const mAtual = referencia.getMinutes();
+
+    if (
+      Number.isFinite(horaCorte) &&
+      (hAtual < horaCorte || (hAtual === horaCorte && mAtual < (Number.isFinite(minutoCorte) ? minutoCorte : 0)))
+    ) {
       referencia.setDate(referencia.getDate() - 1);
     }
 
@@ -84,7 +102,8 @@
     return {
       dataChave: `${ano}-${mes}-${dia}`,
       dataFormatada: `${dia}/${mes}/${ano}`,
-      horaFormatada: `${hora}:${minuto}:${segundo}`,
+      horaFormatada: `${hora}:${minuto}`,
+      horaCompleta: `${hora}:${minuto}:${segundo}`,
       iso: agora.toISOString()
     };
   }
@@ -186,22 +205,6 @@
      INTEGRAÇÃO COM HISTÓRICO COMO VENDA NO FECHAMENTO
   ========================================================= */
 
-  async function resolverComercioIdAtivo() {
-    if (window.EstoqueSupabase && typeof window.EstoqueSupabase.obterComercioId === 'function') {
-      try {
-        const id = await window.EstoqueSupabase.obterComercioId();
-        if (id) return id;
-      } catch (_) {}
-    }
-    if (window.DadosSupabase && typeof window.DadosSupabase.obterComercioId === 'function') {
-      try {
-        const id = await window.DadosSupabase.obterComercioId();
-        if (id) return id;
-      } catch (_) {}
-    }
-    return localStorage.getItem('drTroco_comercioId') || localStorage.getItem('comercioId') || null;
-  }
-
   function montarResumoItensComanda(itens) {
     return itens.map(it => {
       const qtd = Math.max(1, Number(it.quantidade) || 1);
@@ -214,73 +217,53 @@
     const momento = obterDataHoraOperacional();
     const totalReais = Number((totalCentavos / 100).toFixed(2));
     const resumoItens = montarResumoItensComanda(comanda.itens || []);
-    const clienteParte = comanda.clienteNome ? ` · Cliente: ${comanda.clienteNome}` : '';
-    const descricao = `Venda Comanda — ${comanda.mesaNome}${clienteParte}${resumoItens ? ` (${resumoItens})` : ''}`;
+    const clienteParte = comanda.clienteNome ? ` · ${comanda.clienteNome}` : '';
+    const descricao = `${comanda.mesaNome}${clienteParte}${resumoItens ? ` — ${resumoItens}` : ''}`;
+
+    const produtosVenda = (comanda.itens || [])
+      .filter(it => it && it.produtoId)
+      .map(it => ({
+        id: String(it.produtoId),
+        nome: it.nome,
+        quantidade: Math.max(1, Number(it.quantidade) || 1),
+        preco: Number(((Number(it.valorUnitarioCentavos) || 0) / 100).toFixed(2))
+      }));
 
     const registroVenda = {
       id: gerarId(),
       tipo: 'venda',
-      categoria: 'comanda',
+      categoria: 'venda',
       origem: 'comanda',
       comandaId: comanda.id,
       mesaNome: comanda.mesaNome,
       clienteNome: comanda.clienteNome || '',
       descricao,
-      itens: (comanda.itens || []).map(it => ({
-        produtoId: it.produtoId || null,
-        nome: it.nome,
-        quantidade: Math.max(1, Number(it.quantidade) || 1),
-        valorUnitario: Number(((Number(it.valorUnitarioCentavos) || 0) / 100).toFixed(2)),
-        valorTotal: Number((((Math.max(1, Number(it.quantidade) || 1)) * (Number(it.valorUnitarioCentavos) || 0)) / 100).toFixed(2))
-      })),
+      total: totalReais,
       valor: totalReais,
-      valorCentavos: totalCentavos,
       formaPagamento,
       forma_pagamento: formaPagamento,
+      produtos: produtosVenda,
       data: momento.dataChave,
+      dataChave: momento.dataChave,
+      dataISO: momento.dataChave,
       dataFormatada: momento.dataFormatada,
       hora: momento.horaFormatada,
       criadoEm: momento.iso
     };
 
-    const comercioId = await resolverComercioIdAtivo();
-    const chaveEscopada = comercioId ? `${CHAVE_HISTORICO_LOCAL}_${comercioId}` : null;
+    try {
+      const atual = JSON.parse(localStorage.getItem(CHAVE_VENDAS_HISTORICO) || '[]');
+      const lista = Array.isArray(atual) ? atual : [];
+      lista.unshift(registroVenda);
+      localStorage.setItem(CHAVE_VENDAS_HISTORICO, JSON.stringify(lista));
+    } catch (_) {}
 
-    // Salva no cache local para o histórico refletir imediatamente
-    [CHAVE_HISTORICO_LOCAL, chaveEscopada].filter(Boolean).forEach(chave => {
+    if (window.DrTrocoDados && typeof window.DrTrocoDados.salvarVenda === 'function') {
       try {
-        const atual = JSON.parse(localStorage.getItem(chave) || '[]');
-        const lista = Array.isArray(atual) ? atual : [];
-        lista.unshift(registroVenda);
-        localStorage.setItem(chave, JSON.stringify(lista));
-      } catch (_) {}
-    });
-
-    // Persiste na nuvem se houver helper de vendas/histórico disponível
-    if (window.DadosSupabase && typeof window.DadosSupabase.salvarVenda === 'function') {
-      try {
-        await window.DadosSupabase.salvarVenda(registroVenda);
+        await window.DrTrocoDados.salvarVenda(registroVenda);
       } catch (e) {
-        console.warn('Aviso ao salvar venda da comanda via DadosSupabase:', e);
+        console.warn('[Comandas] Venda salva em drTroco_vendas; falha ao enviar via DrTrocoDados:', e);
       }
-    } else if (window.DadosSupabase && typeof window.DadosSupabase.registrarMovimentacao === 'function') {
-      try {
-        await window.DadosSupabase.registrarMovimentacao(registroVenda);
-      } catch (e) {
-        console.warn('Aviso ao registrar venda da comanda via DadosSupabase:', e);
-      }
-    } else if (window.supabase && typeof window.supabase.from === 'function') {
-      try {
-        await window.supabase.from('vendas').insert([{
-          ...(comercioId ? { comercio_id: comercioId } : {}),
-          tipo: 'venda',
-          descricao,
-          valor: totalReais,
-          forma_pagamento: formaPagamento,
-          data: momento.dataChave,
-          hora: momento.horaFormatada
-        }]);
-      } catch (_) {}
     }
 
     return registroVenda;
@@ -508,7 +491,7 @@
             quantidadeNova: nova,
             observacao: `Fechamento ${comanda.mesaNome || 'Comanda'}`,
             data: momento.dataChave,
-            hora: momento.horaFormatada
+            hora: momento.horaCompleta
           });
         }
       });
