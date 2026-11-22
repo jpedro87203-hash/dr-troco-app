@@ -12,6 +12,7 @@
   const CHAVE_COMANDAS = 'drTroco_comandasLista';
   const PREFIXO_ESTOQUE = 'drTroco_estoque_';
   const PREFIXO_MOV_ESTOQUE = 'drTroco_movimentacoesEstoque_';
+  const CHAVE_HISTORICO_LOCAL = 'drTroco_historicoVendas';
 
   let mesas = [];
   let comandas = [];
@@ -63,6 +64,29 @@
 
   function normalizarCodigo(cod) {
     return String(cod || '').trim().toUpperCase();
+  }
+
+  function obterDataHoraOperacional() {
+    const agora = new Date();
+    const referencia = new Date(agora.getTime());
+    if (referencia.getHours() >= 0 && referencia.getHours() < 6) {
+      referencia.setDate(referencia.getDate() - 1);
+    }
+
+    const dia = String(referencia.getDate()).padStart(2, '0');
+    const mes = String(referencia.getMonth() + 1).padStart(2, '0');
+    const ano = referencia.getFullYear();
+
+    const hora = String(agora.getHours()).padStart(2, '0');
+    const minuto = String(agora.getMinutes()).padStart(2, '0');
+    const segundo = String(agora.getSeconds()).padStart(2, '0');
+
+    return {
+      dataChave: `${ano}-${mes}-${dia}`,
+      dataFormatada: `${dia}/${mes}/${ano}`,
+      horaFormatada: `${hora}:${minuto}:${segundo}`,
+      iso: agora.toISOString()
+    };
   }
 
   function mostrarAviso(msg, erro = false) {
@@ -156,6 +180,110 @@
       }
     }
     salvarEstadoLocal();
+  }
+
+  /* =========================================================
+     INTEGRAÇÃO COM HISTÓRICO COMO VENDA NO FECHAMENTO
+  ========================================================= */
+
+  async function resolverComercioIdAtivo() {
+    if (window.EstoqueSupabase && typeof window.EstoqueSupabase.obterComercioId === 'function') {
+      try {
+        const id = await window.EstoqueSupabase.obterComercioId();
+        if (id) return id;
+      } catch (_) {}
+    }
+    if (window.DadosSupabase && typeof window.DadosSupabase.obterComercioId === 'function') {
+      try {
+        const id = await window.DadosSupabase.obterComercioId();
+        if (id) return id;
+      } catch (_) {}
+    }
+    return localStorage.getItem('drTroco_comercioId') || localStorage.getItem('comercioId') || null;
+  }
+
+  function montarResumoItensComanda(itens) {
+    return itens.map(it => {
+      const qtd = Math.max(1, Number(it.quantidade) || 1);
+      const unitC = Number(it.valorUnitarioCentavos) || 0;
+      return `${qtd}x ${it.nome} (${formatarDinheiro(qtd * unitC)})`;
+    }).join(', ');
+  }
+
+  async function registrarComandaNoHistoricoComoVenda(comanda, totalCentavos, formaPagamento) {
+    const momento = obterDataHoraOperacional();
+    const totalReais = Number((totalCentavos / 100).toFixed(2));
+    const resumoItens = montarResumoItensComanda(comanda.itens || []);
+    const clienteParte = comanda.clienteNome ? ` · Cliente: ${comanda.clienteNome}` : '';
+    const descricao = `Venda Comanda — ${comanda.mesaNome}${clienteParte}${resumoItens ? ` (${resumoItens})` : ''}`;
+
+    const registroVenda = {
+      id: gerarId(),
+      tipo: 'venda',
+      categoria: 'comanda',
+      origem: 'comanda',
+      comandaId: comanda.id,
+      mesaNome: comanda.mesaNome,
+      clienteNome: comanda.clienteNome || '',
+      descricao,
+      itens: (comanda.itens || []).map(it => ({
+        produtoId: it.produtoId || null,
+        nome: it.nome,
+        quantidade: Math.max(1, Number(it.quantidade) || 1),
+        valorUnitario: Number(((Number(it.valorUnitarioCentavos) || 0) / 100).toFixed(2)),
+        valorTotal: Number((((Math.max(1, Number(it.quantidade) || 1)) * (Number(it.valorUnitarioCentavos) || 0)) / 100).toFixed(2))
+      })),
+      valor: totalReais,
+      valorCentavos: totalCentavos,
+      formaPagamento,
+      forma_pagamento: formaPagamento,
+      data: momento.dataChave,
+      dataFormatada: momento.dataFormatada,
+      hora: momento.horaFormatada,
+      criadoEm: momento.iso
+    };
+
+    const comercioId = await resolverComercioIdAtivo();
+    const chaveEscopada = comercioId ? `${CHAVE_HISTORICO_LOCAL}_${comercioId}` : null;
+
+    // Salva no cache local para o histórico refletir imediatamente
+    [CHAVE_HISTORICO_LOCAL, chaveEscopada].filter(Boolean).forEach(chave => {
+      try {
+        const atual = JSON.parse(localStorage.getItem(chave) || '[]');
+        const lista = Array.isArray(atual) ? atual : [];
+        lista.unshift(registroVenda);
+        localStorage.setItem(chave, JSON.stringify(lista));
+      } catch (_) {}
+    });
+
+    // Persiste na nuvem se houver helper de vendas/histórico disponível
+    if (window.DadosSupabase && typeof window.DadosSupabase.salvarVenda === 'function') {
+      try {
+        await window.DadosSupabase.salvarVenda(registroVenda);
+      } catch (e) {
+        console.warn('Aviso ao salvar venda da comanda via DadosSupabase:', e);
+      }
+    } else if (window.DadosSupabase && typeof window.DadosSupabase.registrarMovimentacao === 'function') {
+      try {
+        await window.DadosSupabase.registrarMovimentacao(registroVenda);
+      } catch (e) {
+        console.warn('Aviso ao registrar venda da comanda via DadosSupabase:', e);
+      }
+    } else if (window.supabase && typeof window.supabase.from === 'function') {
+      try {
+        await window.supabase.from('vendas').insert([{
+          ...(comercioId ? { comercio_id: comercioId } : {}),
+          tipo: 'venda',
+          descricao,
+          valor: totalReais,
+          forma_pagamento: formaPagamento,
+          data: momento.dataChave,
+          hora: momento.horaFormatada
+        }]);
+      } catch (_) {}
+    }
+
+    return registroVenda;
   }
 
   /* =========================================================
@@ -334,7 +462,6 @@
       return;
     }
 
-    // Fallback direto no cache local do estoque caso estoque.js não esteja incluído na página
     const { chaveEstoque, chaveMov } = encontrarChavesEstoqueLocal();
     if (!chaveEstoque) return;
 
@@ -352,10 +479,7 @@
 
       if (!agregados.size) return;
 
-      const agora = new Date();
-      const dataChave = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
-      const horaStr = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
-
+      const momento = obterDataHoraOperacional();
       let movs = [];
       if (chaveMov) {
         try {
@@ -383,8 +507,8 @@
             quantidadeAnterior: ant,
             quantidadeNova: nova,
             observacao: `Fechamento ${comanda.mesaNome || 'Comanda'}`,
-            data: dataChave,
-            hora: horaStr
+            data: momento.dataChave,
+            hora: momento.horaFormatada
           });
         }
       });
@@ -706,17 +830,19 @@
     }
 
     await darBaixaEstoqueAoFecharComanda(comanda);
+    const vendaSalva = await registrarComandaNoHistoricoComoVenda(comanda, totalC, formaPagamento);
 
     comanda.status = 'fechada';
     comanda.formaPagamento = formaPagamento;
     comanda.fechadoEm = new Date().toISOString();
     comanda.totalFechadoCentavos = totalC;
+    comanda.vendaHistoricoId = vendaSalva?.id || null;
 
     salvarEstadoLocal();
     renderizarComandas();
     fecharModal('modalDetalhesComanda');
     comandaAtivaId = null;
-    mostrarAviso(`${comanda.mesaNome} fechada (${formatarDinheiro(totalC)} · ${formaPagamento}). Estoque atualizado.`);
+    mostrarAviso(`${comanda.mesaNome} fechada (${formatarDinheiro(totalC)} · ${formaPagamento}). Salva como venda no histórico.`);
   }
 
   function processarCodigoQrLido(codigoLido) {
