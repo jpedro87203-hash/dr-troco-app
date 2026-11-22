@@ -1185,80 +1185,112 @@ body:has(.fiado-resumo) .fiado-modal-topo p { margin: 0; color: #64748b; font-si
   .area-leitor-venda { min-height: 230px; }
 }
 
-/* ===== NAVEGAÇÃO INFERIOR (menu-inferior — rolagem horizontal) ===== */
-body nav.menu-inferior {
-  position: fixed !important;
-  left: 50% !important;
-  right: auto !important;
-  bottom: 0 !important;
-  transform: translateX(-50%) !important;
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 4px;
-  width: 100% !important;
-  max-width: 760px !important;
-  min-height: 64px;
-  padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
-  border-top: 1px solid #dfe8e3;
-  background: rgba(255, 255, 255, .97);
-  box-shadow: 0 -5px 20px rgba(30, 50, 42, .08);
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  z-index: 99999 !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* =========================================================
+   NAVEGAÇÃO INFERIOR (Rolagem Horizontal)
+========================================================= */
+
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
 }
+
+body nav.menu-inferior,
+nav.menu-inferior {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    transform: none !important;
+    z-index: 99999 !important;
+
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
+
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-height: 64px !important;
+    margin: 0 !important;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
+    
+    /* Habilita o scroll lateral */
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+    
+    border-top: 1px solid #dfe8e3;
+    background: rgba(255, 255, 255, .97);
+    box-shadow: 0 -5px 20px rgba(30, 50, 42, .08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Esconde a barra de rolagem feia */
 body nav.menu-inferior::-webkit-scrollbar {
-  display: none;
+    display: none !important;
 }
-body nav.menu-inferior > a.menu-item {
-  display: inline-flex !important;
-  flex: 0 0 auto !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 4px;
-  min-width: 74px !important;
-  margin: 0 !important;
-  padding: 4px 10px !important;
-  border-radius: 11px;
-  color: #7c8985;
-  font-size: 20px;
-  visibility: visible !important;
-  opacity: 1 !important;
-  text-decoration: none !important;
-  transition: background .12s ease, color .12s ease;
+
+body nav.menu-inferior > a.menu-item,
+nav.menu-inferior > a.menu-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+
+    flex: 0 0 auto !important; /* Impede que o botão amasse */
+    min-width: 74px !important; /* Largura mínima de cada botão */
+    padding: 4px 10px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    border-radius: 11px;
+    text-decoration: none !important;
+    color: #7c8985;
+    transition: background .12s ease, color .12s ease;
+    -webkit-tap-highlight-color: transparent;
 }
+
 body nav.menu-inferior > a.menu-item > span,
-body nav.menu-inferior > a.menu-item > small {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+nav.menu-inferior > a.menu-item > span {
+    font-size: 20px !important;
+    line-height: 1.1 !important;
 }
-body nav.menu-inferior > a.menu-item > small {
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap !important;
-  color: inherit;
-  font-size: 10px !important;
-  line-height: 1.2;
-  font-weight: 800;
-  text-align: center;
+
+body nav.menu-inferior > a.menu-item > small,
+nav.menu-inferior > a.menu-item > small {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    text-align: center;
+    font-weight: 800;
+    color: inherit;
 }
-body nav.menu-inferior > a.menu-item.ativo { color: var(--verde); background: #eef9f4; }
-body nav.menu-inferior > a.menu-item:active { transform: scale(.96); }
+
+body nav.menu-inferior > a.menu-item.ativo {
+    color: var(--verde);
+    background: #eef9f4;
+}
+
+body nav.menu-inferior > a.menu-item:active {
+    transform: scale(.96);
+}
 
 @media (max-width: 360px) {
-  body nav.menu-inferior > a.menu-item { min-width: 66px !important; padding: 4px 8px !important; }
-  body nav.menu-inferior > a.menu-item small { font-size: 9px !important; }
+    body nav.menu-inferior > a.menu-item { min-width: 68px !important; padding: 4px 8px !important; }
+    body nav.menu-inferior > a.menu-item > small { font-size: 9px !important; }
 }
 
-/* ===== REDUÇÃO DE MOVIMENTO ===== */
+/* =========================================================
+   REDUÇÃO DE MOVIMENTO
+========================================================= */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;
@@ -1268,516 +1300,21 @@ body nav.menu-inferior > a.menu-item:active { transform: scale(.96); }
 }
 
 /* =========================================================
-   FIADO — TELA DE LISTA (sistema via :has)
-========================================================= */
-
-body:has(.fiado-resumo) { background: #f1f5f9; color: #1e293b; }
-body:has(.fiado-resumo) .app-container {
-  width: 100%;
-  max-width: 850px;
-  margin: 0 auto;
-  padding: 20px 16px 40px;
-}
-body:has(.fiado-resumo) .app-header {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 20px;
-  margin-bottom: 20px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 18px;
-  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
-}
-body:has(.fiado-resumo) .app-logo {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  flex-shrink: 0;
-  border-radius: 15px;
-  background: #dbeafe;
-  font-size: 27px;
-}
-body:has(.fiado-resumo) .app-header h1 { margin: 0; color: #0f172a; font-size: 25px; line-height: 1.2; }
-body:has(.fiado-resumo) .app-header p { margin: 5px 0 0; color: #64748b; font-size: 14px; }
-
-body:has(.fiado-resumo) .fiado-nav {
-  display: flex;
-  gap: 8px;
-  margin: 0 0 22px;
-  padding: 5px;
-  overflow-x: auto;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 13px;
-  scrollbar-width: thin;
-}
-body:has(.fiado-resumo) .fiado-nav a {
-  flex: 0 0 auto;
-  padding: 11px 13px;
-  color: #475569;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 9px;
-  transition: background 0.2s, color 0.2s;
-}
-body:has(.fiado-resumo) .fiado-nav a[href="fiado.html"],
-body:has(.fiado-resumo) .fiado-nav a:hover { color: #ffffff; background: #2563eb; }
-
-body:has(.fiado-resumo) .fiado-resumo {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 22px;
-}
-body:has(.fiado-resumo) .fiado-card {
-  min-width: 0;
-  padding: 17px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
-}
-body:has(.fiado-resumo) .fiado-card span { display: block; margin-bottom: 10px; color: #64748b; font-size: 13px; font-weight: 600; }
-body:has(.fiado-resumo) .fiado-card strong { display: block; color: #0f172a; font-size: clamp(18px, 4.5vw, 25px); overflow-wrap: anywhere; }
-body:has(.fiado-resumo) #fiadoTotalDividas { color: #d97706; }
-body:has(.fiado-resumo) #fiadoTotalRecebido { color: #059669; }
-body:has(.fiado-resumo) #fiadoTotalAberto { color: #dc2626; }
-
-body:has(.fiado-resumo) .fiado-secao {
-  min-width: 0;
-  margin-bottom: 20px;
-  padding: 20px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 18px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
-}
-body:has(.fiado-resumo) .fiado-titulo { margin-bottom: 20px; }
-body:has(.fiado-resumo) .fiado-titulo h2 { margin: 0 0 7px; color: #0f172a; font-size: 21px; line-height: 1.3; }
-body:has(.fiado-resumo) .fiado-titulo p { margin: 0; color: #64748b; font-size: 14px; line-height: 1.5; }
-
-body:has(.fiado-resumo) .fiado-form { display: flex; flex-direction: column; gap: 16px; }
-body:has(.fiado-resumo) .fiado-campo { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-body:has(.fiado-resumo) .fiado-campo label { color: #334155; font-size: 14px; font-weight: 700; }
-body:has(.fiado-resumo) .fiado-campo input,
-body:has(.fiado-resumo) .fiado-campo select,
-body:has(.fiado-resumo) .fiado-busca input {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  min-height: 48px;
-  padding: 12px 14px;
-  color: #0f172a;
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  border-radius: 11px;
-  font-family: inherit;
-  font-size: 16px;
-  outline: none;
-}
-body:has(.fiado-resumo) .fiado-campo input:focus,
-body:has(.fiado-resumo) .fiado-campo select:focus,
-body:has(.fiado-resumo) .fiado-busca input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-body:has(.fiado-resumo) .fiado-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 46px;
-  padding: 12px 16px;
-  border: 1px solid transparent;
-  border-radius: 11px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  text-align: center;
-  cursor: pointer;
-  transition: transform 0.15s, background 0.2s;
-}
-body:has(.fiado-resumo) .fiado-btn:active { transform: scale(0.98); }
-body:has(.fiado-resumo) .fiado-btn-principal { color: #ffffff; background: #2563eb; }
-body:has(.fiado-resumo) .fiado-btn-principal:hover { background: #1d4ed8; }
-body:has(.fiado-resumo) .fiado-btn-secundario { color: #334155; background: #f1f5f9; border-color: #cbd5e1; }
-body:has(.fiado-resumo) .fiado-btn-fechar {
-  width: 42px;
-  height: 42px;
-  flex-shrink: 0;
-  padding: 0;
-  color: #475569;
-  background: #f1f5f9;
-  border: 0;
-  border-radius: 50%;
-  font-size: 27px;
-  cursor: pointer;
-}
-body:has(.fiado-resumo) .fiado-busca { margin-bottom: 16px; }
-
-body:has(.fiado-resumo) .fiado-lista {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-}
-body:has(.fiado-resumo) .fiado-cliente-card {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  min-width: 0;
-  padding: 16px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 15px;
-}
-body:has(.fiado-resumo) .fiado-cliente-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
-body:has(.fiado-resumo) .fiado-avatar {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  flex-shrink: 0;
-  background: #dbeafe;
-  border-radius: 14px;
-  font-size: 23px;
-}
-body:has(.fiado-resumo) .fiado-cliente-texto { min-width: 0; }
-body:has(.fiado-resumo) .fiado-cliente-texto h3 { margin: 0 0 5px; color: #0f172a; font-size: 16px; overflow-wrap: anywhere; }
-body:has(.fiado-resumo) .fiado-cliente-texto p { margin: 0 0 5px; color: #64748b; font-size: 13px; overflow-wrap: anywhere; }
-body:has(.fiado-resumo) .fiado-cliente-texto small { color: #64748b; font-size: 12px; }
-body:has(.fiado-resumo) .fiado-cliente-saldo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px;
-  background: #fff1f2;
-  border-radius: 10px;
-}
-body:has(.fiado-resumo) .fiado-cliente-saldo span { color: #9f1239; font-size: 13px; }
-body:has(.fiado-resumo) .fiado-cliente-saldo strong { color: #be123c; font-size: 17px; overflow-wrap: anywhere; }
-
-body:has(.fiado-resumo) .fiado-vazio {
-  padding: 28px 16px;
-  text-align: center;
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
-  border-radius: 15px;
-}
-body:has(.fiado-resumo) .fiado-vazio > div { margin-bottom: 12px; font-size: 36px; }
-body:has(.fiado-resumo) .fiado-vazio h3 { margin: 0 0 8px; color: #334155; font-size: 17px; }
-body:has(.fiado-resumo) .fiado-vazio p { margin: 0; color: #64748b; font-size: 14px; line-height: 1.6; }
-
-body:has(.fiado-resumo) .fiado-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  overflow-y: auto;
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(3px);
-}
-body:has(.fiado-resumo) .fiado-modal.aberto { display: flex; }
-body:has(.fiado-resumo) .fiado-modal-conteudo {
-  width: 100%;
-  max-width: 480px;
-  max-height: 90%;
-  overflow-y: auto;
-  padding: 22px;
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
-}
-
-body:has(.fiado-resumo) .fiado-saldo-destaque {
-  padding: 20px;
-  margin-bottom: 14px;
-  text-align: center;
-  background: #fff1f2;
-  border-radius: 15px;
-}
-body:has(.fiado-resumo) .fiado-saldo-destaque span { display: block; margin-bottom: 8px; color: #9f1239; font-size: 14px; }
-body:has(.fiado-resumo) .fiado-saldo-destaque strong { color: #be123c; font-size: 29px; overflow-wrap: anywhere; }
-body:has(.fiado-resumo) .fiado-detalhes-resumo {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 22px;
-}
-body:has(.fiado-resumo) .fiado-detalhes-resumo > div {
-  padding: 13px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-}
-body:has(.fiado-resumo) .fiado-detalhes-resumo span,
-body:has(.fiado-resumo) .fiado-detalhes-resumo strong { display: block; }
-body:has(.fiado-resumo) .fiado-detalhes-resumo span { margin-bottom: 7px; color: #64748b; font-size: 12px; }
-body:has(.fiado-resumo) .fiado-detalhes-resumo strong { color: #0f172a; font-size: 16px; overflow-wrap: anywhere; }
-
-body:has(.fiado-resumo) .fiado-historico { margin-bottom: 20px; }
-body:has(.fiado-resumo) .fiado-historico h3 { margin: 0 0 12px; color: #0f172a; font-size: 17px; }
-body:has(.fiado-resumo) .fiado-historico > div > p { color: #64748b; font-size: 14px; }
-body:has(.fiado-resumo) .fiado-movimento {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 13px 0;
-  border-bottom: 1px solid #e2e8f0;
-}
-body:has(.fiado-resumo) .fiado-movimento > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-body:has(.fiado-resumo) .fiado-movimento > div > strong { color: #334155; font-size: 14px; overflow-wrap: anywhere; }
-body:has(.fiado-resumo) .fiado-movimento small { color: #64748b; font-size: 12px; overflow-wrap: anywhere; }
-body:has(.fiado-resumo) .fiado-movimento > strong { flex-shrink: 0; font-size: 13px; text-align: right; overflow-wrap: anywhere; }
-body:has(.fiado-resumo) .fiado-valor-pago { color: #059669; }
-body:has(.fiado-resumo) .fiado-valor-divida { color: #d97706; }
-
-body:has(.fiado-resumo) .fiado-acoes-modal { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
-body:has(.fiado-resumo) .fiado-acoes-modal .fiado-btn { width: 100%; }
-
-body:has(.fiado-resumo) .fiado-notificacao {
-  position: fixed;
-  right: 16px;
-  bottom: 20px;
-  left: 16px;
-  z-index: 10001;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 14px 17px;
-  color: #ffffff;
-  background: #047857;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.18);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.5;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px);
-  transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
-}
-body:has(.fiado-resumo) .fiado-notificacao.visivel { opacity: 1; visibility: visible; transform: translateY(0); }
-body:has(.fiado-resumo) .fiado-notificacao.erro { background: #b91c1c; }
-
-@media (max-width: 380px) {
-  body:has(.fiado-resumo) .app-container { padding: 12px 10px 28px; }
-  body:has(.fiado-resumo) .fiado-secao { padding: 15px; }
-  body:has(.fiado-resumo) .fiado-card { padding: 13px; }
-  body:has(.fiado-resumo) .fiado-nav a { padding: 10px; font-size: 13px; }
-  body:has(.fiado-resumo) .fiado-movimento { flex-direction: column; }
-  body:has(.fiado-resumo) .fiado-movimento > strong { text-align: left; }
-}
-
-@media (min-width: 600px) {
-  body:has(.fiado-resumo) .fiado-resumo { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  body:has(.fiado-resumo) .fiado-form {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: end;
-  }
-  body:has(.fiado-resumo) .fiado-form > button { grid-column: 1 / -1; }
-  body:has(.fiado-resumo) .fiado-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-/* =========================================================
-   FIADO — DETALHES (sistema .pagina-fiado)
-========================================================= */
-
-.pagina-fiado { padding-bottom: 90px; }
-.pagina-fiado #modalDetalhesFiado { color: #26352e; }
-.pagina-fiado #modalDetalhesFiado > div,
-.pagina-fiado #modalDetalhesFiado .modal-conteudo,
-.pagina-fiado #modalDetalhesFiado .modal-content,
-.pagina-fiado #modalDetalhesFiado .modal-card,
-.pagina-fiado #modalDetalhesFiado .modal-dialog,
-.pagina-fiado #modalDetalhesFiado .conteudo-modal {
-  border-radius: 24px !important;
-}
-.pagina-fiado #modalDetalhesFiado h1,
-.pagina-fiado #modalDetalhesFiado h2,
-.pagina-fiado #modalDetalhesFiado h3 { color: #20352b; font-weight: 800; letter-spacing: -0.4px; }
-.pagina-fiado #modalDetalhesFiado p { color: #718078; line-height: 1.55; }
-
-.pagina-fiado #modalDetalhesFiado input,
-.pagina-fiado #modalDetalhesFiado select,
-.pagina-fiado #modalDetalhesFiado textarea {
-  width: 100%;
-  min-height: 52px;
-  padding: 14px 16px;
-  color: #26352e;
-  background: #f7faf8;
-  border: 1px solid #dce6e0;
-  border-radius: 15px;
-  font-size: 16px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.pagina-fiado #modalDetalhesFiado input:focus,
-.pagina-fiado #modalDetalhesFiado select:focus,
-.pagina-fiado #modalDetalhesFiado textarea:focus {
-  border-color: #20a767;
-  box-shadow: 0 0 0 3px rgba(32, 167, 103, 0.12);
-}
-.pagina-fiado #modalDetalhesFiado label {
-  display: block;
-  margin: 12px 0 7px;
-  color: #3e5147;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.pagina-fiado #modalDetalhesFiado :is(.card, .resumo-card, .info-card, .stat-card, .resumo-item) {
-  padding: 17px;
-  background: #f7faf8;
-  border: 1px solid #e0e8e3;
-  border-radius: 18px;
-}
-
-.pagina-fiado #fiadoDetalhesSaldo { color: #a35d20; font-size: 25px; font-weight: 800; }
-.pagina-fiado #fiadoDetalhesNome { color: #20352b; font-size: 28px; font-weight: 850; line-height: 1.2; overflow-wrap: anywhere; }
-.pagina-fiado #fiadoDetalhesTelefone { color: #78847d; font-size: 15px; }
-
-.pagina-fiado #modalDetalhesFiado button {
-  min-height: 48px;
-  padding: 12px 17px;
-  border-radius: 14px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.15s, opacity 0.15s;
-}
-.pagina-fiado #modalDetalhesFiado button:active { transform: scale(0.98); }
-
-.pagina-fiado #btnAdicionarDividaFiado {
-  color: #218457;
-  background: #eaf7f0;
-  border: 1px solid #cfe9db;
-}
-.pagina-fiado #btnRegistrarPagamentoFiado {
-  color: #ffffff;
-  background: linear-gradient(135deg, #25ad70, #168b53);
-  border: 1px solid #168b53;
-  box-shadow: 0 5px 12px rgba(22, 139, 83, 0.14);
-}
-.pagina-fiado #btnExportarFiadoPDF {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  width: 100% !important;
-  max-width: 360px;
-  min-height: 58px;
-  margin: 16px auto !important;
-  padding: 14px 20px;
-  color: #fff !important;
-  background: linear-gradient(135deg, #25ad70, #168b53) !important;
-  border: 1px solid #168b53 !important;
-  border-radius: 17px !important;
-  box-shadow: 0 5px 12px rgba(22, 139, 83, .15);
-  font-size: 17px;
-  font-weight: 750;
-}
-.pagina-fiado #btnExcluirClienteFiado {
-  display: block;
-  width: auto !important;
-  min-width: 150px;
-  min-height: 42px;
-  margin: 10px auto 16px !important;
-  padding: 9px 16px !important;
-  color: #b42318 !important;
-  background: #fff4f2 !important;
-  border: 1px solid #f0d2ce !important;
-  border-radius: 12px !important;
-  box-shadow: none !important;
-  font-size: 13px !important;
-  font-weight: 650;
-}
-
-.pagina-fiado #fiadoHistoricoCliente { margin-top: 14px; }
-
-.pagina-fiado #modalDetalhesFiado table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  overflow: hidden;
-  border: 1px solid #e1e9e4;
-  border-radius: 15px;
-}
-.pagina-fiado #modalDetalhesFiado th {
-  padding: 12px;
-  color: #4b6254;
-  background: #eef6f1;
-  font-size: 13px;
-  text-align: left;
-}
-.pagina-fiado #modalDetalhesFiado td {
-  padding: 12px;
-  color: #394b40;
-  background: #ffffff;
-  border-top: 1px solid #e7eee9;
-  font-size: 14px;
-}
-
-.pagina-fiado #btnFecharDetalhesFiado {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  min-width: 52px;
-  min-height: 52px;
-  margin-left: auto;
-  padding: 0;
-  color: #53645a;
-  background: #f1f5f2;
-  border: 1px solid #e0e8e3;
-  border-radius: 17px;
-  font-size: 0;
-}
-.pagina-fiado #btnFecharDetalhesFiado::before { content: "\00d7"; font-size: 30px; line-height: 1; font-weight: 400; }
-
-.pagina-fiado #btnFecharDetalhesFiado2 { display: none !important; }
-.pagina-fiado #fiadoResumoMensal { display: none !important; }
-.pagina-fiado #modalDetalhesFiado :is(.fiado-sem-juros, .aviso-sem-juros, .mensagem-sem-juros) { display: none !important; }
-
-@media (max-width: 480px) {
-  .pagina-fiado #modalDetalhesFiado :is(
-    > div,
-    .modal-conteudo,
-    .modal-content,
-    .modal-card,
-    .modal-dialog,
-    .conteudo-modal
-  ) { max-width: 100%; }
-  .pagina-fiado #fiadoDetalhesNome { font-size: 24px; }
-  .pagina-fiado #modalDetalhesFiado button { max-width: 100%; }
-  .pagina-fiado #btnExportarFiadoPDF { max-width: 100%; }
-  .pagina-fiado #btnExcluirClienteFiado { min-width: 135px; }
-}
-
-/* =========================================================
-   COMPATIBILIDADE — .bottom-nav (rolagem horizontal)
-   (usado pelo fiado.html)
+   COMPATIBILIDADE — .bottom-nav (fiado.html)
 ========================================================= */
 body .bottom-nav {
   position: fixed !important;
-  left: 50% !important;
-  right: auto !important;
+  left: 0 !important;
+  right: 0 !important;
   bottom: 0 !important;
-  transform: translateX(-50%) !important;
+  transform: none !important;
   display: flex !important;
   flex-direction: row !important;
   align-items: stretch;
   justify-content: flex-start;
   gap: 4px;
   width: 100% !important;
-  max-width: 760px !important;
+  max-width: 100vw !important;
   min-height: 64px;
   margin: 0;
   padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
@@ -1806,7 +1343,6 @@ body .bottom-nav .nav-item {
   justify-content: center;
   gap: 4px;
   min-width: 74px;
-  min-height: auto;
   margin: 0;
   padding: 4px 10px;
   border-radius: 11px;
@@ -1815,12 +1351,7 @@ body .bottom-nav .nav-item {
   transition: background .12s ease, color .12s ease;
   -webkit-tap-highlight-color: transparent;
 }
-
-body .bottom-nav .nav-icon {
-  font-size: 20px;
-  line-height: 1.2;
-}
-
+body .bottom-nav .nav-icon { font-size: 20px; line-height: 1.2; }
 body .bottom-nav .nav-item > span:last-child {
   display: block;
   max-width: 100%;
@@ -1832,75 +1363,10 @@ body .bottom-nav .nav-item > span:last-child {
   text-align: center;
   white-space: nowrap;
 }
+body .bottom-nav .nav-item.ativo { color: var(--verde); background: #eef9f4; }
+body .bottom-nav .nav-item:active { transform: scale(.96); }
 
-body .bottom-nav .nav-item.ativo {
-  color: var(--verde);
-  background: #eef9f4;
-}
-
-body .bottom-nav .nav-item:active {
-  transform: scale(.96);
-}
-html, body {
-    max-width: 100%;
-    overflow-x: hidden;
-}
-
-body nav.menu-inferior,
-nav.menu-inferior {
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    transform: none !important;
-    z-index: 99999 !important;
-
-    display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    align-items: center !important;
-    gap: 2px !important;
-
-    width: 100% !important;
-    max-width: 100vw !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom)) !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-}
-
-body nav.menu-inferior > a.menu-item,
-nav.menu-inferior > a.menu-item {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 2px !important;
-
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    flex: 1 1 0 !important;
-    padding: 4px 2px !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
-}
-
-body nav.menu-inferior > a.menu-item > span,
-nav.menu-inferior > a.menu-item > span {
-    font-size: 18px !important;
-    line-height: 1.1 !important;
-}
-
-body nav.menu-inferior > a.menu-item > small,
-nav.menu-inferior > a.menu-item > small {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    font-size: 9.5px !important;
-    line-height: 1.15 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-}
-
+@media (max-width: 360px) {
+  body .bottom-nav .nav-item { min-width: 68px; padding: 4px 8px; }
+  body .bottom-nav .nav-item > span:last-child { font-size: 9px; }
+   }
