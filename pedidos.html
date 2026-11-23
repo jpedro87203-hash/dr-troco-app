@@ -7,6 +7,9 @@
   <title>Dr. Troco - Pedidos Online</title>
   
   <link rel="stylesheet" href="style.css">
+  <!-- BIBLIOTECA DE QR CODE ADICIONADA AQUI -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+
   <style>
     body { background: #f8fafc; font-family: Arial, sans-serif; margin: 0; padding-bottom: 100px; }
     .header-pedidos { background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff; padding: 20px 16px; border-radius: 0 0 24px 24px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 15px rgba(234, 88, 12, 0.2); }
@@ -57,6 +60,22 @@
   </div>
 
   <div class="container">
+    
+    <!-- NOVO: CARD DE DIVULGAÇÃO DO CARDÁPIO -->
+    <div style="background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        <div style="width: 44px; height: 44px; background: #eaf8f0; color: #168b53; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px;">🔗</div>
+        <div style="flex: 1;">
+          <strong style="display: block; font-size: 15px; color: #1e293b;">Seu Cardápio Digital</strong>
+          <span style="font-size: 12px; color: #64748b;">Envie este link para seus clientes fazerem pedidos</span>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button type="button" onclick="copiarLinkCardapio()" style="background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">📋 Copiar Link</button>
+        <button type="button" onclick="baixarQrCardapio()" style="background: #168b53; border: 0; color: #fff; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">📱 Baixar QR Code</button>
+      </div>
+    </div>
+
     <!-- Filtros -->
     <div class="abas-pedidos">
       <button class="aba-btn ativo" data-filtro="aguardando">⏳ Aguardando</button>
