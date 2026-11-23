@@ -1,6 +1,6 @@
 /* ============================================================
    DR. TROCO — COMANDAS & QR CODE POR MESA
-   Arquivo: comandas.js (CORRIGIDO - SEM DUPLICAÇÃO)
+   Arquivo: comandas.js (CORRIGIDO - BAIXA NO SUPABASE)
 ============================================================ */
 'use strict';
 
@@ -25,7 +25,6 @@
 
   const $ = id => document.getElementById(id);
 
-  // Gera um UUID v4 válido para o Supabase não rejeitar
   function gerarId() {
     if (window.crypto && typeof window.crypto.randomUUID === 'function') {
       return window.crypto.randomUUID();
@@ -264,7 +263,7 @@
     const margemPctTotal = totalReais > 0 ? Number(((lucroBruto / totalReais) * 100).toFixed(1)) : 0;
 
     const registroVenda = {
-      id: gerarId(), // Agora é um UUID válido!
+      id: gerarId(),
       tipo: 'venda',
       categoria: 'venda',
       origem: 'comanda',
@@ -288,7 +287,6 @@
       criadoEm: momento.iso
     };
 
-    // Função de fallback caso o DrTrocoDados falhe
     const salvarVendaLocalmente = () => {
       try {
         const atual = JSON.parse(localStorage.getItem(CHAVE_VENDAS_HISTORICO) || '[]');
@@ -315,7 +313,7 @@
   }
 
   /* =========================================================
-     INTEGRAÇÃO COM ESTOQUE (SEM BAIXA AO ADICIONAR ITEM)
+     INTEGRAÇÃO COM ESTOQUE (BAIXA LOCAL + SUPABASE)
   ========================================================= */
 
   function encontrarChavesEstoqueLocal() {
@@ -336,6 +334,15 @@
   }
 
   async function carregarProdutosEstoqueDisponiveis() {
+    if (window.EstoqueSupabase && typeof window.EstoqueSupabase.carregarProdutos === 'function') {
+      try {
+        await window.EstoqueSupabase.obterComercioId();
+        const lista = await window.EstoqueSupabase.carregarProdutos();
+        produtosEstoqueCache = Array.isArray(lista) ? lista : [];
+        return produtosEstoqueCache;
+      } catch (_) {}
+    }
+    
     if (window.DrTrocoEstoque && typeof window.DrTrocoEstoque.listarProdutosParaComanda === 'function') {
       try {
         const lista = await window.DrTrocoEstoque.listarProdutosParaComanda();
@@ -517,73 +524,104 @@
     const itens = Array.isArray(comanda?.itens) ? comanda.itens : [];
     if (!itens.length) return;
 
-    if (window.DrTrocoEstoque && typeof window.DrTrocoEstoque.darBaixaFechamentoComanda === 'function') {
-      await window.DrTrocoEstoque.darBaixaFechamentoComanda(itens, comanda.mesaNome);
-      await carregarProdutosEstoqueDisponiveis();
-      preencherSelectProdutosComanda();
-      renderizarGradeEstoqueComanda();
-      return;
+    const agregados = new Map();
+    itens.forEach(item => {
+      if (!item || !item.produtoId) return;
+      const pid = String(item.produtoId);
+      const qtd = Math.max(1, parseInt(item.quantidade, 10) || 1);
+      agregados.set(pid, (agregados.get(pid) || 0) + qtd);
+    });
+
+    if (!agregados.size) return;
+
+    const momento = obterDataHoraOperacional();
+
+    // 1. BAIXA NO LOCALSTORAGE (Rápido para o celular)
+    const { chaveEstoque, chaveMov } = encontrarChavesEstoqueLocal();
+    if (chaveEstoque) {
+      try {
+        const listaProdutos = JSON.parse(localStorage.getItem(chaveEstoque) || '[]');
+        let movs = [];
+        if (chaveMov) {
+          try {
+            const mRaw = JSON.parse(localStorage.getItem(chaveMov) || '[]');
+            if (Array.isArray(mRaw)) movs = mRaw;
+          } catch (_) {}
+        }
+
+        agregados.forEach((qtdBaixa, pid) => {
+          const prod = listaProdutos.find(p => String(p.id) === pid);
+          if (!prod) return;
+          const ant = Math.max(0, Number(prod.quantidade) || 0);
+          const nova = Math.max(0, ant - qtdBaixa);
+          const efetiva = ant - nova;
+          prod.quantidade = nova;
+          prod.atualizadoEm = new Date().toISOString();
+
+          if (efetiva > 0 && chaveMov) {
+            movs.push({
+              id: gerarId(),
+              produtoId: prod.id,
+              produtoNome: prod.nome,
+              tipo: 'saida',
+              quantidade: efetiva,
+              quantidadeAnterior: ant,
+              quantidadeNova: nova,
+              observacao: `Fechamento ${comanda.mesaNome || 'Comanda'}`,
+              data: momento.dataChave,
+              hora: momento.horaCompleta
+            });
+          }
+        });
+
+        localStorage.setItem(chaveEstoque, JSON.stringify(listaProdutos));
+        if (chaveMov) {
+          localStorage.setItem(chaveMov, JSON.stringify(movs));
+        }
+      } catch (e) {
+        console.error('[Comandas] Erro na baixa local:', e);
+      }
     }
 
-    const { chaveEstoque, chaveMov } = encontrarChavesEstoqueLocal();
-    if (!chaveEstoque) return;
+    // 2. BAIXA NO SUPABASE (Nuvem)
+    if (window.EstoqueSupabase && typeof window.EstoqueSupabase.salvarProduto === 'function') {
+      try {
+        await window.EstoqueSupabase.obterComercioId();
+        const produtosRemotos = await window.EstoqueSupabase.carregarProdutos();
 
-    try {
-      const listaProdutos = JSON.parse(localStorage.getItem(chaveEstoque) || '[]');
-      if (!Array.isArray(listaProdutos)) return;
+        for (const [pid, qtdBaixa] of agregados.entries()) {
+          const prodRemoto = produtosRemotos.find(p => String(p.id) === pid);
+          if (!prodRemoto) continue;
 
-      const agregados = new Map();
-      itens.forEach(item => {
-        if (!item || !item.produtoId) return;
-        const pid = String(item.produtoId);
-        const qtd = Math.max(1, parseInt(item.quantidade, 10) || 1);
-        agregados.set(pid, (agregados.get(pid) || 0) + qtd);
-      });
+          const qtdAnt = Math.max(0, Number(prodRemoto.quantidade) || 0);
+          const qtdNova = Math.max(0, qtdAnt - qtdBaixa);
 
-      if (!agregados.size) return;
+          await window.EstoqueSupabase.salvarProduto({
+            ...prodRemoto,
+            quantidade: qtdNova
+          });
 
-      const momento = obterDataHoraOperacional();
-      let movs = [];
-      if (chaveMov) {
-        try {
-          const mRaw = JSON.parse(localStorage.getItem(chaveMov) || '[]');
-          if (Array.isArray(mRaw)) movs = mRaw;
-        } catch (_) {}
-      }
-
-      agregados.forEach((qtdBaixa, pid) => {
-        const prod = listaProdutos.find(p => String(p.id) === pid);
-        if (!prod) return;
-        const ant = Math.max(0, Number(prod.quantidade) || 0);
-        const nova = Math.max(0, ant - qtdBaixa);
-        const efetiva = ant - nova;
-        prod.quantidade = nova;
-        prod.atualizadoEm = new Date().toISOString();
-
-        if (efetiva > 0 && chaveMov) {
-          movs.push({
-            id: gerarId(),
-            produtoId: prod.id,
-            produtoNome: prod.nome,
+          await window.EstoqueSupabase.salvarMovimentacao({
+            produtoId: prodRemoto.id,
+            produtoNome: prodRemoto.nome,
             tipo: 'saida',
-            quantidade: efetiva,
-            quantidadeAnterior: ant,
-            quantidadeNova: nova,
-            observacao: `Fechamento ${comanda.mesaNome || 'Comanda'}`,
+            quantidade: qtdBaixa,
+            quantidadeAnterior: qtdAnt,
+            quantidadeNova: qtdNova,
             data: momento.dataChave,
-            hora: momento.horaCompleta
+            hora: momento.horaCompleta,
+            observacao: `Fechamento ${comanda.mesaNome || 'Comanda'}`
           });
         }
-      });
-
-      localStorage.setItem(chaveEstoque, JSON.stringify(listaProdutos));
-      if (chaveMov) {
-        localStorage.setItem(chaveMov, JSON.stringify(movs));
+      } catch (e) {
+        console.error('[Comandas] Erro ao sincronizar baixa com Supabase:', e);
       }
-      await carregarProdutosEstoqueDisponiveis();
-      preencherSelectProdutosComanda();
-      renderizarGradeEstoqueComanda();
-    } catch (_) {}
+    }
+
+    // Atualiza a tela com os valores corretos
+    await carregarProdutosEstoqueDisponiveis();
+    preencherSelectProdutosComanda();
+    renderizarGradeEstoqueComanda();
   }
 
   /* =========================================================
