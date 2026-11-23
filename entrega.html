@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Conferência de Entrega - Dr. Troco</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f3f7f5; margin: 0; padding: 20px; color: #263640; }
+    .card { background: #fff; border-radius: 16px; padding: 20px; max-width: 400px; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .status { text-align: center; padding: 16px; border-radius: 12px; margin-bottom: 20px; font-weight: 900; }
+    .status.pago { background: #eaf8f0; color: #147844; font-size: 18px; }
+    .status.aberto { background: #fff4d8; color: #a26b00; font-size: 18px; }
+    .info { margin-bottom: 20px; }
+    .info span { font-size: 12px; color: #64748b; font-weight: 800; text-transform: uppercase; }
+    .info strong { display: block; font-size: 16px; margin-top: 4px; }
+    .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+    .item:last-child { border-bottom: 0; }
+    .total { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 2px dashed #eee; }
+    .total strong { font-size: 22px; color: #168b53; }
+    .btn { display: block; width: 100%; padding: 15px; border: 0; border-radius: 12px; background: #168b53; color: #fff; font-size: 16px; font-weight: 900; margin-top: 20px; cursor: pointer; }
+    .carregando { text-align: center; padding: 40px; font-weight: bold; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="card" id="app">
+    <div class="carregando">Buscando dados do pedido...</div>
+  </div>
+
+  <script>
+    async function carregarPedido() {
+      // Pega o ID do pedido na URL (ex: entrega.html?id=UUID)
+      const params = new URLSearchParams(window.location.search);
+      const idPedido = params.get('id');
+
+      if (!idPedido) {
+        document.getElementById('app').innerHTML = '<h2 style="color:red;text-align:center;">QR Code Inválido</h2>';
+        return;
+      }
+
+      try {
+        const { data, error } = await window.supabaseClient
+          .from('comandas_abertas')
+          .select('*')
+          .eq('id', idPedido)
+          .single();
+
+        if (error || !data) throw new Error('Pedido não encontrado.');
+
+        const isPago = data.status === 'fechada';
+        const itensHtml = (data.itens || []).map(it => {
+          const qtd = it.quantidade || 1;
+          const unit = (it.valorUnitarioCentavos || 0) / 100;
+          return `
+            <div class="item">
+              <span>${qtd}x ${it.nome}</span>
+              <strong>R$ ${(qtd * unit).toFixed(2).replace('.', ',')}</strong>
+            </div>
+          `;
+        }).join('');
+
+        document.getElementById('app').innerHTML = `
+          <div class="status ${isPago ? 'pago' : 'aberto'}">
+            ${isPago ? '✓ PEDIDO PAGO' : '⏳ PAGAMENTO PENDENTE'}
+          </div>
+
+          <div class="info">
+            <span>Cliente / Mesa</span>
+            <strong>${data.cliente_nome || 'Não informado'} (${data.mesa_nome})</strong>
+          </div>
+
+          <div class="info">
+            <span>Itens do Pedido</span>
+            <div style="margin-top:8px;">${itensHtml}</div>
+          </div>
+
+          <div class="total">
+            <span style="font-weight:800;">Total</span>
+            <strong>R$ ${Number(data.total).toFixed(2).replace('.', ',')}</strong>
+          </div>
+
+          ${isPago ? 
+            `<button class="btn" onclick="alert('Entrega confirmada! Pode entregar o pedido.')">✓ Confirmar e Entregar</button>` : 
+            `<div style="text-align:center;margin-top:20px;color:#a26b00;font-size:13px;font-weight:bold;">⚠️ Cobre o cliente antes de entregar.</div>`
+          }
+        `;
+      } catch (err) {
+        document.getElementById('app').innerHTML = '<h2 style="color:red;text-align:center;">Erro ao carregar o pedido.</h2>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', carregarPedido);
+  </script>
+</body>
+</html>
