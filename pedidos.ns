@@ -1,0 +1,303 @@
+/* ============================================================
+   DR. TROCO — PEDIDOS ONLINE (DELIVERY)
+   Arquivo: pedidos.js
+============================================================ */
+'use strict';
+
+(() => {
+  let pedidosOnline = [];
+  let filtroAtual = 'aguardando';
+  let produtosEstoqueCache = [];
+  
+  const $ = id => document.getElementById(id);
+
+  // ==========================================================
+  // FUNÇÕES BÁSICAS
+  // ==========================================================
+  function formatarDinheiro(valor) {
+    return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function escaparHTML(texto) {
+    return String(texto ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+
+  function obterDataHoraOperacional() {
+    const agora = new Date();
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const ano = agora.getFullYear();
+    return {
+      dataChave: `${ano}-${mes}-${dia}`, dataFormatada: `${dia}/${mes}/${ano}`,
+      horaFormatada: `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`,
+      horaCompleta: `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`
+    };
+  }
+
+  function tocarCampainha() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      osc.start(); osc.stop(ctx.currentTime + 0.5);
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    } catch (e) {}
+  }
+
+  // ==========================================================
+  // BUSCAR PEDIDOS NO SUPABASE
+  // ==========================================================
+  async function carregarPedidos() {
+    if (!window.supabaseClient) return;
+
+    try {
+      let comercioId = null;
+      if (window.EstoqueSupabase?.obterComercioId) {
+        comercioId = await window.EstoqueSupabase.obterComercioId();
+      }
+
+      // Busca pedidos do cardápio que NÃO foram cancelados
+      let query = window.supabaseClient
+        .from('comandas_abertas')
+        .select('*')
+        .eq('origem', 'cardapio')
+        .neq('status', 'cancelado');
+
+      if (comercioId) query = query.eq('comercio_id', comercioId);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Verifica se chegou pedido novo para tocar a campainha
+      const idsAntigos = pedidosOnline.map(p => p.id);
+      const temNovo = (data || []).some(p => !idsAntigos.includes(p.id) && p.status === 'aberta');
+
+      if (temNovo && pedidosOnline.length > 0) {
+        tocarCampainha();
+      }
+
+      pedidosOnline = data || [];
+      renderizarPedidos();
+
+    } catch (e) {
+      console.warn('[Pedidos] Erro ao buscar:', e);
+      if ($('listaPedidos')) {
+        $('listaPedidos').innerHTML = '<div class="vazio"><h3>Erro ao carregar</h3><p>Verifique sua conexão.</p></div>';
+      }
+    }
+  }
+
+  // ==========================================================
+  // RENDERIZAR NA TELA
+  // ==========================================================
+  function renderizarPedidos() {
+    const lista = $('listaPedidos');
+    if (!lista) return;
+
+    // Filtra pelos botões de status
+    let filtrados = [];
+    if (filtroAtual === 'aguardando') {
+      filtrados = pedidosOnline.filter(p => p.status === 'aberta');
+    } else if (filtroAtual === 'preparando') {
+      filtrados = pedidosOnline.filter(p => p.status === 'preparando');
+    } else if (filtroAtual === 'rota') {
+      filtrados = pedidosOnline.filter(p => p.status === 'em_rota');
+    } else if (filtroAtual === 'concluidos') {
+      filtrados = pedidosOnline.filter(p => p.status === 'fechada');
+    }
+
+    if (!filtrados.length) {
+      lista.innerHTML = `<div class="vazio"><h3>Nenhum pedido aqui</h3><p>Os pedidos com status "${filtroAtual}" aparecerão aqui.</p></div>`;
+      return;
+    }
+
+    lista.innerHTML = filtrados.map(p => {
+      const itensHtml = (p.itens || []).map(it => {
+        const qtd = it.quantidade || 1;
+        const unit = (it.valorUnitarioCentavos || 0) / 100;
+        return `<div class="pedido-item-linha"><span>${qtd}x ${escaparHTML(it.nome)}</span><strong>${formatarDinheiro(qtd * unit)}</strong></div>`;
+      }).join('');
+
+      // Define botões de acordo com o status
+      let botoes = '';
+      if (p.status === 'aberta') {
+        botoes = `
+          <button class="btn-acao btn-recusar" onclick="alterarStatusPedido('${p.id}', 'cancelado')">❌ Recusar</button>
+          <button class="btn-acao btn-aceitar" onclick="alterarStatusPedido('${p.id}', 'preparando')">👨‍🍳 Aceitar e Preparar</button>
+        `;
+      } else if (p.status === 'preparando') {
+        botoes = `
+          <button class="btn-acao btn-rota" onclick="alterarStatusPedido('${p.id}', 'em_rota')" style="grid-column: 1 / -1;">🛵 Saiu para Entrega</button>
+        `;
+      } else if (p.status === 'em_rota') {
+        botoes = `
+          <button class="btn-acao btn-finalizar" onclick="finalizarPedido('${p.id}')" style="grid-column: 1 / -1;">✅ Finalizar e Baixar Estoque</button>
+        `;
+      }
+
+      return `
+        <div class="card-pedido status-${p.status}">
+          <div class="pedido-topo">
+            <span class="pedido-id">Pedido #${String(p.id).slice(0, 4)}</span>
+            <span class="pedido-total">${formatarDinheiro(p.total)}</span>
+          </div>
+          <div class="pedido-cliente">👤 ${escaparHTML(p.cliente_nome || 'Cliente')}</div>
+          <div class="pedido-info">
+            <span>💳 ${escaparHTML(p.forma_pagamento || 'Pix')}</span>
+          </div>
+          ${p.observacao ? `<div class="pedido-obs">📝 ${escaparHTML(p.observacao)}</div>` : ''}
+          
+          <div class="pedido-itens">${itensHtml}</div>
+          
+          <div class="pedido-acoes">${botoes}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ==========================================================
+  // AÇÕES DOS PEDIDOS
+  // ==========================================================
+  window.alterarStatusPedido = async function(id, novoStatus) {
+    try {
+      // Se for cancelar, apaga da nuvem
+      if (novoStatus === 'cancelado') {
+        if (!confirm('Tem certeza que deseja recusar este pedido?')) return;
+        await window.supabaseClient.from('comandas_abertas').delete().eq('id', id);
+        alert('Pedido recusado e removido.');
+      } else {
+        // Atualiza o status na nuvem (preparando, em_rota)
+        await window.supabaseClient.from('comandas_abertas').update({ status: novoStatus }).eq('id', id);
+      }
+      carregarPedidos(); // Recarrega a tela
+    } catch (e) {
+      alert('Erro ao atualizar o pedido: ' + e.message);
+    }
+  };
+
+  window.finalizarPedido = async function(id) {
+    const pedido = pedidosOnline.find(p => String(p.id) === String(id));
+    if (!pedido) return;
+
+    if (!confirm(`Finalizar pedido de ${pedido.cliente_nome}?\n\nIsso dará baixa no estoque e salvará no seu Histórico de Vendas.`)) return;
+
+    try {
+      // 1. Atualiza o status na nuvem para fechada (pago)
+      await window.supabaseClient.from('comandas_abertas').update({ status: 'fechada' }).eq('id', id);
+
+      // 2. Dar baixa no estoque
+      await darBaixaNoEstoque(pedido);
+
+      // 3. Salvar no Histórico de Vendas local
+      salvarNoHistorico(pedido);
+
+      alert('Pedido finalizado com sucesso!');
+      carregarPedidos();
+    } catch (e) {
+      alert('Erro ao finalizar: ' + e.message);
+    }
+  };
+
+  // ==========================================================
+  // BAIXA DE ESTOQUE E HISTÓRICO
+  // ==========================================================
+  async function darBaixaNoEstoque(pedido) {
+    const itens = pedido.itens || [];
+    if (!itens.length) return;
+
+    const agregados = new Map();
+    itens.forEach(item => {
+      if (!item.id) return;
+      agregados.set(String(item.id), (agregados.get(String(item.id)) || 0) + (Number(item.quantidade) || 1));
+    });
+
+    // Baixa Local
+    let chaveEstoque = null;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('drTroco_estoque_') && !k.includes('_backup_')) { chaveEstoque = k; break; }
+    }
+    
+    if (chaveEstoque) {
+      try {
+        const lista = JSON.parse(localStorage.getItem(chaveEstoque) || '[]');
+        agregados.forEach((qtd, pid) => {
+          const prod = lista.find(p => String(p.id) === pid);
+          if (prod) prod.quantidade = Math.max(0, Number(prod.quantidade) - qtd);
+        });
+        localStorage.setItem(chaveEstoque, JSON.stringify(lista));
+      } catch(e) {}
+    }
+
+    // Baixa na Nuvem
+    if (window.EstoqueSupabase) {
+      try {
+        const remotos = await window.EstoqueSupabase.carregarProdutos();
+        for (const [pid, qtdBaixa] of agregados.entries()) {
+          const prod = remotos.find(p => String(p.id) === pid);
+          if (!prod) continue;
+          await window.EstoqueSupabase.salvarProduto({ ...prod, quantidade: Math.max(0, Number(prod.quantidade) - qtdBaixa) });
+        }
+      } catch(e) { console.warn('Erro ao baixar estoque na nuvem:', e); }
+    }
+  }
+
+  function salvarNoHistorico(pedido) {
+    const momento = obterDataHoraOperacional();
+    const totalReais = Number(pedido.total) || 0;
+    
+    const produtosVenda = (pedido.itens || []).map(it => {
+      const qtd = it.quantidade || 1;
+      const preco = (it.valorUnitarioCentavos || 0) / 100;
+      return { id: it.id, nome: it.nome, quantidade: qtd, preco: preco, custoUnitario: 0, subtotalCusto: 0, lucroItem: preco * qtd, margemPct: 100 };
+    });
+
+    const registro = {
+      id: crypto.randomUUID(), tipo: 'venda', categoria: 'venda', origem: 'delivery',
+      clienteNome: pedido.cliente_nome, descricao: `Delivery - ${pedido.cliente_nome}`,
+      total: totalReais, valor: totalReais, formaPagamento: pedido.forma_pagamento || 'pix',
+      produtos: produtosVenda,
+      data: momento.dataFormatada, dataChave: momento.dataChave, dataISO: momento.dataChave,
+      hora: momento.horaFormatada
+    };
+
+    try {
+      const atual = JSON.parse(localStorage.getItem('drTroco_vendas') || '[]');
+      atual.unshift(registro);
+      localStorage.setItem('drTroco_vendas', JSON.stringify(atual));
+    } catch(e) {}
+
+    // Envia para a nuvem se a função existir
+    if (window.DrTrocoDados?.salvarVenda) {
+      window.DrTrocoDados.salvarVenda(registro).catch(e => console.warn(e));
+    }
+  }
+
+  // ==========================================================
+  // INICIALIZAÇÃO
+  // ==========================================================
+  function inicializar() {
+    // Botões de filtro
+    document.querySelectorAll('.aba-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativo'));
+        btn.classList.add('ativo');
+        filtroAtual = btn.getAttribute('data-filtro');
+        renderizarPedidos();
+      });
+    });
+
+    // Carrega imediatamente e atualiza a cada 10 segundos (tempo real)
+    carregarPedidos();
+    setInterval(carregarPedidos, 10000);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', inicializar);
+  else inicializar();
+
+})();
