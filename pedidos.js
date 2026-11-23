@@ -8,6 +8,7 @@
   let pedidosOnline = [];
   let filtroAtual = 'aguardando';
   let produtosEstoqueCache = [];
+  let linkCardapioLoja = '';
   
   const $ = id => document.getElementById(id);
 
@@ -279,6 +280,65 @@
   }
 
   // ==========================================================
+  // FUNÇÕES DE DIVULGAÇÃO DO CARDÁPIO (LINK E QR CODE)
+  // ==========================================================
+  async function montarLinkCardapio() {
+    try {
+      let comercioId = null;
+      if (window.EstoqueSupabase?.obterComercioId) {
+        comercioId = await window.EstoqueSupabase.obterComercioId();
+      }
+      
+      if (!comercioId) {
+        console.warn('ID do comércio não encontrado.');
+        return;
+      }
+
+      let path = window.location.pathname;
+      if (path.includes('pedidos.html')) path = path.replace('pedidos.html', 'cardapio.html');
+      else path = '/cardapio.html';
+      
+      linkCardapioLoja = window.location.origin + path + '?loja=' + comercioId;
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  window.copiarLinkCardapio = async function() {
+    if (!linkCardapioLoja) await montarLinkCardapio();
+    if (!linkCardapioLoja) return alert('Erro ao gerar link. Verifique a conexão.');
+
+    try {
+      await navigator.clipboard.writeText(linkCardapioLoja);
+      alert('Link copiado com sucesso!\n\nAgora é só colar no WhatsApp ou Instagram do cliente.\n\n' + linkCardapioLoja);
+    } catch(e) {
+      prompt('Copie o link abaixo:', linkCardapioLoja);
+    }
+  };
+
+  window.baixarQrCardapio = async function() {
+    if (!linkCardapioLoja) await montarLinkCardapio();
+    if (!linkCardapioLoja) return alert('Erro ao gerar link.');
+
+    if (typeof window.qrcode !== 'function') {
+      alert('Erro: Biblioteca de QR Code não carregada. Verifique sua internet.');
+      return;
+    }
+
+    const qr = window.qrcode(0, 'M');
+    qr.addData(linkCardapioLoja);
+    qr.make();
+    const qrDataUrl = qr.createDataURL(8, 0);
+
+    const link = document.createElement('a');
+    link.href = qrDataUrl;
+    link.download = 'cardapio-qrcode.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // ==========================================================
   // INICIALIZAÇÃO
   // ==========================================================
   function inicializar() {
@@ -291,6 +351,9 @@
         renderizarPedidos();
       });
     });
+
+    // Gera o link do cardápio ao abrir a tela
+    montarLinkCardapio();
 
     // Carrega imediatamente e atualiza a cada 10 segundos (tempo real)
     carregarPedidos();
