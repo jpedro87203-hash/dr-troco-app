@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurar Estabelecimento</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    body { font-family: Arial; background: #f3f7f5; padding: 16px; }
+    .card { background: #fff; max-width: 520px; margin: 0 auto; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,.06); }
+    h2 { margin: 0 0 16px; color: #168b53; }
+    label { display: block; font-size: 12px; font-weight: 800; color: #475569; margin: 12px 0 4px; }
+    input, select { width: 100%; height: 44px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0 12px; font-size: 14px; box-sizing: border-box; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    button { width: 100%; height: 48px; margin-top: 16px; background: #168b53; color: #fff; border: 0; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; }
+    .msg { margin-top: 12px; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 800; text-align: center; }
+    .ok { background: #eaf8f0; color: #168b53; }
+    .err { background: #fee2e2; color: #dc2626; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🏪 Meu Estabelecimento</h2>
+    <label>Nome da Loja</label>
+    <input type="text" id="nome">
+    <label>Endereço</label>
+    <input type="text" id="endereco">
+    <div class="grid2">
+      <div><label>Cidade</label><input type="text" id="cidade"></div>
+      <div><label>Estado</label><input type="text" id="estado" maxlength="2"></div>
+    </div>
+    <label>WhatsApp (só números: 5511999999999)</label>
+    <input type="tel" id="telefone_whatsapp" placeholder="5511999999999">
+    <div class="grid2">
+      <div><label>Abre</label><input type="time" id="horario_abertura"></div>
+      <div><label>Fecha</label><input type="time" id="horario_fechamento"></div>
+    </div>
+    <label>Taxa de Entrega (R$)</label>
+    <input type="number" id="taxa_entrega" min="0" step="0.5" value="0">
+    <label>Pedido Mínimo (R$)</label>
+    <input type="number" id="pedido_minimo" min="0" step="0.5" value="0">
+    <label>Aceitar Delivery?</label>
+    <select id="aceita_delivery"><option value="true">Sim</option><option value="false">Não</option></select>
+    <button onclick="salvar()">Salvar Configurações</button>
+    <div id="msg"></div>
+  </div>
+
+  <script>
+    let comercioId = null;
+
+    async function carregar() {
+      if (window.EstoqueSupabase?.obterComercioId) comercioId = await window.EstoqueSupabase.obterComercioId();
+      if (!comercioId) return;
+      const { data } = await window.supabaseClient.from('dados_estabelecimento').select('*').eq('comercio_id', comercioId).maybeSingle();
+      const { data: c } = await window.supabaseClient.from('comercios').select('nome').eq('id', comercioId).maybeSingle();
+      if (c?.nome) document.getElementById('nome').value = c.nome;
+      if (data) {
+        ['endereco','cidade','estado','telefone_whatsapp','horario_abertura','horario_fechamento','taxa_entrega','pedido_minimo'].forEach(k => {
+          if (data[k] != null) document.getElementById(k).value = data[k];
+        });
+        document.getElementById('aceita_delivery').value = data.aceita_delivery === false ? 'false' : 'true';
+      }
+    }
+
+    async function salvar() {
+      const msg = document.getElementById('msg');
+      if (!comercioId) { msg.className = 'msg err'; msg.textContent = 'Loja não identificada.'; return; }
+      const nome = document.getElementById('nome').value.trim();
+      const payload = {
+        endereco: document.getElementById('endereco').value.trim(),
+        cidade: document.getElementById('cidade').value.trim(),
+        estado: document.getElementById('estado').value.trim().toUpperCase(),
+        telefone_whatsapp: document.getElementById('telefone_whatsapp').value.trim(),
+        horario_abertura: document.getElementById('horario_abertura').value,
+        horario_fechamento: document.getElementById('horario_fechamento').value,
+        taxa_entrega: Number(document.getElementById('taxa_entrega').value) || 0,
+        pedido_minimo: Number(document.getElementById('pedido_minimo').value) || 0,
+        aceita_delivery: document.getElementById('aceita_delivery').value === 'true',
+        atualizado_em: new Date().toISOString()
+      };
+      try {
+        if (nome) await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
+        const { error } = await window.supabaseClient.from('dados_estabelecimento').update(payload).eq('comercio_id', comercioId);
+        if (error) throw error;
+        msg.className = 'msg ok'; msg.textContent = '✅ Salvo com sucesso!';
+      } catch(e) {
+        msg.className = 'msg err'; msg.textContent = 'Erro: ' + e.message;
+      }
+    }
+
+    carregar();
+  </script>
+</body>
+</html>
