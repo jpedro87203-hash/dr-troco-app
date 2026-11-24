@@ -2,9 +2,8 @@
    DR. TROCO — SERVICE WORKER (PWA)
    ========================================================= */
 
-const CACHE_NAME = 'dr-troco-v72';
+const CACHE_NAME = 'dr-troco-v73'; // <--- MUDAMOS A VERSÃO AQUI
 
-// Lista de arquivos essenciais para o app abrir offline
 const ASSETS = [
   './',
   './index.html',
@@ -35,20 +34,23 @@ const ASSETS = [
   './lucro.js',
   './admin.js',
   './licenca.js',
-  './estabelecimento.js'
+  './estabelecimento.js',
+  // ADICIONADOS AQUI PARA FUNCIONAR OFFLINE:
+  './cardapio.html',
+  './pedidos.html',
+  './pedidos.js',
+  './config-estabelecimento.html'
 ];
 
-// 1. INSTALAÇÃO: Salva os arquivos no cache do celular
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Guardando arquivos no cache');
+      console.log('[Service Worker] Guardando arquivos no cache v73');
       return cache.addAll(ASSETS);
     }).then(() => self.skipWaiting())
   );
 });
 
-// 2. ATIVAÇÃO: Limpa caches antigos quando o app é atualizado
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -64,48 +66,38 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// 3. FETCH: Busca do cache se estiver offline, senão busca da internet
 self.addEventListener('fetch', (e) => {
-  // Não interceptar chamadas para o Supabase ou CDNs externos
   if (
     e.request.url.includes('supabase.co') || 
     e.request.url.includes('jsdelivr.net') ||
     e.request.url.includes('fonts.googleapis.com')
   ) {
-    return; // Deixa o navegador lidar com isso normalmente
+    return; 
   }
 
   e.respondWith(
     caches.match(e.request).then((response) => {
-      // Se achou no cache, retorna. Se não, busca na internet.
       return response || fetch(e.request).then((fetchRes) => {
         return fetchRes;
       });
     }).catch(() => {
-      // Se estiver offline e tentar navegar para uma página, volta pro index
       if (e.request.mode === 'navigate') {
         return caches.match('./index.html');
       }
     })
   );
 });
-// ======================================================
-// Suporte a Notificações (Web Push / Local)
-// ======================================================
-self.addEventListener('notificationclick', function(event) {
-  event.notification.close(); // Fecha a notificação na barra
 
-  // Abre o app no painel do lojista
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      // Se o app já estiver aberto em alguma aba, foca nela
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
         if (client.url.includes('painel-lojista.html') && 'focus' in client) {
           return client.focus();
         }
       }
-      // Se não estiver aberto, abre uma nova janela
       if (clients.openWindow) {
         return clients.openWindow('/painel-lojista.html');
       }
