@@ -3,198 +3,601 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Configurar Estabelecimento</title>
+  <title>Cardápio Digital</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background: #f3f7f5; margin: 0; padding: 16px 16px 100px; color: #263640; }
-    .card { background: #fff; max-width: 520px; margin: 0 auto; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,.06); }
-    h2 { margin: 0 0 16px; color: #168b53; font-size: 20px; display: flex; align-items: center; gap: 8px; }
-    label { display: block; font-size: 12px; font-weight: 800; color: #475569; margin: 12px 0 4px; }
-    input, select, textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0 12px; font-size: 14px; box-sizing: border-box; outline: none; font-family: inherit; }
-    input, select { height: 44px; }
-    textarea { padding: 10px 12px; height: 80px; resize: vertical; }
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    button { width: 100%; height: 48px; margin-top: 20px; background: #168b53; color: #fff; border: 0; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; }
-    button:disabled { opacity: 0.6; }
-    .msg { margin-top: 12px; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 800; text-align: center; }
-    .ok { background: #eaf8f0; color: #168b53; }
-    .err { background: #fee2e2; color: #dc2626; }
-    .ajuda { font-size: 10px; color: #94a3b8; margin-top: 2px; display: block; font-weight: normal; }
+    :root { --verde:#168b53; --verde-claro:#eaf8f0; --texto:#263640; --cinza:#64748b; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f3f7f5; margin: 0; padding-bottom: 120px; color: var(--texto); }
+
+    /* HEADER */
+    .header { background: linear-gradient(135deg, #168b53, #0f6b3f); color: #fff; padding: 16px 16px 20px; border-radius: 0 0 22px 22px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,.12); }
+    .header-topo { display: flex; align-items: flex-start; gap: 12px; }
+    .logo-estab { width: 50px; height: 50px; border-radius: 14px; background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+    .info-estab { flex: 1; min-width: 0; }
+    .info-estab h1 { margin: 0; font-size: 18px; font-weight: 900; line-height: 1.2; word-break: break-word; }
+    .info-estab p { margin: 4px 0 0; font-size: 12px; opacity: .92; line-height: 1.4; }
+    .badge-status { display: inline-block; margin-top: 7px; padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 900; background: rgba(255,255,255,.22); }
+    .badge-status.fechado { background: #dc2626; }
+
+    /* BUSCA */
+    .barra-busca { margin-top: 14px; display: flex; gap: 8px; }
+    .barra-busca input { flex: 1; height: 44px; border: 0; border-radius: 12px; padding: 0 14px; font-size: 14px; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .btn-limpar { width: 44px; height: 44px; border: 0; border-radius: 12px; background: rgba(255,255,255,.22); color: #fff; font-size: 18px; cursor: pointer; display: none; }
+    .btn-limpar.visivel { display: flex; align-items: center; justify-content: center; }
+
+    .container { max-width: 640px; margin: 0 auto; padding: 16px; }
+
+    /* AVISO */
+    .aviso-loja { background: #fff7ed; border-left: 4px solid #ea580c; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
+    .aviso-loja-titulo { font-size: 13px; font-weight: 900; color: #c2410c; margin-bottom: 4px; }
+    .aviso-loja-texto { font-size: 13px; color: #7c2d12; line-height: 1.5; font-weight: 600; white-space: pre-line; }
+
+    /* GRID PRODUTOS */
+    .grade { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    @media (min-width: 500px) { .grade { grid-template-columns: repeat(3, 1fr); } }
+    .produto { background: #fff; border-radius: 16px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,.04); display: flex; flex-direction: column; text-align: center; }
+    .produto .foto { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 30px; }
+    .produto .nome { font-size: 13px; font-weight: 800; margin: 8px 0 4px; height: 36px; overflow: hidden; line-height: 1.3; }
+    .produto .preco { font-size: 15px; font-weight: 900; color: var(--verde); margin-bottom: 8px; }
+
+    .controle { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: auto; }
+    .controle button { width: 34px; height: 34px; border: 0; border-radius: 9px; background: var(--verde-claro); color: var(--verde); font-size: 20px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .controle button:disabled { opacity: .35; cursor: not-allowed; }
+    .controle .qtd { min-width: 24px; text-align: center; font-weight: 900; font-size: 14px; }
+
+    .aviso-vazio { text-align: center; padding: 40px 16px; color: var(--cinza); grid-column: 1/-1; }
+
+    /* BARRAS FIXAS INFERIORES */
+    .bottom-bars { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; display: flex; flex-direction: column; }
+    
+    /* Barra de Acompanhamento */
+    .bar-acompanhar { background: #1e293b; color: #fff; padding: 12px 16px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 -4px 10px rgba(0,0,0,.1); cursor: pointer; }
+    .bar-acompanhar.visivel { display: flex; }
+    .bar-acompanhar span { font-size: 13px; font-weight: 800; }
+    .bar-acompanhar .btn-acompanhar { background: #10b981; border: 0; color: #fff; padding: 6px 12px; border-radius: 8px; font-weight: 900; font-size: 12px; }
+
+    /* Barra do Carrinho */
+    .carrinho-bar { background: #fff; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 15px rgba(0,0,0,.1); display: none; align-items: center; justify-content: space-between; gap: 10px; }
+    .carrinho-bar.visivel { display: flex; }
+    .carrinho-info { flex: 1; min-width: 0; }
+    .carrinho-info span { font-size: 11px; color: var(--cinza); font-weight: bold; display: block; }
+    .carrinho-info strong { font-size: 17px; color: #1f3028; display: block; }
+    .carrinho-info small { font-size: 10px; color: var(--cinza); display: block; margin-top: 2px; }
+    .btn-finalizar { background: var(--verde); color: #fff; border: 0; border-radius: 12px; padding: 12px 20px; font-weight: 900; font-size: 14px; cursor: pointer; white-space: nowrap; }
+
+    /* MODAIS GENÉRICOS */
+    .modal { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 30; display: none; align-items: flex-end; }
+    .modal.aberto { display: flex; }
+    .modal-box { background: #fff; width: 100%; max-height: 92vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp .2s ease; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-box h2 { margin: 0 0 16px; font-size: 20px; }
+
+    /* CHECKOUT */
+    .secao-titulo { font-size: 12px; font-weight: 900; color: var(--verde); text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0; }
+    .secao-titulo:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+    .item-carrinho { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; gap: 10px; }
+    .mini-controle { display: flex; align-items: center; gap: 4px; }
+    .mini-controle button { width: 28px; height: 28px; border: 0; border-radius: 7px; font-weight: 900; font-size: 15px; cursor: pointer; background: var(--verde-claro); color: var(--verde); }
+    .mini-controle .remover { background: #fff0f0; color: #d94b4b; }
+
+    .form-campo { margin-bottom: 12px; }
+    .form-campo label { display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 4px; }
+    .form-campo input, .form-campo select, .form-campo textarea { width: 100%; height: 46px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0 12px; font-size: 14px; outline: none; }
+    .form-campo textarea { height: 70px; padding: 10px 12px; resize: none; }
+    .form-campo input:focus, .form-campo select:focus, .form-campo textarea:focus { border-color: var(--verde); }
+    .linha-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+
+    .bloco-pix { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+    .bloco-pix .label-pix { font-size: 12px; font-weight: 900; color: #0369a1; margin-bottom: 6px; text-transform: uppercase; }
+    .bloco-pix .chave-pix { background: #fff; border: 1px solid #e0f2fe; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 13px; color: #0c4a6e; font-weight: 700; word-break: break-all; }
+    .bloco-pix .btn-copiar-pix { background: #0284c7; color: #fff; border: 0; border-radius: 8px; padding: 10px; font-weight: 900; font-size: 13px; cursor: pointer; margin-top: 8px; width: 100%; }
+    .bloco-pix .aviso-pix { font-size: 12px; color: #b45309; background: #fef3c7; padding: 10px; border-radius: 8px; margin-top: 10px; font-weight: 700; line-height: 1.45; }
+
+    .resumo-total { background: #f8fafc; border-radius: 12px; padding: 12px; margin: 12px 0; font-size: 13px; }
+    .resumo-total .linha { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .resumo-total .linha:last-child { margin-bottom: 0; font-size: 16px; font-weight: 900; border-top: 1px solid #e2e8f0; padding-top: 8px; margin-top: 8px; }
+
+    .btn-confirmar { width: 100%; background: var(--verde); color: #fff; border: 0; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 900; margin-top: 10px; cursor: pointer; }
+    .btn-confirmar:disabled { opacity: .6; }
+    .btn-voltar { width: 100%; background: transparent; border: 0; margin-top: 10px; color: var(--cinza); font-weight: bold; padding: 10px; cursor: pointer; }
+
+    /* ACOMPANHAMENTO (RASTREIO) */
+    .step-container { display: flex; justify-content: space-between; margin: 24px 0; position: relative; }
+    .step-container::before { content: ''; position: absolute; top: 14px; left: 20px; right: 20px; height: 4px; background: #e2e8f0; z-index: 1; }
+    .step-progress { position: absolute; top: 14px; left: 20px; height: 4px; background: #10b981; z-index: 2; transition: width 0.4s ease; width: 0%; }
+    .step-item { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 60px; }
+    .step-icon { width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; }
+    .step-item.ativo .step-icon { background: #10b981; color: #fff; box-shadow: 0 0 0 4px #d1fae5; }
+    .step-item small { font-size: 10px; font-weight: 800; color: #64748b; text-align: center; }
+    .step-item.ativo small { color: #10b981; }
+    
+    .info-acompanhar { background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; color: #334155; }
+    .info-acompanhar strong { color: #0f172a; }
+
+    /* TOAST */
+    .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-120px); background: #1f3028; color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 800; z-index: 100; transition: transform .3s; box-shadow: 0 8px 20px rgba(0,0,0,.2); }
+    .toast.visivel { transform: translateX(-50%) translateY(0); }
+    .toast.erro { background: #dc2626; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>🏪 Meu Estabelecimento</h2>
-    
-    <label>Nome da Loja</label>
-    <input type="text" id="nome">
 
-    <label>Endereço</label>
-    <input type="text" id="endereco">
-
-    <div class="grid2">
-      <div><label>Cidade</label><input type="text" id="cidade"></div>
-      <div><label>Estado</label><input type="text" id="estado" maxlength="2"></div>
+<div class="header" id="headerEstab">
+  <div class="header-topo">
+    <div class="logo-estab">🏪</div>
+    <div class="info-estab">
+      <h1 id="nomeEstab">Carregando...</h1>
+      <p id="infoEstab"></p>
+      <span class="badge-status" id="badgeStatus" style="display:none;"></span>
     </div>
-
-    <label>WhatsApp da Loja <span class="ajuda">(Apenas números, ex: 5511999999999)</span></label>
-    <input type="tel" id="telefone_whatsapp" placeholder="5511999999999">
-
-    <div class="grid2">
-      <div><label>Abre às</label><input type="time" id="horario_abertura"></div>
-      <div><label>Fecha às</label><input type="time" id="horario_fechamento"></div>
-    </div>
-
-    <div class="grid2">
-      <div><label>Taxa de Entrega (R$)</label><input type="number" id="taxa_entrega" min="0" step="0.50" value="0"></div>
-      <div><label>Pedido Mínimo (R$)</label><input type="number" id="pedido_minimo" min="0" step="0.50" value="0"></div>
-    </div>
-
-    <label>Aceitar Delivery?</label>
-    <select id="aceita_delivery">
-      <option value="true">Sim</option>
-      <option value="false">Não</option>
-    </select>
-
-    <label>Chave PIX <span class="ajuda">(CPF, CNPJ, Celular, E-mail ou Aleatória)</span></label>
-    <input type="text" id="chave_pix" placeholder="Sua chave PIX aqui">
-
-    <label>Aviso aos Clientes <span class="ajuda">(Aparecerá no topo do cardápio)</span></label>
-    <textarea id="aviso_clientes" placeholder="Ex: Pedidos via PIX só serão aceitos após envio do comprovante."></textarea>
-
-    <button id="btnSalvar" onclick="salvar()">Salvar Configurações</button>
-    <div id="msg"></div>
   </div>
+  <div class="barra-busca">
+    <input type="text" id="buscaProduto" placeholder="🔍 Pesquisar produto..." autocomplete="off">
+    <button class="btn-limpar" id="btnLimparBusca" onclick="limparBusca()">✕</button>
+  </div>
+</div>
 
-  <script>
-    let comercioId = null;
+<div class="container">
+  <div id="avisoFechado"></div>
+  <div id="avisoLoja"></div>
+  <div id="gradeProdutos" class="grade">
+    <p class="aviso-vazio">Carregando cardápio...</p>
+  </div>
+</div>
 
-    // Função robusta para encontrar o ID da loja
-    async function obterComercioIdConfig() {
-      // 1. Tenta pela API do EstoqueSupabase
-      if (window.EstoqueSupabase?.obterComercioId) {
-        const id = await window.EstoqueSupabase.obterComercioId();
-        if (id) return id;
-      }
+<!-- Barras Fixas Inferiores -->
+<div class="bottom-bars">
+  <!-- Acompanhamento -->
+  <div class="bar-acompanhar" id="barAcompanhar" onclick="abrirAcompanhamento()">
+    <span>🛵 Acompanhe seu pedido #<span id="idAcompanharBar"></span></span>
+    <button class="btn-acompanhar">Ver Status</button>
+  </div>
+  
+  <!-- Carrinho -->
+  <div class="carrinho-bar" id="carrinhoBar">
+    <div class="carrinho-info">
+      <span id="qtdCarrinho">0 itens</span>
+      <strong id="totalCarrinho">R$ 0,00</strong>
+      <small id="taxaInfo"></small>
+    </div>
+    <button class="btn-finalizar" onclick="abrirCheckout()">Ver Carrinho</button>
+  </div>
+</div>
+
+<!-- MODAL CHECKOUT -->
+<div class="modal" id="modalCarrinho">
+  <div class="modal-box">
+    <h2>Seu Pedido</h2>
+    <div id="listaCarrinho"></div>
+    <form id="formPedido" style="margin-top:16px;">
       
-      // 2. Tenta pelo LocalStorage (vários nomes comuns)
-      const lsKeys = ['drTroco_comercio_id', 'comercio_id', 'comercioId', 'drTroco_loja_id'];
-      for (const key of lsKeys) {
-        const id = localStorage.getItem(key);
-        if (id && id.length > 10) return id;
-      }
+      <div class="secao-titulo">👤 Seus Dados</div>
+      <div class="form-campo"><label>Seu Nome *</label><input type="text" id="nomeCliente" required></div>
+      <div class="form-campo"><label>WhatsApp *</label><input type="tel" id="telefoneCliente" required placeholder="(11) 99999-9999"></div>
 
-      // 3. Tenta via Auth do Supabase
-      try {
-        if (window.supabaseClient) {
-          const { data: { user } } = await window.supabaseClient.auth.getUser();
-          if (user) {
-            // Tenta tabela membros_comercio
-            const { data: membro } = await window.supabaseClient.from('membros_comercio').select('comercio_id').eq('usuario_id', user.id).maybeSingle();
-            if (membro?.comercio_id) return membro.comercio_id;
+      <div class="secao-titulo">📍 Endereço de Entrega</div>
+      <div class="linha-grid">
+        <div class="form-campo"><label>Rua *</label><input type="text" id="endRua" required></div>
+        <div class="form-campo"><label>Número *</label><input type="text" id="endNumero" required></div>
+      </div>
+      <div class="linha-grid">
+        <div class="form-campo"><label>Bairro *</label><input type="text" id="endBairro" required></div>
+        <div class="form-campo"><label>Compl.</label><input type="text" id="endComplemento"></div>
+      </div>
+      <div class="form-campo"><label>Ref.</label><input type="text" id="endReferencia" placeholder="Próximo a..."></div>
 
-            // Tenta tabela comercios (como criador)
-            const { data: comercio } = await window.supabaseClient.from('comercios').select('id').eq('criado_por', user.id).maybeSingle();
-            if (comercio?.id) return comercio.id;
-          }
-        }
-      } catch(e) {
-        console.warn('Erro ao buscar via Auth:', e);
-      }
+      <div class="secao-titulo">💳 Pagamento</div>
+      <div class="form-campo">
+        <select id="pagamento" required>
+          <option value="pix">PIX</option>
+          <option value="dinheiro">Dinheiro</option>
+          <option value="cartao">Cartão</option>
+        </select>
+      </div>
 
-      return null;
-    }
+      <div id="blocoPix" class="bloco-pix" style="display:none;">
+        <div class="label-pix">💠 Pagamento via PIX</div>
+        <div id="pixConteudo"></div>
+      </div>
 
-    async function carregar() {
-      const msgEl = document.getElementById('msg');
-      msgEl.className = 'msg';
-      msgEl.textContent = 'Carregando dados...';
+      <div class="form-campo"><label>Observações</label><textarea id="obs" placeholder="Ex: Sem cebola..."></textarea></div>
 
-      comercioId = await obterComercioIdConfig();
+      <div class="resumo-total" id="resumoTotal"></div>
+      <button type="submit" class="btn-confirmar" id="btnEnviar">Enviar Pedido</button>
+      <button type="button" class="btn-voltar" onclick="fecharCheckout()">Voltar</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL ACOMPANHAMENTO -->
+<div class="modal" id="modalAcompanhar">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h2 style="margin:0;">Status do Pedido</h2>
+      <button onclick="fecharAcompanhamento()" style="background:#f1f5f9; border:0; width:36px; height:36px; border-radius:50%; font-weight:bold; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    
+    <div class="step-container">
+      <div class="step-progress" id="stepProgress"></div>
+      <div class="step-item" id="step-1"><div class="step-icon">📝</div><small>Recebido</small></div>
+      <div class="step-item" id="step-2"><div class="step-icon">👨‍🍳</div><small>Preparando</small></div>
+      <div class="step-item" id="step-3"><div class="step-icon">🛵</div><small>Em Rota</small></div>
+      <div class="step-item" id="step-4"><div class="step-icon">✅</div><small>Entregue</small></div>
+    </div>
+
+    <div class="info-acompanhar" id="infoAcompanhar">
+      Carregando informações...
+    </div>
+    
+    <button class="btn-voltar" onclick="fecharAcompanhamento()">Fechar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const comercioId = urlParams.get('loja');
+  let produtos = [];
+  let carrinho = [];
+  let estabelecimento = { nome: '', endereco: '', cidade: '', estado: '', horario_abertura: '', horario_fechamento: '', taxa_entrega: 0, pedido_minimo: 0, aviso_clientes: '', chave_pix: '', aceita_delivery: true, aberto_manual: true };
+  let termoBusca = '';
+  let intervalAcompanhamento = null;
+
+  // ---------- Utils ----------
+  function gerarId() { return window.crypto?.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); }); }
+  function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function mostrarToast(msg, erro) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.toggle('erro', !!erro); t.classList.add('visivel'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('visivel'), 2800); }
+  function normalizar(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  function normalizarTel(t) { return String(t || '').replace(/\D/g, ''); }
+
+  // ---------- Estabelecimento ----------
+  async function carregarEstabelecimento() {
+    if (!comercioId) return;
+    try {
+      const [comercioRes, dadosRes] = await Promise.all([
+        window.supabaseClient.from('comercios').select('nome').eq('id', comercioId).maybeSingle(),
+        window.supabaseClient.from('dados_estabelecimento').select('*').eq('comercio_id', comercioId).maybeSingle()
+      ]);
       
-      if (!comercioId) {
-        msgEl.className = 'msg err';
-        msgEl.textContent = 'Loja não identificada. Verifique seu login.';
-        document.getElementById('btnSalvar').disabled = true;
-        return;
+      if (comercioRes.data?.nome) estabelecimento.nome = comercioRes.data.nome;
+      
+      if (dadosRes.data) {
+        estabelecimento = {
+          ...estabelecimento,
+          endereco: dadosRes.data.endereco || '',
+          cidade: dadosRes.data.cidade || '',
+          estado: dadosRes.data.estado || '',
+          telefone_whatsapp: dadosRes.data.telefone_whatsapp || dadosRes.data.telefone || '',
+          horario_abertura: dadosRes.data.horario_abertura || '',
+          horario_fechamento: dadosRes.data.horario_fechamento || '',
+          aberto_manual: dadosRes.data.aberto_manual !== false,
+          taxa_entrega: Number(dadosRes.data.taxa_entrega || 0),
+          pedido_minimo: Number(dadosRes.data.pedido_minimo || 0),
+          aceita_delivery: dadosRes.data.aceita_delivery !== false,
+          aviso_clientes: dadosRes.data.aviso_clientes || '',
+          chave_pix: dadosRes.data.chave_pix || ''
+        };
       }
+    } catch (e) {
+      console.warn('Erro estabelecimento:', e);
+    }
+    renderizarHeader();
+    renderizarAvisoLoja();
+  }
 
-      try {
-        const [resCom, resDad] = await Promise.all([
-          window.supabaseClient.from('comercios').select('nome').eq('id', comercioId).maybeSingle(),
-          window.supabaseClient.from('dados_estabelecimento').select('*').eq('comercio_id', comercioId).maybeSingle()
-        ]);
-        
-        if (resCom.data?.nome) document.getElementById('nome').value = resCom.data.nome;
-        
-        if (resDad.data) {
-          const d = resDad.data;
-          const campos = ['endereco', 'cidade', 'estado', 'telefone_whatsapp', 'horario_abertura', 'horario_fechamento', 'taxa_entrega', 'pedido_minimo', 'chave_pix', 'aviso_clientes'];
-          campos.forEach(k => {
-            if (d[k] != null) document.getElementById(k).value = d[k];
-          });
-          document.getElementById('aceita_delivery').value = d.aceita_delivery === false ? 'false' : 'true';
-        }
-        msgEl.textContent = '';
-      } catch(e) {
-        msgEl.className = 'msg err';
-        msgEl.textContent = 'Erro ao carregar dados: ' + e.message;
-      }
+  function estaAbertoAgora() {
+    if (estabelecimento.aberto_manual === false || estabelecimento.aceita_delivery === false) return false;
+    const { horario_abertura, horario_fechamento } = estabelecimento;
+    if (!horario_abertura || !horario_fechamento) return true;
+    const agora = new Date();
+    const min = agora.getHours() * 60 + agora.getMinutes();
+    const [hA, mA] = horario_abertura.split(':').map(Number);
+    const [hF, mF] = horario_fechamento.split(':').map(Number);
+    const ini = hA * 60 + (mA || 0);
+    const fim = hF * 60 + (mF || 0);
+    return fim < ini ? (min >= ini || min <= fim) : (min >= ini && min <= fim);
+  }
+
+  function renderizarHeader() {
+    document.getElementById('nomeEstab').textContent = estabelecimento.nome || 'Cardápio Digital';
+
+    const partes = [];
+    const endCompleto = [estabelecimento.endereco, estabelecimento.cidade, estabelecimento.estado].filter(Boolean).join(' - ');
+    if (endCompleto) partes.push('📍 ' + endCompleto);
+    
+    if (estabelecimento.horario_abertura && estabelecimento.horario_fechamento) {
+      partes.push(`🕐 De ${estabelecimento.horario_abertura} às ${estabelecimento.horario_fechamento}`);
     }
 
-    async function salvar() {
-      const msgEl = document.getElementById('msg');
-      if (!comercioId) return;
-
-      const btn = document.getElementById('btnSalvar');
-      btn.disabled = true;
-      btn.textContent = 'Salvando...';
-
-      const nome = document.getElementById('nome').value.trim();
-      const payload = {
-        endereco: document.getElementById('endereco').value.trim(),
-        cidade: document.getElementById('cidade').value.trim(),
-        estado: document.getElementById('estado').value.trim().toUpperCase(),
-        telefone_whatsapp: document.getElementById('telefone_whatsapp').value.trim(),
-        horario_abertura: document.getElementById('horario_abertura').value,
-        horario_fechamento: document.getElementById('horario_fechamento').value,
-        taxa_entrega: Number(document.getElementById('taxa_entrega').value) || 0,
-        pedido_minimo: Number(document.getElementById('pedido_minimo').value) || 0,
-        aceita_delivery: document.getElementById('aceita_delivery').value === 'true',
-        chave_pix: document.getElementById('chave_pix').value.trim(),
-        aviso_clientes: document.getElementById('aviso_clientes').value.trim(),
-        atualizado_em: new Date().toISOString()
-      };
-
-      try {
-        if (nome) {
-          await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
-        }
-        
-        // Tenta atualizar. Se não existir linha, faz insert.
-        const { data: updated, error: errUpd } = await window.supabaseClient.from('dados_estabelecimento').update(payload).eq('comercio_id', comercioId).select();
-        
-        if (errUpd) throw errUpd;
-
-        if (!updated || updated.length === 0) {
-          // Se não atualizou nada, insere
-          await window.supabaseClient.from('dados_estabelecimento').insert([{ comercio_id: comercioId, ...payload }]);
-        }
-
-        msgEl.className = 'msg ok';
-        msgEl.textContent = '✅ Configurações salvas com sucesso!';
-        setTimeout(() => { msgEl.textContent = ''; }, 3000);
-      } catch(e) {
-        msgEl.className = 'msg err';
-        msgEl.textContent = 'Erro: ' + e.message;
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Salvar Configurações';
-      }
+    // DESTAQUE PARA A TAXA DE ENTREGA
+    if (estabelecimento.taxa_entrega > 0) {
+      partes.push(`🛵 Taxa de entrega: <strong>${fmt(estabelecimento.taxa_entrega)}</strong>`);
+    } else {
+      partes.push('🛵 <strong>Entrega Grátis!</strong>');
     }
 
-    carregar();
-  </script>
+    document.getElementById('infoEstab').innerHTML = partes.join('<br>');
+
+    const badge = document.getElementById('badgeStatus');
+    const aberto = estaAbertoAgora();
+    badge.style.display = 'inline-block';
+    badge.textContent = aberto ? '🟢 Aberto agora' : '🔴 Fechado';
+    badge.classList.toggle('fechado', !aberto);
+
+    if (!aberto) document.getElementById('avisoFechado').innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:12px;text-align:center;font-weight:800;font-size:13px;border-radius:12px;margin-bottom:16px;">😴 A loja está fechada no momento.</div>';
+    else document.getElementById('avisoFechado').innerHTML = '';
+  }
+
+  function renderizarAvisoLoja() {
+    const el = document.getElementById('avisoLoja');
+    const aviso = (estabelecimento.aviso_clientes || '').trim();
+    if (!aviso) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div class="aviso-loja"><div class="aviso-loja-titulo">📢 Aviso da Loja</div><div class="aviso-loja-texto">${aviso.replace(/</g,'&lt;')}</div></div>`;
+  }
+
+  // ---------- Produtos ----------
+  async function carregarCardapio() {
+    if (!comercioId) return document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio">Link inválido.</p>';
+    await carregarEstabelecimento();
+    try {
+      const { data } = await window.supabaseClient.from('estoque_produtos').select('*').eq('comercio_id', comercioId).gt('quantidade', 0);
+      produtos = data || [];
+      renderizarProdutos();
+    } catch (e) { document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio">Erro ao carregar.</p>'; }
+  }
+
+  function produtosFiltrados() {
+    if (!termoBusca) return produtos;
+    const t = normalizar(termoBusca);
+    return produtos.filter(p => normalizar(p.nome).includes(t));
+  }
+
+  function renderizarProdutos() {
+    const grade = document.getElementById('gradeProdutos');
+    const lista = produtosFiltrados();
+    if (!produtos.length) return grade.innerHTML = '<p class="aviso-vazio">Nenhum produto disponível.</p>';
+    if (!lista.length) return grade.innerHTML = `<p class="aviso-vazio">Nada encontrado.</p>`;
+
+    grade.innerHTML = lista.map(p => {
+      const noCarrinho = carrinho.find(c => String(c.id) === String(p.id));
+      const qtd = noCarrinho ? noCarrinho.quantidade : 0;
+      return `
+        <div class="produto">
+          ${p.foto ? `<img src="${p.foto}" class="foto">` : `<div class="foto">🍔</div>`}
+          <div class="nome">${p.nome}</div>
+          <div class="preco">${fmt(p.preco)}</div>
+          <div class="controle">
+            <button onclick="alterarQtd('${p.id}', -1)" ${qtd === 0 ? 'disabled' : ''}>−</button>
+            <span class="qtd">${qtd}</span>
+            <button onclick="alterarQtd('${p.id}', 1)" ${qtd >= p.quantidade ? 'disabled' : ''}>+</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ---------- Carrinho ----------
+  window.alterarQtd = function (id, delta) {
+    const prod = produtos.find(p => String(p.id) === String(id));
+    let item = carrinho.find(c => String(c.id) === String(id));
+    if (!item && delta > 0) carrinho.push({ ...prod, quantidade: 1 });
+    else if (item) {
+      item.quantidade += delta;
+      if (item.quantidade <= 0) carrinho = carrinho.filter(c => String(c.id) !== String(id));
+      else if (item.quantidade > prod.quantidade) item.quantidade = prod.quantidade;
+    }
+    atualizarCarrinho();
+    renderizarProdutos();
+    if (document.getElementById('modalCarrinho').classList.contains('aberto')) abrirCheckout();
+  };
+  window.removerItem = function (id) { carrinho = carrinho.filter(c => String(c.id) !== String(id)); atualizarCarrinho(); renderizarProdutos(); abrirCheckout(); };
+  window.limparBusca = function () { termoBusca = ''; document.getElementById('buscaProduto').value = ''; document.getElementById('btnLimparBusca').classList.remove('visivel'); renderizarProdutos(); };
+  document.getElementById('buscaProduto').addEventListener('input', (e) => { termoBusca = e.target.value.trim(); document.getElementById('btnLimparBusca').classList.toggle('visivel', !!termoBusca); renderizarProdutos(); });
+
+  function calcularSubtotal() { return carrinho.reduce((acc, c) => acc + Number(c.preco) * c.quantidade, 0); }
+  function calcularTotal() { return calcularSubtotal() + (calcularSubtotal() > 0 ? Number(estabelecimento.taxa_entrega || 0) : 0); }
+
+  function atualizarCarrinho() {
+    const qtd = carrinho.reduce((acc, c) => acc + c.quantidade, 0);
+    const bar = document.getElementById('carrinhoBar');
+    if (qtd > 0) {
+      bar.classList.add('visivel');
+      document.getElementById('qtdCarrinho').textContent = `${qtd} ${qtd === 1 ? 'item' : 'itens'}`;
+      document.getElementById('totalCarrinho').textContent = fmt(calcularTotal());
+      const taxa = Number(estabelecimento.taxa_entrega || 0);
+      document.getElementById('taxaInfo').textContent = taxa > 0 ? `(inclui taxa de ${fmt(taxa)})` : '';
+    } else { bar.classList.remove('visivel'); }
+  }
+
+  // ---------- Checkout ----------
+  function abrirCheckout() {
+    const lista = document.getElementById('listaCarrinho');
+    lista.innerHTML = carrinho.length ? carrinho.map(c => `
+      <div class="item-carrinho">
+        <div><strong>${c.nome}</strong><br><span>${fmt(c.preco * c.quantidade)}</span></div>
+        <div class="mini-controle">
+          <button onclick="alterarQtd('${c.id}', -1)">−</button><span>${c.quantidade}</span><button onclick="alterarQtd('${c.id}', 1)">+</button>
+          <button class="remover" onclick="removerItem('${c.id}')">✕</button>
+        </div>
+      </div>`).join('') : '<p style="text-align:center;color:#64748b;">Carrinho vazio</p>';
+
+    const sub = calcularSubtotal();
+    const taxa = sub > 0 ? Number(estabelecimento.taxa_entrega || 0) : 0;
+    document.getElementById('resumoTotal').innerHTML = `
+      <div class="linha"><span>Subtotal</span><span>${fmt(sub)}</span></div>
+      <div class="linha"><span>Taxa de entrega</span><span>${taxa > 0 ? fmt(taxa) : 'Grátis'}</span></div>
+      <div class="linha"><span>Total</span><span>${fmt(sub + taxa)}</span></div>
+      ${estabelecimento.pedido_minimo > 0 && sub < estabelecimento.pedido_minimo ? `<div style="color:#dc2626;font-size:11px;font-weight:800;margin-top:8px;">⚠️ Mínimo: ${fmt(estabelecimento.pedido_minimo)}</div>` : ''}
+    `;
+    document.getElementById('btnEnviar').disabled = (!carrinho.length || (estabelecimento.pedido_minimo > 0 && sub < estabelecimento.pedido_minimo));
+    document.getElementById('modalCarrinho').classList.add('aberto');
+  }
+  window.fecharCheckout = function () { document.getElementById('modalCarrinho').classList.remove('aberto'); };
+
+  // ---------- PIX ----------
+  function atualizarBlocoPix() {
+    const pag = document.getElementById('pagamento').value;
+    const bloco = document.getElementById('blocoPix');
+    if (pag !== 'pix') { bloco.style.display = 'none'; return; }
+    bloco.style.display = 'block';
+    document.getElementById('pixConteudo').innerHTML = estabelecimento.chave_pix 
+      ? `<div class="chave-pix">${estabelecimento.chave_pix}</div><button type="button" class="btn-copiar-pix" onclick="navigator.clipboard.writeText('${estabelecimento.chave_pix}'); mostrarToast('Copiada!');">📋 Copiar chave PIX</button><div class="aviso-pix">⚠️ Seu pedido só será <strong>aceito após a confirmação do pagamento</strong>. Envie o comprovante.</div>`
+      : `<div class="aviso-pix">💡 A loja não cadastrou a chave PIX. Entre em contato.</div>`;
+  }
+  document.getElementById('pagamento').addEventListener('change', atualizarBlocoPix);
+
+  // ---------- Auto Preenchimento ----------
+  function preencherDados() {
+    try {
+      const info = JSON.parse(localStorage.getItem('drTroco_cliente_info') || '{}');
+      ['nome', 'telefone', 'rua', 'numero', 'bairro', 'complemento', 'referencia'].forEach(k => {
+        if (info[k]) document.getElementById(k === 'nome' ? 'nomeCliente' : k === 'telefone' ? 'telefoneCliente' : 'end' + k.charAt(0).toUpperCase() + k.slice(1)).value = info[k];
+      });
+    } catch(e){}
+  }
+  function salvarDados() {
+    try {
+      localStorage.setItem('drTroco_cliente_info', JSON.stringify({
+        nome: document.getElementById('nomeCliente').value.trim(),
+        telefone: document.getElementById('telefoneCliente').value.trim(),
+        rua: document.getElementById('endRua').value.trim(), numero: document.getElementById('endNumero').value.trim(),
+        bairro: document.getElementById('endBairro').value.trim(), complemento: document.getElementById('endComplemento').value.trim(),
+        referencia: document.getElementById('endReferencia').value.trim()
+      }));
+    } catch(e){}
+  }
+  function formatarEndereco() {
+    const rua = document.getElementById('endRua').value.trim(), num = document.getElementById('endNumero').value.trim();
+    const bai = document.getElementById('endBairro').value.trim(), com = document.getElementById('endComplemento').value.trim();
+    const ref = document.getElementById('endReferencia').value.trim();
+    if (!rua || !num || !bai) return '';
+    return `${rua}, ${num} - ${bai}${com ? ` (${com})` : ''}${ref ? ` — Ref: ${ref}` : ''}`;
+  }
+
+  // ---------- Envio ----------
+  document.getElementById('formPedido').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const endereco = formatarEndereco();
+    if (!endereco) return mostrarToast('Preencha o endereço completo.', true);
+    const tel = normalizarTel(document.getElementById('telefoneCliente').value);
+    if (tel.length < 10) return mostrarToast('WhatsApp inválido.', true);
+
+    const btn = document.getElementById('btnEnviar');
+    btn.textContent = 'Enviando...'; btn.disabled = true;
+
+    const pedido = {
+      id: gerarId(), comercio_id: comercioId, mesa_nome: 'Delivery Online', codigo_qr: 'DELIVERY',
+      cliente_nome: document.getElementById('nomeCliente').value.trim(), cliente_telefone: tel, endereco_entrega: endereco,
+      itens: carrinho.map(c => ({ id: c.id, nome: c.nome, quantidade: c.quantidade, valorUnitarioCentavos: Math.round(c.preco * 100) })),
+      total: calcularTotal(), taxa_entrega: Number(estabelecimento.taxa_entrega || 0),
+      status: 'aberta', forma_pagamento: document.getElementById('pagamento').value, origem: 'cardapio',
+      observacao: document.getElementById('obs').value.trim(), atualizado_em: new Date().toISOString()
+    };
+
+    try {
+      const { error } = await window.supabaseClient.from('comandas_abertas').insert([pedido]);
+      if (error) throw error;
+
+      // Salva o ID no celular para acompanhamento
+      localStorage.setItem('drTroco_ultimo_pedido', pedido.id);
+      salvarDados();
+      verificarPedidoAtivo();
+
+      mostrarToast('Pedido enviado! Acompanhe abaixo. 🛵');
+      carrinho = []; atualizarCarrinho(); renderizarProdutos(); fecharCheckout(); document.getElementById('formPedido').reset(); atualizarBlocoPix(); preencherDados();
+    } catch (err) {
+      console.error(err); mostrarToast('Erro ao enviar.', true);
+    } finally { btn.textContent = 'Enviar Pedido'; btn.disabled = false; }
+  });
+
+  // ---------- ACOMPANHAMENTO (RASTREIO) ----------
+  function verificarPedidoAtivo() {
+    const id = localStorage.getItem('drTroco_ultimo_pedido');
+    if (id) {
+      document.getElementById('barAcompanhar').classList.add('visivel');
+      document.getElementById('idAcompanharBar').textContent = id.slice(0, 4);
+    } else {
+      document.getElementById('barAcompanhar').classList.remove('visivel');
+    }
+  }
+
+  window.abrirAcompanhamento = async function() {
+    const id = localStorage.getItem('drTroco_ultimo_pedido');
+    if (!id) return;
+    document.getElementById('modalAcompanhar').classList.add('aberto');
+    atualizarStatusPedido(id);
+    
+    // Atualiza o status a cada 5 segundos enquanto o modal estiver aberto
+    if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
+    intervalAcompanhamento = setInterval(() => atualizarStatusPedido(id), 5000);
+  };
+
+  window.fecharAcompanhamento = function() {
+    document.getElementById('modalAcompanhar').classList.remove('aberto');
+    if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
+  };
+
+  async function atualizarStatusPedido(id) {
+    try {
+      const { data } = await window.supabaseClient.from('comandas_abertas').select('status, total, itens').eq('id', id).maybeSingle();
+      if (!data) return;
+
+      const info = document.getElementById('infoAcompanhar');
+      const prog = document.getElementById('stepProgress');
+      const steps = ['step-1', 'step-2', 'step-3', 'step-4'];
+      
+      // Limpa ativos
+      steps.forEach(s => document.getElementById(s).classList.remove('ativo'));
+
+      let stepAtual = 1;
+      let texto = '';
+
+      if (data.status === 'aberta') {
+        stepAtual = 1; texto = 'Aguardando a loja aceitar seu pedido...';
+      } else if (data.status === 'preparando') {
+        stepAtual = 2; texto = 'Seu pedido está sendo preparado com carinho!';
+      } else if (data.status === 'em_rota') {
+        stepAtual = 3; texto = 'O entregador já está a caminho! Fique atento.';
+      } else if (data.status === 'fechada') {
+        stepAtual = 4; texto = 'Pedido entregue. Bom apetite!';
+      } else if (data.status === 'cancelado') {
+        stepAtual = 0; texto = 'Infelizmente este pedido foi cancelado.';
+      }
+
+      // Pinta os ativos até o step atual
+      for(let i=1; i<=stepAtual; i++) document.getElementById('step-'+i).classList.add('ativo');
+      
+      // Progresso da linha verde
+      const perc = stepAtual === 1 ? 0 : stepAtual === 2 ? 33 : stepAtual === 3 ? 66 : 100;
+      prog.style.width = stepAtual === 0 ? '0%' : `${perc}%`;
+
+      if (stepAtual === 0) {
+        prog.style.background = '#dc2626';
+        info.style.color = '#dc2626';
+      } else {
+        prog.style.background = '#10b981';
+        info.style.color = '#334155';
+      }
+
+      info.innerHTML = `<strong>Status:</strong> ${texto}<br><br><strong>Total do Pedido:</strong> ${fmt(data.total)}`;
+
+      // Se finalizou ou cancelou, para de atualizar e remove a barra
+      if (data.status === 'fechada' || data.status === 'cancelado') {
+        if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
+        localStorage.removeItem('drTroco_ultimo_pedido');
+        document.getElementById('barAcompanhar').classList.remove('visivel');
+      }
+
+    } catch(e) { console.error('Erro status:', e); }
+  }
+
+  // ---------- Boot ----------
+  preencherDados();
+  carregarCardapio();
+  verificarPedidoAtivo();
+  setInterval(renderizarHeader, 60000);
+</script>
 </body>
 </html>
