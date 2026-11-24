@@ -1,6 +1,6 @@
 /* ============================================================
    DR. TROCO — PEDIDOS ONLINE (DELIVERY)
-   Arquivo: pedidos.js  —  versão atualizada
+   Arquivo: pedidos.js
 ============================================================ */
 'use strict';
 
@@ -26,9 +26,7 @@
     })[c]);
   }
 
-  function normalizarTelefone(t) {
-    return String(t || '').replace(/\D/g, '');
-  }
+  function normalizarTelefone(t) { return String(t || '').replace(/\D/g, ''); }
 
   function gerarId() {
     if (window.crypto?.randomUUID) return crypto.randomUUID();
@@ -44,10 +42,8 @@
     const mes = String(agora.getMonth() + 1).padStart(2, '0');
     const ano = agora.getFullYear();
     return {
-      dataChave: `${ano}-${mes}-${dia}`,
-      dataFormatada: `${dia}/${mes}/${ano}`,
-      horaFormatada: `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`,
-      horaCompleta: `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`
+      dataChave: `${ano}-${mes}-${dia}`, dataFormatada: `${dia}/${mes}/${ano}`,
+      horaFormatada: `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`
     };
   }
 
@@ -67,7 +63,7 @@
   }
 
   // ==========================================================
-  // WHATSAPP — NOTIFICAÇÃO AUTOMÁTICA AO CLIENTE
+  // WHATSAPP — MENSAGENS COMPLETAS
   // ==========================================================
   function notificarWhatsApp(id, status) {
     const pedido = pedidosOnline.find(p => String(p.id) === String(id));
@@ -76,18 +72,23 @@
     const tel = normalizarTelefone(pedido.cliente_telefone);
     if (!tel || tel.length < 10) return;
 
-    const mensagens = {
-      preparando: `👨‍🍳 Seu pedido #${String(id).slice(0, 4)} foi ACEITO e já está sendo preparado!`,
-      em_rota: `🛵 Seu pedido #${String(id).slice(0, 4)} SAIU PARA ENTREGA! Já está a caminho.`,
-      fechada: `✅ Pedido #${String(id).slice(0, 4)} finalizado. Obrigado pela preferência!`,
-      cancelado: `❌ Infelizmente seu pedido #${String(id).slice(0, 4)} não pôde ser atendido. Entre em contato com a loja.`
-    };
+    const nome = pedido.cliente_nome ? pedido.cliente_nome.split(' ')[0] : 'Cliente';
+    const total = formatarDinheiro(pedido.total);
+    const idCurto = String(id).slice(0, 4);
 
-    const texto = mensagens[status];
+    let texto = '';
+    if (status === 'preparando') {
+      texto = `Olá ${nome}! 👋\n\nSeu pedido *#${idCurto}* foi *ACEITO* e já está sendo preparado com muito carinho. 🧑‍🍳\n\n💰 Valor total: ${total}\n\nAvisaremos aqui assim que sair para entrega!`;
+    } else if (status === 'em_rota') {
+      texto = `Olá ${nome}! 🛵\n\nSeu pedido *#${idCurto}* acabou de *SAIR PARA ENTREGA*.\n\n📍 Endereço de entrega:\n${pedido.endereco_entrega || 'Não informado'}\n\nFique atento ao telefone e aguarde o entregador!`;
+    } else if (status === 'fechada') {
+      texto = `Olá ${nome}! ✅\n\nSeu pedido *#${idCurto}* foi entregue com sucesso.\n\nEsperamos que esteja tudo delicioso! 🍔🥤\nObrigado pela preferência e volte sempre!`;
+    } else if (status === 'cancelado') {
+      texto = `Olá ${nome}, 😔\n\nInfelizmente o seu pedido *#${idCurto}* não pôde ser atendido neste momento.\n\nPor favor, entre em contato com a loja para mais informações ou para verificar o reembolso.`;
+    }
+
     if (!texto) return;
-
-    const msg = encodeURIComponent(texto);
-    window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
+    window.open(`https://wa.me/55${tel}?text=${encodeURIComponent(texto)}`, '_blank');
   }
 
   window.abrirWhatsCliente = function (id) {
@@ -95,14 +96,84 @@
     if (!pedido) return;
     const tel = normalizarTelefone(pedido.cliente_telefone);
     if (!tel) return alert('Este pedido não tem WhatsApp cadastrado.');
-    const msg = encodeURIComponent(
-      `Olá ${pedido.cliente_nome || ''}! Sobre seu pedido #${String(id).slice(0, 4)}...`
-    );
-    window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
+    window.open(`https://wa.me/55${tel}`, '_blank');
   };
 
   // ==========================================================
-  // BUSCAR PEDIDOS NO SUPABASE
+  // MODAL DE DETALHES
+  // ==========================================================
+  window.abrirDetalhes = function (id) {
+    const p = pedidosOnline.find(x => String(x.id) === String(id));
+    if (!p) return;
+
+    document.getElementById('detalhesTitulo').textContent = `Pedido #${String(p.id).slice(0, 4)}`;
+    
+    const itens = (p.itens || []).map(it => {
+      const qtd = it.quantidade || 1;
+      const unit = (it.valorUnitarioCentavos || 0) / 100;
+      return `<div class="pedido-item-linha"><span>${qtd}x ${escaparHTML(it.nome)}</span><strong>${formatarDinheiro(qtd * unit)}</strong></div>`;
+    }).join('');
+
+    const taxa = Number(p.taxa_entrega || 0);
+    
+    let html = `
+      <div class="detalhe-secao">
+        <div class="detalhe-titulo">👤 Cliente</div>
+        <div class="detalhe-conteudo">
+          <strong>${escaparHTML(p.cliente_nome || 'Não informado')}</strong><br>
+          📱 ${escaparHTML(p.cliente_telefone || 'Não informado')}
+        </div>
+      </div>
+    `;
+
+    if (p.endereco_entrega) {
+      html += `
+        <div class="detalhe-secao">
+          <div class="detalhe-titulo">📍 Endereço de Entrega</div>
+          <div class="detalhe-conteudo endereco">
+            ${escaparHTML(p.endereco_entrega)}
+          </div>
+        </div>
+      `;
+    }
+
+    if (p.observacao) {
+      html += `
+        <div class="detalhe-secao">
+          <div class="detalhe-titulo">📝 Observações</div>
+          <div class="detalhe-conteudo obs">
+            ${escaparHTML(p.observacao)}
+          </div>
+        </div>
+      `;
+    }
+
+    html += `
+      <div class="detalhe-secao">
+        <div class="detalhe-titulo">🛒 Itens do Pedido</div>
+        <div class="detalhe-conteudo">
+          ${itens}
+          ${taxa > 0 ? `<div class="pedido-item-linha" style="border-top:1px dashed #e2e8f0;margin-top:8px;padding-top:8px;"><span>🛵 Taxa de Entrega</span><strong>${formatarDinheiro(taxa)}</strong></div>` : ''}
+          <div class="pedido-item-linha" style="border-top:1px solid #cbd5e1;margin-top:8px;padding-top:8px;font-size:15px;font-weight:900;">
+            <span>Total</span><span>${formatarDinheiro(p.total)}</span>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:#64748b;text-align:center;font-weight:800;">
+            Pagamento: ${escaparHTML(p.forma_pagamento || 'Não informado').toUpperCase()}
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('detalhesConteudo').innerHTML = html;
+    document.getElementById('modalDetalhes').classList.add('aberto');
+  };
+
+  window.fecharDetalhes = function () {
+    document.getElementById('modalDetalhes').classList.remove('aberto');
+  };
+
+  // ==========================================================
+  // BUSCAR PEDIDOS
   // ==========================================================
   async function carregarPedidos() {
     if (!window.supabaseClient) return;
@@ -111,11 +182,9 @@
       if (window.EstoqueSupabase?.obterComercioId) {
         comercioIdAtual = await window.EstoqueSupabase.obterComercioId();
       }
-
       if (!comercioIdAtual) {
         if ($('listaPedidos')) {
-          $('listaPedidos').innerHTML =
-            '<div class="vazio"><h3>Loja não identificada</h3><p>Faça login novamente.</p></div>';
+          $('listaPedidos').innerHTML = '<div class="vazio"><h3>Loja não identificada</h3><p>Faça login novamente.</p></div>';
         }
         return;
       }
@@ -131,7 +200,6 @@
 
       if (error) throw error;
 
-      // Campainha se chegou pedido novo
       const idsAntigos = pedidosOnline.map(p => p.id);
       const temNovo = (data || []).some(p => !idsAntigos.includes(p.id) && p.status === 'aberta');
       if (temNovo && pedidosOnline.length > 0) tocarCampainha();
@@ -141,14 +209,13 @@
     } catch (e) {
       console.warn('[Pedidos] Erro ao buscar:', e);
       if ($('listaPedidos')) {
-        $('listaPedidos').innerHTML =
-          '<div class="vazio"><h3>Erro ao carregar</h3><p>Verifique sua conexão.</p></div>';
+        $('listaPedidos').innerHTML = '<div class="vazio"><h3>Erro ao carregar</h3><p>Verifique sua conexão.</p></div>';
       }
     }
   }
 
   // ==========================================================
-  // RENDERIZAR NA TELA
+  // RENDERIZAR
   // ==========================================================
   function renderizarPedidos() {
     const lista = $('listaPedidos');
@@ -159,7 +226,7 @@
     else if (filtroAtual === 'preparando') filtrados = pedidosOnline.filter(p => p.status === 'preparando');
     else if (filtroAtual === 'rota')    filtrados = pedidosOnline.filter(p => p.status === 'em_rota');
     else if (filtroAtual === 'concluidos') filtrados = pedidosOnline.filter(p => p.status === 'fechada');
-    else filtrados = pedidosOnline; // "todos"
+    else filtrados = pedidosOnline;
 
     if (!filtrados.length) {
       lista.innerHTML = `<div class="vazio"><h3>Nenhum pedido aqui</h3><p>Os pedidos com status "${filtroAtual}" aparecerão aqui.</p></div>`;
@@ -167,21 +234,8 @@
     }
 
     lista.innerHTML = filtrados.map(p => {
-      const itensHtml = (p.itens || []).map(it => {
-        const qtd = it.quantidade || 1;
-        const unit = (it.valorUnitarioCentavos || 0) / 100;
-        return `<div class="pedido-item-linha"><span>${qtd}x ${escaparHTML(it.nome)}</span><strong>${formatarDinheiro(qtd * unit)}</strong></div>`;
-      }).join('');
-
-      const taxa = Number(p.taxa_entrega || 0);
-      const taxaHtml = taxa > 0
-        ? `<div class="pedido-item-linha" style="border-top:1px dashed #e2e8f0;margin-top:6px;padding-top:6px;color:#64748b;"><span>🛵 Taxa de entrega</span><strong>${formatarDinheiro(taxa)}</strong></div>`
-        : '';
-
       const temWhats = !!normalizarTelefone(p.cliente_telefone);
-      const btnWhats = temWhats
-        ? `<button class="btn-acao" style="background:#25d366;color:#fff;" onclick="abrirWhatsCliente('${p.id}')">💬 WhatsApp</button>`
-        : '';
+      const btnWhats = temWhats ? `<button class="btn-acao" style="background:#25d366;color:#fff;" onclick="abrirWhatsCliente('${p.id}')">💬 WhatsApp</button>` : '';
 
       let botoes = '';
       if (p.status === 'aberta') {
@@ -206,6 +260,16 @@
         `;
       }
 
+      // Resumo dos itens (apenas 2 primeiros para não poluir o card)
+      const itensArray = p.itens || [];
+      const itensResumo = itensArray.slice(0, 2).map(it => {
+        return `<div class="pedido-item-linha"><span>${it.quantidade || 1}x ${escaparHTML(it.nome)}</span></div>`;
+      }).join('');
+      const maisItens = itensArray.length > 2 ? `<div style="font-size:11px;color:#64748b;margin-top:4px;text-align:center;">+ ${itensArray.length - 2} itens...</div>` : '';
+
+      // Tag visual se tiver observação
+      const tagObs = p.observacao ? `<div class="pedido-obs">📝 ${escaparHTML(p.observacao)}</div>` : '';
+
       return `
         <div class="card-pedido status-${p.status}">
           <div class="pedido-topo">
@@ -215,11 +279,16 @@
           <div class="pedido-cliente">👤 ${escaparHTML(p.cliente_nome || 'Cliente')}</div>
           <div class="pedido-info">
             <span>💳 ${escaparHTML(p.forma_pagamento || 'Pix')}</span>
-            ${temWhats ? `<span>📱 ${escaparHTML(p.cliente_telefone)}</span>` : ''}
           </div>
-          ${p.observacao ? `<div class="pedido-obs">📝 ${escaparHTML(p.observacao)}</div>` : ''}
+          
+          <button class="btn-detalhes" onclick="abrirDetalhes('${p.id}')">🔍 Ver Detalhes / Endereço</button>
+          
+          ${tagObs}
 
-          <div class="pedido-itens">${itensHtml}${taxaHtml}</div>
+          <div class="pedido-itens">
+            ${itensResumo}
+            ${maisItens}
+          </div>
 
           <div class="pedido-acoes">${botoes}</div>
         </div>
@@ -238,15 +307,9 @@
         await window.supabaseClient.from('comandas_abertas').delete().eq('id', id);
         alert('Pedido recusado e removido.');
       } else if (novoStatus === 'arquivar') {
-        await window.supabaseClient
-          .from('comandas_abertas')
-          .update({ status: 'cancelado', atualizado_em: new Date().toISOString() })
-          .eq('id', id);
+        await window.supabaseClient.from('comandas_abertas').update({ status: 'cancelado', atualizado_em: new Date().toISOString() }).eq('id', id);
       } else {
-        const { error } = await window.supabaseClient
-          .from('comandas_abertas')
-          .update({ status: novoStatus, atualizado_em: new Date().toISOString() })
-          .eq('id', id);
+        const { error } = await window.supabaseClient.from('comandas_abertas').update({ status: novoStatus, atualizado_em: new Date().toISOString() }).eq('id', id);
         if (error) throw error;
         notificarWhatsApp(id, novoStatus);
       }
@@ -259,14 +322,10 @@
   window.finalizarPedido = async function (id) {
     const pedido = pedidosOnline.find(p => String(p.id) === String(id));
     if (!pedido) return;
-
-    if (!confirm(`Finalizar pedido de ${pedido.cliente_nome}?\n\nIsso dará baixa no estoque e salvará no Histórico de Vendas.`)) return;
+    if (!confirm(`Finalizar pedido de ${pedido.cliente_nome}?\n\nIsso dará baixa no estoque e salvará no Histórico.`)) return;
 
     try {
-      const { error } = await window.supabaseClient
-        .from('comandas_abertas')
-        .update({ status: 'fechada', atualizado_em: new Date().toISOString() })
-        .eq('id', id);
+      const { error } = await window.supabaseClient.from('comandas_abertas').update({ status: 'fechada', atualizado_em: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
 
       await darBaixaNoEstoque(pedido);
@@ -281,7 +340,7 @@
   };
 
   // ==========================================================
-  // BAIXA DE ESTOQUE (LOCAL + SUPABASE DIRETO)
+  // BAIXA DE ESTOQUE E HISTÓRICO
   // ==========================================================
   async function darBaixaNoEstoque(pedido) {
     const itens = pedido.itens || [];
@@ -293,7 +352,7 @@
       agregados.set(String(item.id), (agregados.get(String(item.id)) || 0) + (Number(item.quantidade) || 1));
     });
 
-    // --- Baixa local (compatibilidade) ---
+    // Local
     let chaveEstoque = null;
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
@@ -310,27 +369,18 @@
       } catch (e) {}
     }
 
-    // --- Baixa direta no Supabase (tabela estoque_produtos) ---
+    // Supabase
     if (window.supabaseClient && comercioIdAtual) {
       try {
         const ids = [...agregados.keys()];
-        const { data: remotos, error } = await window.supabaseClient
-          .from('estoque_produtos')
-          .select('id, quantidade')
-          .eq('comercio_id', comercioIdAtual)
-          .in('id', ids);
-
+        const { data: remotos, error } = await window.supabaseClient.from('estoque_produtos').select('id, quantidade').eq('comercio_id', comercioIdAtual).in('id', ids);
         if (error) throw error;
 
         for (const prod of remotos || []) {
           const qtdBaixa = agregados.get(String(prod.id)) || 0;
           if (!qtdBaixa) continue;
           const novaQtd = Math.max(0, Number(prod.quantidade) - qtdBaixa);
-          await window.supabaseClient
-            .from('estoque_produtos')
-            .update({ quantidade: novaQtd })
-            .eq('id', prod.id)
-            .eq('comercio_id', comercioIdAtual);
+          await window.supabaseClient.from('estoque_produtos').update({ quantidade: novaQtd }).eq('id', prod.id).eq('comercio_id', comercioIdAtual);
         }
       } catch (e) {
         console.warn('[Pedidos] Erro baixa nuvem:', e);
@@ -338,32 +388,20 @@
     }
   }
 
-  // ==========================================================
-  // HISTÓRICO DE VENDAS
-  // ==========================================================
   function salvarNoHistorico(pedido) {
     const momento = obterDataHoraOperacional();
     const totalReais = Number(pedido.total) || 0;
-
     const produtosVenda = (pedido.itens || []).map(it => {
       const qtd = it.quantidade || 1;
       const preco = (it.valorUnitarioCentavos || 0) / 100;
-      return {
-        id: it.id, nome: it.nome, quantidade: qtd, preco: preco,
-        custoUnitario: 0, subtotalCusto: 0, lucroItem: preco * qtd, margemPct: 100
-      };
+      return { id: it.id, nome: it.nome, quantidade: qtd, preco: preco, custoUnitario: 0, subtotalCusto: 0, lucroItem: preco * qtd, margemPct: 100 };
     });
 
     const registro = {
-      id: gerarId(),
-      tipo: 'venda', categoria: 'venda', origem: 'delivery',
-      clienteNome: pedido.cliente_nome,
-      descricao: `Delivery - ${pedido.cliente_nome}`,
-      total: totalReais, valor: totalReais,
-      formaPagamento: pedido.forma_pagamento || 'pix',
-      produtos: produtosVenda,
-      data: momento.dataFormatada, dataChave: momento.dataChave, dataISO: momento.dataChave,
-      hora: momento.horaFormatada
+      id: gerarId(), tipo: 'venda', categoria: 'venda', origem: 'delivery',
+      clienteNome: pedido.cliente_nome, descricao: `Delivery - ${pedido.cliente_nome}`,
+      total: totalReais, valor: totalReais, formaPagamento: pedido.forma_pagamento || 'pix',
+      produtos: produtosVenda, data: momento.dataFormatada, dataChave: momento.dataChave, dataISO: momento.dataChave, hora: momento.horaFormatada
     };
 
     try {
@@ -372,62 +410,44 @@
       localStorage.setItem('drTroco_vendas', JSON.stringify(atual));
     } catch (e) {}
 
-    if (window.DrTrocoDados?.salvarVenda) {
-      window.DrTrocoDados.salvarVenda(registro).catch(e => console.warn(e));
-    }
+    if (window.DrTrocoDados?.salvarVenda) window.DrTrocoDados.salvarVenda(registro).catch(e => console.warn(e));
   }
 
   // ==========================================================
-  // DIVULGAÇÃO DO CARDÁPIO (LINK E QR CODE)
+  // DIVULGAÇÃO
   // ==========================================================
   async function montarLinkCardapio() {
     try {
       if (!comercioIdAtual && window.EstoqueSupabase?.obterComercioId) {
         comercioIdAtual = await window.EstoqueSupabase.obterComercioId();
       }
-      if (!comercioIdAtual) {
-        console.warn('ID do comércio não encontrado.');
-        return;
-      }
+      if (!comercioIdAtual) return;
 
       let path = window.location.pathname;
       if (path.includes('pedidos.html')) path = path.replace('pedidos.html', 'cardapio.html');
       else path = '/cardapio.html';
-
       linkCardapioLoja = window.location.origin + path + '?loja=' + comercioIdAtual;
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
   }
 
   window.copiarLinkCardapio = async function () {
     if (!linkCardapioLoja) await montarLinkCardapio();
     if (!linkCardapioLoja) return alert('Erro ao gerar link. Verifique a conexão.');
-
     try {
       await navigator.clipboard.writeText(linkCardapioLoja);
-      alert('Link copiado com sucesso!\n\nCole no WhatsApp ou Instagram.\n\n' + linkCardapioLoja);
-    } catch (e) {
-      prompt('Copie o link abaixo:', linkCardapioLoja);
-    }
+      alert('Link copiado com sucesso!\n\n' + linkCardapioLoja);
+    } catch (e) { prompt('Copie o link abaixo:', linkCardapioLoja); }
   };
 
   window.baixarQrCardapio = async function () {
     if (!linkCardapioLoja) await montarLinkCardapio();
     if (!linkCardapioLoja) return alert('Erro ao gerar link.');
-
-    if (typeof window.qrcode !== 'function') {
-      alert('Erro: Biblioteca de QR Code não carregada. Verifique sua internet.');
-      return;
-    }
-
+    if (typeof window.qrcode !== 'function') return alert('Erro: Biblioteca de QR Code não carregada.');
     const qr = window.qrcode(0, 'M');
     qr.addData(linkCardapioLoja);
     qr.make();
-    const qrDataUrl = qr.createDataURL(8, 0);
-
     const link = document.createElement('a');
-    link.href = qrDataUrl;
+    link.href = qr.createDataURL(8, 0);
     link.download = 'cardapio-qrcode.png';
     document.body.appendChild(link);
     link.click();
@@ -435,26 +455,16 @@
   };
 
   // ==========================================================
-  // REALTIME (SUPABASE)
+  // INICIALIZAÇÃO E REALTIME
   // ==========================================================
   function iniciarRealtime() {
     if (!window.supabaseClient || !comercioIdAtual) return;
-    if (realtimeChannel) {
-      try { window.supabaseClient.removeChannel(realtimeChannel); } catch (e) {}
-    }
-    realtimeChannel = window.supabaseClient
-      .channel('pedidos-realtime-' + comercioIdAtual)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'comandas_abertas', filter: `comercio_id=eq.${comercioIdAtual}` },
-        () => carregarPedidos()
-      )
+    if (realtimeChannel) { try { window.supabaseClient.removeChannel(realtimeChannel); } catch (e) {} }
+    realtimeChannel = window.supabaseClient.channel('pedidos-realtime-' + comercioIdAtual)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas_abertas', filter: `comercio_id=eq.${comercioIdAtual}` }, () => carregarPedidos())
       .subscribe();
   }
 
-  // ==========================================================
-  // INICIALIZAÇÃO
-  // ==========================================================
   function inicializar() {
     document.querySelectorAll('.aba-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -467,11 +477,7 @@
 
     montarLinkCardapio();
     carregarPedidos();
-
-    // Realtime (espera carregar o comercioId)
     setTimeout(iniciarRealtime, 1500);
-
-    // Fallback por polling
     setInterval(carregarPedidos, 30000);
   }
 
