@@ -2,70 +2,155 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Configurar Estabelecimento</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <style>
-    body { font-family: Arial; background: #f3f7f5; padding: 16px; }
+    body { font-family: Arial, sans-serif; background: #f3f7f5; margin: 0; padding: 16px 16px 100px; color: #263640; }
     .card { background: #fff; max-width: 520px; margin: 0 auto; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,.06); }
-    h2 { margin: 0 0 16px; color: #168b53; }
+    h2 { margin: 0 0 16px; color: #168b53; font-size: 20px; display: flex; align-items: center; gap: 8px; }
     label { display: block; font-size: 12px; font-weight: 800; color: #475569; margin: 12px 0 4px; }
-    input, select { width: 100%; height: 44px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0 12px; font-size: 14px; box-sizing: border-box; }
+    input, select, textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0 12px; font-size: 14px; box-sizing: border-box; outline: none; font-family: inherit; }
+    input, select { height: 44px; }
+    textarea { padding: 10px 12px; height: 80px; resize: vertical; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    button { width: 100%; height: 48px; margin-top: 16px; background: #168b53; color: #fff; border: 0; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; }
+    button { width: 100%; height: 48px; margin-top: 20px; background: #168b53; color: #fff; border: 0; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; }
+    button:disabled { opacity: 0.6; }
     .msg { margin-top: 12px; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 800; text-align: center; }
     .ok { background: #eaf8f0; color: #168b53; }
     .err { background: #fee2e2; color: #dc2626; }
+    .ajuda { font-size: 10px; color: #94a3b8; margin-top: 2px; display: block; font-weight: normal; }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>🏪 Meu Estabelecimento</h2>
+    
     <label>Nome da Loja</label>
     <input type="text" id="nome">
+
     <label>Endereço</label>
     <input type="text" id="endereco">
+
     <div class="grid2">
       <div><label>Cidade</label><input type="text" id="cidade"></div>
       <div><label>Estado</label><input type="text" id="estado" maxlength="2"></div>
     </div>
-    <label>WhatsApp (só números: 5511999999999)</label>
+
+    <label>WhatsApp da Loja <span class="ajuda">(Apenas números, ex: 5511999999999)</span></label>
     <input type="tel" id="telefone_whatsapp" placeholder="5511999999999">
+
     <div class="grid2">
-      <div><label>Abre</label><input type="time" id="horario_abertura"></div>
-      <div><label>Fecha</label><input type="time" id="horario_fechamento"></div>
+      <div><label>Abre às</label><input type="time" id="horario_abertura"></div>
+      <div><label>Fecha às</label><input type="time" id="horario_fechamento"></div>
     </div>
-    <label>Taxa de Entrega (R$)</label>
-    <input type="number" id="taxa_entrega" min="0" step="0.5" value="0">
-    <label>Pedido Mínimo (R$)</label>
-    <input type="number" id="pedido_minimo" min="0" step="0.5" value="0">
+
+    <div class="grid2">
+      <div><label>Taxa de Entrega (R$)</label><input type="number" id="taxa_entrega" min="0" step="0.50" value="0"></div>
+      <div><label>Pedido Mínimo (R$)</label><input type="number" id="pedido_minimo" min="0" step="0.50" value="0"></div>
+    </div>
+
     <label>Aceitar Delivery?</label>
-    <select id="aceita_delivery"><option value="true">Sim</option><option value="false">Não</option></select>
-    <button onclick="salvar()">Salvar Configurações</button>
+    <select id="aceita_delivery">
+      <option value="true">Sim</option>
+      <option value="false">Não</option>
+    </select>
+
+    <label>Chave PIX <span class="ajuda">(CPF, CNPJ, Celular, E-mail ou Aleatória)</span></label>
+    <input type="text" id="chave_pix" placeholder="Sua chave PIX aqui">
+
+    <label>Aviso aos Clientes <span class="ajuda">(Aparecerá no topo do cardápio)</span></label>
+    <textarea id="aviso_clientes" placeholder="Ex: Pedidos via PIX só serão aceitos após envio do comprovante."></textarea>
+
+    <button id="btnSalvar" onclick="salvar()">Salvar Configurações</button>
     <div id="msg"></div>
   </div>
 
   <script>
     let comercioId = null;
 
+    // Função robusta para encontrar o ID da loja
+    async function obterComercioIdConfig() {
+      // 1. Tenta pela API do EstoqueSupabase
+      if (window.EstoqueSupabase?.obterComercioId) {
+        const id = await window.EstoqueSupabase.obterComercioId();
+        if (id) return id;
+      }
+      
+      // 2. Tenta pelo LocalStorage (vários nomes comuns)
+      const lsKeys = ['drTroco_comercio_id', 'comercio_id', 'comercioId', 'drTroco_loja_id'];
+      for (const key of lsKeys) {
+        const id = localStorage.getItem(key);
+        if (id && id.length > 10) return id;
+      }
+
+      // 3. Tenta via Auth do Supabase
+      try {
+        if (window.supabaseClient) {
+          const { data: { user } } = await window.supabaseClient.auth.getUser();
+          if (user) {
+            // Tenta tabela membros_comercio
+            const { data: membro } = await window.supabaseClient.from('membros_comercio').select('comercio_id').eq('usuario_id', user.id).maybeSingle();
+            if (membro?.comercio_id) return membro.comercio_id;
+
+            // Tenta tabela comercios (como criador)
+            const { data: comercio } = await window.supabaseClient.from('comercios').select('id').eq('criado_por', user.id).maybeSingle();
+            if (comercio?.id) return comercio.id;
+          }
+        }
+      } catch(e) {
+        console.warn('Erro ao buscar via Auth:', e);
+      }
+
+      return null;
+    }
+
     async function carregar() {
-      if (window.EstoqueSupabase?.obterComercioId) comercioId = await window.EstoqueSupabase.obterComercioId();
-      if (!comercioId) return;
-      const { data } = await window.supabaseClient.from('dados_estabelecimento').select('*').eq('comercio_id', comercioId).maybeSingle();
-      const { data: c } = await window.supabaseClient.from('comercios').select('nome').eq('id', comercioId).maybeSingle();
-      if (c?.nome) document.getElementById('nome').value = c.nome;
-      if (data) {
-        ['endereco','cidade','estado','telefone_whatsapp','horario_abertura','horario_fechamento','taxa_entrega','pedido_minimo'].forEach(k => {
-          if (data[k] != null) document.getElementById(k).value = data[k];
-        });
-        document.getElementById('aceita_delivery').value = data.aceita_delivery === false ? 'false' : 'true';
+      const msgEl = document.getElementById('msg');
+      msgEl.className = 'msg';
+      msgEl.textContent = 'Carregando dados...';
+
+      comercioId = await obterComercioIdConfig();
+      
+      if (!comercioId) {
+        msgEl.className = 'msg err';
+        msgEl.textContent = 'Loja não identificada. Verifique seu login.';
+        document.getElementById('btnSalvar').disabled = true;
+        return;
+      }
+
+      try {
+        const [resCom, resDad] = await Promise.all([
+          window.supabaseClient.from('comercios').select('nome').eq('id', comercioId).maybeSingle(),
+          window.supabaseClient.from('dados_estabelecimento').select('*').eq('comercio_id', comercioId).maybeSingle()
+        ]);
+        
+        if (resCom.data?.nome) document.getElementById('nome').value = resCom.data.nome;
+        
+        if (resDad.data) {
+          const d = resDad.data;
+          const campos = ['endereco', 'cidade', 'estado', 'telefone_whatsapp', 'horario_abertura', 'horario_fechamento', 'taxa_entrega', 'pedido_minimo', 'chave_pix', 'aviso_clientes'];
+          campos.forEach(k => {
+            if (d[k] != null) document.getElementById(k).value = d[k];
+          });
+          document.getElementById('aceita_delivery').value = d.aceita_delivery === false ? 'false' : 'true';
+        }
+        msgEl.textContent = '';
+      } catch(e) {
+        msgEl.className = 'msg err';
+        msgEl.textContent = 'Erro ao carregar dados: ' + e.message;
       }
     }
 
     async function salvar() {
-      const msg = document.getElementById('msg');
-      if (!comercioId) { msg.className = 'msg err'; msg.textContent = 'Loja não identificada.'; return; }
+      const msgEl = document.getElementById('msg');
+      if (!comercioId) return;
+
+      const btn = document.getElementById('btnSalvar');
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
       const nome = document.getElementById('nome').value.trim();
       const payload = {
         endereco: document.getElementById('endereco').value.trim(),
@@ -77,15 +162,35 @@
         taxa_entrega: Number(document.getElementById('taxa_entrega').value) || 0,
         pedido_minimo: Number(document.getElementById('pedido_minimo').value) || 0,
         aceita_delivery: document.getElementById('aceita_delivery').value === 'true',
+        chave_pix: document.getElementById('chave_pix').value.trim(),
+        aviso_clientes: document.getElementById('aviso_clientes').value.trim(),
         atualizado_em: new Date().toISOString()
       };
+
       try {
-        if (nome) await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
-        const { error } = await window.supabaseClient.from('dados_estabelecimento').update(payload).eq('comercio_id', comercioId);
-        if (error) throw error;
-        msg.className = 'msg ok'; msg.textContent = '✅ Salvo com sucesso!';
+        if (nome) {
+          await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
+        }
+        
+        // Tenta atualizar. Se não existir linha, faz insert.
+        const { data: updated, error: errUpd } = await window.supabaseClient.from('dados_estabelecimento').update(payload).eq('comercio_id', comercioId).select();
+        
+        if (errUpd) throw errUpd;
+
+        if (!updated || updated.length === 0) {
+          // Se não atualizou nada, insere
+          await window.supabaseClient.from('dados_estabelecimento').insert([{ comercio_id: comercioId, ...payload }]);
+        }
+
+        msgEl.className = 'msg ok';
+        msgEl.textContent = '✅ Configurações salvas com sucesso!';
+        setTimeout(() => { msgEl.textContent = ''; }, 3000);
       } catch(e) {
-        msg.className = 'msg err'; msg.textContent = 'Erro: ' + e.message;
+        msgEl.className = 'msg err';
+        msgEl.textContent = 'Erro: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Salvar Configurações';
       }
     }
 
