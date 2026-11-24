@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#ea580c">
   <title>Dr. Troco - Pedidos Online</title>
-  
+
   <link rel="stylesheet" href="style.css">
-  <!-- BIBLIOTECA DE QR CODE ADICIONADA AQUI -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 
   <style>
@@ -15,32 +14,54 @@
     .header-pedidos { background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff; padding: 20px 16px; border-radius: 0 0 24px 24px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 15px rgba(234, 88, 12, 0.2); }
     .header-pedidos h1 { margin: 0; font-size: 22px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
     .header-pedidos p { margin: 4px 0 0; font-size: 13px; opacity: 0.9; }
-    
+
     .container { max-width: 760px; margin: 0 auto; padding: 16px; }
-    
-    /* Abas de Filtro */
+
+    /* ===== Stats ===== */
+    .stats-pedidos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+    .stat-item { background: #fff; border-radius: 12px; padding: 12px 6px; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+    .stat-num { display: block; font-size: 22px; font-weight: 900; color: #ea580c; line-height: 1.2; }
+    .stat-item small { font-size: 9px; color: #64748b; font-weight: 800; display: block; margin-top: 3px; line-height: 1.2; }
+
+    /* ===== Aviso da loja ===== */
+    .card-aviso-loja { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+    .aviso-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .aviso-header strong { color: #c2410c; font-size: 13px; }
+    .btn-editar-aviso { color: #ea580c; font-size: 12px; font-weight: 800; text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+    .btn-editar-aviso:hover { background: #ffedd5; }
+    .card-aviso-loja p { margin: 0; color: #7c2d12; font-size: 13px; line-height: 1.45; }
+    .card-aviso-loja p a { color: #ea580c; font-weight: 800; }
+
+    /* ===== Card cardápio ===== */
+    .card-cardapio { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+
+    /* ===== Filtros ===== */
     .abas-pedidos { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; scrollbar-width: none; }
     .abas-pedidos::-webkit-scrollbar { display: none; }
-    .aba-btn { flex: 0 0 auto; padding: 10px 16px; border-radius: 999px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.15s; }
+    .aba-btn { flex: 0 0 auto; padding: 10px 14px; border-radius: 999px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
     .aba-btn.ativo { background: #ea580c; color: #fff; border-color: #ea580c; }
-    
-    /* Cards de Pedido */
+    .badge-count { background: #f1f5f9; color: #94a3b8; padding: 1px 7px; border-radius: 999px; font-size: 11px; min-width: 18px; text-align: center; }
+    .aba-btn.ativo .badge-count { background: rgba(255,255,255,0.28); color: #fff; }
+    .badge-count[data-zero="true"] { display: none; }
+
+    /* ===== Cards de Pedido ===== */
     .lista-pedidos { display: flex; flex-direction: column; gap: 12px; }
     .card-pedido { background: #fff; border-radius: 16px; padding: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-left: 5px solid #ea580c; }
     .card-pedido.status-preparando { border-left-color: #3b82f6; }
-    .card-pedido.status-rota { border-left-color: #10b981; }
-    
+    .card-pedido.status-em_rota, .card-pedido.status-rota { border-left-color: #10b981; }
+    .card-pedido.status-fechada { border-left-color: #94a3b8; opacity: .88; }
+
     .pedido-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .pedido-id { font-size: 11px; color: #94a3b8; font-weight: 800; text-transform: uppercase; }
     .pedido-total { font-size: 18px; font-weight: 900; color: #1e293b; }
     .pedido-cliente { font-size: 15px; font-weight: 900; color: #1e293b; margin-bottom: 4px; }
     .pedido-info { font-size: 13px; color: #64748b; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
     .pedido-obs { font-size: 12px; background: #fff7ed; color: #c2410c; padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; border-left: 2px solid #ea580c; font-weight: 600; }
-    
+
     .pedido-itens { background: #f8fafc; border-radius: 10px; padding: 10px; margin-bottom: 12px; }
     .pedido-item-linha { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
     .pedido-item-linha:last-child { margin-bottom: 0; }
-    
+
     .pedido-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .btn-acao { padding: 12px; border: 0; border-radius: 10px; font-size: 13px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .btn-aceitar { background: #ea580c; color: #fff; }
@@ -48,9 +69,14 @@
     .btn-rota { background: #10b981; color: #fff; }
     .btn-finalizar { background: #1e293b; color: #fff; }
     .btn-recusar { background: #fee2e2; color: #dc2626; }
-    
+
     .vazio { text-align: center; padding: 40px 20px; background: #fff; border-radius: 16px; border: 1px dashed #cbd5e1; color: #64748b; }
     .vazio h3 { color: #1e293b; margin: 0 0 8px 0; }
+
+    @media (max-width: 400px) {
+      .stat-num { font-size: 18px; }
+      .stat-item small { font-size: 8px; }
+    }
   </style>
 </head>
 <body class="pagina-pedidos">
@@ -60,9 +86,38 @@
   </div>
 
   <div class="container">
-    
-    <!-- NOVO: CARD DE DIVULGAÇÃO DO CARDÁPIO -->
-    <div style="background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+
+    <!-- Stats rápidos -->
+    <div class="stats-pedidos">
+      <div class="stat-item">
+        <span class="stat-num" id="statAguardando">0</span>
+        <small>⏳ Aguardando</small>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="statPreparando">0</span>
+        <small>👨‍🍳 Preparando</small>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="statRota">0</span>
+        <small>🛵 Em Rota</small>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="statHoje">0</span>
+        <small>✅ Finalizados</small>
+      </div>
+    </div>
+
+    <!-- Aviso aos clientes -->
+    <div class="card-aviso-loja">
+      <div class="aviso-header">
+        <strong>📢 Aviso aos Clientes</strong>
+        <a href="config-estabelecimento.html" class="btn-editar-aviso">✏️ Editar</a>
+      </div>
+      <p id="textoAviso">Carregando aviso...</p>
+    </div>
+
+    <!-- Divulgação do cardápio -->
+    <div class="card-cardapio">
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
         <div style="width: 44px; height: 44px; background: #eaf8f0; color: #168b53; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px;">🔗</div>
         <div style="flex: 1;">
@@ -78,10 +133,11 @@
 
     <!-- Filtros -->
     <div class="abas-pedidos">
-      <button class="aba-btn ativo" data-filtro="aguardando">⏳ Aguardando</button>
-      <button class="aba-btn" data-filtro="preparando">👨‍🍳 Preparando</button>
-      <button class="aba-btn" data-filtro="rota">🛵 Em Rota</button>
+      <button class="aba-btn ativo" data-filtro="aguardando">⏳ Aguardando <span class="badge-count" id="countAguardando" data-zero="true">0</span></button>
+      <button class="aba-btn" data-filtro="preparando">👨‍🍳 Preparando <span class="badge-count" id="countPreparando" data-zero="true">0</span></button>
+      <button class="aba-btn" data-filtro="rota">🛵 Em Rota <span class="badge-count" id="countRota" data-zero="true">0</span></button>
       <button class="aba-btn" data-filtro="concluidos">✅ Concluídos</button>
+      <button class="aba-btn" data-filtro="todos">📋 Todos</button>
     </div>
 
     <!-- Lista -->
@@ -102,9 +158,8 @@
     <a href="fiado.html" class="menu-item"><span>🧾</span><small>Fiado</small></a>
     <a href="comandas.html" class="menu-item"><span>🍽️</span><small>Comandas</small></a>
     <a href="pedidos.html" class="menu-item ativo" style="color:#ea580c;"><span>🛵</span><small>Pedidos</small></a>
-  <a href="config-estabelecimento.html" class="menu-item"><span>⚙️</span><small>Config</small></a>
+    <a href="config-estabelecimento.html" class="menu-item"><span>⚙️</span><small>Config</small></a>
   </nav>
-  
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -113,5 +168,79 @@
   <script src="dados-supabase.js"></script>
   <script src="estoque-supabase.js"></script>
   <script src="pedidos.js"></script>
+
+  <!-- Script complementar: aviso + stats -->
+  <script>
+    (function () {
+      async function carregarAvisoEStats() {
+        try {
+          let comercioId = null;
+          if (window.EstoqueSupabase?.obterComercioId) {
+            comercioId = await window.EstoqueSupabase.obterComercioId();
+          }
+          if (!comercioId) return;
+
+          // Aviso
+          try {
+            const { data: dados } = await window.supabaseClient
+              .from('dados_estabelecimento')
+              .select('aviso_clientes')
+              .eq('comercio_id', comercioId)
+              .maybeSingle();
+            const el = document.getElementById('textoAviso');
+            if (el) {
+              if (dados?.aviso_clientes) {
+                el.textContent = dados.aviso_clientes;
+                el.style.color = '#7c2d12';
+              } else {
+                el.innerHTML = 'Nenhum aviso configurado. <a href="config-estabelecimento.html">Configurar agora</a>';
+              }
+            }
+          } catch (e) { /* coluna pode não existir ainda */ }
+
+          // Stats
+          try {
+            const { data: pedidos } = await window.supabaseClient
+              .from('comandas_abertas')
+              .select('status')
+              .eq('origem', 'cardapio')
+              .eq('comercio_id', comercioId)
+              .neq('status', 'cancelado');
+
+            if (pedidos) {
+              const aguardando = pedidos.filter(p => p.status === 'aberta').length;
+              const preparando = pedidos.filter(p => p.status === 'preparando').length;
+              const rota = pedidos.filter(p => p.status === 'em_rota').length;
+              const fechada = pedidos.filter(p => p.status === 'fechada').length;
+
+              setNum('statAguardando', aguardando);
+              setNum('statPreparando', preparando);
+              setNum('statRota', rota);
+              setNum('statHoje', fechada);
+
+              setNum('countAguardando', aguardando);
+              setNum('countPreparando', preparando);
+              setNum('countRota', rota);
+            }
+          } catch (e) {}
+        } catch (e) {}
+      }
+
+      function setNum(id, valor) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = valor;
+        if (valor === 0) el.setAttribute('data-zero', 'true');
+        else el.removeAttribute('data-zero');
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', carregarAvisoEStats);
+      } else {
+        carregarAvisoEStats();
+      }
+      setInterval(carregarAvisoEStats, 15000);
+    })();
+  </script>
 </body>
 </html>
