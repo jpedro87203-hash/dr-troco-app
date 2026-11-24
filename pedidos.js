@@ -63,6 +63,38 @@
   }
 
   // ==========================================================
+  // BUSCA ROBUSTA DO ID DA LOJA
+  // ==========================================================
+  async function buscarComercioId() {
+    if (comercioIdAtual) return comercioIdAtual;
+    
+    try {
+      // 1. Tenta pela API oficial
+      if (window.EstoqueSupabase?.obterComercioId) {
+        comercioIdAtual = await window.EstoqueSupabase.obterComercioId();
+      }
+      
+      // 2. Tenta pelo LocalStorage
+      if (!comercioIdAtual) {
+        comercioIdAtual = localStorage.getItem('drTroco_comercio_id') || localStorage.getItem('comercio_id');
+      }
+
+      // 3. Tenta pelo Auth
+      if (!comercioIdAtual && window.supabaseClient) {
+        const { data: { user } } = await window.supabaseClient.auth.getUser();
+        if (user) {
+          const { data } = await window.supabaseClient.from('comercios').select('id').eq('criado_por', user.id).maybeSingle();
+          if (data) comercioIdAtual = data.id;
+        }
+      }
+    } catch(e) {
+      console.warn('Erro ao buscar ID', e);
+    }
+    
+    return comercioIdAtual;
+  }
+
+  // ==========================================================
   // WHATSAPP — MENSAGENS COMPLETAS
   // ==========================================================
   function notificarWhatsApp(id, status) {
@@ -130,9 +162,7 @@
       html += `
         <div class="detalhe-secao">
           <div class="detalhe-titulo">📍 Endereço de Entrega</div>
-          <div class="detalhe-conteudo endereco">
-            ${escaparHTML(p.endereco_entrega)}
-          </div>
+          <div class="detalhe-conteudo endereco">${escaparHTML(p.endereco_entrega)}</div>
         </div>
       `;
     }
@@ -141,9 +171,7 @@
       html += `
         <div class="detalhe-secao">
           <div class="detalhe-titulo">📝 Observações</div>
-          <div class="detalhe-conteudo obs">
-            ${escaparHTML(p.observacao)}
-          </div>
+          <div class="detalhe-conteudo obs">${escaparHTML(p.observacao)}</div>
         </div>
       `;
     }
@@ -179,9 +207,8 @@
     if (!window.supabaseClient) return;
 
     try {
-      if (window.EstoqueSupabase?.obterComercioId) {
-        comercioIdAtual = await window.EstoqueSupabase.obterComercioId();
-      }
+      await buscarComercioId();
+      
       if (!comercioIdAtual) {
         if ($('listaPedidos')) {
           $('listaPedidos').innerHTML = '<div class="vazio"><h3>Loja não identificada</h3><p>Faça login novamente.</p></div>';
@@ -260,14 +287,12 @@
         `;
       }
 
-      // Resumo dos itens (apenas 2 primeiros para não poluir o card)
       const itensArray = p.itens || [];
       const itensResumo = itensArray.slice(0, 2).map(it => {
         return `<div class="pedido-item-linha"><span>${it.quantidade || 1}x ${escaparHTML(it.nome)}</span></div>`;
       }).join('');
       const maisItens = itensArray.length > 2 ? `<div style="font-size:11px;color:#64748b;margin-top:4px;text-align:center;">+ ${itensArray.length - 2} itens...</div>` : '';
 
-      // Tag visual se tiver observação
       const tagObs = p.observacao ? `<div class="pedido-obs">📝 ${escaparHTML(p.observacao)}</div>` : '';
 
       return `
@@ -352,7 +377,6 @@
       agregados.set(String(item.id), (agregados.get(String(item.id)) || 0) + (Number(item.quantidade) || 1));
     });
 
-    // Local
     let chaveEstoque = null;
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
@@ -369,7 +393,6 @@
       } catch (e) {}
     }
 
-    // Supabase
     if (window.supabaseClient && comercioIdAtual) {
       try {
         const ids = [...agregados.keys()];
@@ -414,44 +437,59 @@
   }
 
   // ==========================================================
-  // DIVULGAÇÃO
+  // DIVULGAÇÃO DO CARDÁPIO (CORRIGIDO)
   // ==========================================================
   async function montarLinkCardapio() {
     try {
-      if (!comercioIdAtual && window.EstoqueSupabase?.obterComercioId) {
-        comercioIdAtual = await window.EstoqueSupabase.obterComercioId();
+      await buscarComercioId(); // Garante que temos o ID
+
+      if (!comercioIdAtual || comercioIdAtual === 'undefined' || comercioIdAtual === 'null') {
+        console.warn('ID do comércio não encontrado para gerar link.');
+        return null;
       }
-      if (!comercioIdAtual) return;
 
       let path = window.location.pathname;
-      if (path.includes('pedidos.html')) path = path.replace('pedidos.html', 'cardapio.html');
-      else path = '/cardapio.html';
+      if (path.includes('pedidos.html')) {
+        path = path.replace('pedidos.html', 'cardapio.html');
+      } else {
+        path = path.substring(0, path.lastIndexOf('/')) + '/cardapio.html';
+      }
+      
       linkCardapioLoja = window.location.origin + path + '?loja=' + comercioIdAtual;
-    } catch (e) {}
+      return linkCardapioLoja;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   }
 
   window.copiarLinkCardapio = async function () {
-    if (!linkCardapioLoja) await montarLinkCardapio();
-    if (!linkCardapioLoja) return alert('Erro ao gerar link. Verifique a conexão.');
+    const link = await montarLinkCardapio();
+    if (!link) return alert('Erro: Não foi possível identificar a sua loja. Faça login novamente.');
+    
     try {
-      await navigator.clipboard.writeText(linkCardapioLoja);
-      alert('Link copiado com sucesso!\n\n' + linkCardapioLoja);
-    } catch (e) { prompt('Copie o link abaixo:', linkCardapioLoja); }
+      await navigator.clipboard.writeText(link);
+      alert('Link copiado com sucesso!\n\n' + link);
+    } catch (e) {
+      prompt('Copie o link abaixo:', link);
+    }
   };
 
   window.baixarQrCardapio = async function () {
-    if (!linkCardapioLoja) await montarLinkCardapio();
-    if (!linkCardapioLoja) return alert('Erro ao gerar link.');
+    const link = await montarLinkCardapio();
+    if (!link) return alert('Erro: Não foi possível identificar a sua loja. Faça login novamente.');
+    
     if (typeof window.qrcode !== 'function') return alert('Erro: Biblioteca de QR Code não carregada.');
+    
     const qr = window.qrcode(0, 'M');
-    qr.addData(linkCardapioLoja);
+    qr.addData(link);
     qr.make();
-    const link = document.createElement('a');
-    link.href = qr.createDataURL(8, 0);
-    link.download = 'cardapio-qrcode.png';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const linkEl = document.createElement('a');
+    linkEl.href = qr.createDataURL(8, 0);
+    linkEl.download = 'cardapio-qrcode.png';
+    document.body.appendChild(linkEl);
+    linkEl.click();
+    document.body.removeChild(linkEl);
   };
 
   // ==========================================================
@@ -465,7 +503,7 @@
       .subscribe();
   }
 
-  function inicializar() {
+  async function inicializar() {
     document.querySelectorAll('.aba-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativo'));
@@ -475,7 +513,7 @@
       });
     });
 
-    montarLinkCardapio();
+    await montarLinkCardapio(); // Pega o ID logo de cara
     carregarPedidos();
     setTimeout(iniciarRealtime, 1500);
     setInterval(carregarPedidos, 30000);
