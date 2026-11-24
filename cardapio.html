@@ -29,6 +29,11 @@
 
     .container { max-width: 640px; margin: 0 auto; padding: 16px; }
 
+    /* AVISO DO LOJISTA */
+    .aviso-loja { background: #fff7ed; border-left: 4px solid #ea580c; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
+    .aviso-loja-titulo { font-size: 13px; font-weight: 900; color: #c2410c; margin-bottom: 4px; }
+    .aviso-loja-texto { font-size: 13px; color: #7c2d12; line-height: 1.5; font-weight: 600; white-space: pre-line; }
+
     /* GRID PRODUTOS */
     .grade { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     @media (min-width: 500px) { .grade { grid-template-columns: repeat(3, 1fr); } }
@@ -59,6 +64,10 @@
     .modal.aberto { display: flex; }
     .modal-box { background: #fff; width: 100%; max-height: 92vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; }
     .modal-box h2 { margin: 0 0 16px; font-size: 20px; }
+
+    .secao-titulo { font-size: 12px; font-weight: 900; color: var(--verde); text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0; }
+    .secao-titulo:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+
     .item-carrinho { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; gap: 10px; }
     .item-carrinho > div { min-width: 0; }
     .item-carrinho strong { display: block; font-size: 13px; }
@@ -72,6 +81,15 @@
     .form-campo input, .form-campo select, .form-campo textarea { width: 100%; height: 46px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0 12px; font-size: 14px; outline: none; }
     .form-campo textarea { height: 70px; padding: 10px 12px; resize: none; }
     .form-campo input:focus, .form-campo select:focus, .form-campo textarea:focus { border-color: var(--verde); }
+
+    .linha-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+
+    /* BLOCO PIX */
+    .bloco-pix { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+    .bloco-pix .label-pix { font-size: 12px; font-weight: 900; color: #0369a1; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+    .bloco-pix .chave-pix { background: #fff; border: 1px solid #e0f2fe; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 13px; word-break: break-all; color: #0c4a6e; font-weight: 700; }
+    .bloco-pix .btn-copiar-pix { background: #0284c7; color: #fff; border: 0; border-radius: 8px; padding: 10px; font-weight: 900; font-size: 13px; cursor: pointer; margin-top: 8px; width: 100%; }
+    .bloco-pix .aviso-pix { font-size: 12px; color: #b45309; background: #fef3c7; padding: 10px; border-radius: 8px; margin-top: 10px; font-weight: 700; line-height: 1.45; }
 
     .resumo-total { background: #f8fafc; border-radius: 12px; padding: 12px; margin: 12px 0; font-size: 13px; }
     .resumo-total .linha { display: flex; justify-content: space-between; margin-bottom: 6px; }
@@ -109,6 +127,7 @@
 
 <div class="container">
   <div id="avisoFechado"></div>
+  <div id="avisoLoja"></div>
   <div id="gradeProdutos" class="grade">
     <p class="aviso-vazio">Carregando cardápio...</p>
   </div>
@@ -129,6 +148,8 @@
     <div id="listaCarrinho"></div>
 
     <form id="formPedido" style="margin-top:16px;">
+
+      <div class="secao-titulo">👤 Seus Dados</div>
       <div class="form-campo">
         <label>Seu Nome *</label>
         <input type="text" id="nomeCliente" required placeholder="Ex: João Silva">
@@ -137,6 +158,34 @@
         <label>WhatsApp (para atualizações) *</label>
         <input type="tel" id="telefoneCliente" required placeholder="(11) 99999-9999" inputmode="tel">
       </div>
+
+      <div class="secao-titulo">📍 Endereço de Entrega</div>
+      <div class="linha-grid">
+        <div class="form-campo">
+          <label>Rua / Avenida *</label>
+          <input type="text" id="endRua" required placeholder="Ex: Rua das Flores">
+        </div>
+        <div class="form-campo">
+          <label>Número *</label>
+          <input type="text" id="endNumero" required placeholder="123" inputmode="numeric">
+        </div>
+      </div>
+      <div class="linha-grid">
+        <div class="form-campo">
+          <label>Bairro *</label>
+          <input type="text" id="endBairro" required placeholder="Centro">
+        </div>
+        <div class="form-campo">
+          <label>Complemento</label>
+          <input type="text" id="endComplemento" placeholder="Apto 12">
+        </div>
+      </div>
+      <div class="form-campo">
+        <label>Ponto de Referência</label>
+        <input type="text" id="endReferencia" placeholder="Próximo ao mercado...">
+      </div>
+
+      <div class="secao-titulo">💳 Pagamento</div>
       <div class="form-campo">
         <label>Forma de Pagamento *</label>
         <select id="pagamento" required>
@@ -145,6 +194,13 @@
           <option value="cartao">Cartão (na entrega)</option>
         </select>
       </div>
+
+      <!-- BLOCO PIX -->
+      <div id="blocoPix" class="bloco-pix" style="display:none;">
+        <div class="label-pix">💠 Pagamento via PIX</div>
+        <div id="pixConteudo"></div>
+      </div>
+
       <div class="form-campo">
         <label>Observações (opcional)</label>
         <textarea id="obs" placeholder="Ex: Sem cebola, troco para R$50..."></textarea>
@@ -168,7 +224,8 @@
   let estabelecimento = {
     nome: '', endereco: '', cidade: '', estado: '', telefone_whatsapp: '',
     horario_abertura: '', horario_fechamento: '', aberto_manual: true,
-    taxa_entrega: 0, pedido_minimo: 0, aceita_delivery: true
+    taxa_entrega: 0, pedido_minimo: 0, aceita_delivery: true,
+    aviso_clientes: '', chave_pix: ''
   };
   let termoBusca = '';
 
@@ -196,7 +253,7 @@
     return String(t || '').replace(/\D/g, '');
   }
 
-  // ---------- Estabelecimento (JOIN comercios + dados_estabelecimento) ----------
+  // ---------- Estabelecimento ----------
   async function carregarEstabelecimento() {
     if (!comercioId) return;
     try {
@@ -217,13 +274,16 @@
           aberto_manual: dadosRes.data.aberto_manual !== false,
           taxa_entrega: Number(dadosRes.data.taxa_entrega || 0),
           pedido_minimo: Number(dadosRes.data.pedido_minimo || 0),
-          aceita_delivery: dadosRes.data.aceita_delivery !== false
+          aceita_delivery: dadosRes.data.aceita_delivery !== false,
+          aviso_clientes: dadosRes.data.aviso_clientes || '',
+          chave_pix: dadosRes.data.chave_pix || ''
         };
       }
     } catch (e) {
       console.warn('Erro ao carregar estabelecimento:', e);
     }
     renderizarHeader();
+    renderizarAvisoLoja();
   }
 
   function estaAbertoAgora() {
@@ -265,6 +325,17 @@
       document.getElementById('avisoFechado').innerHTML =
         '<div class="estab-fechado-aviso">😴 A loja está fechada no momento. Volte mais tarde!</div>';
     }
+  }
+
+  function renderizarAvisoLoja() {
+    const el = document.getElementById('avisoLoja');
+    const aviso = (estabelecimento.aviso_clientes || '').trim();
+    if (!aviso) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+      <div class="aviso-loja">
+        <div class="aviso-loja-titulo">📢 Aviso da Loja</div>
+        <div class="aviso-loja-texto">${aviso.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      </div>`;
   }
 
   // ---------- Produtos ----------
@@ -431,6 +502,85 @@
     document.getElementById('modalCarrinho').classList.remove('aberto');
   };
 
+  // ---------- PIX dinâmico ----------
+  function atualizarBlocoPix() {
+    const pagamento = document.getElementById('pagamento').value;
+    const bloco = document.getElementById('blocoPix');
+    const conteudo = document.getElementById('pixConteudo');
+
+    if (pagamento !== 'pix') {
+      bloco.style.display = 'none';
+      conteudo.innerHTML = '';
+      return;
+    }
+
+    bloco.style.display = 'block';
+
+    if (estabelecimento.chave_pix) {
+      conteudo.innerHTML = `
+        <div class="chave-pix" id="chavePixValor">${estabelecimento.chave_pix.replace(/</g,'&lt;')}</div>
+        <button type="button" class="btn-copiar-pix" onclick="copiarPix()">📋 Copiar chave PIX</button>
+        <div class="aviso-pix">⚠️ Seu pedido só será <strong>aceito após a confirmação do pagamento</strong>. Envie o comprovante no WhatsApp da loja.</div>
+      `;
+    } else {
+      conteudo.innerHTML = `
+        <div class="aviso-pix">💡 A loja ainda não cadastrou a chave PIX. Entre em contato pelo WhatsApp para receber a chave e enviar o comprovante. Seu pedido só será aceito após confirmação do pagamento.</div>
+      `;
+    }
+  }
+
+  window.copiarPix = async function () {
+    try {
+      await navigator.clipboard.writeText(estabelecimento.chave_pix);
+      mostrarToast('✅ Chave PIX copiada!');
+    } catch (e) {
+      prompt('Copie a chave PIX:', estabelecimento.chave_pix);
+    }
+  };
+
+  document.getElementById('pagamento').addEventListener('change', atualizarBlocoPix);
+
+  // ---------- Endereço ----------
+  function formatarEndereco() {
+    const rua = document.getElementById('endRua').value.trim();
+    const num = document.getElementById('endNumero').value.trim();
+    const bairro = document.getElementById('endBairro').value.trim();
+    const compl = document.getElementById('endComplemento').value.trim();
+    const ref = document.getElementById('endReferencia').value.trim();
+    if (!rua || !num || !bairro) return '';
+    let end = `${rua}, ${num} - ${bairro}`;
+    if (compl) end += ` (${compl})`;
+    if (ref) end += ` — Ref: ${ref}`;
+    return end;
+  }
+
+  function preencherDadosCliente() {
+    try {
+      const info = JSON.parse(localStorage.getItem('drTroco_cliente_info') || '{}');
+      if (info.nome) document.getElementById('nomeCliente').value = info.nome;
+      if (info.telefone) document.getElementById('telefoneCliente').value = info.telefone;
+      if (info.rua) document.getElementById('endRua').value = info.rua;
+      if (info.numero) document.getElementById('endNumero').value = info.numero;
+      if (info.bairro) document.getElementById('endBairro').value = info.bairro;
+      if (info.complemento) document.getElementById('endComplemento').value = info.complemento;
+      if (info.referencia) document.getElementById('endReferencia').value = info.referencia;
+    } catch (e) {}
+  }
+
+  function salvarDadosCliente() {
+    try {
+      localStorage.setItem('drTroco_cliente_info', JSON.stringify({
+        nome: document.getElementById('nomeCliente').value.trim(),
+        telefone: document.getElementById('telefoneCliente').value.trim(),
+        rua: document.getElementById('endRua').value.trim(),
+        numero: document.getElementById('endNumero').value.trim(),
+        bairro: document.getElementById('endBairro').value.trim(),
+        complemento: document.getElementById('endComplemento').value.trim(),
+        referencia: document.getElementById('endReferencia').value.trim()
+      }));
+    } catch (e) {}
+  }
+
   // ---------- Envio ----------
   document.getElementById('formPedido').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -443,9 +593,8 @@
       return mostrarToast(`Pedido mínimo de ${fmt(estabelecimento.pedido_minimo)}.`, true);
     }
 
-    const btn = document.getElementById('btnEnviar');
-    btn.textContent = 'Enviando...';
-    btn.disabled = true;
+    const endereco = formatarEndereco();
+    if (!endereco) return mostrarToast('Preencha o endereço completo (rua, número e bairro).', true);
 
     const nome = document.getElementById('nomeCliente').value.trim();
     const telefone = normalizarTel(document.getElementById('telefoneCliente').value);
@@ -454,11 +603,11 @@
     const taxa = calcularTaxa();
     const total = calcularTotal();
 
-    if (telefone.length < 10) {
-      btn.textContent = 'Enviar Pedido';
-      btn.disabled = false;
-      return mostrarToast('WhatsApp inválido.', true);
-    }
+    if (telefone.length < 10) return mostrarToast('WhatsApp inválido.', true);
+
+    const btn = document.getElementById('btnEnviar');
+    btn.textContent = 'Enviando...';
+    btn.disabled = true;
 
     const itensFormatados = carrinho.map(c => ({
       id: c.id, nome: c.nome, quantidade: c.quantidade,
@@ -472,6 +621,7 @@
       codigo_qr: 'DELIVERY',
       cliente_nome: nome,
       cliente_telefone: telefone,
+      endereco_entrega: endereco,
       itens: itensFormatados,
       total: total,
       taxa_entrega: taxa,
@@ -486,20 +636,25 @@
       const { error } = await window.supabaseClient.from('comandas_abertas').insert([pedido]);
       if (error) throw error;
 
-      // Abre WhatsApp do CLIENTE pra ele confirmar/ter o comprovante
+      // WhatsApp do cliente
       const msgCliente = encodeURIComponent(
-        `Olá ${nome}! Seu pedido foi recebido.\nTotal: ${fmt(total)}.\n` +
+        `Olá ${nome}! Seu pedido foi recebido.\n` +
+        `Total: ${fmt(total)}\n` +
+        (pagamento === 'pix'
+          ? `💠 Chave PIX: ${estabelecimento.chave_pix || '(peça à loja)'}\n⚠️ Envie o comprovante após o pagamento.\n`
+          : '') +
         `Você receberá atualizações por aqui. Obrigado!`
       );
       window.open(`https://wa.me/55${telefone}?text=${msgCliente}`, '_blank');
 
-      // Notifica o ESTABELECIMENTO (se tiver whatsapp configurado)
+      // Notifica a loja
       if (estabelecimento.telefone_whatsapp) {
         const telEstab = normalizarTel(estabelecimento.telefone_whatsapp);
         if (telEstab) {
           const msgEstab = encodeURIComponent(
             `🛵 NOVO PEDIDO #${pedido.id.slice(0, 4)}\n` +
             `Cliente: ${nome} (${telefone})\n` +
+            `Endereço: ${endereco}\n` +
             `Itens: ${carrinho.map(c => `${c.quantidade}x ${c.nome}`).join(', ')}\n` +
             `Total: ${fmt(total)}\n` +
             `Pagamento: ${pagamento}\n` +
@@ -509,12 +664,15 @@
         }
       }
 
+      salvarDadosCliente();
       mostrarToast('Pedido enviado com sucesso! 🛵');
       carrinho = [];
       atualizarCarrinho();
       renderizarProdutos();
       fecharCheckout();
       document.getElementById('formPedido').reset();
+      atualizarBlocoPix();
+      preencherDadosCliente();
     } catch (err) {
       console.error(err);
       mostrarToast('Erro ao enviar. Tente novamente.', true);
@@ -524,10 +682,11 @@
     }
   });
 
-  // Atualiza status aberto/fechado a cada 60s
   setInterval(() => { renderizarHeader(); }, 60000);
 
+  // Boot
+  preencherDadosCliente();
   carregarCardapio();
 </script>
 </body>
-</html>
+  </html>
