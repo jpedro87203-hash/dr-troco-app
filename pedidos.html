@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#ea580c">
   <title>Dr. Troco - Pedidos Online</title>
-
+  
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 
@@ -14,16 +14,16 @@
     .header-pedidos { background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff; padding: 20px 16px; border-radius: 0 0 24px 24px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 15px rgba(234, 88, 12, 0.2); }
     .header-pedidos h1 { margin: 0; font-size: 22px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
     .header-pedidos p { margin: 4px 0 0; font-size: 13px; opacity: 0.9; }
-
+    
     .container { max-width: 760px; margin: 0 auto; padding: 16px; }
-
-    /* ===== Stats ===== */
+    
+    /* Stats */
     .stats-pedidos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
     .stat-item { background: #fff; border-radius: 12px; padding: 12px 6px; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
     .stat-num { display: block; font-size: 22px; font-weight: 900; color: #ea580c; line-height: 1.2; }
     .stat-item small { font-size: 9px; color: #64748b; font-weight: 800; display: block; margin-top: 3px; line-height: 1.2; }
 
-    /* ===== Aviso da loja ===== */
+    /* Aviso e Cardápio */
     .card-aviso-loja { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
     .aviso-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .aviso-header strong { color: #c2410c; font-size: 13px; }
@@ -32,10 +32,9 @@
     .card-aviso-loja p { margin: 0; color: #7c2d12; font-size: 13px; line-height: 1.45; }
     .card-aviso-loja p a { color: #ea580c; font-weight: 800; }
 
-    /* ===== Card cardápio ===== */
     .card-cardapio { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
 
-    /* ===== Filtros ===== */
+    /* Filtros */
     .abas-pedidos { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; scrollbar-width: none; }
     .abas-pedidos::-webkit-scrollbar { display: none; }
     .aba-btn { flex: 0 0 auto; padding: 10px 14px; border-radius: 999px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
@@ -44,7 +43,7 @@
     .aba-btn.ativo .badge-count { background: rgba(255,255,255,0.28); color: #fff; }
     .badge-count[data-zero="true"] { display: none; }
 
-    /* ===== Cards de Pedido ===== */
+    /* Cards de Pedido */
     .lista-pedidos { display: flex; flex-direction: column; gap: 12px; }
     .card-pedido { background: #fff; border-radius: 16px; padding: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-left: 5px solid #ea580c; }
     .card-pedido.status-preparando { border-left-color: #3b82f6; }
@@ -56,7 +55,10 @@
     .pedido-total { font-size: 18px; font-weight: 900; color: #1e293b; }
     .pedido-cliente { font-size: 15px; font-weight: 900; color: #1e293b; margin-bottom: 4px; }
     .pedido-info { font-size: 13px; color: #64748b; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
-    .pedido-obs { font-size: 12px; background: #fff7ed; color: #c2410c; padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; border-left: 2px solid #ea580c; font-weight: 600; }
+    
+    .btn-detalhes { background: #f1f5f9; color: #3b82f6; border: 1px solid #bfdbfe; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 10px; }
+    
+    .pedido-obs { font-size: 12px; background: #fff7ed; color: #c2410c; padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; border-left: 2px solid #ea580c; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
     .pedido-itens { background: #f8fafc; border-radius: 10px; padding: 10px; margin-bottom: 12px; }
     .pedido-item-linha { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
@@ -77,6 +79,21 @@
       .stat-num { font-size: 18px; }
       .stat-item small { font-size: 8px; }
     }
+
+    /* MODAL DETALHES */
+    .modal-detalhes { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 50; display: none; align-items: flex-end; }
+    .modal-detalhes.aberto { display: flex; }
+    .modal-detalhes-box { background: #fff; width: 100%; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp .2s ease; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-detalhes-topo { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px; }
+    .modal-detalhes-topo h2 { margin: 0; font-size: 18px; color: #1e293b; }
+    .btn-fechar-modal { background: #f1f5f9; border: 0; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; font-weight: bold; color: #64748b; cursor: pointer; }
+    
+    .detalhe-secao { margin-bottom: 16px; }
+    .detalhe-titulo { font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .detalhe-conteudo { font-size: 14px; color: #1e293b; background: #f8fafc; padding: 12px; border-radius: 10px; line-height: 1.5; }
+    .detalhe-conteudo.obs { background: #fff7ed; color: #c2410c; border-left: 3px solid #ea580c; }
+    .detalhe-conteudo.endereco { background: #f0fdf4; color: #166534; border-left: 3px solid #22c55e; }
   </style>
 </head>
 <body class="pagina-pedidos">
@@ -86,28 +103,15 @@
   </div>
 
   <div class="container">
-
-    <!-- Stats rápidos -->
+    <!-- Stats -->
     <div class="stats-pedidos">
-      <div class="stat-item">
-        <span class="stat-num" id="statAguardando">0</span>
-        <small>⏳ Aguardando</small>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" id="statPreparando">0</span>
-        <small>👨‍🍳 Preparando</small>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" id="statRota">0</span>
-        <small>🛵 Em Rota</small>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num" id="statHoje">0</span>
-        <small>✅ Finalizados</small>
-      </div>
+      <div class="stat-item"><span class="stat-num" id="statAguardando">0</span><small>⏳ Aguardando</small></div>
+      <div class="stat-item"><span class="stat-num" id="statPreparando">0</span><small>👨‍🍳 Preparando</small></div>
+      <div class="stat-item"><span class="stat-num" id="statRota">0</span><small>🛵 Em Rota</small></div>
+      <div class="stat-item"><span class="stat-num" id="statHoje">0</span><small>✅ Finalizados</small></div>
     </div>
 
-    <!-- Aviso aos clientes -->
+    <!-- Aviso -->
     <div class="card-aviso-loja">
       <div class="aviso-header">
         <strong>📢 Aviso aos Clientes</strong>
@@ -116,7 +120,7 @@
       <p id="textoAviso">Carregando aviso...</p>
     </div>
 
-    <!-- Divulgação do cardápio -->
+    <!-- Divulgação -->
     <div class="card-cardapio">
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
         <div style="width: 44px; height: 44px; background: #eaf8f0; color: #168b53; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px;">🔗</div>
@@ -142,9 +146,19 @@
 
     <!-- Lista -->
     <div id="listaPedidos" class="lista-pedidos">
-      <div class="vazio">
-        <h3>Carregando pedidos...</h3>
-        <p>Aguarde um instante.</p>
+      <div class="vazio"><h3>Carregando pedidos...</h3><p>Aguarde um instante.</p></div>
+    </div>
+  </div>
+
+  <!-- MODAL DE DETALHES DO PEDIDO -->
+  <div class="modal-detalhes" id="modalDetalhes">
+    <div class="modal-detalhes-box">
+      <div class="modal-detalhes-topo">
+        <h2 id="detalhesTitulo">Detalhes do Pedido</h2>
+        <button class="btn-fechar-modal" onclick="fecharDetalhes()">✕</button>
+      </div>
+      <div id="detalhesConteudo">
+        <!-- Preenchido via JS -->
       </div>
     </div>
   </div>
@@ -160,6 +174,7 @@
     <a href="pedidos.html" class="menu-item ativo" style="color:#ea580c;"><span>🛵</span><small>Pedidos</small></a>
     <a href="config-estabelecimento.html" class="menu-item"><span>⚙️</span><small>Config</small></a>
   </nav>
+  
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -169,24 +184,17 @@
   <script src="estoque-supabase.js"></script>
   <script src="pedidos.js"></script>
 
-  <!-- Script complementar: aviso + stats -->
   <script>
+    // Script de Aviso e Stats
     (function () {
       async function carregarAvisoEStats() {
         try {
           let comercioId = null;
-          if (window.EstoqueSupabase?.obterComercioId) {
-            comercioId = await window.EstoqueSupabase.obterComercioId();
-          }
+          if (window.EstoqueSupabase?.obterComercioId) comercioId = await window.EstoqueSupabase.obterComercioId();
           if (!comercioId) return;
 
-          // Aviso
           try {
-            const { data: dados } = await window.supabaseClient
-              .from('dados_estabelecimento')
-              .select('aviso_clientes')
-              .eq('comercio_id', comercioId)
-              .maybeSingle();
+            const { data: dados } = await window.supabaseClient.from('dados_estabelecimento').select('aviso_clientes').eq('comercio_id', comercioId).maybeSingle();
             const el = document.getElementById('textoAviso');
             if (el) {
               if (dados?.aviso_clientes) {
@@ -196,17 +204,10 @@
                 el.innerHTML = 'Nenhum aviso configurado. <a href="config-estabelecimento.html">Configurar agora</a>';
               }
             }
-          } catch (e) { /* coluna pode não existir ainda */ }
+          } catch (e) {}
 
-          // Stats
           try {
-            const { data: pedidos } = await window.supabaseClient
-              .from('comandas_abertas')
-              .select('status')
-              .eq('origem', 'cardapio')
-              .eq('comercio_id', comercioId)
-              .neq('status', 'cancelado');
-
+            const { data: pedidos } = await window.supabaseClient.from('comandas_abertas').select('status').eq('origem', 'cardapio').eq('comercio_id', comercioId).neq('status', 'cancelado');
             if (pedidos) {
               const aguardando = pedidos.filter(p => p.status === 'aberta').length;
               const preparando = pedidos.filter(p => p.status === 'preparando').length;
@@ -217,7 +218,6 @@
               setNum('statPreparando', preparando);
               setNum('statRota', rota);
               setNum('statHoje', fechada);
-
               setNum('countAguardando', aguardando);
               setNum('countPreparando', preparando);
               setNum('countRota', rota);
@@ -234,11 +234,8 @@
         else el.removeAttribute('data-zero');
       }
 
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', carregarAvisoEStats);
-      } else {
-        carregarAvisoEStats();
-      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', carregarAvisoEStats);
+      else carregarAvisoEStats();
       setInterval(carregarAvisoEStats, 15000);
     })();
   </script>
