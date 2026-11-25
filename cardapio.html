@@ -136,7 +136,8 @@
   
   <div class="box-acompanhar">
     <span style="font-size:18px;">🔎</span>
-    <input type="text" id="inputRastreio" placeholder="CÓDIGO DO PEDIDO (Ex: A1B2)" maxlength="4">
+    <!-- Aumentei o maxlength para 36 caso o cliente cole o código inteiro -->
+    <input type="text" id="inputRastreio" placeholder="CÓDIGO DO PEDIDO (Ex: 5F9E)" maxlength="36">
     <button onclick="rastrearPedidoManual()">Status</button>
   </div>
 
@@ -224,16 +225,12 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // =========================================================
-  // TRATAMENTO DE ERROS GLOBAIS (PARA NÃO TRAVAR NUNCA)
-  // =========================================================
   window.addEventListener('error', function(event) {
     const painel = document.getElementById('painelErro');
     if(painel) {
       painel.style.display = 'block';
       painel.innerHTML = `Erro de Script: ${event.message}. Tente recarregar a página.`;
     }
-    // Remove o carregamento
     const grade = document.getElementById('gradeProdutos');
     if(grade && grade.innerHTML.includes('Carregando')) grade.innerHTML = '<p class="aviso-vazio">Erro ao carregar.</p>';
     const nome = document.getElementById('nomeEstab');
@@ -263,12 +260,10 @@
     document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio" style="color:#dc2626;">Não foi possível carregar o cardápio.</p>';
   }
 
-  // ---------- Inicialização ----------
   async function initCardapio() {
-    // Timer de segurança: se em 5 segundos não carregar, mostra erro e para o loop.
     const timer = setTimeout(() => {
       if (document.getElementById('nomeEstab').textContent === 'Carregando...') {
-        mostrarErroSistema("O banco de dados está demorando para responder. Verifique sua internet ou o RLS do Supabase.");
+        mostrarErroSistema("O banco de dados está demorando para responder.");
       }
     }, 5000);
 
@@ -279,7 +274,7 @@
 
     if (!window.supabaseClient) {
       clearTimeout(timer);
-      return mostrarErroSistema("A biblioteca do Supabase não foi encontrada (verifique supabase.js).");
+      return mostrarErroSistema("A biblioteca do Supabase não foi encontrada.");
     }
 
     try {
@@ -289,7 +284,6 @@
       ]);
 
       if (resCom.error) {
-         console.error("Erro comercios:", resCom.error);
          clearTimeout(timer);
          return mostrarErroSistema("O banco bloqueou a leitura. Rode o SQL de permissão (RLS).");
       }
@@ -308,7 +302,6 @@
         };
       }
     } catch (e) { 
-      console.warn(e); 
       clearTimeout(timer);
       return mostrarErroSistema("Erro ao conectar com o banco de dados.");
     }
@@ -325,7 +318,7 @@
     } catch (e) { 
       document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio">Erro ao carregar produtos.</p>'; 
     } finally {
-      clearTimeout(timer); // Desliga o timer de segurança, pois a tela já renderizou
+      clearTimeout(timer);
     }
 
     const pId = urlParams.get('pedido');
@@ -527,7 +520,7 @@
       window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
 
       if (estabelecimento.telefone_whatsapp) {
-        setTimeout(() => window.open(`https://wa.me/55${normalizarTel(estabelecimento.telefone_whatsapp)}?text=${encodeURIComponent(`🛵 NOVO PEDIDO #${pedido.id.slice(0,4)}\nCliente: ${pedido.cliente_nome}\nTotal: ${fmt(pedido.total)}`)}`, '_blank'), 800);
+        setTimeout(() => window.open(`https://wa.me/55${normalizarTel(estabelecimento.telefone_whatsapp)}?text=${encodeURIComponent(`🛵 NOVO PEDIDO #${pedido.id.slice(0,4).toUpperCase()}\nCliente: ${pedido.cliente_nome}\nTotal: ${fmt(pedido.total)}`)}`, '_blank'), 800);
       }
 
       mostrarToast('Pedido enviado! 🛵');
@@ -540,8 +533,12 @@
     }
   });
 
+  // ==========================================
+  // LÓGICA DE RASTREIO CORRIGIDA
+  // ==========================================
   window.rastrearPedidoManual = function() {
-    const code = document.getElementById('inputRastreio').value.trim().toUpperCase();
+    // Pega o valor, remove o # e deixa maiúsculo
+    let code = document.getElementById('inputRastreio').value.trim().toUpperCase().replace('#', '');
     if (code.length < 4) return mostrarToast('Digite o código de 4 dígitos.', true);
     window.abrirAcompanhamento(code);
   };
@@ -549,14 +546,37 @@
   window.abrirAcompanhamento = async function(idOuCode) {
     document.getElementById('modalAcompanhar').classList.add('aberto');
     if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
-    if (idOuCode.length <= 4) {
-      const { data } = await window.supabaseClient.from('comandas_abertas').select('id').ilike('id', idOuCode + '%').order('atualizado_em', { ascending: false }).limit(1).maybeSingle();
-      if (!data) {
+    
+    // Limpa o # caso venha da URL
+    idOuCode = idOuCode.replace('#', '').toUpperCase();
+
+    // Se não for o UUID inteiro (36 caracteres), busca no banco
+    if (idOuCode.length < 36) {
+      document.getElementById('infoAcompanhar').innerHTML = 'Buscando pedido...';
+      
+      // Puxa os últimos 50 pedidos e filtra no JS (mais garantido que o ilike do Supabase)
+      const { data, error } = await window.supabaseClient
+        .from('comandas_abertas')
+        .select('id')
+        .order('atualizado_em', { ascending: false })
+        .limit(50);
+
+      if (error || !data) {
+        document.getElementById('infoAcompanhar').innerHTML = `<span style="color:#dc2626;">Erro ao buscar pedido na nuvem.</span>`;
+        return;
+      }
+
+      // Encontra o ID que começa com as letras digitadas
+      const pedidoEncontrado = data.find(p => p.id.toUpperCase().startsWith(idOuCode));
+
+      if (!pedidoEncontrado) {
         document.getElementById('infoAcompanhar').innerHTML = `<span style="color:#dc2626;">Pedido não encontrado. Verifique o código.</span>`;
         return;
       }
-      idOuCode = data.id;
+      
+      idOuCode = pedidoEncontrado.id;
     }
+
     atualizarStatusPedido(idOuCode);
     intervalAcompanhamento = setInterval(() => atualizarStatusPedido(idOuCode), 5000);
   };
@@ -595,4 +615,4 @@
   setInterval(renderizarHeader, 60000);
 </script>
 </body>
-</html>
+  </html>
