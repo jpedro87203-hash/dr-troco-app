@@ -5,219 +5,112 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cardápio Digital</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- O supabase.js precisa estar na mesma pasta. Se não existir, vai dar erro aqui. -->
   <script src="supabase.js"></script>
   <style>
-    :root { --verde:#168b53; --verde-claro:#eaf8f0; --texto:#263640; --cinza:#64748b; }
+    :root { --verde:#168b53; --cinza:#64748b; }
     * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #f3f7f5; margin: 0; padding-bottom: 120px; color: var(--texto); }
-
-    .header { background: linear-gradient(135deg, #168b53, #0f6b3f); color: #fff; padding: 16px 16px 20px; border-radius: 0 0 22px 22px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,.12); }
-    .header-topo { display: flex; align-items: flex-start; gap: 12px; }
-    .logo-estab { width: 50px; height: 50px; border-radius: 14px; background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
-    .info-estab { flex: 1; min-width: 0; }
-    .info-estab h1 { margin: 0; font-size: 18px; font-weight: 900; line-height: 1.2; word-break: break-word; }
-    .info-estab p { margin: 4px 0 0; font-size: 12px; opacity: .92; line-height: 1.4; }
-    .badge-status { display: inline-block; margin-top: 7px; padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 900; background: rgba(255,255,255,.22); }
-    .badge-status.fechado { background: #dc2626; }
-
-    .box-acompanhar { background: #fff; border-radius: 12px; padding: 8px 12px; margin-top: 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-    .box-acompanhar input { flex: 1; border: 0; outline: none; font-size: 14px; font-weight: bold; color: #1e293b; padding: 4px 0; text-transform: uppercase; background: transparent; }
-    .box-acompanhar button { background: #1e293b; color: #fff; border: 0; padding: 8px 16px; border-radius: 8px; font-weight: 900; font-size: 13px; cursor: pointer; }
-
-    .barra-busca { margin-top: 10px; display: flex; gap: 8px; }
-    .barra-busca input { flex: 1; height: 44px; border: 0; border-radius: 12px; padding: 0 14px; font-size: 14px; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-
-    .container { max-width: 640px; margin: 0 auto; padding: 16px; }
-
-    .aviso-loja { background: #fff7ed; border-left: 4px solid #ea580c; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
-    .aviso-loja-titulo { font-size: 13px; font-weight: 900; color: #c2410c; margin-bottom: 4px; }
-    .aviso-loja-texto { font-size: 13px; color: #7c2d12; line-height: 1.5; font-weight: 600; white-space: pre-line; }
-
-    .grade { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    @media (min-width: 500px) { .grade { grid-template-columns: repeat(3, 1fr); } }
-    .produto { background: #fff; border-radius: 16px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,.04); display: flex; flex-direction: column; text-align: center; }
-    .produto .foto { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 30px; }
-    .produto .nome { font-size: 13px; font-weight: 800; margin: 8px 0 4px; height: 36px; overflow: hidden; line-height: 1.3; }
-    .produto .preco { font-size: 15px; font-weight: 900; color: var(--verde); margin-bottom: 8px; }
-    .controle { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: auto; }
-    .controle button { width: 34px; height: 34px; border: 0; border-radius: 9px; background: var(--verde-claro); color: var(--verde); font-size: 20px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .controle button:disabled { opacity: .35; cursor: not-allowed; }
-    .controle .qtd { min-width: 24px; text-align: center; font-weight: 900; font-size: 14px; }
-    .aviso-vazio { text-align: center; padding: 40px 16px; color: var(--cinza); grid-column: 1/-1; }
-
-    .modal { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 30; display: none; align-items: flex-end; }
-    .modal.aberto { display: flex; }
-    .modal-box { background: #fff; width: 100%; max-height: 92vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; }
-    .form-campo { margin-bottom: 12px; }
-    .form-campo label { display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 4px; }
-    .form-campo input, .form-campo select, .form-campo textarea { width: 100%; height: 46px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0 12px; font-size: 14px; outline: none; }
-    .linha-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
-    .btn-confirmar { width: 100%; background: var(--verde); color: #fff; border: 0; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 900; margin-top: 10px; cursor: pointer; }
-    .btn-voltar { width: 100%; background: transparent; border: 0; margin-top: 10px; color: var(--cinza); font-weight: bold; padding: 10px; cursor: pointer; }
-
-    .step-container { display: flex; justify-content: space-between; margin: 24px 0; position: relative; }
-    .step-container::before { content: ''; position: absolute; top: 14px; left: 20px; right: 20px; height: 4px; background: #e2e8f0; z-index: 1; }
-    .step-progress { position: absolute; top: 14px; left: 20px; height: 4px; background: #10b981; z-index: 2; transition: width 0.4s ease; width: 0%; }
-    .step-item { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 60px; }
-    .step-icon { width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-    .step-item.ativo .step-icon { background: #10b981; color: #fff; box-shadow: 0 0 0 4px #d1fae5; }
-    .step-item small { font-size: 10px; font-weight: 800; color: #64748b; text-align: center; }
-    .step-item.ativo small { color: #10b981; }
-    .info-acompanhar { background: #f8fafc; border-radius: 12px; padding: 16px; font-size: 13px; line-height: 1.5; color: #334155; text-align: center; }
-    
-    .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-120px); background: #1f3028; color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 800; z-index: 100; transition: transform .3s; }
-    .toast.visivel { transform: translateX(-50%) translateY(0); }
+    body { font-family: Arial, sans-serif; background: #f3f7f5; margin: 0; padding-bottom: 50px; color: #263640; }
+    .debug { background: #fee2e2; color: #991b1b; padding: 15px; font-family: monospace; font-size: 13px; display: none; border-bottom: 2px solid #dc2626; }
+    .header { background: linear-gradient(135deg, #168b53, #0f6b3f); color: #fff; padding: 16px; text-align: center; }
+    .info-estab { background: #fff; margin: 16px; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .info-estab h2 { margin: 0 0 8px 0; font-size: 18px; color: #168b53; }
+    .info-estab p { margin: 4px 0; font-size: 14px; color: #475569; }
+    .grade { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px; }
+    .produto { background: #fff; border-radius: 12px; padding: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    .produto img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; }
+    .produto .nome { font-weight: bold; font-size: 13px; margin: 8px 0; }
+    .produto .preco { color: #168b53; font-weight: bold; }
   </style>
 </head>
 <body>
 
-<div class="header" id="headerEstab">
-  <div class="header-topo">
-    <div class="logo-estab">🏪</div>
-    <div class="info-estab">
-      <h1 id="nomeEstab">Carregando...</h1>
-      <p id="infoEstab"></p>
-      <span class="badge-status" id="badgeStatus" style="display:none;"></span>
-    </div>
-  </div>
-  
-  <div class="box-acompanhar">
-    <span style="font-size:18px;">🔎</span>
-    <input type="text" id="inputRastreio" placeholder="CÓDIGO DO PEDIDO" maxlength="4">
-    <button onclick="rastrearPedidoManual()">Status</button>
-  </div>
+<!-- Painel de Erros -->
+<div id="painelErro" class="debug"></div>
 
-  <div class="barra-busca">
-    <input type="text" id="buscaProduto" placeholder="🔍 Pesquisar produto..." autocomplete="off">
-  </div>
+<div class="header">
+  <h1>🏪 Cardápio Digital</h1>
 </div>
 
-<div class="container">
-  <div id="avisoLoja"></div>
-  <div id="gradeProdutos" class="grade">
-    <p class="aviso-vazio">Carregando cardápio...</p>
-  </div>
+<div class="info-estab" id="cardEstab">
+  <h2 id="nomeEstab">Carregando dados da loja...</h2>
+  <p id="endEstab"></p>
+  <p id="horEstab"></p>
+  <p id="taxaEstab"></p>
 </div>
 
-<div class="modal" id="modalCarrinho">
-  <div class="modal-box">
-    <h2>Seu Pedido</h2>
-    <div id="listaCarrinho"></div>
-    <form id="formPedido" style="margin-top:16px;">
-      <div class="form-campo"><label>Seu Nome *</label><input type="text" id="nomeCliente" required></div>
-      <div class="form-campo"><label>WhatsApp *</label><input type="tel" id="telefoneCliente" required></div>
-      <div class="linha-grid">
-        <div class="form-campo"><label>Rua *</label><input type="text" id="endRua" required></div>
-        <div class="form-campo"><label>Número *</label><input type="text" id="endNumero" required></div>
-      </div>
-      <div class="form-campo"><label>Bairro *</label><input type="text" id="endBairro" required></div>
-      <div class="form-campo">
-        <select id="pagamento" required>
-          <option value="pix">PIX</option>
-          <option value="dinheiro">Dinheiro</option>
-          <option value="cartao">Cartão</option>
-        </select>
-      </div>
-      <div class="form-campo"><label>Observações</label><textarea id="obs" placeholder="Ex: Sem cebola..."></textarea></div>
-      <div class="resumo-total" id="resumoTotal"></div>
-      <button type="submit" class="btn-confirmar" id="btnEnviar">Enviar Pedido</button>
-      <button type="button" class="btn-voltar" onclick="fecharCheckout()">Voltar</button>
-    </form>
-  </div>
+<div id="gradeProdutos" class="grade">
+  <p style="grid-column: 1/-1; text-align: center;">Carregando produtos...</p>
 </div>
-
-<div class="modal" id="modalAcompanhar">
-  <div class="modal-box">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-      <h2 style="margin:0;">Status do Pedido</h2>
-      <button onclick="fecharAcompanhamento()" style="background:#f1f5f9; border:0; width:36px; height:36px; border-radius:50%; font-weight:bold; font-size:18px; cursor:pointer;">✕</button>
-    </div>
-    <div class="step-container">
-      <div class="step-progress" id="stepProgress"></div>
-      <div class="step-item" id="step-1"><div class="step-icon">📝</div><small>Recebido</small></div>
-      <div class="step-item" id="step-2"><div class="step-icon">👨‍🍳</div><small>Preparando</small></div>
-      <div class="step-item" id="step-3"><div class="step-icon">🛵</div><small>Em Rota</small></div>
-      <div class="step-item" id="step-4"><div class="step-icon">✅</div><small>Entregue</small></div>
-    </div>
-    <div class="info-acompanhar" id="infoAcompanhar">Carregando informações...</div>
-    <button class="btn-voltar" onclick="fecharAcompanhamento()">Fechar</button>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
 
 <script>
   const urlParams = new URLSearchParams(window.location.search);
   const comercioId = urlParams.get('loja') || urlParams.get('id');
-  let produtos = [];
-  let carrinho = [];
-  let estabelecimento = { nome: '', endereco: '', cidade: '', estado: '', horario_abertura: '', horario_fechamento: '', taxa_entrega: 0, aviso_clientes: '', chave_pix: '', aceita_delivery: true };
+  const painelErro = document.getElementById('painelErro');
 
-  function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-  function mostrarToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('visivel'); setTimeout(() => t.classList.remove('visivel'), 2500); }
+  function mostrarErro(msg) {
+    painelErro.style.display = 'block';
+    painelErro.innerHTML += `❌ ERRO: ${msg}<br><br>`;
+  }
 
   async function initCardapio() {
-    if (!comercioId || comercioId === 'undefined' || comercioId === 'null') {
-      document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio" style="color:red;font-weight:bold;">Erro: Link sem ID da loja.</p>';
-      return;
+    // 1. Verifica se o link tem o ID
+    if (!comercioId) {
+      return mostrarErro("O link não tem o ID da loja (parâmetro ?loja=).");
+    }
+
+    // 2. Verifica se o arquivo supabase.js carregou e criou a conexão
+    if (!window.supabaseClient) {
+      return mostrarErro("A biblioteca do Supabase não foi encontrada. Verifique se o arquivo 'supabase.js' existe na pasta do GitHub e se a URL/chave estão corretas dentro dele.");
     }
 
     try {
-      const resCom = await window.supabaseClient.from('comercios').select('*').eq('id', comercioId).maybeSingle();
-      const resDad = await window.supabaseClient.from('dados_estabelecimento').select('*').eq('comercio_id', comercioId).maybeSingle();
-
-      if (resCom.data?.nome) estabelecimento.nome = resCom.data.nome;
-      if (resDad.data) {
-        estabelecimento.endereco = resDad.data.endereco || '';
-        estabelecimento.cidade = resDad.data.cidade || '';
-        estabelecimento.estado = resDad.data.estado || '';
-        estabelecimento.horario_abertura = resDad.data.horario_abertura || '';
-        estabelecimento.horario_fechamento = resDad.data.horario_fechamento || '';
-        estabelecimento.taxa_entrega = Number(resDad.data.taxa_entrega || 0);
-        estabelecimento.aviso_clientes = resDad.data.aviso_clientes || '';
+      // 3. Tenta buscar os dados da loja
+      const { data: com, error: errCom } = await window.supabaseClient.from('comercios').select('*').eq('id', comercioId).maybeSingle();
+      
+      if (errCom) throw new Error("Erro na tabela 'comercios': " + errCom.message);
+      
+      if (!com) {
+        mostrarErro("O banco de dados não encontrou a loja com este ID. Pode ser que o RLS (Row Level Security) do Supabase esteja bloqueando a leitura pública.");
+      } else {
+        document.getElementById('nomeEstab').textContent = com.nome || 'Sem nome';
       }
-    } catch(e) { console.error(e); }
 
-    renderizarHeader();
-    
-    try {
-      const { data } = await window.supabaseClient.from('estoque_produtos').select('*').eq('comercio_id', comercioId).gt('quantidade', 0);
-      produtos = data || [];
-      renderizarProdutos();
-    } catch(e) { document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio">Erro ao carregar produtos.</p>'; }
-  }
+      // 4. Tenta buscar os dados do estabelecimento (endereço, horário)
+      const { data: dad, error: errDad } = await window.supabaseClient.from('dados_estabelecimento').select('*').eq('comercio_id', comercioId).maybeSingle();
+      
+      if (errDad) throw new Error("Erro na tabela 'dados_estabelecimento': " + errDad.message);
 
-  function renderizarHeader() {
-    document.getElementById('nomeEstab').textContent = estabelecimento.nome || 'Cardápio Digital';
-    
-    let partes = [];
-    if (estabelecimento.endereco) partes.push('📍 ' + estabelecimento.endereco + ', ' + estabelecimento.cidade);
-    if (estabelecimento.horario_abertura) partes.push(`🕐 De ${estabelecimento.horario_abertura} às ${estabelecimento.horario_fechamento}`);
-    if (estabelecimento.taxa_entrega > 0) partes.push(`🛵 Taxa: ${fmt(estabelecimento.taxa_entrega)}`);
-    else partes.push('🛵 Grátis');
+      if (dad) {
+        document.getElementById('endEstab').innerHTML = `📍 ${dad.endereco || 'Sem endereço'}, ${dad.cidade || ''}`;
+        document.getElementById('horEstab').innerHTML = `🕐 De ${dad.horario_abertura || '--'} às ${dad.horario_fechamento || '--'}`;
+        document.getElementById('taxaEstab').innerHTML = `🛵 Taxa de entrega: R$ ${Number(dad.taxa_entrega || 0).toFixed(2).replace('.', ',')}`;
+      } else {
+        document.getElementById('endEstab').innerHTML = "⚠️ Os dados de endereço/horário não foram encontrados no banco. (Bloqueio de RLS?)";
+      }
 
-    document.getElementById('infoEstab').innerHTML = partes.join('<br>');
-    
-    if (estabelecimento.aviso_clientes) {
-      document.getElementById('avisoLoja').innerHTML = `<div class="aviso-loja"><div class="aviso-loja-titulo">📢 Aviso</div><div class="aviso-loja-texto">${estabelecimento.aviso_clientes}</div></div>`;
-    }
-  }
+      // 5. Tenta buscar os produtos
+      const { data: prods, error: errProds } = await window.supabaseClient.from('estoque_produtos').select('*').eq('comercio_id', comercioId).gt('quantidade', 0);
+      
+      if (errProds) throw new Error("Erro na tabela 'estoque_produtos': " + errProds.message);
 
-  function renderizarProdutos() {
-    const grade = document.getElementById('gradeProdutos');
-    if (!produtos.length) return grade.innerHTML = '<p class="aviso-vazio">Nenhum produto disponível.</p>';
-
-    grade.innerHTML = produtos.map(p => {
-      return `
-        <div class="produto">
-          ${p.foto ? `<img src="${p.foto}" class="foto">` : `<div class="foto">🍔</div>`}
-          <div class="nome">${p.nome}</div>
-          <div class="preco">${fmt(p.preco)}</div>
-          <div class="controle">
-            <button onclick="alert('Adicionado!')">+</button>
+      const grade = document.getElementById('gradeProdutos');
+      if (!prods || prods.length === 0) {
+        grade.innerHTML = '<p style="grid-column:1/-1;text-align:center;">Nenhum produto encontrado (ou bloqueado por RLS).</p>';
+      } else {
+        grade.innerHTML = prods.map(p => `
+          <div class="produto">
+            ${p.foto ? `<img src="${p.foto}">` : `<div style="height:100px;background:#eee;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:30px;">🍔</div>`}
+            <div class="nome">${p.nome}</div>
+            <div class="preco">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
           </div>
-        </div>`;
-    }).join('');
+        `).join('');
+      }
+
+    } catch (err) {
+      mostrarErro(err.message);
+      console.error(err);
+    }
   }
 
   window.addEventListener('DOMContentLoaded', initCardapio);
