@@ -27,8 +27,8 @@
     button.btn-salvar:disabled { opacity: 0.6; }
     
     .msg { margin-top: 16px; padding: 14px; border-radius: 10px; font-size: 14px; font-weight: 900; text-align: center; display: none; }
-    .ok { background: #d1fae5; color: #047857; border: 2px solid #10b981; display: block; }
-    .err { background: #fee2e2; color: #b91c1c; border: 2px solid #ef4444; display: block; }
+    .ok { background: #d1fae5; color: #047857; border: 2px solid #10b981; }
+    .err { background: #fee2e2; color: #b91c1c; border: 2px solid #ef4444; white-space: pre-wrap; font-family: monospace; font-size: 12px; text-align: left; }
     
     .ajuda { font-size: 10px; color: #94a3b8; margin-top: 2px; display: block; font-weight: normal; }
     .voltar { display: block; text-align: center; margin-top: 16px; color: #64748b; text-decoration: none; font-size: 13px; font-weight: bold; }
@@ -154,8 +154,6 @@
       try {
         comercioId = await obterComercioIdConfig();
         if (!comercioId) {
-          document.getElementById('msg').className = 'msg err';
-          document.getElementById('msg').textContent = 'Loja não identificada. Faça login novamente.';
           document.getElementById('btnSalvar').disabled = true;
           return;
         }
@@ -180,35 +178,37 @@
             document.getElementById('previewLogo').innerHTML = `<img src="${d.logo_url}">`;
           }
         }
-      } catch(e) {
-        console.error(e);
-      }
+      } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
     async function salvar() {
       const msgEl = document.getElementById('msg');
-      if (!comercioId) return;
+      if (!comercioId) return alert("Loja não identificada. Faça login novamente.");
 
       const btn = document.getElementById('btnSalvar');
       btn.disabled = true;
       btn.textContent = 'Salvando...';
-      msgEl.style.display = 'none';
+      msgEl.style.display = 'none'; // Esconde a msg antiga
+      msgEl.textContent = '';
 
       let logoUrlFinal = document.getElementById('logo_url').value;
 
       try {
+        // 1. Upload da Imagem (se escolheu alguma)
         if (arquivoSelecionado) {
           btn.textContent = 'Enviando Imagem...';
           const extensao = arquivoSelecionado.name.split('.').pop();
           const nomeArquivo = `${comercioId}-logo-${Date.now()}.${extensao}`;
 
           const { error: uploadError } = await window.supabaseClient.storage.from('logos').upload(nomeArquivo, arquivoSelecionado, { upsert: true });
-          if (uploadError) throw new Error("Erro no upload: " + uploadError.message);
+          
+          if (uploadError) throw new Error("Falha no upload da imagem: " + uploadError.message);
 
           const { data: publicUrlData } = window.supabaseClient.storage.from('logos').getPublicUrl(nomeArquivo);
           logoUrlFinal = publicUrlData.publicUrl;
         }
 
+        // 2. Salvar Dados no Banco
         btn.textContent = 'Salvando Dados...';
         const nome = document.getElementById('nome').value.trim();
         
@@ -231,23 +231,39 @@
           atualizado_em: new Date().toISOString()
         };
 
-        if (nome) await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
+        if (nome) {
+          await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
+        }
         
-        // USA O UPSERT (Salva ou Atualiza sem duplicar)
+        // UPSERT (Insere se não existir, Atualiza se existir)
         const { error: errUpd } = await window.supabaseClient
           .from('dados_estabelecimento')
           .upsert(payload, { onConflict: 'comercio_id' });
 
         if (errUpd) throw errUpd;
 
+        // ===== SUCESSO =====
         msgEl.className = 'msg ok';
         msgEl.innerHTML = '✅ Configurações e Logo salvas com sucesso!';
+        msgEl.style.display = 'block'; // <--- AQUI ESTAVA O BUG, AGORA ELE FORÇA APARECER
+        
         arquivoSelecionado = null; 
-        setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+        
+        // Esconde a mensagem depois de 4 segundos
+        setTimeout(() => { 
+          msgEl.style.display = 'none'; 
+          msgEl.className = 'msg';
+        }, 4000);
 
       } catch(e) {
+        console.error("Erro no save:", e);
+        
+        // ===== ERRO =====
         msgEl.className = 'msg err';
-        msgEl.textContent = 'Erro ao salvar: ' + e.message;
+        msgEl.textContent = 'Erro do Supabase: ' + e.message + '\nDetalhes: ' + (e.details || 'Nenhum.');
+        msgEl.style.display = 'block';
+        
+        alert("Ocorreu um erro ao salvar. Verifique a mensagem em vermelho na tela.");
       } finally {
         btn.disabled = false;
         btn.textContent = 'Salvar Configurações';
