@@ -15,8 +15,18 @@
     input, select { height: 44px; }
     textarea { padding: 10px 12px; height: 80px; resize: vertical; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    button { width: 100%; height: 48px; margin-top: 20px; background: #168b53; color: #fff; border: 0; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; }
-    button:disabled { opacity: 0.6; }
+    
+    /* Estilo da Logo */
+    .area-logo { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+    .preview-logo { width: 64px; height: 64px; border-radius: 14px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 32px; overflow: hidden; flex-shrink: 0; border: 2px dashed #cbd5e1; }
+    .preview-logo img { width: 100%; height: 100%; object-fit: cover; }
+    
+    /* Esconde o input de arquivo feio e deixa o botão bonito */
+    .btn-file { display: inline-block; background: #f1f5f9; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px 16px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer; text-align: center; }
+    input[type="file"] { display: none; }
+
+    button.btn-salvar { width: 100%; height: 48px; margin-top: 20px; background: #168b53; color: #fff; border: 0; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; }
+    button.btn-salvar:disabled { opacity: 0.6; }
     .msg { margin-top: 12px; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 800; text-align: center; display: none; }
     .ok { background: #eaf8f0; color: #168b53; display: block; }
     .err { background: #fee2e2; color: #dc2626; display: block; }
@@ -28,6 +38,16 @@
   <div class="card">
     <h2>🏪 Meu Estabelecimento</h2>
     
+    <label>Logo da Loja <span class="ajuda">(JPG ou PNG, máx 2MB)</span></label>
+    <div class="area-logo">
+      <div class="preview-logo" id="previewLogo">🏪</div>
+      <div style="flex:1;">
+        <label for="fileLogo" class="btn-file">📷 Escolher da Galeria</label>
+        <input type="file" id="fileLogo" accept="image/*" onchange="previewImagem(event)">
+        <input type="hidden" id="logo_url"> <!-- Guarda o link final da imagem -->
+      </div>
+    </div>
+
     <label>Nome da Loja</label>
     <input type="text" id="nome" placeholder="Ex: Asas Lanches">
 
@@ -64,7 +84,7 @@
     <label>Aviso aos Clientes <span class="ajuda">(Aparecerá no topo do cardápio)</span></label>
     <textarea id="aviso_clientes" placeholder="Ex: Pedidos via PIX só serão aceitos após envio do comprovante."></textarea>
 
-    <button id="btnSalvar" onclick="salvar()">Salvar Configurações</button>
+    <button class="btn-salvar" id="btnSalvar" onclick="salvar()">Salvar Configurações</button>
     <div id="msg" class="msg"></div>
     
     <a href="pedidos.html" class="voltar">← Voltar para Pedidos</a>
@@ -72,32 +92,46 @@
 
   <script>
     let comercioId = null;
+    let arquivoSelecionado = null;
 
-    // Função robusta para buscar o ID da loja de várias formas
+    // Mostra a imagem na telinha antes de salvar
+    function previewImagem(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+        alert("A imagem é muito grande. Escolha uma foto de até 2MB.");
+        event.target.value = '';
+        return;
+      }
+
+      arquivoSelecionado = file;
+      const preview = document.getElementById('previewLogo');
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        preview.innerHTML = `<img src="${e.target.result}">`;
+      };
+      reader.readAsDataURL(file);
+    }
+
     async function obterComercioIdConfig() {
-      // 1. Tenta pela API do EstoqueSupabase
       if (window.EstoqueSupabase?.obterComercioId) {
         try {
           const id = await window.EstoqueSupabase.obterComercioId();
           if (id && id !== 'undefined') return id;
         } catch(e) {}
       }
-      
-      // 2. Tenta pelo LocalStorage
       const lsKeys = ['drTroco_comercio_id', 'comercio_id', 'comercioId', 'drTroco_loja_id'];
       for (const key of lsKeys) {
         const id = localStorage.getItem(key);
         if (id && id !== 'undefined' && id.length > 10) return id;
       }
-
-      // 3. Tenta via Auth do Supabase (caso esteja logado)
       try {
         if (window.supabaseClient) {
           const { data: { user } } = await window.supabaseClient.auth.getUser();
           if (user) {
             const { data: membro } = await window.supabaseClient.from('membros_comercio').select('comercio_id').eq('usuario_id', user.id).maybeSingle();
             if (membro?.comercio_id) return membro.comercio_id;
-
             const { data: comercio } = await window.supabaseClient.from('comercios').select('id').eq('criado_por', user.id).maybeSingle();
             if (comercio?.id) return comercio.id;
           }
@@ -136,6 +170,12 @@
             if (d[k] != null) document.getElementById(k).value = d[k];
           });
           document.getElementById('aceita_delivery').value = d.aceita_delivery === false ? 'false' : 'true';
+          
+          // Se já tem logo salva, mostra na tela
+          if (d.logo_url) {
+            document.getElementById('logo_url').value = d.logo_url;
+            document.getElementById('previewLogo').innerHTML = `<img src="${d.logo_url}">`;
+          }
         }
         msgEl.style.display = 'none';
       } catch(e) {
@@ -153,23 +193,52 @@
       btn.textContent = 'Salvando...';
       msgEl.style.display = 'none';
 
-      const nome = document.getElementById('nome').value.trim();
-      const payload = {
-        endereco: document.getElementById('endereco').value.trim(),
-        cidade: document.getElementById('cidade').value.trim(),
-        estado: document.getElementById('estado').value.trim().toUpperCase(),
-        telefone_whatsapp: document.getElementById('telefone_whatsapp').value.trim(),
-        horario_abertura: document.getElementById('horario_abertura').value,
-        horario_fechamento: document.getElementById('horario_fechamento').value,
-        taxa_entrega: Number(document.getElementById('taxa_entrega').value) || 0,
-        pedido_minimo: Number(document.getElementById('pedido_minimo').value) || 0,
-        aceita_delivery: document.getElementById('aceita_delivery').value === 'true',
-        chave_pix: document.getElementById('chave_pix').value.trim(),
-        aviso_clientes: document.getElementById('aviso_clientes').value.trim(),
-        atualizado_em: new Date().toISOString()
-      };
+      let logoUrlFinal = document.getElementById('logo_url').value;
 
       try {
+        // 1. Se o lojista escolheu uma foto nova, faz o upload pro Supabase Storage
+        if (arquivoSelecionado) {
+          btn.textContent = 'Enviando Imagem...';
+          
+          const extensao = arquivoSelecionado.name.split('.').pop();
+          const nomeArquivo = `${comercioId}-logo-${Date.now()}.${extensao}`;
+
+          // Faz o upload para o bucket "logos"
+          const { data: uploadData, error: uploadError } = await window.supabaseClient
+            .storage
+            .from('logos')
+            .upload(nomeArquivo, arquivoSelecionado, { upsert: true });
+
+          if (uploadError) throw new Error("Erro ao enviar imagem: " + uploadError.message);
+
+          // Pega o link público da imagem que acabou de subir
+          const { data: publicUrlData } = window.supabaseClient
+            .storage
+            .from('logos')
+            .getPublicUrl(nomeArquivo);
+            
+          logoUrlFinal = publicUrlData.publicUrl;
+        }
+
+        // 2. Salva os dados de texto e o link da imagem no Banco de Dados
+        btn.textContent = 'Salvando Dados...';
+        const nome = document.getElementById('nome').value.trim();
+        const payload = {
+          logo_url: logoUrlFinal,
+          endereco: document.getElementById('endereco').value.trim(),
+          cidade: document.getElementById('cidade').value.trim(),
+          estado: document.getElementById('estado').value.trim().toUpperCase(),
+          telefone_whatsapp: document.getElementById('telefone_whatsapp').value.trim(),
+          horario_abertura: document.getElementById('horario_abertura').value,
+          horario_fechamento: document.getElementById('horario_fechamento').value,
+          taxa_entrega: Number(document.getElementById('taxa_entrega').value) || 0,
+          pedido_minimo: Number(document.getElementById('pedido_minimo').value) || 0,
+          aceita_delivery: document.getElementById('aceita_delivery').value === 'true',
+          chave_pix: document.getElementById('chave_pix').value.trim(),
+          aviso_clientes: document.getElementById('aviso_clientes').value.trim(),
+          atualizado_em: new Date().toISOString()
+        };
+
         if (nome) {
           await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
         }
@@ -182,8 +251,10 @@
         }
 
         msgEl.className = 'msg ok';
-        msgEl.textContent = '✅ Configurações salvas com sucesso!';
+        msgEl.textContent = '✅ Configurações e Logo salvas com sucesso!';
+        arquivoSelecionado = null; 
         setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+
       } catch(e) {
         msgEl.className = 'msg err';
         msgEl.textContent = 'Erro: ' + e.message;
