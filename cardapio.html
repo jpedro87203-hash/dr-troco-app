@@ -229,12 +229,36 @@
   });
 
   const urlParams = new URLSearchParams(window.location.search);
-  const comercioId = urlParams.get('loja') || urlParams.get('id');
+  // 🔹 SLUG: começa como o valor bruto da URL (?loja=asas-lanches ou UUID)
+  let comercioId = urlParams.get('loja') || urlParams.get('id');
+  let slugAtual = null; // guarda o slug da loja (se tiver) para reutilizar em links
+
   let produtos = [];
   let carrinho = [];
   let estabelecimento = { nome: '', logo_url: '', endereco: '', cidade: '', estado: '', cidade_vizinha: '', taxa_entrega_vizinha: 0, horario_abertura: '', horario_fechamento: '', taxa_entrega: 0, pedido_minimo: 0, aviso_clientes: '', chave_pix: '', aceita_delivery: true };
   let termoBusca = '';
   let intervalAcompanhamento = null;
+
+  // 🔹 SLUG: detecta UUID e, se não for, busca o slug na tabela comercios
+  function isUUID(str) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
+  }
+
+  async function resolverComercioId(valor) {
+    if (!valor) return null;
+    if (isUUID(valor)) return valor;
+
+    // Busca por slug (case-insensitive)
+    const { data, error } = await window.supabaseClient
+      .from('comercios')
+      .select('id, slug')
+      .ilike('slug', String(valor).trim())
+      .maybeSingle();
+
+    if (error || !data) return null;
+    slugAtual = data.slug || null;
+    return data.id;
+  }
 
   // 🔹 CORRIGIDO #3: helper anti-XSS
   function esc(s) {
@@ -284,9 +308,22 @@
       return mostrarErroSistema("A biblioteca do Supabase não foi encontrada.");
     }
 
+    // 🔹 SLUG: resolve slug → UUID (mantém compatibilidade com UUID direto)
+    try {
+      const resolvido = await resolverComercioId(comercioId);
+      if (!resolvido) {
+        clearTimeout(timer);
+        return mostrarErroSistema("Loja não encontrada. Verifique o link.");
+      }
+      comercioId = resolvido;
+    } catch (e) {
+      clearTimeout(timer);
+      return mostrarErroSistema("Erro ao identificar a loja.");
+    }
+
     try {
       const [resCom, resDad] = await Promise.all([
-        window.supabaseClient.from('comercios').select('nome').eq('id', comercioId).maybeSingle(),
+        window.supabaseClient.from('comercios').select('nome, slug').eq('id', comercioId).maybeSingle(),
         window.supabaseClient.from('dados_estabelecimento').select('*').eq('comercio_id', comercioId).maybeSingle()
       ]);
 
@@ -296,6 +333,8 @@
       }
 
       if (resCom.data?.nome) estabelecimento.nome = resCom.data.nome;
+      // 🔹 SLUG: guarda o slug para usar em links (se existir)
+      if (resCom.data?.slug) slugAtual = resCom.data.slug;
 
       if (resDad.data) {
         estabelecimento = {
@@ -591,8 +630,9 @@
       localStorage.setItem('drTroco_ultimo_pedido', pedido.id);
       salvarDados();
 
-      // 🔹 CORRIGIDO #4: link usa tracking_code
-      const linkRastreio = window.location.origin + window.location.pathname + '?loja=' + encodeURIComponent(comercioId) + '&pedido=' + encodeURIComponent(trackingCode);
+      // 🔹 SLUG: usa slug no link (se existir); senão usa UUID
+      const identificadorLoja = slugAtual || comercioId;
+      const linkRastreio = window.location.origin + window.location.pathname + '?loja=' + encodeURIComponent(identificadorLoja) + '&pedido=' + encodeURIComponent(trackingCode);
       const msg = encodeURIComponent(`Olá ${pedido.cliente_nome}! Seu pedido *${trackingCode}* foi recebido.\n\nPara acompanhar o status, clique no link abaixo:\n${linkRastreio}`);
       window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
 
@@ -628,11 +668,9 @@
       return;
     }
 
-    // Se veio UUID completo (36 chars), ainda validamos a loja
     let idFinal = null;
 
     if (idOuCode.length >= 32) {
-      // UUID completo — validar com comercio_id
       const { data, error } = await window.supabaseClient
         .from('comandas_abertas')
         .select('id')
@@ -646,7 +684,6 @@
       }
       idFinal = data.id;
     } else {
-      // Código curto (tracking_code ou 4 chars antigos) — usar RPC
       document.getElementById('infoAcompanhar').innerHTML = 'Buscando pedido...';
 
       const { data, error } = await window.supabaseClient.rpc('buscar_pedido_por_codigo', {
