@@ -12,7 +12,7 @@
     body { font-family: Arial, sans-serif; background: #f3f7f5; margin: 0; padding-bottom: 120px; color: var(--texto); }
 
     .erro-topo { background: #fee2e2; color: #991b1b; padding: 15px; text-align: center; font-size: 13px; font-weight: bold; display: none; border-bottom: 2px solid #dc2626; }
-    
+
     .header { background: linear-gradient(135deg, #168b53, #0f6b3f); color: #fff; padding: 16px 16px 20px; border-radius: 0 0 22px 22px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,.12); }
     .header-topo { display: flex; align-items: flex-start; gap: 12px; }
     .logo-estab { width: 50px; height: 50px; border-radius: 14px; background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; overflow: hidden; }
@@ -122,10 +122,10 @@
       <span class="badge-status" id="badgeStatus" style="display:none;"></span>
     </div>
   </div>
-  
+
   <div class="box-acompanhar">
     <span style="font-size:18px;">🔎</span>
-    <input type="text" id="inputRastreio" placeholder="Ex: A1B2" maxlength="36" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+    <input type="text" id="inputRastreio" placeholder="Ex: A1B2C3D4" maxlength="8" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
     <button onclick="rastrearPedidoManual()">Status</button>
   </div>
 
@@ -162,10 +162,9 @@
       <div class="secao-titulo">👤 Seus Dados</div>
       <div class="form-campo"><label>Seu Nome *</label><input type="text" id="nomeCliente" required></div>
       <div class="form-campo"><label>WhatsApp *</label><input type="tel" id="telefoneCliente" required placeholder="(11) 99999-9999"></div>
-      
+
       <div class="secao-titulo">📍 Endereço de Entrega</div>
-      
-      <!-- NOVO CAMPO: CIDADE DE ENTREGA -->
+
       <div class="form-campo">
         <label>Cidade de Entrega *</label>
         <select id="cidadeEntrega" onchange="calcularTotal()">
@@ -182,7 +181,7 @@
         <div class="form-campo"><label>Compl.</label><input type="text" id="endComplemento"></div>
       </div>
       <div class="form-campo"><label>Ref.</label><input type="text" id="endReferencia" placeholder="Próximo a..."></div>
-      
+
       <div class="secao-titulo">💳 Pagamento</div>
       <div class="form-campo">
         <select id="pagamento" required>
@@ -237,7 +236,23 @@
   let termoBusca = '';
   let intervalAcompanhamento = null;
 
+  // 🔹 CORRIGIDO #3: helper anti-XSS
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+  }
+
   function gerarId() { return window.crypto?.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); }); }
+
+  // 🔹 CORRIGIDO #4: código de rastreio de 8 chars
+  function gerarCodigoRastreio() {
+    const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem I, O, 0, 1 (evita confusão)
+    let out = '';
+    for (let i = 0; i < 8; i++) out += abc[Math.floor(Math.random() * abc.length)];
+    return out;
+  }
+
   function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
   function mostrarToast(msg, erro) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.toggle('erro', !!erro); t.classList.add('visivel'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('visivel'), 2800); }
   function normalizar(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
@@ -246,7 +261,7 @@
   function mostrarErroSistema(msg) {
     const painel = document.getElementById('painelErro');
     painel.style.display = 'block';
-    painel.innerHTML = `⚠️ ${msg}`;
+    painel.innerHTML = `⚠️ ${esc(msg)}`;
     document.getElementById('nomeEstab').textContent = 'Cardápio Digital';
     document.getElementById('infoEstab').textContent = 'Não foi possível carregar os dados da loja.';
     document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio" style="color:#dc2626;">Não foi possível carregar o cardápio.</p>';
@@ -281,7 +296,7 @@
       }
 
       if (resCom.data?.nome) estabelecimento.nome = resCom.data.nome;
-      
+
       if (resDad.data) {
         estabelecimento = {
           ...estabelecimento,
@@ -295,14 +310,14 @@
           aviso_clientes: resDad.data.aviso_clientes || '', chave_pix: resDad.data.chave_pix || ''
         };
       }
-    } catch (e) { 
+    } catch (e) {
       clearTimeout(timer);
       return mostrarErroSistema("Erro ao conectar com o banco de dados.");
     }
-    
+
     renderizarHeader();
     renderizarAvisoLoja();
-    configurarCidades(); // Configura o select de cidades
+    configurarCidades();
     preencherDados();
 
     try {
@@ -310,26 +325,27 @@
       if(error) throw error;
       produtos = data || [];
       renderizarProdutos();
-    } catch (e) { 
-      document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio">Erro ao carregar produtos.</p>'; 
+    } catch (e) {
+      document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio">Erro ao carregar produtos.</p>';
     } finally {
       clearTimeout(timer);
     }
 
     const pId = urlParams.get('pedido');
     if (pId) {
-      document.getElementById('inputRastreio').value = pId.slice(0,4).toUpperCase();
-      window.abrirAcompanhamento(pId);
+      // 🔹 CORRIGIDO #4: aceita tracking_code (8 chars) ou UUID completo
+      const codigo = pId.trim().toUpperCase();
+      document.getElementById('inputRastreio').value = codigo.length <= 8 ? codigo : codigo.slice(0, 8);
+      window.abrirAcompanhamento(codigo);
     }
   }
 
   function configurarCidades() {
     const select = document.getElementById('cidadeEntrega');
-    select.innerHTML = `<option value="principal">${estabelecimento.cidade || 'Cidade Principal'}</option>`;
-    
-    // Se tiver cidade vizinha cadastrada, adiciona a opção com o valor da taxa
+    select.innerHTML = `<option value="principal">${esc(estabelecimento.cidade || 'Cidade Principal')}</option>`;
+
     if (estabelecimento.cidade_vizinha && estabelecimento.taxa_entrega_vizinha > 0) {
-      select.innerHTML += `<option value="vizinha">${estabelecimento.cidade_vizinha} (+ ${fmt(estabelecimento.taxa_entrega_vizinha)})</option>`;
+      select.innerHTML += `<option value="vizinha">${esc(estabelecimento.cidade_vizinha)} (+ ${fmt(estabelecimento.taxa_entrega_vizinha)})</option>`;
     }
   }
 
@@ -348,11 +364,11 @@
 
   function renderizarHeader() {
     document.getElementById('nomeEstab').textContent = estabelecimento.nome || 'Cardápio Digital';
-    
+
     const divLogo = document.querySelector('.logo-estab');
     if (divLogo) {
       if (estabelecimento.logo_url) {
-        divLogo.innerHTML = `<img src="${estabelecimento.logo_url}" style="width:100%; height:100%; object-fit:cover;">`;
+        divLogo.innerHTML = `<img src="${esc(estabelecimento.logo_url)}" style="width:100%; height:100%; object-fit:cover;">`;
       } else {
         divLogo.innerHTML = `🏪`;
       }
@@ -360,12 +376,12 @@
 
     const partes = [];
     const endCompleto = [estabelecimento.endereco, estabelecimento.cidade, estabelecimento.estado].filter(Boolean).join(' - ');
-    if (endCompleto) partes.push('📍 ' + endCompleto);
-    if (estabelecimento.horario_abertura && estabelecimento.horario_fechamento) partes.push(`🕐 De ${estabelecimento.horario_abertura} às ${estabelecimento.horario_fechamento}`);
-    
+    if (endCompleto) partes.push('📍 ' + esc(endCompleto));
+    if (estabelecimento.horario_abertura && estabelecimento.horario_fechamento) partes.push(`🕐 De ${esc(estabelecimento.horario_abertura)} às ${esc(estabelecimento.horario_fechamento)}`);
+
     if (estabelecimento.taxa_entrega > 0) partes.push(`🛵 Taxa de entrega: <strong>${fmt(estabelecimento.taxa_entrega)}</strong>`);
     else partes.push('🛵 <strong>Entrega Grátis!</strong>');
-    
+
     document.getElementById('infoEstab').innerHTML = partes.join('<br>');
 
     const badge = document.getElementById('badgeStatus');
@@ -382,7 +398,8 @@
     const el = document.getElementById('avisoLoja');
     const aviso = (estabelecimento.aviso_clientes || '').trim();
     if (!aviso) { el.innerHTML = ''; return; }
-    el.innerHTML = `<div class="aviso-loja"><div class="aviso-loja-titulo">📢 Aviso da Loja</div><div class="aviso-loja-texto">${aviso.replace(/</g,'&lt;')}</div></div>`;
+    // 🔹 CORRIGIDO #3: esc() preserva quebras de linha via white-space: pre-line
+    el.innerHTML = `<div class="aviso-loja"><div class="aviso-loja-titulo">📢 Aviso da Loja</div><div class="aviso-loja-texto">${esc(aviso)}</div></div>`;
   }
 
   function renderizarProdutos() {
@@ -395,24 +412,25 @@
     grade.innerHTML = lista.map(p => {
       const noCarrinho = carrinho.find(c => String(c.id) === String(p.id));
       const qtd = noCarrinho ? noCarrinho.quantidade : 0;
+      // 🔹 CORRIGIDO #3: escapar nome e URL da foto
       return `
         <div class="produto">
-          ${p.foto ? `<img src="${p.foto}" class="foto">` : `<div class="foto">🍔</div>`}
-          <div class="nome">${p.nome}</div>
+          ${p.foto ? `<img src="${esc(p.foto)}" class="foto" alt="">` : `<div class="foto">🍔</div>`}
+          <div class="nome">${esc(p.nome)}</div>
           <div class="preco">${fmt(p.preco)}</div>
           <div class="controle">
-            <button onclick="alterarQtd('${p.id}', -1)" ${qtd === 0 ? 'disabled' : ''}>−</button>
+            <button onclick="alterarQtd('${esc(String(p.id))}', -1)" ${qtd === 0 ? 'disabled' : ''}>−</button>
             <span class="qtd">${qtd}</span>
-            <button onclick="alterarQtd('${p.id}', 1)" ${qtd >= p.quantidade ? 'disabled' : ''}>+</button>
+            <button onclick="alterarQtd('${esc(String(p.id))}', 1)" ${qtd >= p.quantidade ? 'disabled' : ''}>+</button>
           </div>
         </div>`;
     }).join('');
   }
 
-  document.getElementById('buscaProduto').addEventListener('input', (e) => { 
-    termoBusca = e.target.value.trim(); 
+  document.getElementById('buscaProduto').addEventListener('input', (e) => {
+    termoBusca = e.target.value.trim();
     document.getElementById('btnLimparBusca').classList.toggle('visivel', !!termoBusca);
-    renderizarProdutos(); 
+    renderizarProdutos();
   });
   window.limparBusca = function () { termoBusca = ''; document.getElementById('buscaProduto').value = ''; document.getElementById('btnLimparBusca').classList.remove('visivel'); renderizarProdutos(); };
 
@@ -431,25 +449,23 @@
   window.removerItem = function (id) { carrinho = carrinho.filter(c => String(c.id) !== String(id)); calcularTotal(); renderizarProdutos(); abrirCheckout(); };
 
   function calcularSubtotal() { return carrinho.reduce((acc, c) => acc + Number(c.preco) * c.quantidade, 0); }
-  
-  // LÓGICA DA DUPLA TAXA DE ENTREGA
+
   function calcularTaxa() {
     if (calcularSubtotal() === 0) return 0;
     const selectCidade = document.getElementById('cidadeEntrega');
     const cidadeSelecionada = selectCidade ? selectCidade.value : 'principal';
-    
+
     if (cidadeSelecionada === 'vizinha') {
       return Number(estabelecimento.taxa_entrega_vizinha || 0);
     }
     return Number(estabelecimento.taxa_entrega || 0);
   }
 
-  function calcularTotal() { 
+  function calcularTotal() {
     const sub = calcularSubtotal();
     const taxa = calcularTaxa();
     const total = sub + taxa;
-    
-    // Atualiza a barra inferior
+
     const qtd = carrinho.reduce((acc, c) => acc + c.quantidade, 0);
     const bar = document.getElementById('carrinhoBar');
     if (qtd > 0) {
@@ -459,7 +475,6 @@
       document.getElementById('taxaInfo').textContent = taxa > 0 ? `(inclui taxa de ${fmt(taxa)})` : '';
     } else { bar.classList.remove('visivel'); }
 
-    // Atualiza o modal se estiver aberto
     if (document.getElementById('modalCarrinho').classList.contains('aberto')) {
       document.getElementById('resumoTotal').innerHTML = `
         <div class="linha"><span>Subtotal</span><span>${fmt(sub)}</span></div>
@@ -474,16 +489,17 @@
 
   function abrirCheckout() {
     const lista = document.getElementById('listaCarrinho');
+    // 🔹 CORRIGIDO #3: escapar nome do produto
     lista.innerHTML = carrinho.length ? carrinho.map(c => `
       <div class="item-carrinho">
-        <div><strong>${c.nome}</strong><br><span>${fmt(c.preco * c.quantidade)}</span></div>
+        <div><strong>${esc(c.nome)}</strong><br><span>${fmt(c.preco * c.quantidade)}</span></div>
         <div class="mini-controle">
-          <button onclick="alterarQtd('${c.id}', -1)">−</button><span>${c.quantidade}</span><button onclick="alterarQtd('${c.id}', 1)">+</button>
-          <button class="remover" onclick="removerItem('${c.id}')">✕</button>
+          <button onclick="alterarQtd('${esc(String(c.id))}', -1)">−</button><span>${c.quantidade}</span><button onclick="alterarQtd('${esc(String(c.id))}', 1)">+</button>
+          <button class="remover" onclick="removerItem('${esc(String(c.id))}')">✕</button>
         </div>
       </div>`).join('') : '<p style="text-align:center;color:#64748b;">Carrinho vazio</p>';
 
-    calcularTotal(); // Chama o cálculo atualizado
+    calcularTotal();
     document.getElementById('modalCarrinho').classList.add('aberto');
   }
   window.fecharCheckout = function () { document.getElementById('modalCarrinho').classList.remove('aberto'); };
@@ -492,9 +508,22 @@
     const pag = document.getElementById('pagamento').value, bloco = document.getElementById('blocoPix');
     if (pag !== 'pix') { bloco.style.display = 'none'; return; }
     bloco.style.display = 'block';
-    document.getElementById('pixConteudo').innerHTML = estabelecimento.chave_pix 
-      ? `<div class="chave-pix">${estabelecimento.chave_pix}</div><button type="button" class="btn-copiar-pix" onclick="navigator.clipboard.writeText('${estabelecimento.chave_pix}'); mostrarToast('Copiada!');">📋 Copiar chave PIX</button><div class="aviso-pix">⚠️ Seu pedido só será <strong>aceito após a confirmação do pagamento</strong>.</div>`
-      : `<div class="aviso-pix">💡 A loja não cadastrou a chave PIX.</div>`;
+
+    // 🔹 CORRIGIDO #3: escapar chave + usar dataset em vez de onclick inline
+    if (estabelecimento.chave_pix) {
+      const chave = String(estabelecimento.chave_pix);
+      document.getElementById('pixConteudo').innerHTML = `
+        <div class="chave-pix">${esc(chave)}</div>
+        <button type="button" class="btn-copiar-pix" id="btnCopiarPix">📋 Copiar chave PIX</button>
+        <div class="aviso-pix">⚠️ Seu pedido só será <strong>aceito após a confirmação do pagamento</strong>.</div>
+      `;
+      const btn = document.getElementById('btnCopiarPix');
+      if (btn) btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(chave).then(() => mostrarToast('Copiada!')).catch(() => mostrarToast('Erro ao copiar', true));
+      });
+    } else {
+      document.getElementById('pixConteudo').innerHTML = `<div class="aviso-pix">💡 A loja não cadastrou a chave PIX.</div>`;
+    }
   }
   document.getElementById('pagamento').addEventListener('change', atualizarBlocoPix);
 
@@ -522,11 +551,12 @@
     const rua = document.getElementById('endRua').value.trim(), num = document.getElementById('endNumero').value.trim();
     const bai = document.getElementById('endBairro').value.trim(), com = document.getElementById('endComplemento').value.trim();
     const ref = document.getElementById('endReferencia').value.trim();
-    
-    // Pega o nome da cidade escolhida no select
+
     const selectCidade = document.getElementById('cidadeEntrega');
-    const cidadeEscolhida = selectCidade.options[selectCidade.selectedIndex].text.split(' (')[0];
-    
+    const cidadeEscolhida = (selectCidade && selectCidade.selectedIndex >= 0)
+      ? selectCidade.options[selectCidade.selectedIndex].text.split(' (')[0]
+      : (estabelecimento.cidade || 'Cidade Principal');
+
     if (!rua || !num || !bai) return '';
     return `${rua}, ${num} - ${bai} (${cidadeEscolhida})${com ? ` (${com})` : ''}${ref ? ` — Ref: ${ref}` : ''}`;
   }
@@ -541,11 +571,15 @@
     const btn = document.getElementById('btnEnviar');
     btn.textContent = 'Enviando...'; btn.disabled = true;
 
+    // 🔹 CORRIGIDO #4: gera tracking_code de 8 chars
+    const trackingCode = gerarCodigoRastreio();
+
     const pedido = {
       id: gerarId(), comercio_id: comercioId, mesa_nome: 'Delivery', codigo_qr: 'DELIVERY',
+      tracking_code: trackingCode,
       cliente_nome: document.getElementById('nomeCliente').value.trim(), cliente_telefone: tel, endereco_entrega: endereco,
       itens: carrinho.map(c => ({ id: c.id, nome: c.nome, quantidade: c.quantidade, valorUnitarioCentavos: Math.round(c.preco * 100) })),
-      total: calcularTotal(), taxa_entrega: calcularTaxa(), // Calcula a taxa correta no envio
+      total: calcularTotal(), taxa_entrega: calcularTaxa(),
       status: 'aberta', forma_pagamento: document.getElementById('pagamento').value, origem: 'cardapio',
       observacao: document.getElementById('obs').value.trim(), atualizado_em: new Date().toISOString()
     };
@@ -557,62 +591,78 @@
       localStorage.setItem('drTroco_ultimo_pedido', pedido.id);
       salvarDados();
 
-      const linkRastreio = window.location.origin + window.location.pathname + '?loja=' + comercioId + '&pedido=' + pedido.id;
-      const msg = encodeURIComponent(`Olá ${pedido.cliente_nome}! Seu pedido *${pedido.id.slice(0,4).toUpperCase()}* foi recebido.\n\nPara acompanhar o status, clique no link abaixo:\n${linkRastreio}`);
+      // 🔹 CORRIGIDO #4: link usa tracking_code
+      const linkRastreio = window.location.origin + window.location.pathname + '?loja=' + encodeURIComponent(comercioId) + '&pedido=' + encodeURIComponent(trackingCode);
+      const msg = encodeURIComponent(`Olá ${pedido.cliente_nome}! Seu pedido *${trackingCode}* foi recebido.\n\nPara acompanhar o status, clique no link abaixo:\n${linkRastreio}`);
       window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
 
       if (estabelecimento.telefone_whatsapp) {
-        setTimeout(() => window.open(`https://wa.me/55${normalizarTel(estabelecimento.telefone_whatsapp)}?text=${encodeURIComponent(`🛵 NOVO PEDIDO ${pedido.id.slice(0,4).toUpperCase()}\nCliente: ${pedido.cliente_nome}\nTotal: ${fmt(pedido.total)}`)}`, '_blank'), 800);
+        setTimeout(() => window.open(`https://wa.me/55${normalizarTel(estabelecimento.telefone_whatsapp)}?text=${encodeURIComponent(`🛵 NOVO PEDIDO ${trackingCode}\nCliente: ${pedido.cliente_nome}\nTotal: ${fmt(pedido.total)}`)}`, '_blank'), 800);
       }
 
       mostrarToast('Pedido enviado! 🛵');
       carrinho = []; calcularTotal(); renderizarProdutos(); fecharCheckout(); document.getElementById('formPedido').reset(); atualizarBlocoPix(); preencherDados();
-      window.abrirAcompanhamento(pedido.id);
-    } catch (err) { 
-      console.error(err); mostrarToast('Erro ao enviar. Tente novamente.', true); 
-    } finally { 
-      btn.textContent = 'Enviar Pedido'; btn.disabled = false; 
+      window.abrirAcompanhamento(trackingCode);
+    } catch (err) {
+      console.error(err); mostrarToast('Erro ao enviar. Tente novamente.', true);
+    } finally {
+      btn.textContent = 'Enviar Pedido'; btn.disabled = false;
     }
   });
 
   window.rastrearPedidoManual = function() {
     let code = document.getElementById('inputRastreio').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (code.length < 4) return mostrarToast('Digite o código de 4 letras/números.', true);
+    if (code.length < 4) return mostrarToast('Digite o código de rastreio.', true);
     window.abrirAcompanhamento(code);
   };
 
+  // 🔹 CORRIGIDO #1 e #2: usa RPC com filtro de comercio_id e sem LIMIT 50
   window.abrirAcompanhamento = async function(idOuCode) {
     document.getElementById('modalAcompanhar').classList.add('aberto');
     if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
-    
-    idOuCode = idOuCode.replace(/[^A-Z0-9]/g, '').toUpperCase();
 
-    if (idOuCode.length < 36) {
-      document.getElementById('infoAcompanhar').innerHTML = 'Buscando pedido...';
-      
+    idOuCode = String(idOuCode || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+    if (!idOuCode) {
+      document.getElementById('infoAcompanhar').innerHTML = `<span style="color:#dc2626;">Código inválido.</span>`;
+      return;
+    }
+
+    // Se veio UUID completo (36 chars), ainda validamos a loja
+    let idFinal = null;
+
+    if (idOuCode.length >= 32) {
+      // UUID completo — validar com comercio_id
       const { data, error } = await window.supabaseClient
         .from('comandas_abertas')
         .select('id')
-        .order('atualizado_em', { ascending: false })
-        .limit(50);
+        .eq('id', idOuCode.toLowerCase())
+        .eq('comercio_id', comercioId)
+        .maybeSingle();
 
       if (error || !data) {
-        document.getElementById('infoAcompanhar').innerHTML = `<span style="color:#dc2626;">Erro ao buscar pedido na nuvem.</span>`;
+        document.getElementById('infoAcompanhar').innerHTML = `<span style="color:#dc2626;">Pedido não encontrado.</span>`;
         return;
       }
+      idFinal = data.id;
+    } else {
+      // Código curto (tracking_code ou 4 chars antigos) — usar RPC
+      document.getElementById('infoAcompanhar').innerHTML = 'Buscando pedido...';
 
-      const pedidoEncontrado = data.find(p => p.id.toUpperCase().startsWith(idOuCode));
+      const { data, error } = await window.supabaseClient.rpc('buscar_pedido_por_codigo', {
+        p_comercio_id: comercioId,
+        p_codigo: idOuCode
+      });
 
-      if (!pedidoEncontrado) {
+      if (error || !data || !data.length) {
         document.getElementById('infoAcompanhar').innerHTML = `<span style="color:#dc2626;">Pedido não encontrado. Verifique o código.</span>`;
         return;
       }
-      
-      idOuCode = pedidoEncontrado.id;
+      idFinal = data[0].pedido_id;
     }
 
-    atualizarStatusPedido(idOuCode);
-    intervalAcompanhamento = setInterval(() => atualizarStatusPedido(idOuCode), 5000);
+    atualizarStatusPedido(idFinal);
+    intervalAcompanhamento = setInterval(() => atualizarStatusPedido(idFinal), 5000);
   };
 
   window.fecharAcompanhamento = function() {
@@ -620,10 +670,22 @@
     if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
   };
 
+  // 🔹 CORRIGIDO #1: filtro comercio_id obrigatório
   async function atualizarStatusPedido(id) {
     try {
-      const { data } = await window.supabaseClient.from('comandas_abertas').select('status, total').eq('id', id).maybeSingle();
-      if (!data) return;
+      const { data } = await window.supabaseClient
+        .from('comandas_abertas')
+        .select('status, total')
+        .eq('id', id)
+        .eq('comercio_id', comercioId)
+        .maybeSingle();
+
+      if (!data) {
+        document.getElementById('infoAcompanhar').innerHTML = `<span style="color:#dc2626;">Pedido não encontrado.</span>`;
+        if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
+        return;
+      }
+
       const info = document.getElementById('infoAcompanhar'), prog = document.getElementById('stepProgress');
       const steps = ['step-1', 'step-2', 'step-3', 'step-4'];
       steps.forEach(s => document.getElementById(s).classList.remove('ativo'));
@@ -637,10 +699,10 @@
 
       for(let i=1; i<=stepAtual; i++) document.getElementById('step-'+i).classList.add('ativo');
       prog.style.width = stepAtual === 1 ? '0%' : stepAtual === 2 ? '33%' : stepAtual === 3 ? '66%' : stepAtual === 4 ? '100%' : '0%';
-      
-      if (stepAtual === 0) { prog.style.background = '#dc2626'; info.style.color = '#dc2626'; } 
+
+      if (stepAtual === 0) { prog.style.background = '#dc2626'; info.style.color = '#dc2626'; }
       else { prog.style.background = '#10b981'; info.style.color = '#334155'; }
-      info.innerHTML = `<strong>Status:</strong> ${texto}<br><br><strong>Total do Pedido:</strong> ${fmt(data.total)}`;
+      info.innerHTML = `<strong>Status:</strong> ${esc(texto)}<br><br><strong>Total do Pedido:</strong> ${fmt(data.total)}`;
       if (data.status === 'fechada' || data.status === 'cancelado') clearInterval(intervalAcompanhamento);
     } catch(e) {}
   }
@@ -649,4 +711,4 @@
   setInterval(renderizarHeader, 60000);
 </script>
 </body>
-  </html>
+</html>
