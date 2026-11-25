@@ -136,8 +136,8 @@
   
   <div class="box-acompanhar">
     <span style="font-size:18px;">🔎</span>
-    <!-- Aumentei o maxlength para 36 caso o cliente cole o código inteiro -->
-    <input type="text" id="inputRastreio" placeholder="CÓDIGO DO PEDIDO (Ex: 5F9E)" maxlength="36">
+    <!-- O oninput faz a mágica: tira tudo que não é letra ou número e deixa maiúsculo -->
+    <input type="text" id="inputRastreio" placeholder="Ex: A1B2" maxlength="36" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
     <button onclick="rastrearPedidoManual()">Status</button>
   </div>
 
@@ -231,10 +231,6 @@
       painel.style.display = 'block';
       painel.innerHTML = `Erro de Script: ${event.message}. Tente recarregar a página.`;
     }
-    const grade = document.getElementById('gradeProdutos');
-    if(grade && grade.innerHTML.includes('Carregando')) grade.innerHTML = '<p class="aviso-vazio">Erro ao carregar.</p>';
-    const nome = document.getElementById('nomeEstab');
-    if(nome && nome.innerText === 'Carregando...') nome.innerText = 'Cardápio';
   });
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -515,12 +511,13 @@
       localStorage.setItem('drTroco_ultimo_pedido', pedido.id);
       salvarDados();
 
+      // MENSAGEM SEM O # NO CÓDIGO
       const linkRastreio = window.location.origin + window.location.pathname + '?loja=' + comercioId + '&pedido=' + pedido.id;
-      const msg = encodeURIComponent(`Olá ${pedido.cliente_nome}! Seu pedido *#${pedido.id.slice(0,4).toUpperCase()}* foi recebido.\n\nPara acompanhar o status, clique no link abaixo:\n${linkRastreio}`);
+      const msg = encodeURIComponent(`Olá ${pedido.cliente_nome}! Seu pedido *${pedido.id.slice(0,4).toUpperCase()}* foi recebido.\n\nPara acompanhar o status, clique no link abaixo:\n${linkRastreio}`);
       window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
 
       if (estabelecimento.telefone_whatsapp) {
-        setTimeout(() => window.open(`https://wa.me/55${normalizarTel(estabelecimento.telefone_whatsapp)}?text=${encodeURIComponent(`🛵 NOVO PEDIDO #${pedido.id.slice(0,4).toUpperCase()}\nCliente: ${pedido.cliente_nome}\nTotal: ${fmt(pedido.total)}`)}`, '_blank'), 800);
+        setTimeout(() => window.open(`https://wa.me/55${normalizarTel(estabelecimento.telefone_whatsapp)}?text=${encodeURIComponent(`🛵 NOVO PEDIDO ${pedido.id.slice(0,4).toUpperCase()}\nCliente: ${pedido.cliente_nome}\nTotal: ${fmt(pedido.total)}`)}`, '_blank'), 800);
       }
 
       mostrarToast('Pedido enviado! 🛵');
@@ -534,12 +531,12 @@
   });
 
   // ==========================================
-  // LÓGICA DE RASTREIO CORRIGIDA
+  // LÓGICA DE RASTREIO BLINDADA
   // ==========================================
   window.rastrearPedidoManual = function() {
-    // Pega o valor, remove o # e deixa maiúsculo
-    let code = document.getElementById('inputRastreio').value.trim().toUpperCase().replace('#', '');
-    if (code.length < 4) return mostrarToast('Digite o código de 4 dígitos.', true);
+    // O input já limpa o # e espaços, mas garantimos aqui também
+    let code = document.getElementById('inputRastreio').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (code.length < 4) return mostrarToast('Digite o código de 4 letras/números.', true);
     window.abrirAcompanhamento(code);
   };
 
@@ -547,14 +544,11 @@
     document.getElementById('modalAcompanhar').classList.add('aberto');
     if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
     
-    // Limpa o # caso venha da URL
-    idOuCode = idOuCode.replace('#', '').toUpperCase();
+    idOuCode = idOuCode.replace(/[^A-Z0-9]/g, '').toUpperCase();
 
-    // Se não for o UUID inteiro (36 caracteres), busca no banco
     if (idOuCode.length < 36) {
       document.getElementById('infoAcompanhar').innerHTML = 'Buscando pedido...';
       
-      // Puxa os últimos 50 pedidos e filtra no JS (mais garantido que o ilike do Supabase)
       const { data, error } = await window.supabaseClient
         .from('comandas_abertas')
         .select('id')
@@ -566,7 +560,6 @@
         return;
       }
 
-      // Encontra o ID que começa com as letras digitadas
       const pedidoEncontrado = data.find(p => p.id.toUpperCase().startsWith(idOuCode));
 
       if (!pedidoEncontrado) {
@@ -615,4 +608,4 @@
   setInterval(renderizarHeader, 60000);
 </script>
 </body>
-  </html>
+</html>
