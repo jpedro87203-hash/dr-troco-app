@@ -2,7 +2,7 @@
    DR. TROCO — SERVICE WORKER (PWA) - VERSÃO CORRIGIDA
    ========================================================= */
 
-const CACHE_NAME = 'dr-troco-v87.';
+const CACHE_NAME = 'dr-troco-v88.';
 
 const ASSETS = [
   './', './index.html', './fluxo.html', './historico.html', './estoque.html',
