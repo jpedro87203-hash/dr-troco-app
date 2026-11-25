@@ -8,10 +8,6 @@
   <script src="supabase.js"></script>
   <style>
     body { font-family: Arial, sans-serif; background: #f8fafc; margin: 0; padding: 16px 16px 100px; color: #263640; }
-    
-    /* Painel de erro para ajudar a identificar problemas */
-    .erro-box { background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: bold; margin-bottom: 16px; display: none; border: 1px solid #f87171; text-align: center; }
-
     .card { background: #fff; max-width: 520px; margin: 0 auto; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,.06); }
     h2 { margin: 0 0 16px; color: #168b53; font-size: 20px; display: flex; align-items: center; gap: 8px; }
     label { display: block; font-size: 12px; font-weight: 800; color: #475569; margin: 12px 0 4px; }
@@ -41,10 +37,7 @@
   </style>
 </head>
 <body>
-  
   <div class="card">
-    <div id="painelErro" class="erro-box"></div>
-
     <h2>🏪 Meu Estabelecimento</h2>
     
     <label>Logo da Loja <span class="ajuda">(JPG ou PNG, máx 2MB)</span></label>
@@ -116,12 +109,6 @@
     let comercioId = null;
     let arquivoSelecionado = null;
 
-    function mostrarErroGlobal(msg) {
-      const painel = document.getElementById('painelErro');
-      painel.style.display = 'block';
-      painel.innerHTML = `⚠️ ${msg}`;
-    }
-
     function previewImagem(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -167,7 +154,8 @@
       try {
         comercioId = await obterComercioIdConfig();
         if (!comercioId) {
-          mostrarErroGlobal('Loja não identificada. Faça login novamente.');
+          document.getElementById('msg').className = 'msg err';
+          document.getElementById('msg').textContent = 'Loja não identificada. Faça login novamente.';
           document.getElementById('btnSalvar').disabled = true;
           return;
         }
@@ -193,7 +181,7 @@
           }
         }
       } catch(e) {
-        mostrarErroGlobal('Erro ao carregar os dados: ' + e.message);
+        console.error(e);
       }
     }
 
@@ -223,7 +211,9 @@
 
         btn.textContent = 'Salvando Dados...';
         const nome = document.getElementById('nome').value.trim();
+        
         const payload = {
+          comercio_id: comercioId,
           logo_url: logoUrlFinal,
           endereco: document.getElementById('endereco').value.trim(),
           cidade: document.getElementById('cidade').value.trim(),
@@ -243,12 +233,12 @@
 
         if (nome) await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
         
-        const { data: updated, error: errUpd } = await window.supabaseClient.from('dados_estabelecimento').update(payload).eq('comercio_id', comercioId).select();
-        if (errUpd) throw errUpd;
+        // USA O UPSERT (Salva ou Atualiza sem duplicar)
+        const { error: errUpd } = await window.supabaseClient
+          .from('dados_estabelecimento')
+          .upsert(payload, { onConflict: 'comercio_id' });
 
-        if (!updated || updated.length === 0) {
-          await window.supabaseClient.from('dados_estabelecimento').insert([{ comercio_id: comercioId, ...payload }]);
-        }
+        if (errUpd) throw errUpd;
 
         msgEl.className = 'msg ok';
         msgEl.innerHTML = '✅ Configurações e Logo salvas com sucesso!';
@@ -264,7 +254,6 @@
       }
     }
 
-    // Inicia o carregamento com um pequeno delay para garantir que o Supabase.js carregou
     window.addEventListener('DOMContentLoaded', () => { setTimeout(carregar, 200); });
   </script>
 </body>
