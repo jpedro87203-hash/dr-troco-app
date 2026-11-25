@@ -36,6 +36,14 @@
     });
   }
 
+  // 🔹 NOVO: código de rastreio exibível
+  function codigoRastreio(pedido) {
+    if (!pedido) return '----';
+    if (pedido.tracking_code) return String(pedido.tracking_code).toUpperCase();
+    // fallback p/ pedidos antigos sem tracking_code
+    return String(pedido.id || '').slice(0, 4).toUpperCase();
+  }
+
   function obterDataHoraOperacional() {
     const agora = new Date();
     const dia = String(agora.getDate()).padStart(2, '0');
@@ -69,17 +77,12 @@
     if (comercioIdAtual) return comercioIdAtual;
     
     try {
-      // 1. Tenta pela API oficial
       if (window.EstoqueSupabase?.obterComercioId) {
         comercioIdAtual = await window.EstoqueSupabase.obterComercioId();
       }
-      
-      // 2. Tenta pelo LocalStorage
       if (!comercioIdAtual) {
         comercioIdAtual = localStorage.getItem('drTroco_comercio_id') || localStorage.getItem('comercio_id');
       }
-
-      // 3. Tenta pelo Auth
       if (!comercioIdAtual && window.supabaseClient) {
         const { data: { user } } = await window.supabaseClient.auth.getUser();
         if (user) {
@@ -106,13 +109,19 @@
 
     const nome = pedido.cliente_nome ? pedido.cliente_nome.split(' ')[0] : 'Cliente';
     const total = formatarDinheiro(pedido.total);
-    const idCurto = String(id).slice(0, 4);
+    const idCurto = codigoRastreio(pedido); // 🔹 NOVO: usa tracking_code
+
+    // 🔹 NOVO: link de rastreio com tracking_code
+    const baseLink = window.location.origin + window.location.pathname.replace('pedidos.html', 'cardapio.html');
+    const linkRastreio = comercioIdAtual
+      ? `${baseLink}?loja=${comercioIdAtual}&pedido=${encodeURIComponent(idCurto)}`
+      : baseLink;
 
     let texto = '';
     if (status === 'preparando') {
-      texto = `Olá ${nome}! 👋\n\nSeu pedido *#${idCurto}* foi *ACEITO* e já está sendo preparado com muito carinho. 🧑‍🍳\n\n💰 Valor total: ${total}\n\nAvisaremos aqui assim que sair para entrega!`;
+      texto = `Olá ${nome}! 👋\n\nSeu pedido *#${idCurto}* foi *ACEITO* e já está sendo preparado com muito carinho. 🧑‍🍳\n\n💰 Valor total: ${total}\n\nAcompanhe o status aqui:\n${linkRastreio}\n\nAvisaremos aqui assim que sair para entrega!`;
     } else if (status === 'em_rota') {
-      texto = `Olá ${nome}! 🛵\n\nSeu pedido *#${idCurto}* acabou de *SAIR PARA ENTREGA*.\n\n📍 Endereço de entrega:\n${pedido.endereco_entrega || 'Não informado'}\n\nFique atento ao telefone e aguarde o entregador!`;
+      texto = `Olá ${nome}! 🛵\n\nSeu pedido *#${idCurto}* acabou de *SAIR PARA ENTREGA*.\n\n📍 Endereço de entrega:\n${pedido.endereco_entrega || 'Não informado'}\n\nAcompanhe em tempo real:\n${linkRastreio}\n\nFique atento ao telefone e aguarde o entregador!`;
     } else if (status === 'fechada') {
       texto = `Olá ${nome}! ✅\n\nSeu pedido *#${idCurto}* foi entregue com sucesso.\n\nEsperamos que esteja tudo delicioso! 🍔🥤\nObrigado pela preferência e volte sempre!`;
     } else if (status === 'cancelado') {
@@ -138,7 +147,8 @@
     const p = pedidosOnline.find(x => String(x.id) === String(id));
     if (!p) return;
 
-    document.getElementById('detalhesTitulo').textContent = `Pedido #${String(p.id).slice(0, 4)}`;
+    const codigo = codigoRastreio(p);
+    document.getElementById('detalhesTitulo').textContent = `Pedido #${codigo}`;
     
     const itens = (p.itens || []).map(it => {
       const qtd = it.quantidade || 1;
@@ -149,6 +159,12 @@
     const taxa = Number(p.taxa_entrega || 0);
     
     let html = `
+      <div class="detalhe-secao">
+        <div class="detalhe-titulo">🔎 Código de Rastreio</div>
+        <div class="detalhe-conteudo" style="font-family:monospace;font-size:16px;font-weight:900;letter-spacing:2px;text-align:center;">
+          ${escaparHTML(codigo)}
+        </div>
+      </div>
       <div class="detalhe-secao">
         <div class="detalhe-titulo">👤 Cliente</div>
         <div class="detalhe-conteudo">
@@ -261,6 +277,7 @@
     }
 
     lista.innerHTML = filtrados.map(p => {
+      const codigo = codigoRastreio(p); // 🔹 NOVO
       const temWhats = !!normalizarTelefone(p.cliente_telefone);
       const btnWhats = temWhats ? `<button class="btn-acao" style="background:#25d366;color:#fff;" onclick="abrirWhatsCliente('${p.id}')">💬 WhatsApp</button>` : '';
 
@@ -298,7 +315,7 @@
       return `
         <div class="card-pedido status-${p.status}">
           <div class="pedido-topo">
-            <span class="pedido-id">Pedido #${String(p.id).slice(0, 4)}</span>
+            <span class="pedido-id">Pedido #${escaparHTML(codigo)}</span>
             <span class="pedido-total">${formatarDinheiro(p.total)}</span>
           </div>
           <div class="pedido-cliente">👤 ${escaparHTML(p.cliente_nome || 'Cliente')}</div>
@@ -437,11 +454,11 @@
   }
 
   // ==========================================================
-  // DIVULGAÇÃO DO CARDÁPIO (CORRIGIDO)
+  // DIVULGAÇÃO DO CARDÁPIO
   // ==========================================================
   async function montarLinkCardapio() {
     try {
-      await buscarComercioId(); // Garante que temos o ID
+      await buscarComercioId();
 
       if (!comercioIdAtual || comercioIdAtual === 'undefined' || comercioIdAtual === 'null') {
         console.warn('ID do comércio não encontrado para gerar link.');
@@ -513,7 +530,7 @@
       });
     });
 
-    await montarLinkCardapio(); // Pega o ID logo de cara
+    await montarLinkCardapio();
     carregarPedidos();
     setTimeout(iniciarRealtime, 1500);
     setInterval(carregarPedidos, 30000);
