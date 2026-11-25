@@ -9,7 +9,7 @@
   <style>
     :root { --verde:#168b53; --verde-claro:#eaf8f0; --texto:#263640; --cinza:#64748b; }
     * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #f3f7f5; margin: 0; padding-bottom: 110px; color: var(--texto); }
+    body { font-family: Arial, sans-serif; background: #f3f7f5; margin: 0; padding-bottom: 120px; color: var(--texto); }
 
     /* HEADER */
     .header { background: linear-gradient(135deg, #168b53, #0f6b3f); color: #fff; padding: 16px 16px 20px; border-radius: 0 0 22px 22px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,.12); }
@@ -22,8 +22,8 @@
     .badge-status.fechado { background: #dc2626; }
 
     /* ACOMPANHAMENTO RÁPIDO */
-    .box-acompanhar { background: #fff; border-radius: 12px; padding: 10px 14px; margin-top: 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-    .box-acompanhar input { flex: 1; border: 0; outline: none; font-size: 14px; font-weight: bold; color: #1e293b; padding: 4px 0; }
+    .box-acompanhar { background: #fff; border-radius: 12px; padding: 8px 12px; margin-top: 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .box-acompanhar input { flex: 1; border: 0; outline: none; font-size: 14px; font-weight: bold; color: #1e293b; padding: 4px 0; text-transform: uppercase; background: transparent; }
     .box-acompanhar button { background: #1e293b; color: #fff; border: 0; padding: 8px 16px; border-radius: 8px; font-weight: 900; font-size: 13px; cursor: pointer; }
 
     /* BUSCA PRODUTO */
@@ -86,7 +86,7 @@
     .btn-confirmar { width: 100%; background: var(--verde); color: #fff; border: 0; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 900; margin-top: 10px; cursor: pointer; }
     .btn-voltar { width: 100%; background: transparent; border: 0; margin-top: 10px; color: var(--cinza); font-weight: bold; padding: 10px; cursor: pointer; }
 
-    /* RASTREIO (PROGRESSO) */
+    /* RASTREIO */
     .step-container { display: flex; justify-content: space-between; margin: 24px 0; position: relative; }
     .step-container::before { content: ''; position: absolute; top: 14px; left: 20px; right: 20px; height: 4px; background: #e2e8f0; z-index: 1; }
     .step-progress { position: absolute; top: 14px; left: 20px; height: 4px; background: #10b981; z-index: 2; transition: width 0.4s ease; width: 0%; }
@@ -114,15 +114,14 @@
     </div>
   </div>
   
-  <!-- ACOMPANHAMENTO RÁPIDO -->
   <div class="box-acompanhar">
     <span style="font-size:18px;">🔎</span>
-    <input type="text" id="inputRastreio" placeholder="Código do pedido (ex: A1B2)" maxlength="4">
-    <button onclick="rastrearPedidoManual()">Acompanhar</button>
+    <input type="text" id="inputRastreio" placeholder="CÓDIGO (Ex: A1B2)" maxlength="4">
+    <button onclick="rastrearPedidoManual()">Status</button>
   </div>
 
   <div class="barra-busca">
-    <input type="text" id="buscaProduto" placeholder="🔍 Pesquisar no cardápio..." autocomplete="off">
+    <input type="text" id="buscaProduto" placeholder="🔍 Pesquisar produto..." autocomplete="off">
   </div>
 </div>
 
@@ -145,13 +144,11 @@
   </div>
 </div>
 
-<!-- MODAL CHECKOUT -->
 <div class="modal" id="modalCarrinho">
   <div class="modal-box">
     <h2>Seu Pedido</h2>
     <div id="listaCarrinho"></div>
     <form id="formPedido" style="margin-top:16px;">
-      
       <div class="secao-titulo">👤 Seus Dados</div>
       <div class="form-campo"><label>Seu Nome *</label><input type="text" id="nomeCliente" required></div>
       <div class="form-campo"><label>WhatsApp *</label><input type="tel" id="telefoneCliente" required placeholder="(11) 99999-9999"></div>
@@ -190,7 +187,6 @@
   </div>
 </div>
 
-<!-- MODAL RASTREIO -->
 <div class="modal" id="modalAcompanhar">
   <div class="modal-box">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -217,7 +213,7 @@
 
 <script>
   const urlParams = new URLSearchParams(window.location.search);
-  const comercioId = urlParams.get('loja');
+  const comercioId = urlParams.get('loja') || urlParams.get('id');
   let produtos = [];
   let carrinho = [];
   let estabelecimento = { nome: '', endereco: '', cidade: '', estado: '', horario_abertura: '', horario_fechamento: '', taxa_entrega: 0, pedido_minimo: 0, aviso_clientes: '', chave_pix: '', aceita_delivery: true, aberto_manual: true };
@@ -230,8 +226,18 @@
   function normalizar(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
   function normalizarTel(t) { return String(t || '').replace(/\D/g, ''); }
 
-  async function carregarEstabelecimento() {
-    if (!comercioId) return;
+  async function initCardapio() {
+    if (!comercioId || comercioId === 'undefined' || comercioId === 'null') {
+      document.getElementById('gradeProdutos').innerHTML = `
+        <div style="grid-column: 1/-1; text-align:center; padding: 40px 20px; background:#fff; border-radius:12px;">
+          <p style="font-size:18px; font-weight:900; color:#dc2626; margin-bottom:10px;">Link Inválido</p>
+          <p style="color:#64748b; margin-bottom:20px;">O link que você acessou não tem o ID da loja.</p>
+          <button onclick="window.location.href='index.html'" style="background:#168b53; color:#fff; border:0; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer;">Voltar ao Início</button>
+        </div>`;
+      document.getElementById('nomeEstab').textContent = 'Cardápio Digital';
+      return;
+    }
+
     try {
       const [comercioRes, dadosRes] = await Promise.all([
         window.supabaseClient.from('comercios').select('nome').eq('id', comercioId).maybeSingle(),
@@ -250,8 +256,15 @@
         };
       }
     } catch (e) { console.warn(e); }
+    
     renderizarHeader();
     renderizarAvisoLoja();
+
+    try {
+      const { data } = await window.supabaseClient.from('estoque_produtos').select('*').eq('comercio_id', comercioId).gt('quantidade', 0);
+      produtos = data || [];
+      renderizarProdutos();
+    } catch (e) { document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio">Erro ao carregar produtos.</p>'; }
   }
 
   function estaAbertoAgora() {
@@ -293,16 +306,6 @@
     const aviso = (estabelecimento.aviso_clientes || '').trim();
     if (!aviso) { el.innerHTML = ''; return; }
     el.innerHTML = `<div class="aviso-loja"><div class="aviso-loja-titulo">📢 Aviso da Loja</div><div class="aviso-loja-texto">${aviso.replace(/</g,'&lt;')}</div></div>`;
-  }
-
-  async function carregarCardapio() {
-    if (!comercioId) return document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio">Link inválido.</p>';
-    await carregarEstabelecimento();
-    try {
-      const { data } = await window.supabaseClient.from('estoque_produtos').select('*').eq('comercio_id', comercioId).gt('quantidade', 0);
-      produtos = data || [];
-      renderizarProdutos();
-    } catch (e) { document.getElementById('gradeProdutos').innerHTML = '<p class="aviso-vazio">Erro ao carregar.</p>'; }
   }
 
   function renderizarProdutos() {
@@ -417,30 +420,15 @@
       const { error } = await window.supabaseClient.from('comandas_abertas').insert([pedido]);
       if (error) throw error;
 
-      // Envia o WhatsApp pro cliente com o LINK DE RASTREIO
       const linkRastreio = window.location.origin + window.location.pathname + '?loja=' + comercioId + '&pedido=' + pedido.id;
-      const msg = encodeURIComponent(`Olá ${pedido.cliente_nome}! Seu pedido *#${pedido.id.slice(0,4)}* foi recebido.\n\nPara acompanhar o status, clique no link abaixo:\n${linkRastreio}`);
+      const msg = encodeURIComponent(`Olá ${pedido.cliente_nome}! Seu pedido *#${pedido.id.slice(0,4).toUpperCase()}* foi recebido.\n\nPara acompanhar o status, clique no link abaixo:\n${linkRastreio}`);
       window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
-
-      // Notifica a loja
-      if (estabelecimento.telefone_whatsapp) {
-        setTimeout(() => window.open(`https://wa.me/55${normalizarTel(estabelecimento.telefone_whatsapp)}?text=${encodeURIComponent(`🛵 NOVO PEDIDO #${pedido.id.slice(0,4)}\nCliente: ${pedido.cliente_nome}\nTotal: ${fmt(pedido.total)}`)}`, '_blank'), 800);
-      }
 
       mostrarToast('Pedido enviado! 🛵');
       carrinho = []; atualizarCarrinho(); renderizarProdutos(); fecharCheckout(); document.getElementById('formPedido').reset(); atualizarBlocoPix();
     } catch (err) { console.error(err); mostrarToast('Erro ao enviar.', true); } 
     finally { btn.textContent = 'Enviar Pedido'; btn.disabled = false; }
   });
-
-  // LÓGICA DE RASTREIO
-  function verificarRastreioUrl() {
-    const pedidoId = urlParams.get('pedido');
-    if (pedidoId) {
-      document.getElementById('inputRastreio').value = pedidoId.slice(0,4).toUpperCase();
-      window.abrirAcompanhamento(pedidoId);
-    }
-  }
 
   window.rastrearPedidoManual = function() {
     const code = document.getElementById('inputRastreio').value.trim().toUpperCase();
@@ -452,7 +440,6 @@
     document.getElementById('modalAcompanhar').classList.add('aberto');
     if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
     
-    // Se for apenas o código (4 letras), busca no banco
     if (idOuCode.length <= 4) {
       const { data } = await window.supabaseClient.from('comandas_abertas').select('id').ilike('id', idOuCode + '%').order('atualizado_em', { ascending: false }).limit(1).maybeSingle();
       if (!data) {
@@ -498,10 +485,17 @@
     } catch(e) {}
   }
 
-  // Boot
-  carregarCardapio();
-  verificarRastreioUrl();
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      initCardapio();
+      const pId = urlParams.get('pedido');
+      if (pId) {
+        document.getElementById('inputRastreio').value = pId.slice(0,4).toUpperCase();
+        window.abrirAcompanhamento(pId);
+      }
+    }, 300);
+  });
   setInterval(renderizarHeader, 60000);
 </script>
 </body>
-</html>
+  </html>
