@@ -27,11 +27,16 @@
 
     button.btn-salvar { width: 100%; height: 48px; margin-top: 20px; background: #168b53; color: #fff; border: 0; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; }
     button.btn-salvar:disabled { opacity: 0.6; }
-    .msg { margin-top: 12px; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 800; text-align: center; display: none; }
-    .ok { background: #eaf8f0; color: #168b53; display: block; }
-    .err { background: #fee2e2; color: #dc2626; display: block; }
+    
+    /* ESTILO DA MENSAGEM DE SUCESSO */
+    .msg { margin-top: 16px; padding: 14px; border-radius: 10px; font-size: 14px; font-weight: 900; text-align: center; display: none; }
+    .ok { background: #d1fae5; color: #047857; border: 2px solid #10b981; display: block; }
+    .err { background: #fee2e2; color: #b91c1c; border: 2px solid #ef4444; display: block; }
+    
     .ajuda { font-size: 10px; color: #94a3b8; margin-top: 2px; display: block; font-weight: normal; }
     .voltar { display: block; text-align: center; margin-top: 16px; color: #64748b; text-decoration: none; font-size: 13px; font-weight: bold; }
+    
+    .secao-titulo { font-size: 12px; font-weight: 900; color: #168b53; text-transform: uppercase; margin: 20px 0 8px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; }
   </style>
 </head>
 <body>
@@ -44,23 +49,33 @@
       <div style="flex:1;">
         <label for="fileLogo" class="btn-file">📷 Escolher da Galeria</label>
         <input type="file" id="fileLogo" accept="image/*" onchange="previewImagem(event)">
-        <input type="hidden" id="logo_url"> <!-- Guarda o link final da imagem -->
+        <input type="hidden" id="logo_url">
       </div>
     </div>
 
     <label>Nome da Loja</label>
     <input type="text" id="nome" placeholder="Ex: Asas Lanches">
 
-    <label>Endereço</label>
+    <div class="secao-titulo">📍 Endereço e Entregas</div>
+    
+    <label>Endereço da Loja</label>
     <input type="text" id="endereco" placeholder="Ex: Av. Brasil">
 
+    <label>Cidade Principal</label>
+    <input type="text" id="cidade" placeholder="Ex: Santa Helena">
+
     <div class="grid2">
-      <div><label>Cidade</label><input type="text" id="cidade"></div>
       <div><label>Estado</label><input type="text" id="estado" maxlength="2"></div>
+      <div><label>Taxa Cidade Principal (R$)</label><input type="number" id="taxa_entrega" min="0" step="0.50" value="0"></div>
     </div>
 
-    <label>WhatsApp da Loja <span class="ajuda">(Apenas números, ex: 5511999999999)</span></label>
-    <input type="tel" id="telefone_whatsapp" placeholder="5511999999999">
+    <label>Cidade Vizinha <span class="ajuda">(Deixe em branco se não atender outra cidade)</span></label>
+    <div class="grid2">
+      <div><input type="text" id="cidade_vizinha" placeholder="Nome da cidade"></div>
+      <div><input type="number" id="taxa_entrega_vizinha" min="0" step="0.50" value="0" placeholder="Taxa R$"></div>
+    </div>
+
+    <div class="secao-titulo">⏰ Horário e Regras</div>
 
     <div class="grid2">
       <div><label>Abre às</label><input type="time" id="horario_abertura"></div>
@@ -68,21 +83,24 @@
     </div>
 
     <div class="grid2">
-      <div><label>Taxa de Entrega (R$)</label><input type="number" id="taxa_entrega" min="0" step="0.50" value="0"></div>
       <div><label>Pedido Mínimo (R$)</label><input type="number" id="pedido_minimo" min="0" step="0.50" value="0"></div>
+      <div>
+        <label>Aceitar Delivery?</label>
+        <select id="aceita_delivery">
+          <option value="true">Sim</option>
+          <option value="false">Não</option>
+        </select>
+      </div>
     </div>
 
-    <label>Aceitar Delivery?</label>
-    <select id="aceita_delivery">
-      <option value="true">Sim</option>
-      <option value="false">Não</option>
-    </select>
+    <label>WhatsApp da Loja <span class="ajuda">(Apenas números, ex: 5511999999999)</span></label>
+    <input type="tel" id="telefone_whatsapp" placeholder="5511999999999">
 
     <label>Chave PIX</label>
     <input type="text" id="chave_pix" placeholder="Sua chave PIX aqui">
 
     <label>Aviso aos Clientes <span class="ajuda">(Aparecerá no topo do cardápio)</span></label>
-    <textarea id="aviso_clientes" placeholder="Ex: Pedidos via PIX só serão aceitos após envio do comprovante."></textarea>
+    <textarea id="aviso_clientes" placeholder="Ex: Pagamento pix, envio só após envio do comprovante"></textarea>
 
     <button class="btn-salvar" id="btnSalvar" onclick="salvar()">Salvar Configurações</button>
     <div id="msg" class="msg"></div>
@@ -94,23 +112,18 @@
     let comercioId = null;
     let arquivoSelecionado = null;
 
-    // Mostra a imagem na telinha antes de salvar
     function previewImagem(event) {
       const file = event.target.files[0];
       if (!file) return;
-
       if (file.size > 2 * 1024 * 1024) {
         alert("A imagem é muito grande. Escolha uma foto de até 2MB.");
         event.target.value = '';
         return;
       }
-
       arquivoSelecionado = file;
       const preview = document.getElementById('previewLogo');
       const reader = new FileReader();
-      reader.onload = function(e) {
-        preview.innerHTML = `<img src="${e.target.result}">`;
-      };
+      reader.onload = function(e) { preview.innerHTML = `<img src="${e.target.result}">`; };
       reader.readAsDataURL(file);
     }
 
@@ -143,11 +156,9 @@
     async function carregar() {
       const msgEl = document.getElementById('msg');
       msgEl.className = 'msg';
-      msgEl.textContent = 'Carregando dados...';
-      msgEl.style.display = 'block';
+      msgEl.style.display = 'none';
 
       comercioId = await obterComercioIdConfig();
-      
       if (!comercioId) {
         msgEl.className = 'msg err';
         msgEl.textContent = 'Loja não identificada. Faça login novamente.';
@@ -165,19 +176,17 @@
         
         if (resDad.data) {
           const d = resDad.data;
-          const campos = ['endereco', 'cidade', 'estado', 'telefone_whatsapp', 'horario_abertura', 'horario_fechamento', 'taxa_entrega', 'pedido_minimo', 'chave_pix', 'aviso_clientes'];
+          const campos = ['endereco', 'cidade', 'estado', 'cidade_vizinha', 'taxa_entrega_vizinha', 'telefone_whatsapp', 'horario_abertura', 'horario_fechamento', 'taxa_entrega', 'pedido_minimo', 'chave_pix', 'aviso_clientes'];
           campos.forEach(k => {
             if (d[k] != null) document.getElementById(k).value = d[k];
           });
           document.getElementById('aceita_delivery').value = d.aceita_delivery === false ? 'false' : 'true';
           
-          // Se já tem logo salva, mostra na tela
           if (d.logo_url) {
             document.getElementById('logo_url').value = d.logo_url;
             document.getElementById('previewLogo').innerHTML = `<img src="${d.logo_url}">`;
           }
         }
-        msgEl.style.display = 'none';
       } catch(e) {
         msgEl.className = 'msg err';
         msgEl.textContent = 'Erro ao carregar dados: ' + e.message;
@@ -196,31 +205,18 @@
       let logoUrlFinal = document.getElementById('logo_url').value;
 
       try {
-        // 1. Se o lojista escolheu uma foto nova, faz o upload pro Supabase Storage
         if (arquivoSelecionado) {
           btn.textContent = 'Enviando Imagem...';
-          
           const extensao = arquivoSelecionado.name.split('.').pop();
           const nomeArquivo = `${comercioId}-logo-${Date.now()}.${extensao}`;
 
-          // Faz o upload para o bucket "logos"
-          const { data: uploadData, error: uploadError } = await window.supabaseClient
-            .storage
-            .from('logos')
-            .upload(nomeArquivo, arquivoSelecionado, { upsert: true });
-
+          const { error: uploadError } = await window.supabaseClient.storage.from('logos').upload(nomeArquivo, arquivoSelecionado, { upsert: true });
           if (uploadError) throw new Error("Erro ao enviar imagem: " + uploadError.message);
 
-          // Pega o link público da imagem que acabou de subir
-          const { data: publicUrlData } = window.supabaseClient
-            .storage
-            .from('logos')
-            .getPublicUrl(nomeArquivo);
-            
+          const { data: publicUrlData } = window.supabaseClient.storage.from('logos').getPublicUrl(nomeArquivo);
           logoUrlFinal = publicUrlData.publicUrl;
         }
 
-        // 2. Salva os dados de texto e o link da imagem no Banco de Dados
         btn.textContent = 'Salvando Dados...';
         const nome = document.getElementById('nome').value.trim();
         const payload = {
@@ -228,6 +224,8 @@
           endereco: document.getElementById('endereco').value.trim(),
           cidade: document.getElementById('cidade').value.trim(),
           estado: document.getElementById('estado').value.trim().toUpperCase(),
+          cidade_vizinha: document.getElementById('cidade_vizinha').value.trim(),
+          taxa_entrega_vizinha: Number(document.getElementById('taxa_entrega_vizinha').value) || 0,
           telefone_whatsapp: document.getElementById('telefone_whatsapp').value.trim(),
           horario_abertura: document.getElementById('horario_abertura').value,
           horario_fechamento: document.getElementById('horario_fechamento').value,
@@ -239,9 +237,7 @@
           atualizado_em: new Date().toISOString()
         };
 
-        if (nome) {
-          await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
-        }
+        if (nome) await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
         
         const { data: updated, error: errUpd } = await window.supabaseClient.from('dados_estabelecimento').update(payload).eq('comercio_id', comercioId).select();
         if (errUpd) throw errUpd;
@@ -250,10 +246,13 @@
           await window.supabaseClient.from('dados_estabelecimento').insert([{ comercio_id: comercioId, ...payload }]);
         }
 
+        // MENSAGEM DE SUCESSO VERDE
         msgEl.className = 'msg ok';
-        msgEl.textContent = '✅ Configurações e Logo salvas com sucesso!';
+        msgEl.innerHTML = '✅ Configurações e Logo salvas com sucesso!';
         arquivoSelecionado = null; 
-        setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+        
+        // Remove a mensagem depois de 4 segundos
+        setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
 
       } catch(e) {
         msgEl.className = 'msg err';
