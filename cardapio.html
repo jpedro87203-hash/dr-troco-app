@@ -162,7 +162,17 @@
       <div class="secao-titulo">👤 Seus Dados</div>
       <div class="form-campo"><label>Seu Nome *</label><input type="text" id="nomeCliente" required></div>
       <div class="form-campo"><label>WhatsApp *</label><input type="tel" id="telefoneCliente" required placeholder="(11) 99999-9999"></div>
+      
       <div class="secao-titulo">📍 Endereço de Entrega</div>
+      
+      <!-- NOVO CAMPO: CIDADE DE ENTREGA -->
+      <div class="form-campo">
+        <label>Cidade de Entrega *</label>
+        <select id="cidadeEntrega" onchange="calcularTotal()">
+          <option value="principal">Cidade Principal</option>
+        </select>
+      </div>
+
       <div class="linha-grid">
         <div class="form-campo"><label>Rua *</label><input type="text" id="endRua" required></div>
         <div class="form-campo"><label>Número *</label><input type="text" id="endNumero" required></div>
@@ -172,6 +182,7 @@
         <div class="form-campo"><label>Compl.</label><input type="text" id="endComplemento"></div>
       </div>
       <div class="form-campo"><label>Ref.</label><input type="text" id="endReferencia" placeholder="Próximo a..."></div>
+      
       <div class="secao-titulo">💳 Pagamento</div>
       <div class="form-campo">
         <select id="pagamento" required>
@@ -215,17 +226,14 @@
 <script>
   window.addEventListener('error', function(event) {
     const painel = document.getElementById('painelErro');
-    if(painel) {
-      painel.style.display = 'block';
-      painel.innerHTML = `Erro de Script: ${event.message}. Tente recarregar a página.`;
-    }
+    if(painel) { painel.style.display = 'block'; painel.innerHTML = `Erro de Script: ${event.message}. Tente recarregar a página.`; }
   });
 
   const urlParams = new URLSearchParams(window.location.search);
   const comercioId = urlParams.get('loja') || urlParams.get('id');
   let produtos = [];
   let carrinho = [];
-  let estabelecimento = { nome: '', logo_url: '', endereco: '', cidade: '', estado: '', horario_abertura: '', horario_fechamento: '', taxa_entrega: 0, pedido_minimo: 0, aviso_clientes: '', chave_pix: '', aceita_delivery: true };
+  let estabelecimento = { nome: '', logo_url: '', endereco: '', cidade: '', estado: '', cidade_vizinha: '', taxa_entrega_vizinha: 0, horario_abertura: '', horario_fechamento: '', taxa_entrega: 0, pedido_minimo: 0, aviso_clientes: '', chave_pix: '', aceita_delivery: true };
   let termoBusca = '';
   let intervalAcompanhamento = null;
 
@@ -279,6 +287,7 @@
           ...estabelecimento,
           logo_url: resDad.data.logo_url || '',
           endereco: resDad.data.endereco || '', cidade: resDad.data.cidade || '', estado: resDad.data.estado || '',
+          cidade_vizinha: resDad.data.cidade_vizinha || '', taxa_entrega_vizinha: Number(resDad.data.taxa_entrega_vizinha || 0),
           telefone_whatsapp: resDad.data.telefone_whatsapp || '',
           horario_abertura: resDad.data.horario_abertura || '', horario_fechamento: resDad.data.horario_fechamento || '',
           aberto_manual: resDad.data.aberto_manual !== false, taxa_entrega: Number(resDad.data.taxa_entrega || 0),
@@ -293,6 +302,7 @@
     
     renderizarHeader();
     renderizarAvisoLoja();
+    configurarCidades(); // Configura o select de cidades
     preencherDados();
 
     try {
@@ -313,6 +323,16 @@
     }
   }
 
+  function configurarCidades() {
+    const select = document.getElementById('cidadeEntrega');
+    select.innerHTML = `<option value="principal">${estabelecimento.cidade || 'Cidade Principal'}</option>`;
+    
+    // Se tiver cidade vizinha cadastrada, adiciona a opção com o valor da taxa
+    if (estabelecimento.cidade_vizinha && estabelecimento.taxa_entrega_vizinha > 0) {
+      select.innerHTML += `<option value="vizinha">${estabelecimento.cidade_vizinha} (+ ${fmt(estabelecimento.taxa_entrega_vizinha)})</option>`;
+    }
+  }
+
   function estaAbertoAgora() {
     if (estabelecimento.aberto_manual === false || estabelecimento.aceita_delivery === false) return false;
     const { horario_abertura, horario_fechamento } = estabelecimento;
@@ -329,7 +349,6 @@
   function renderizarHeader() {
     document.getElementById('nomeEstab').textContent = estabelecimento.nome || 'Cardápio Digital';
     
-    // AQUI A LOGO É EXIBIDA
     const divLogo = document.querySelector('.logo-estab');
     if (divLogo) {
       if (estabelecimento.logo_url) {
@@ -343,8 +362,10 @@
     const endCompleto = [estabelecimento.endereco, estabelecimento.cidade, estabelecimento.estado].filter(Boolean).join(' - ');
     if (endCompleto) partes.push('📍 ' + endCompleto);
     if (estabelecimento.horario_abertura && estabelecimento.horario_fechamento) partes.push(`🕐 De ${estabelecimento.horario_abertura} às ${estabelecimento.horario_fechamento}`);
+    
     if (estabelecimento.taxa_entrega > 0) partes.push(`🛵 Taxa de entrega: <strong>${fmt(estabelecimento.taxa_entrega)}</strong>`);
     else partes.push('🛵 <strong>Entrega Grátis!</strong>');
+    
     document.getElementById('infoEstab').innerHTML = partes.join('<br>');
 
     const badge = document.getElementById('badgeStatus');
@@ -404,24 +425,51 @@
       if (item.quantidade <= 0) carrinho = carrinho.filter(c => String(c.id) !== String(id));
       else if (item.quantidade > prod.quantidade) item.quantidade = prod.quantidade;
     }
-    atualizarCarrinho(); renderizarProdutos();
+    calcularTotal(); renderizarProdutos();
     if (document.getElementById('modalCarrinho').classList.contains('aberto')) abrirCheckout();
   };
-  window.removerItem = function (id) { carrinho = carrinho.filter(c => String(c.id) !== String(id)); atualizarCarrinho(); renderizarProdutos(); abrirCheckout(); };
+  window.removerItem = function (id) { carrinho = carrinho.filter(c => String(c.id) !== String(id)); calcularTotal(); renderizarProdutos(); abrirCheckout(); };
 
   function calcularSubtotal() { return carrinho.reduce((acc, c) => acc + Number(c.preco) * c.quantidade, 0); }
-  function calcularTotal() { return calcularSubtotal() + (calcularSubtotal() > 0 ? Number(estabelecimento.taxa_entrega || 0) : 0); }
+  
+  // LÓGICA DA DUPLA TAXA DE ENTREGA
+  function calcularTaxa() {
+    if (calcularSubtotal() === 0) return 0;
+    const selectCidade = document.getElementById('cidadeEntrega');
+    const cidadeSelecionada = selectCidade ? selectCidade.value : 'principal';
+    
+    if (cidadeSelecionada === 'vizinha') {
+      return Number(estabelecimento.taxa_entrega_vizinha || 0);
+    }
+    return Number(estabelecimento.taxa_entrega || 0);
+  }
 
-  function atualizarCarrinho() {
+  function calcularTotal() { 
+    const sub = calcularSubtotal();
+    const taxa = calcularTaxa();
+    const total = sub + taxa;
+    
+    // Atualiza a barra inferior
     const qtd = carrinho.reduce((acc, c) => acc + c.quantidade, 0);
     const bar = document.getElementById('carrinhoBar');
     if (qtd > 0) {
       bar.classList.add('visivel');
       document.getElementById('qtdCarrinho').textContent = `${qtd} ${qtd === 1 ? 'item' : 'itens'}`;
-      document.getElementById('totalCarrinho').textContent = fmt(calcularTotal());
-      const taxa = Number(estabelecimento.taxa_entrega || 0);
+      document.getElementById('totalCarrinho').textContent = fmt(total);
       document.getElementById('taxaInfo').textContent = taxa > 0 ? `(inclui taxa de ${fmt(taxa)})` : '';
     } else { bar.classList.remove('visivel'); }
+
+    // Atualiza o modal se estiver aberto
+    if (document.getElementById('modalCarrinho').classList.contains('aberto')) {
+      document.getElementById('resumoTotal').innerHTML = `
+        <div class="linha"><span>Subtotal</span><span>${fmt(sub)}</span></div>
+        <div class="linha"><span>Taxa de entrega</span><span>${taxa > 0 ? fmt(taxa) : 'Grátis'}</span></div>
+        <div class="linha"><span>Total</span><span>${fmt(total)}</span></div>
+        ${estabelecimento.pedido_minimo > 0 && sub < estabelecimento.pedido_minimo ? `<div style="color:#dc2626;font-size:11px;font-weight:800;margin-top:8px;">⚠️ Mínimo: ${fmt(estabelecimento.pedido_minimo)}</div>` : ''}
+      `;
+      document.getElementById('btnEnviar').disabled = (!carrinho.length || (estabelecimento.pedido_minimo > 0 && sub < estabelecimento.pedido_minimo));
+    }
+    return total;
   }
 
   function abrirCheckout() {
@@ -435,14 +483,7 @@
         </div>
       </div>`).join('') : '<p style="text-align:center;color:#64748b;">Carrinho vazio</p>';
 
-    const sub = calcularSubtotal(), taxa = sub > 0 ? Number(estabelecimento.taxa_entrega || 0) : 0;
-    document.getElementById('resumoTotal').innerHTML = `
-      <div class="linha"><span>Subtotal</span><span>${fmt(sub)}</span></div>
-      <div class="linha"><span>Taxa de entrega</span><span>${taxa > 0 ? fmt(taxa) : 'Grátis'}</span></div>
-      <div class="linha"><span>Total</span><span>${fmt(sub + taxa)}</span></div>
-      ${estabelecimento.pedido_minimo > 0 && sub < estabelecimento.pedido_minimo ? `<div style="color:#dc2626;font-size:11px;font-weight:800;margin-top:8px;">⚠️ Mínimo: ${fmt(estabelecimento.pedido_minimo)}</div>` : ''}
-    `;
-    document.getElementById('btnEnviar').disabled = (!carrinho.length || (estabelecimento.pedido_minimo > 0 && sub < estabelecimento.pedido_minimo));
+    calcularTotal(); // Chama o cálculo atualizado
     document.getElementById('modalCarrinho').classList.add('aberto');
   }
   window.fecharCheckout = function () { document.getElementById('modalCarrinho').classList.remove('aberto'); };
@@ -481,8 +522,13 @@
     const rua = document.getElementById('endRua').value.trim(), num = document.getElementById('endNumero').value.trim();
     const bai = document.getElementById('endBairro').value.trim(), com = document.getElementById('endComplemento').value.trim();
     const ref = document.getElementById('endReferencia').value.trim();
+    
+    // Pega o nome da cidade escolhida no select
+    const selectCidade = document.getElementById('cidadeEntrega');
+    const cidadeEscolhida = selectCidade.options[selectCidade.selectedIndex].text.split(' (')[0];
+    
     if (!rua || !num || !bai) return '';
-    return `${rua}, ${num} - ${bai}${com ? ` (${com})` : ''}${ref ? ` — Ref: ${ref}` : ''}`;
+    return `${rua}, ${num} - ${bai} (${cidadeEscolhida})${com ? ` (${com})` : ''}${ref ? ` — Ref: ${ref}` : ''}`;
   }
 
   document.getElementById('formPedido').addEventListener('submit', async (e) => {
@@ -499,7 +545,7 @@
       id: gerarId(), comercio_id: comercioId, mesa_nome: 'Delivery', codigo_qr: 'DELIVERY',
       cliente_nome: document.getElementById('nomeCliente').value.trim(), cliente_telefone: tel, endereco_entrega: endereco,
       itens: carrinho.map(c => ({ id: c.id, nome: c.nome, quantidade: c.quantidade, valorUnitarioCentavos: Math.round(c.preco * 100) })),
-      total: calcularTotal(), taxa_entrega: Number(estabelecimento.taxa_entrega || 0),
+      total: calcularTotal(), taxa_entrega: calcularTaxa(), // Calcula a taxa correta no envio
       status: 'aberta', forma_pagamento: document.getElementById('pagamento').value, origem: 'cardapio',
       observacao: document.getElementById('obs').value.trim(), atualizado_em: new Date().toISOString()
     };
@@ -520,7 +566,7 @@
       }
 
       mostrarToast('Pedido enviado! 🛵');
-      carrinho = []; atualizarCarrinho(); renderizarProdutos(); fecharCheckout(); document.getElementById('formPedido').reset(); atualizarBlocoPix(); preencherDados();
+      carrinho = []; calcularTotal(); renderizarProdutos(); fecharCheckout(); document.getElementById('formPedido').reset(); atualizarBlocoPix(); preencherDados();
       window.abrirAcompanhamento(pedido.id);
     } catch (err) { 
       console.error(err); mostrarToast('Erro ao enviar. Tente novamente.', true); 
@@ -603,4 +649,4 @@
   setInterval(renderizarHeader, 60000);
 </script>
 </body>
-</html>
+  </html>
