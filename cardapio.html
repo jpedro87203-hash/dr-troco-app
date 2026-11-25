@@ -11,25 +11,22 @@
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; background: #f3f7f5; margin: 0; padding-bottom: 120px; color: var(--texto); }
 
-    /* AVISO DE ERRO */
     .erro-topo { background: #fee2e2; color: #991b1b; padding: 15px; text-align: center; font-size: 13px; font-weight: bold; display: none; border-bottom: 2px solid #dc2626; }
     
-    /* HEADER */
     .header { background: linear-gradient(135deg, #168b53, #0f6b3f); color: #fff; padding: 16px 16px 20px; border-radius: 0 0 22px 22px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,.12); }
     .header-topo { display: flex; align-items: flex-start; gap: 12px; }
-    .logo-estab { width: 50px; height: 50px; border-radius: 14px; background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+    .logo-estab { width: 50px; height: 50px; border-radius: 14px; background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; overflow: hidden; }
+    .logo-estab img { width: 100%; height: 100%; object-fit: cover; }
     .info-estab { flex: 1; min-width: 0; }
     .info-estab h1 { margin: 0; font-size: 18px; font-weight: 900; line-height: 1.2; word-break: break-word; }
     .info-estab p { margin: 4px 0 0; font-size: 12px; opacity: .92; line-height: 1.4; }
     .badge-status { display: inline-block; margin-top: 7px; padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 900; background: rgba(255,255,255,.22); }
     .badge-status.fechado { background: #dc2626; }
 
-    /* ACOMPANHAMENTO */
     .box-acompanhar { background: #fff; border-radius: 12px; padding: 8px 12px; margin-top: 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .box-acompanhar input { flex: 1; border: 0; outline: none; font-size: 14px; font-weight: bold; color: #1e293b; padding: 4px 0; text-transform: uppercase; background: transparent; }
     .box-acompanhar button { background: #1e293b; color: #fff; border: 0; padding: 8px 16px; border-radius: 8px; font-weight: 900; font-size: 13px; cursor: pointer; }
 
-    /* BUSCA */
     .barra-busca { margin-top: 10px; display: flex; gap: 8px; }
     .barra-busca input { flex: 1; height: 44px; border: 0; border-radius: 12px; padding: 0 14px; font-size: 14px; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .btn-limpar { width: 44px; height: 44px; border: 0; border-radius: 12px; background: rgba(255,255,255,.22); color: #fff; font-size: 18px; cursor: pointer; display: none; }
@@ -37,12 +34,10 @@
 
     .container { max-width: 640px; margin: 0 auto; padding: 16px; }
 
-    /* AVISO */
     .aviso-loja { background: #fff7ed; border-left: 4px solid #ea580c; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
     .aviso-loja-titulo { font-size: 13px; font-weight: 900; color: #c2410c; margin-bottom: 4px; }
     .aviso-loja-texto { font-size: 13px; color: #7c2d12; line-height: 1.5; font-weight: 600; white-space: pre-line; }
 
-    /* GRID */
     .grade { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     @media (min-width: 500px) { .grade { grid-template-columns: repeat(3, 1fr); } }
     .produto { background: #fff; border-radius: 16px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,.04); display: flex; flex-direction: column; text-align: center; }
@@ -55,7 +50,6 @@
     .controle .qtd { min-width: 24px; text-align: center; font-weight: 900; font-size: 14px; }
     .aviso-vazio { text-align: center; padding: 40px 16px; color: var(--cinza); grid-column: 1/-1; }
 
-    /* BARRAS */
     .bottom-bars { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; display: flex; flex-direction: column; }
     .carrinho-bar { background: #fff; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 15px rgba(0,0,0,.1); display: none; align-items: center; justify-content: space-between; gap: 10px; }
     .carrinho-bar.visivel { display: flex; }
@@ -65,14 +59,12 @@
     .carrinho-info small { font-size: 10px; color: var(--cinza); display: block; margin-top: 2px; }
     .btn-finalizar { background: var(--verde); color: #fff; border: 0; border-radius: 12px; padding: 12px 20px; font-weight: 900; font-size: 14px; cursor: pointer; white-space: nowrap; }
 
-    /* MODAIS */
     .modal { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 30; display: none; align-items: flex-end; }
     .modal.aberto { display: flex; }
     .modal-box { background: #fff; width: 100%; max-height: 92vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp .2s ease; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .modal-box h2 { margin: 0 0 16px; font-size: 20px; }
 
-    /* CHECKOUT */
     .secao-titulo { font-size: 12px; font-weight: 900; color: var(--verde); text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0; }
     .secao-titulo:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
     .item-carrinho { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; gap: 10px; }
@@ -101,7 +93,6 @@
     .btn-confirmar:disabled { opacity: .6; }
     .btn-voltar { width: 100%; background: transparent; border: 0; margin-top: 10px; color: var(--cinza); font-weight: bold; padding: 10px; cursor: pointer; }
 
-    /* RASTREIO */
     .step-container { display: flex; justify-content: space-between; margin: 24px 0; position: relative; }
     .step-container::before { content: ''; position: absolute; top: 14px; left: 20px; right: 20px; height: 4px; background: #e2e8f0; z-index: 1; }
     .step-progress { position: absolute; top: 14px; left: 20px; height: 4px; background: #10b981; z-index: 2; transition: width 0.4s ease; width: 0%; }
@@ -110,11 +101,9 @@
     .step-item.ativo .step-icon { background: #10b981; color: #fff; box-shadow: 0 0 0 4px #d1fae5; }
     .step-item small { font-size: 10px; font-weight: 800; color: #64748b; text-align: center; }
     .step-item.ativo small { color: #10b981; }
-    
     .info-acompanhar { background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; color: #334155; text-align: center; }
     .info-acompanhar strong { color: #0f172a; }
 
-    /* TOAST */
     .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-120px); background: #1f3028; color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 800; z-index: 100; transition: transform .3s; box-shadow: 0 8px 20px rgba(0,0,0,.2); }
     .toast.visivel { transform: translateX(-50%) translateY(0); }
     .toast.erro { background: #dc2626; }
@@ -136,7 +125,6 @@
   
   <div class="box-acompanhar">
     <span style="font-size:18px;">🔎</span>
-    <!-- O oninput faz a mágica: tira tudo que não é letra ou número e deixa maiúsculo -->
     <input type="text" id="inputRastreio" placeholder="Ex: A1B2" maxlength="36" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
     <button onclick="rastrearPedidoManual()">Status</button>
   </div>
@@ -237,7 +225,7 @@
   const comercioId = urlParams.get('loja') || urlParams.get('id');
   let produtos = [];
   let carrinho = [];
-  let estabelecimento = { nome: '', endereco: '', cidade: '', estado: '', horario_abertura: '', horario_fechamento: '', taxa_entrega: 0, pedido_minimo: 0, aviso_clientes: '', chave_pix: '', aceita_delivery: true };
+  let estabelecimento = { nome: '', logo_url: '', endereco: '', cidade: '', estado: '', horario_abertura: '', horario_fechamento: '', taxa_entrega: 0, pedido_minimo: 0, aviso_clientes: '', chave_pix: '', aceita_delivery: true };
   let termoBusca = '';
   let intervalAcompanhamento = null;
 
@@ -289,6 +277,7 @@
       if (resDad.data) {
         estabelecimento = {
           ...estabelecimento,
+          logo_url: resDad.data.logo_url || '',
           endereco: resDad.data.endereco || '', cidade: resDad.data.cidade || '', estado: resDad.data.estado || '',
           telefone_whatsapp: resDad.data.telefone_whatsapp || '',
           horario_abertura: resDad.data.horario_abertura || '', horario_fechamento: resDad.data.horario_fechamento || '',
@@ -339,6 +328,17 @@
 
   function renderizarHeader() {
     document.getElementById('nomeEstab').textContent = estabelecimento.nome || 'Cardápio Digital';
+    
+    // AQUI A LOGO É EXIBIDA
+    const divLogo = document.querySelector('.logo-estab');
+    if (divLogo) {
+      if (estabelecimento.logo_url) {
+        divLogo.innerHTML = `<img src="${estabelecimento.logo_url}" style="width:100%; height:100%; object-fit:cover;">`;
+      } else {
+        divLogo.innerHTML = `🏪`;
+      }
+    }
+
     const partes = [];
     const endCompleto = [estabelecimento.endereco, estabelecimento.cidade, estabelecimento.estado].filter(Boolean).join(' - ');
     if (endCompleto) partes.push('📍 ' + endCompleto);
@@ -511,7 +511,6 @@
       localStorage.setItem('drTroco_ultimo_pedido', pedido.id);
       salvarDados();
 
-      // MENSAGEM SEM O # NO CÓDIGO
       const linkRastreio = window.location.origin + window.location.pathname + '?loja=' + comercioId + '&pedido=' + pedido.id;
       const msg = encodeURIComponent(`Olá ${pedido.cliente_nome}! Seu pedido *${pedido.id.slice(0,4).toUpperCase()}* foi recebido.\n\nPara acompanhar o status, clique no link abaixo:\n${linkRastreio}`);
       window.open(`https://wa.me/55${tel}?text=${msg}`, '_blank');
@@ -530,11 +529,7 @@
     }
   });
 
-  // ==========================================
-  // LÓGICA DE RASTREIO BLINDADA
-  // ==========================================
   window.rastrearPedidoManual = function() {
-    // O input já limpa o # e espaços, mas garantimos aqui também
     let code = document.getElementById('inputRastreio').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (code.length < 4) return mostrarToast('Digite o código de 4 letras/números.', true);
     window.abrirAcompanhamento(code);
