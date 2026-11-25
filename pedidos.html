@@ -17,13 +17,11 @@
     
     .container { max-width: 760px; margin: 0 auto; padding: 16px; }
     
-    /* Stats */
     .stats-pedidos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
     .stat-item { background: #fff; border-radius: 12px; padding: 12px 6px; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
     .stat-num { display: block; font-size: 22px; font-weight: 900; color: #ea580c; line-height: 1.2; }
     .stat-item small { font-size: 9px; color: #64748b; font-weight: 800; display: block; margin-top: 3px; line-height: 1.2; }
 
-    /* Aviso e Cardápio */
     .card-aviso-loja { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
     .aviso-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .aviso-header strong { color: #c2410c; font-size: 13px; }
@@ -34,7 +32,6 @@
 
     .card-cardapio { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
 
-    /* Filtros */
     .abas-pedidos { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; scrollbar-width: none; }
     .abas-pedidos::-webkit-scrollbar { display: none; }
     .aba-btn { flex: 0 0 auto; padding: 10px 14px; border-radius: 999px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
@@ -43,7 +40,6 @@
     .aba-btn.ativo .badge-count { background: rgba(255,255,255,0.28); color: #fff; }
     .badge-count[data-zero="true"] { display: none; }
 
-    /* Cards de Pedido */
     .lista-pedidos { display: flex; flex-direction: column; gap: 12px; }
     .card-pedido { background: #fff; border-radius: 16px; padding: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-left: 5px solid #ea580c; }
     .card-pedido.status-preparando { border-left-color: #3b82f6; }
@@ -80,7 +76,6 @@
       .stat-item small { font-size: 8px; }
     }
 
-    /* MODAL DETALHES */
     .modal-detalhes { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 50; display: none; align-items: flex-end; }
     .modal-detalhes.aberto { display: flex; }
     .modal-detalhes-box { background: #fff; width: 100%; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp .2s ease; }
@@ -103,7 +98,6 @@
   </div>
 
   <div class="container">
-    <!-- Stats -->
     <div class="stats-pedidos">
       <div class="stat-item"><span class="stat-num" id="statAguardando">0</span><small>⏳ Aguardando</small></div>
       <div class="stat-item"><span class="stat-num" id="statPreparando">0</span><small>👨‍🍳 Preparando</small></div>
@@ -111,7 +105,6 @@
       <div class="stat-item"><span class="stat-num" id="statHoje">0</span><small>✅ Finalizados</small></div>
     </div>
 
-    <!-- Aviso -->
     <div class="card-aviso-loja">
       <div class="aviso-header">
         <strong>📢 Aviso aos Clientes</strong>
@@ -120,7 +113,6 @@
       <p id="textoAviso">Carregando aviso...</p>
     </div>
 
-    <!-- Divulgação -->
     <div class="card-cardapio">
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
         <div style="width: 44px; height: 44px; background: #eaf8f0; color: #168b53; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px;">🔗</div>
@@ -135,7 +127,6 @@
       </div>
     </div>
 
-    <!-- Filtros -->
     <div class="abas-pedidos">
       <button class="aba-btn ativo" data-filtro="aguardando">⏳ Aguardando <span class="badge-count" id="countAguardando" data-zero="true">0</span></button>
       <button class="aba-btn" data-filtro="preparando">👨‍🍳 Preparando <span class="badge-count" id="countPreparando" data-zero="true">0</span></button>
@@ -144,26 +135,21 @@
       <button class="aba-btn" data-filtro="todos">📋 Todos</button>
     </div>
 
-    <!-- Lista -->
     <div id="listaPedidos" class="lista-pedidos">
       <div class="vazio"><h3>Carregando pedidos...</h3><p>Aguarde um instante.</p></div>
     </div>
   </div>
 
-  <!-- MODAL DE DETALHES DO PEDIDO -->
   <div class="modal-detalhes" id="modalDetalhes">
     <div class="modal-detalhes-box">
       <div class="modal-detalhes-topo">
         <h2 id="detalhesTitulo">Detalhes do Pedido</h2>
         <button class="btn-fechar-modal" onclick="fecharDetalhes()">✕</button>
       </div>
-      <div id="detalhesConteudo">
-        <!-- Preenchido via JS -->
-      </div>
+      <div id="detalhesConteudo"></div>
     </div>
   </div>
 
-  <!-- Menu Inferior -->
   <nav class="menu-inferior" aria-label="Navegação principal">
     <a href="index.html" class="menu-item"><span>🧮</span><small>Calculadora</small></a>
     <a href="fluxo.html" class="menu-item"><span>📊</span><small>Fluxo</small></a>
@@ -174,9 +160,7 @@
     <a href="pedidos.html" class="menu-item ativo" style="color:#ea580c;"><span>🛵</span><small>Pedidos</small></a>
     <a href="config-estabelecimento.html" class="menu-item"><span>⚙️</span><small>Config</small></a>
   </nav>
-  
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <script src="auth-guard.js"></script>
@@ -185,16 +169,32 @@
   <script src="pedidos.js"></script>
 
   <script>
-    // Script de Aviso e Stats
+    // 🔹 Aviso + Stats (com proteção contra race condition)
     (function () {
+      let rodando = false;
+
       async function carregarAvisoEStats() {
+        if (rodando) return;
+        rodando = true;
+
         try {
+          if (!window.supabaseClient) return;
+
           let comercioId = null;
-          if (window.EstoqueSupabase?.obterComercioId) comercioId = await window.EstoqueSupabase.obterComercioId();
+          if (window.EstoqueSupabase?.obterComercioId) {
+            try { comercioId = await window.EstoqueSupabase.obterComercioId(); } catch(e) {}
+          }
+          if (!comercioId) comercioId = localStorage.getItem('drTroco_comercio_id');
           if (!comercioId) return;
 
+          // Aviso
           try {
-            const { data: dados } = await window.supabaseClient.from('dados_estabelecimento').select('aviso_clientes').eq('comercio_id', comercioId).maybeSingle();
+            const { data: dados } = await window.supabaseClient
+              .from('dados_estabelecimento')
+              .select('aviso_clientes')
+              .eq('comercio_id', comercioId)
+              .maybeSingle();
+
             const el = document.getElementById('textoAviso');
             if (el) {
               if (dados?.aviso_clientes) {
@@ -206,8 +206,15 @@
             }
           } catch (e) {}
 
+          // Stats
           try {
-            const { data: pedidos } = await window.supabaseClient.from('comandas_abertas').select('status').eq('origem', 'cardapio').eq('comercio_id', comercioId).neq('status', 'cancelado');
+            const { data: pedidos } = await window.supabaseClient
+              .from('comandas_abertas')
+              .select('status')
+              .eq('origem', 'cardapio')
+              .eq('comercio_id', comercioId)
+              .neq('status', 'cancelado');
+
             if (pedidos) {
               const aguardando = pedidos.filter(p => p.status === 'aberta').length;
               const preparando = pedidos.filter(p => p.status === 'preparando').length;
@@ -223,7 +230,9 @@
               setNum('countRota', rota);
             }
           } catch (e) {}
-        } catch (e) {}
+        } finally {
+          rodando = false;
+        }
       }
 
       function setNum(id, valor) {
@@ -234,8 +243,11 @@
         else el.removeAttribute('data-zero');
       }
 
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', carregarAvisoEStats);
-      else carregarAvisoEStats();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', carregarAvisoEStats);
+      } else {
+        carregarAvisoEStats();
+      }
       setInterval(carregarAvisoEStats, 15000);
     })();
   </script>
