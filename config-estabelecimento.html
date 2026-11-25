@@ -3,267 +3,240 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Configurar Estabelecimento</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f8fafc; margin: 0; padding: 16px 16px 100px; color: #263640; }
-    .card { background: #fff; max-width: 520px; margin: 0 auto; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,.06); }
-    h2 { margin: 0 0 16px; color: #168b53; font-size: 20px; display: flex; align-items: center; gap: 8px; }
-    label { display: block; font-size: 12px; font-weight: 800; color: #475569; margin: 12px 0 4px; }
-    input, select, textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0 12px; font-size: 14px; box-sizing: border-box; outline: none; font-family: inherit; }
-    input, select { height: 44px; }
-    textarea { padding: 10px 12px; height: 80px; resize: vertical; }
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    
-    /* Estilo da Logo */
-    .area-logo { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
-    .preview-logo { width: 64px; height: 64px; border-radius: 14px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 32px; overflow: hidden; flex-shrink: 0; border: 2px dashed #cbd5e1; }
-    .preview-logo img { width: 100%; height: 100%; object-fit: cover; }
-    
-    /* Esconde o input de arquivo feio e deixa o botão bonito */
-    .btn-file { display: inline-block; background: #f1f5f9; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px 16px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer; text-align: center; }
-    input[type="file"] { display: none; }
+  <meta name="theme-color" content="#ea580c">
+  <title>Dr. Troco - Pedidos Online</title>
+  
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 
-    button.btn-salvar { width: 100%; height: 48px; margin-top: 20px; background: #168b53; color: #fff; border: 0; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; }
-    button.btn-salvar:disabled { opacity: 0.6; }
+  <style>
+    body { background: #f8fafc; font-family: Arial, sans-serif; margin: 0; padding-bottom: 100px; }
+    .header-pedidos { background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff; padding: 20px 16px; border-radius: 0 0 24px 24px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 15px rgba(234, 88, 12, 0.2); }
+    .header-pedidos h1 { margin: 0; font-size: 22px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+    .header-pedidos p { margin: 4px 0 0; font-size: 13px; opacity: 0.9; }
     
-    /* ESTILO DA MENSAGEM DE SUCESSO */
-    .msg { margin-top: 16px; padding: 14px; border-radius: 10px; font-size: 14px; font-weight: 900; text-align: center; display: none; }
-    .ok { background: #d1fae5; color: #047857; border: 2px solid #10b981; display: block; }
-    .err { background: #fee2e2; color: #b91c1c; border: 2px solid #ef4444; display: block; }
+    .container { max-width: 760px; margin: 0 auto; padding: 16px; }
     
-    .ajuda { font-size: 10px; color: #94a3b8; margin-top: 2px; display: block; font-weight: normal; }
-    .voltar { display: block; text-align: center; margin-top: 16px; color: #64748b; text-decoration: none; font-size: 13px; font-weight: bold; }
+    /* Stats */
+    .stats-pedidos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+    .stat-item { background: #fff; border-radius: 12px; padding: 12px 6px; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+    .stat-num { display: block; font-size: 22px; font-weight: 900; color: #ea580c; line-height: 1.2; }
+    .stat-item small { font-size: 9px; color: #64748b; font-weight: 800; display: block; margin-top: 3px; line-height: 1.2; }
+
+    /* Aviso e Cardápio */
+    .card-aviso-loja { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+    .aviso-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .aviso-header strong { color: #c2410c; font-size: 13px; }
+    .btn-editar-aviso { color: #ea580c; font-size: 12px; font-weight: 800; text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+    .btn-editar-aviso:hover { background: #ffedd5; }
+    .card-aviso-loja p { margin: 0; color: #7c2d12; font-size: 13px; line-height: 1.45; }
+    .card-aviso-loja p a { color: #ea580c; font-weight: 800; }
+
+    .card-cardapio { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+
+    /* Filtros */
+    .abas-pedidos { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; scrollbar-width: none; }
+    .abas-pedidos::-webkit-scrollbar { display: none; }
+    .aba-btn { flex: 0 0 auto; padding: 10px 14px; border-radius: 999px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
+    .aba-btn.ativo { background: #ea580c; color: #fff; border-color: #ea580c; }
+    .badge-count { background: #f1f5f9; color: #94a3b8; padding: 1px 7px; border-radius: 999px; font-size: 11px; min-width: 18px; text-align: center; }
+    .aba-btn.ativo .badge-count { background: rgba(255,255,255,0.28); color: #fff; }
+    .badge-count[data-zero="true"] { display: none; }
+
+    /* Cards de Pedido */
+    .lista-pedidos { display: flex; flex-direction: column; gap: 12px; }
+    .card-pedido { background: #fff; border-radius: 16px; padding: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-left: 5px solid #ea580c; }
+    .card-pedido.status-preparando { border-left-color: #3b82f6; }
+    .card-pedido.status-em_rota, .card-pedido.status-rota { border-left-color: #10b981; }
+    .card-pedido.status-fechada { border-left-color: #94a3b8; opacity: .88; }
+
+    .pedido-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .pedido-id { font-size: 11px; color: #94a3b8; font-weight: 800; text-transform: uppercase; }
+    .pedido-total { font-size: 18px; font-weight: 900; color: #1e293b; }
+    .pedido-cliente { font-size: 15px; font-weight: 900; color: #1e293b; margin-bottom: 4px; }
+    .pedido-info { font-size: 13px; color: #64748b; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
     
-    .secao-titulo { font-size: 12px; font-weight: 900; color: #168b53; text-transform: uppercase; margin: 20px 0 8px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; }
+    .btn-detalhes { background: #f1f5f9; color: #3b82f6; border: 1px solid #bfdbfe; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 10px; }
+    
+    .pedido-obs { font-size: 12px; background: #fff7ed; color: #c2410c; padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; border-left: 2px solid #ea580c; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .pedido-itens { background: #f8fafc; border-radius: 10px; padding: 10px; margin-bottom: 12px; }
+    .pedido-item-linha { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+    .pedido-item-linha:last-child { margin-bottom: 0; }
+
+    .pedido-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-acao { padding: 12px; border: 0; border-radius: 10px; font-size: 13px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-aceitar { background: #ea580c; color: #fff; }
+    .btn-preparar { background: #3b82f6; color: #fff; }
+    .btn-rota { background: #10b981; color: #fff; }
+    .btn-finalizar { background: #1e293b; color: #fff; }
+    .btn-recusar { background: #fee2e2; color: #dc2626; }
+
+    .vazio { text-align: center; padding: 40px 20px; background: #fff; border-radius: 16px; border: 1px dashed #cbd5e1; color: #64748b; }
+    .vazio h3 { color: #1e293b; margin: 0 0 8px 0; }
+
+    @media (max-width: 400px) {
+      .stat-num { font-size: 18px; }
+      .stat-item small { font-size: 8px; }
+    }
+
+    /* MODAL DETALHES */
+    .modal-detalhes { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 50; display: none; align-items: flex-end; }
+    .modal-detalhes.aberto { display: flex; }
+    .modal-detalhes-box { background: #fff; width: 100%; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp .2s ease; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-detalhes-topo { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px; }
+    .modal-detalhes-topo h2 { margin: 0; font-size: 18px; color: #1e293b; }
+    .btn-fechar-modal { background: #f1f5f9; border: 0; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; font-weight: bold; color: #64748b; cursor: pointer; }
+    
+    .detalhe-secao { margin-bottom: 16px; }
+    .detalhe-titulo { font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .detalhe-conteudo { font-size: 14px; color: #1e293b; background: #f8fafc; padding: 12px; border-radius: 10px; line-height: 1.5; }
+    .detalhe-conteudo.obs { background: #fff7ed; color: #c2410c; border-left: 3px solid #ea580c; }
+    .detalhe-conteudo.endereco { background: #f0fdf4; color: #166534; border-left: 3px solid #22c55e; }
   </style>
 </head>
-<body>
-  <div class="card">
-    <h2>🏪 Meu Estabelecimento</h2>
-    
-    <label>Logo da Loja <span class="ajuda">(JPG ou PNG, máx 2MB)</span></label>
-    <div class="area-logo">
-      <div class="preview-logo" id="previewLogo">🏪</div>
-      <div style="flex:1;">
-        <label for="fileLogo" class="btn-file">📷 Escolher da Galeria</label>
-        <input type="file" id="fileLogo" accept="image/*" onchange="previewImagem(event)">
-        <input type="hidden" id="logo_url">
-      </div>
-    </div>
-
-    <label>Nome da Loja</label>
-    <input type="text" id="nome" placeholder="Ex: Asas Lanches">
-
-    <div class="secao-titulo">📍 Endereço e Entregas</div>
-    
-    <label>Endereço da Loja</label>
-    <input type="text" id="endereco" placeholder="Ex: Av. Brasil">
-
-    <label>Cidade Principal</label>
-    <input type="text" id="cidade" placeholder="Ex: Santa Helena">
-
-    <div class="grid2">
-      <div><label>Estado</label><input type="text" id="estado" maxlength="2"></div>
-      <div><label>Taxa Cidade Principal (R$)</label><input type="number" id="taxa_entrega" min="0" step="0.50" value="0"></div>
-    </div>
-
-    <label>Cidade Vizinha <span class="ajuda">(Deixe em branco se não atender outra cidade)</span></label>
-    <div class="grid2">
-      <div><input type="text" id="cidade_vizinha" placeholder="Nome da cidade"></div>
-      <div><input type="number" id="taxa_entrega_vizinha" min="0" step="0.50" value="0" placeholder="Taxa R$"></div>
-    </div>
-
-    <div class="secao-titulo">⏰ Horário e Regras</div>
-
-    <div class="grid2">
-      <div><label>Abre às</label><input type="time" id="horario_abertura"></div>
-      <div><label>Fecha às</label><input type="time" id="horario_fechamento"></div>
-    </div>
-
-    <div class="grid2">
-      <div><label>Pedido Mínimo (R$)</label><input type="number" id="pedido_minimo" min="0" step="0.50" value="0"></div>
-      <div>
-        <label>Aceitar Delivery?</label>
-        <select id="aceita_delivery">
-          <option value="true">Sim</option>
-          <option value="false">Não</option>
-        </select>
-      </div>
-    </div>
-
-    <label>WhatsApp da Loja <span class="ajuda">(Apenas números, ex: 5511999999999)</span></label>
-    <input type="tel" id="telefone_whatsapp" placeholder="5511999999999">
-
-    <label>Chave PIX</label>
-    <input type="text" id="chave_pix" placeholder="Sua chave PIX aqui">
-
-    <label>Aviso aos Clientes <span class="ajuda">(Aparecerá no topo do cardápio)</span></label>
-    <textarea id="aviso_clientes" placeholder="Ex: Pagamento pix, envio só após envio do comprovante"></textarea>
-
-    <button class="btn-salvar" id="btnSalvar" onclick="salvar()">Salvar Configurações</button>
-    <div id="msg" class="msg"></div>
-    
-    <a href="pedidos.html" class="voltar">← Voltar para Pedidos</a>
+<body class="pagina-pedidos">
+  <div class="header-pedidos">
+    <h1>🛵 Pedidos Online</h1>
+    <p>Acompanhe as entregas do cardápio digital</p>
   </div>
 
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats-pedidos">
+      <div class="stat-item"><span class="stat-num" id="statAguardando">0</span><small>⏳ Aguardando</small></div>
+      <div class="stat-item"><span class="stat-num" id="statPreparando">0</span><small>👨‍🍳 Preparando</small></div>
+      <div class="stat-item"><span class="stat-num" id="statRota">0</span><small>🛵 Em Rota</small></div>
+      <div class="stat-item"><span class="stat-num" id="statHoje">0</span><small>✅ Finalizados</small></div>
+    </div>
+
+    <!-- Aviso (O link para a configuração fica AQUI) -->
+    <div class="card-aviso-loja">
+      <div class="aviso-header">
+        <strong>📢 Aviso aos Clientes</strong>
+        <a href="config-estabelecimento.html" class="btn-editar-aviso">✏️ Editar</a>
+      </div>
+      <p id="textoAviso">Carregando aviso...</p>
+    </div>
+
+    <!-- Divulgação -->
+    <div class="card-cardapio">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        <div style="width: 44px; height: 44px; background: #eaf8f0; color: #168b53; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 22px;">🔗</div>
+        <div style="flex: 1;">
+          <strong style="display: block; font-size: 15px; color: #1e293b;">Seu Cardápio Digital</strong>
+          <span style="font-size: 12px; color: #64748b;">Envie este link para seus clientes fazerem pedidos</span>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button type="button" onclick="copiarLinkCardapio()" style="background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">📋 Copiar Link</button>
+        <button type="button" onclick="baixarQrCardapio()" style="background: #168b53; border: 0; color: #fff; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">📱 Baixar QR Code</button>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="abas-pedidos">
+      <button class="aba-btn ativo" data-filtro="aguardando">⏳ Aguardando <span class="badge-count" id="countAguardando" data-zero="true">0</span></button>
+      <button class="aba-btn" data-filtro="preparando">👨‍🍳 Preparando <span class="badge-count" id="countPreparando" data-zero="true">0</span></button>
+      <button class="aba-btn" data-filtro="rota">🛵 Em Rota <span class="badge-count" id="countRota" data-zero="true">0</span></button>
+      <button class="aba-btn" data-filtro="concluidos">✅ Concluídos</button>
+      <button class="aba-btn" data-filtro="todos">📋 Todos</button>
+    </div>
+
+    <!-- Lista -->
+    <div id="listaPedidos" class="lista-pedidos">
+      <div class="vazio"><h3>Carregando pedidos...</h3><p>Aguarde um instante.</p></div>
+    </div>
+  </div>
+
+  <!-- MODAL DE DETALHES DO PEDIDO -->
+  <div class="modal-detalhes" id="modalDetalhes">
+    <div class="modal-detalhes-box">
+      <div class="modal-detalhes-topo">
+        <h2 id="detalhesTitulo">Detalhes do Pedido</h2>
+        <button class="btn-fechar-modal" onclick="fecharDetalhes()">✕</button>
+      </div>
+      <div id="detalhesConteudo">
+        <!-- Preenchido via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu Inferior -->
+  <nav class="menu-inferior" aria-label="Navegação principal">
+    <a href="index.html" class="menu-item"><span>🧮</span><small>Calculadora</small></a>
+    <a href="fluxo.html" class="menu-item"><span>📊</span><small>Fluxo</small></a>
+    <a href="historico.html" class="menu-item"><span>📋</span><small>Histórico</small></a>
+    <a href="estoque.html" class="menu-item"><span>📦</span><small>Estoque</small></a>
+    <a href="fiado.html" class="menu-item"><span>🧾</span><small>Fiado</small></a>
+    <a href="comandas.html" class="menu-item"><span>🍽️</span><small>Comandas</small></a>
+    <a href="pedidos.html" class="menu-item ativo" style="color:#ea580c;"><span>🛵</span><small>Pedidos</small></a>
+    <!-- A LINHA DO CONFIG FOI REMOVIDA DAQUI -->
+  </nav>
+  
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="dados-supabase.js"></script>
+  <script src="estoque-supabase.js"></script>
+  <script src="pedidos.js"></script>
+
   <script>
-    let comercioId = null;
-    let arquivoSelecionado = null;
-
-    function previewImagem(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      if (file.size > 2 * 1024 * 1024) {
-        alert("A imagem é muito grande. Escolha uma foto de até 2MB.");
-        event.target.value = '';
-        return;
-      }
-      arquivoSelecionado = file;
-      const preview = document.getElementById('previewLogo');
-      const reader = new FileReader();
-      reader.onload = function(e) { preview.innerHTML = `<img src="${e.target.result}">`; };
-      reader.readAsDataURL(file);
-    }
-
-    async function obterComercioIdConfig() {
-      if (window.EstoqueSupabase?.obterComercioId) {
+    // Script de Aviso e Stats
+    (function () {
+      async function carregarAvisoEStats() {
         try {
-          const id = await window.EstoqueSupabase.obterComercioId();
-          if (id && id !== 'undefined') return id;
-        } catch(e) {}
+          let comercioId = null;
+          if (window.EstoqueSupabase?.obterComercioId) comercioId = await window.EstoqueSupabase.obterComercioId();
+          if (!comercioId) return;
+
+          try {
+            const { data: dados } = await window.supabaseClient.from('dados_estabelecimento').select('aviso_clientes').eq('comercio_id', comercioId).maybeSingle();
+            const el = document.getElementById('textoAviso');
+            if (el) {
+              if (dados?.aviso_clientes) {
+                el.textContent = dados.aviso_clientes;
+                el.style.color = '#7c2d12';
+              } else {
+                el.innerHTML = 'Nenhum aviso configurado. <a href="config-estabelecimento.html">Configurar agora</a>';
+              }
+            }
+          } catch (e) {}
+
+          try {
+            const { data: pedidos } = await window.supabaseClient.from('comandas_abertas').select('status').eq('origem', 'cardapio').eq('comercio_id', comercioId).neq('status', 'cancelado');
+            if (pedidos) {
+              const aguardando = pedidos.filter(p => p.status === 'aberta').length;
+              const preparando = pedidos.filter(p => p.status === 'preparando').length;
+              const rota = pedidos.filter(p => p.status === 'em_rota').length;
+              const fechada = pedidos.filter(p => p.status === 'fechada').length;
+
+              setNum('statAguardando', aguardando);
+              setNum('statPreparando', preparando);
+              setNum('statRota', rota);
+              setNum('statHoje', fechada);
+              setNum('countAguardando', aguardando);
+              setNum('countPreparando', preparando);
+              setNum('countRota', rota);
+            }
+          } catch (e) {}
+        } catch (e) {}
       }
-      const lsKeys = ['drTroco_comercio_id', 'comercio_id', 'comercioId', 'drTroco_loja_id'];
-      for (const key of lsKeys) {
-        const id = localStorage.getItem(key);
-        if (id && id !== 'undefined' && id.length > 10) return id;
-      }
-      try {
-        if (window.supabaseClient) {
-          const { data: { user } } = await window.supabaseClient.auth.getUser();
-          if (user) {
-            const { data: membro } = await window.supabaseClient.from('membros_comercio').select('comercio_id').eq('usuario_id', user.id).maybeSingle();
-            if (membro?.comercio_id) return membro.comercio_id;
-            const { data: comercio } = await window.supabaseClient.from('comercios').select('id').eq('criado_por', user.id).maybeSingle();
-            if (comercio?.id) return comercio.id;
-          }
-        }
-      } catch(e) {}
-      return null;
-    }
 
-    async function carregar() {
-      const msgEl = document.getElementById('msg');
-      msgEl.className = 'msg';
-      msgEl.style.display = 'none';
-
-      comercioId = await obterComercioIdConfig();
-      if (!comercioId) {
-        msgEl.className = 'msg err';
-        msgEl.textContent = 'Loja não identificada. Faça login novamente.';
-        document.getElementById('btnSalvar').disabled = true;
-        return;
+      function setNum(id, valor) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = valor;
+        if (valor === 0) el.setAttribute('data-zero', 'true');
+        else el.removeAttribute('data-zero');
       }
 
-      try {
-        const [resCom, resDad] = await Promise.all([
-          window.supabaseClient.from('comercios').select('nome').eq('id', comercioId).maybeSingle(),
-          window.supabaseClient.from('dados_estabelecimento').select('*').eq('comercio_id', comercioId).maybeSingle()
-        ]);
-        
-        if (resCom.data?.nome) document.getElementById('nome').value = resCom.data.nome;
-        
-        if (resDad.data) {
-          const d = resDad.data;
-          const campos = ['endereco', 'cidade', 'estado', 'cidade_vizinha', 'taxa_entrega_vizinha', 'telefone_whatsapp', 'horario_abertura', 'horario_fechamento', 'taxa_entrega', 'pedido_minimo', 'chave_pix', 'aviso_clientes'];
-          campos.forEach(k => {
-            if (d[k] != null) document.getElementById(k).value = d[k];
-          });
-          document.getElementById('aceita_delivery').value = d.aceita_delivery === false ? 'false' : 'true';
-          
-          if (d.logo_url) {
-            document.getElementById('logo_url').value = d.logo_url;
-            document.getElementById('previewLogo').innerHTML = `<img src="${d.logo_url}">`;
-          }
-        }
-      } catch(e) {
-        msgEl.className = 'msg err';
-        msgEl.textContent = 'Erro ao carregar dados: ' + e.message;
-      }
-    }
-
-    async function salvar() {
-      const msgEl = document.getElementById('msg');
-      if (!comercioId) return;
-
-      const btn = document.getElementById('btnSalvar');
-      btn.disabled = true;
-      btn.textContent = 'Salvando...';
-      msgEl.style.display = 'none';
-
-      let logoUrlFinal = document.getElementById('logo_url').value;
-
-      try {
-        if (arquivoSelecionado) {
-          btn.textContent = 'Enviando Imagem...';
-          const extensao = arquivoSelecionado.name.split('.').pop();
-          const nomeArquivo = `${comercioId}-logo-${Date.now()}.${extensao}`;
-
-          const { error: uploadError } = await window.supabaseClient.storage.from('logos').upload(nomeArquivo, arquivoSelecionado, { upsert: true });
-          if (uploadError) throw new Error("Erro ao enviar imagem: " + uploadError.message);
-
-          const { data: publicUrlData } = window.supabaseClient.storage.from('logos').getPublicUrl(nomeArquivo);
-          logoUrlFinal = publicUrlData.publicUrl;
-        }
-
-        btn.textContent = 'Salvando Dados...';
-        const nome = document.getElementById('nome').value.trim();
-        const payload = {
-          logo_url: logoUrlFinal,
-          endereco: document.getElementById('endereco').value.trim(),
-          cidade: document.getElementById('cidade').value.trim(),
-          estado: document.getElementById('estado').value.trim().toUpperCase(),
-          cidade_vizinha: document.getElementById('cidade_vizinha').value.trim(),
-          taxa_entrega_vizinha: Number(document.getElementById('taxa_entrega_vizinha').value) || 0,
-          telefone_whatsapp: document.getElementById('telefone_whatsapp').value.trim(),
-          horario_abertura: document.getElementById('horario_abertura').value,
-          horario_fechamento: document.getElementById('horario_fechamento').value,
-          taxa_entrega: Number(document.getElementById('taxa_entrega').value) || 0,
-          pedido_minimo: Number(document.getElementById('pedido_minimo').value) || 0,
-          aceita_delivery: document.getElementById('aceita_delivery').value === 'true',
-          chave_pix: document.getElementById('chave_pix').value.trim(),
-          aviso_clientes: document.getElementById('aviso_clientes').value.trim(),
-          atualizado_em: new Date().toISOString()
-        };
-
-        if (nome) await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
-        
-        const { data: updated, error: errUpd } = await window.supabaseClient.from('dados_estabelecimento').update(payload).eq('comercio_id', comercioId).select();
-        if (errUpd) throw errUpd;
-
-        if (!updated || updated.length === 0) {
-          await window.supabaseClient.from('dados_estabelecimento').insert([{ comercio_id: comercioId, ...payload }]);
-        }
-
-        // MENSAGEM DE SUCESSO VERDE
-        msgEl.className = 'msg ok';
-        msgEl.innerHTML = '✅ Configurações e Logo salvas com sucesso!';
-        arquivoSelecionado = null; 
-        
-        // Remove a mensagem depois de 4 segundos
-        setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
-
-      } catch(e) {
-        msgEl.className = 'msg err';
-        msgEl.textContent = 'Erro: ' + e.message;
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Salvar Configurações';
-      }
-    }
-
-    carregar();
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', carregarAvisoEStats);
+      else carregarAvisoEStats();
+      setInterval(carregarAvisoEStats, 15000);
+    })();
   </script>
 </body>
 </html>
