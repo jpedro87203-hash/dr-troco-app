@@ -9,7 +9,7 @@
   let filtroAtual = 'aguardando';
   let linkCardapioLoja = '';
   let comercioIdAtual = null;
-  let slugAtual = null; // 🔹 SLUG: cache do slug da loja
+  let slugAtual = null;
   let realtimeChannel = null;
 
   const $ = id => document.getElementById(id);
@@ -37,11 +37,9 @@
     });
   }
 
-  // 🔹 NOVO: código de rastreio exibível
   function codigoRastreio(pedido) {
     if (!pedido) return '----';
     if (pedido.tracking_code) return String(pedido.tracking_code).toUpperCase();
-    // fallback p/ pedidos antigos sem tracking_code
     return String(pedido.id || '').slice(0, 4).toUpperCase();
   }
 
@@ -72,10 +70,10 @@
   }
 
   // ==========================================================
-  // BUSCA ROBUSTA DO ID DA LOJA
+  // BUSCA ROBUSTA DO ID DA LOJA E SLUG
   // ==========================================================
   async function buscarComercioId() {
-    if (comercioIdAtual) return comercioIdAtual;
+    if (comercioIdAtual && slugAtual !== null) return comercioIdAtual;
     
     try {
       if (window.EstoqueSupabase?.obterComercioId) {
@@ -87,43 +85,22 @@
       if (!comercioIdAtual && window.supabaseClient) {
         const { data: { user } } = await window.supabaseClient.auth.getUser();
         if (user) {
-          const { data } = await window.supabaseClient.from('comercios').select('id').eq('criado_por', user.id).maybeSingle();
-          if (data) comercioIdAtual = data.id;
+          const { data } = await window.supabaseClient.from('comercios').select('id, slug').eq('criado_por', user.id).maybeSingle();
+          if (data) {
+            comercioIdAtual = data.id;
+            slugAtual = data.slug || null;
+          }
         }
+      } else if (comercioIdAtual && window.supabaseClient) {
+        // Se já temos o ID mas não o slug, busca o slug
+        const { data } = await window.supabaseClient.from('comercios').select('slug').eq('id', comercioIdAtual).maybeSingle();
+        if (data) slugAtual = data.slug || null;
       }
     } catch(e) {
-      console.warn('Erro ao buscar ID', e);
+      console.warn('Erro ao buscar ID/Slug', e);
     }
     
     return comercioIdAtual;
-  }
-
-  // 🔹 SLUG: busca e cacheia o slug da loja
-  async function buscarSlugLoja() {
-    if (slugAtual) return slugAtual;
-    if (!comercioIdAtual) await buscarComercioId();
-    if (!comercioIdAtual) return null;
-
-    try {
-      const { data, error } = await window.supabaseClient
-        .from('comercios')
-        .select('slug')
-        .eq('id', comercioIdAtual)
-        .maybeSingle();
-
-      if (!error && data?.slug) {
-        slugAtual = data.slug;
-      }
-    } catch (e) {
-      console.warn('[Pedidos] Erro ao buscar slug:', e);
-    }
-
-    return slugAtual;
-  }
-
-  // 🔹 SLUG: identificador para usar em URLs (slug se existir, senão UUID)
-  function identificadorLoja() {
-    return slugAtual || comercioIdAtual;
   }
 
   // ==========================================================
@@ -140,11 +117,9 @@
     const total = formatarDinheiro(pedido.total);
     const idCurto = codigoRastreio(pedido);
 
-    // 🔹 SLUG: link de rastreio usa slug quando disponível
     const baseLink = window.location.origin + window.location.pathname.replace('pedidos.html', 'cardapio.html');
-    const linkRastreio = identificadorLoja()
-      ? `${baseLink}?loja=${encodeURIComponent(identificadorLoja())}&pedido=${encodeURIComponent(idCurto)}`
-      : baseLink;
+    const identificadorLoja = slugAtual || comercioIdAtual;
+    const linkRastreio = identificadorLoja ? `${baseLink}?loja=${encodeURIComponent(identificadorLoja)}&pedido=${encodeURIComponent(idCurto)}` : baseLink;
 
     let texto = '';
     if (status === 'preparando') {
@@ -186,6 +161,7 @@
     }).join('');
 
     const taxa = Number(p.taxa_entrega || 0);
+    const isRetirada = /retirada/i.test(p.endereco_entrega || '');
     
     let html = `
       <div class="detalhe-secao">
@@ -206,8 +182,10 @@
     if (p.endereco_entrega) {
       html += `
         <div class="detalhe-secao">
-          <div class="detalhe-titulo">📍 Endereço de Entrega</div>
-          <div class="detalhe-conteudo endereco">${escaparHTML(p.endereco_entrega)}</div>
+          <div class="detalhe-titulo">📍 ${isRetirada ? 'Retirada na Loja' : 'Endereço de Entrega'}</div>
+          <div class="detalhe-conteudo endereco" style="${isRetirada ? 'background:#fef3c7; border-left-color:#f59e0b; color:#92400e;' : ''}">
+            ${isRetirada ? '🏪 O cliente vai retirar o pedido na loja.' : escaparHTML(p.endereco_entrega)}
+          </div>
         </div>
       `;
     }
@@ -215,7 +193,7 @@
     if (p.observacao) {
       html += `
         <div class="detalhe-secao">
-          <div class="detalhe-titulo">📝 Observações</div>
+          <div class="detalhe-titulo">📝 Observações / Troco</div>
           <div class="detalhe-conteudo obs">${escaparHTML(p.observacao)}</div>
         </div>
       `;
@@ -340,6 +318,9 @@
       const maisItens = itensArray.length > 2 ? `<div style="font-size:11px;color:#64748b;margin-top:4px;text-align:center;">+ ${itensArray.length - 2} itens...</div>` : '';
 
       const tagObs = p.observacao ? `<div class="pedido-obs">📝 ${escaparHTML(p.observacao)}</div>` : '';
+      
+      const isRetirada = /retirada/i.test(p.endereco_entrega || '');
+      const tagRetirada = isRetirada ? `<span style="background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:bold;margin-left:6px;">🏪 Retirada</span>` : '';
 
       return `
         <div class="card-pedido status-${p.status}">
@@ -347,7 +328,7 @@
             <span class="pedido-id">Pedido #${escaparHTML(codigo)}</span>
             <span class="pedido-total">${formatarDinheiro(p.total)}</span>
           </div>
-          <div class="pedido-cliente">👤 ${escaparHTML(p.cliente_nome || 'Cliente')}</div>
+          <div class="pedido-cliente">👤 ${escaparHTML(p.cliente_nome || 'Cliente')} ${tagRetirada}</div>
           <div class="pedido-info">
             <span>💳 ${escaparHTML(p.forma_pagamento || 'Pix')}</span>
           </div>
@@ -483,12 +464,11 @@
   }
 
   // ==========================================================
-  // DIVULGAÇÃO DO CARDÁPIO (COM SLUG)
+  // DIVULGAÇÃO DO CARDÁPIO
   // ==========================================================
   async function montarLinkCardapio() {
     try {
       await buscarComercioId();
-      await buscarSlugLoja(); // 🔹 SLUG: busca slug antes de montar o link
 
       if (!comercioIdAtual || comercioIdAtual === 'undefined' || comercioIdAtual === 'null') {
         console.warn('ID do comércio não encontrado para gerar link.');
@@ -502,8 +482,8 @@
         path = path.substring(0, path.lastIndexOf('/')) + '/cardapio.html';
       }
       
-      // 🔹 SLUG: usa slug se existir, senão UUID
-      linkCardapioLoja = window.location.origin + path + '?loja=' + encodeURIComponent(identificadorLoja());
+      const identificador = slugAtual || comercioIdAtual;
+      linkCardapioLoja = window.location.origin + path + '?loja=' + identificador;
       return linkCardapioLoja;
     } catch (e) {
       console.error(e);
@@ -561,11 +541,7 @@
       });
     });
 
-    // 🔹 SLUG: pré-carrega ID + slug antes de montar o link
-    await buscarComercioId();
-    await buscarSlugLoja();
     await montarLinkCardapio();
-
     carregarPedidos();
     setTimeout(iniciarRealtime, 1500);
     setInterval(carregarPedidos, 30000);
