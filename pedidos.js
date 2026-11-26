@@ -9,6 +9,7 @@
   let filtroAtual = 'aguardando';
   let linkCardapioLoja = '';
   let comercioIdAtual = null;
+  let slugAtual = null; // 🔹 SLUG: cache do slug da loja
   let realtimeChannel = null;
 
   const $ = id => document.getElementById(id);
@@ -97,6 +98,34 @@
     return comercioIdAtual;
   }
 
+  // 🔹 SLUG: busca e cacheia o slug da loja
+  async function buscarSlugLoja() {
+    if (slugAtual) return slugAtual;
+    if (!comercioIdAtual) await buscarComercioId();
+    if (!comercioIdAtual) return null;
+
+    try {
+      const { data, error } = await window.supabaseClient
+        .from('comercios')
+        .select('slug')
+        .eq('id', comercioIdAtual)
+        .maybeSingle();
+
+      if (!error && data?.slug) {
+        slugAtual = data.slug;
+      }
+    } catch (e) {
+      console.warn('[Pedidos] Erro ao buscar slug:', e);
+    }
+
+    return slugAtual;
+  }
+
+  // 🔹 SLUG: identificador para usar em URLs (slug se existir, senão UUID)
+  function identificadorLoja() {
+    return slugAtual || comercioIdAtual;
+  }
+
   // ==========================================================
   // WHATSAPP — MENSAGENS COMPLETAS
   // ==========================================================
@@ -109,12 +138,12 @@
 
     const nome = pedido.cliente_nome ? pedido.cliente_nome.split(' ')[0] : 'Cliente';
     const total = formatarDinheiro(pedido.total);
-    const idCurto = codigoRastreio(pedido); // 🔹 NOVO: usa tracking_code
+    const idCurto = codigoRastreio(pedido);
 
-    // 🔹 NOVO: link de rastreio com tracking_code
+    // 🔹 SLUG: link de rastreio usa slug quando disponível
     const baseLink = window.location.origin + window.location.pathname.replace('pedidos.html', 'cardapio.html');
-    const linkRastreio = comercioIdAtual
-      ? `${baseLink}?loja=${comercioIdAtual}&pedido=${encodeURIComponent(idCurto)}`
+    const linkRastreio = identificadorLoja()
+      ? `${baseLink}?loja=${encodeURIComponent(identificadorLoja())}&pedido=${encodeURIComponent(idCurto)}`
       : baseLink;
 
     let texto = '';
@@ -277,7 +306,7 @@
     }
 
     lista.innerHTML = filtrados.map(p => {
-      const codigo = codigoRastreio(p); // 🔹 NOVO
+      const codigo = codigoRastreio(p);
       const temWhats = !!normalizarTelefone(p.cliente_telefone);
       const btnWhats = temWhats ? `<button class="btn-acao" style="background:#25d366;color:#fff;" onclick="abrirWhatsCliente('${p.id}')">💬 WhatsApp</button>` : '';
 
@@ -454,11 +483,12 @@
   }
 
   // ==========================================================
-  // DIVULGAÇÃO DO CARDÁPIO
+  // DIVULGAÇÃO DO CARDÁPIO (COM SLUG)
   // ==========================================================
   async function montarLinkCardapio() {
     try {
       await buscarComercioId();
+      await buscarSlugLoja(); // 🔹 SLUG: busca slug antes de montar o link
 
       if (!comercioIdAtual || comercioIdAtual === 'undefined' || comercioIdAtual === 'null') {
         console.warn('ID do comércio não encontrado para gerar link.');
@@ -472,7 +502,8 @@
         path = path.substring(0, path.lastIndexOf('/')) + '/cardapio.html';
       }
       
-      linkCardapioLoja = window.location.origin + path + '?loja=' + comercioIdAtual;
+      // 🔹 SLUG: usa slug se existir, senão UUID
+      linkCardapioLoja = window.location.origin + path + '?loja=' + encodeURIComponent(identificadorLoja());
       return linkCardapioLoja;
     } catch (e) {
       console.error(e);
@@ -530,7 +561,11 @@
       });
     });
 
+    // 🔹 SLUG: pré-carrega ID + slug antes de montar o link
+    await buscarComercioId();
+    await buscarSlugLoja();
     await montarLinkCardapio();
+
     carregarPedidos();
     setTimeout(iniciarRealtime, 1500);
     setInterval(carregarPedidos, 30000);
