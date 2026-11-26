@@ -40,9 +40,11 @@
 
     .grade { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     @media (min-width: 500px) { .grade { grid-template-columns: repeat(3, 1fr); } }
-    .produto { background: #fff; border-radius: 16px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,.04); display: flex; flex-direction: column; text-align: center; }
+    .produto { background: #fff; border-radius: 16px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,.04); display: flex; flex-direction: column; text-align: center; cursor: pointer; transition: transform .15s; }
+    .produto:active { transform: scale(.985); }
     .produto .foto { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 30px; }
     .produto .nome { font-size: 13px; font-weight: 800; margin: 8px 0 4px; height: 36px; overflow: hidden; line-height: 1.3; }
+    .produto .descricao { font-size: 11px; color: #64748b; line-height: 1.35; margin: 0 0 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: left; }
     .produto .preco { font-size: 15px; font-weight: 900; color: var(--verde); margin-bottom: 8px; }
     .controle { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: auto; }
     .controle button { width: 34px; height: 34px; border: 0; border-radius: 9px; background: var(--verde-claro); color: var(--verde); font-size: 20px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -61,7 +63,7 @@
 
     .modal { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 30; display: none; align-items: flex-end; }
     .modal.aberto { display: flex; }
-    .modal-box { background: #fff; width: 100%; max-height: 92vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp .2s ease; }
+    .modal-box { background: #fff; width: 100%; max-height: 92vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp .2s ease; position: relative; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .modal-box h2 { margin: 0 0 16px; font-size: 20px; }
 
@@ -107,6 +109,47 @@
     .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-120px); background: #1f3028; color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 800; z-index: 100; transition: transform .3s; box-shadow: 0 8px 20px rgba(0,0,0,.2); }
     .toast.visivel { transform: translateX(-50%) translateY(0); }
     .toast.erro { background: #dc2626; }
+
+    /* MODAL DE DETALHE DO PRODUTO */
+    .modal-detalhe-produto .modal-box { max-height: 88vh; }
+    .btn-fechar-produto {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 0;
+      background: rgba(255,255,255,.95);
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,.15);
+      z-index: 2;
+    }
+    .modal-produto-foto {
+      width: 100%;
+      max-height: 240px;
+      min-height: 160px;
+      object-fit: cover;
+      border-radius: 14px;
+      margin-bottom: 16px;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      overflow: hidden;
+    }
+    .modal-detalhe-produto h2 { margin: 0 0 8px; font-size: 22px; font-weight: 900; color: #1e293b; line-height: 1.25; padding-right: 40px; }
+    .modal-produto-descricao { margin: 0 0 16px; font-size: 14px; color: #475569; line-height: 1.55; white-space: pre-line; }
+    .modal-produto-preco { font-size: 26px; font-weight: 900; color: var(--verde); margin-bottom: 20px; }
+    .modal-produto-qtd { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 14px; }
+    .modal-produto-qtd button { width: 48px; height: 48px; border: 0; border-radius: 12px; background: var(--verde-claro); color: var(--verde); font-size: 24px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .modal-produto-qtd button:disabled { opacity: .4; cursor: not-allowed; }
+    .modal-produto-qtd span { font-size: 22px; font-weight: 900; min-width: 40px; text-align: center; }
+    .btn-add-produto { width: 100%; background: var(--verde); color: #fff; border: 0; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 900; cursor: pointer; }
+    .btn-ver-carrinho { width: 100%; background: transparent; border: 0; margin-top: 10px; padding: 12px; color: var(--cinza); font-size: 13px; font-weight: 800; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -154,6 +197,7 @@
   </div>
 </div>
 
+<!-- MODAL CARRINHO / CHECKOUT -->
 <div class="modal" id="modalCarrinho">
   <div class="modal-box">
     <h2>Seu Pedido</h2>
@@ -202,6 +246,7 @@
   </div>
 </div>
 
+<!-- MODAL ACOMPANHAR -->
 <div class="modal" id="modalAcompanhar">
   <div class="modal-box">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -220,6 +265,25 @@
   </div>
 </div>
 
+<!-- MODAL DETALHE DO PRODUTO -->
+<div class="modal modal-detalhe-produto" id="modalDetalheProduto">
+  <div class="modal-box">
+    <button class="btn-fechar-produto" onclick="fecharDetalheProduto()" aria-label="Fechar">✕</button>
+    <input type="hidden" id="detalheProdutoId">
+    <div id="detalheProdutoFoto" class="modal-produto-foto"></div>
+    <h2 id="detalheProdutoNome"></h2>
+    <p id="detalheProdutoDescricao" class="modal-produto-descricao"></p>
+    <div id="detalheProdutoPreco" class="modal-produto-preco"></div>
+    <div class="modal-produto-qtd">
+      <button type="button" onclick="alterarQtdModal(-1)" id="btnQtdMenosModal">−</button>
+      <span id="detalheProdutoQtd">0</span>
+      <button type="button" onclick="alterarQtdModal(1)" id="btnQtdMaisModal">+</button>
+    </div>
+    <button type="button" class="btn-add-produto" onclick="adicionarDoModal()">Adicionar ao carrinho</button>
+    <button type="button" class="btn-ver-carrinho" onclick="verCarrinhoDoProduto()">Ver carrinho</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -229,9 +293,8 @@
   });
 
   const urlParams = new URLSearchParams(window.location.search);
-  // 🔹 SLUG: começa como o valor bruto da URL (?loja=asas-lanches ou UUID)
   let comercioId = urlParams.get('loja') || urlParams.get('id');
-  let slugAtual = null; // guarda o slug da loja (se tiver) para reutilizar em links
+  let slugAtual = null;
 
   let produtos = [];
   let carrinho = [];
@@ -239,7 +302,6 @@
   let termoBusca = '';
   let intervalAcompanhamento = null;
 
-  // 🔹 SLUG: detecta UUID e, se não for, busca o slug na tabela comercios
   function isUUID(str) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
   }
@@ -247,20 +309,16 @@
   async function resolverComercioId(valor) {
     if (!valor) return null;
     if (isUUID(valor)) return valor;
-
-    // Busca por slug (case-insensitive)
     const { data, error } = await window.supabaseClient
       .from('comercios')
       .select('id, slug')
       .ilike('slug', String(valor).trim())
       .maybeSingle();
-
     if (error || !data) return null;
     slugAtual = data.slug || null;
     return data.id;
   }
 
-  // 🔹 CORRIGIDO #3: helper anti-XSS
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -269,9 +327,8 @@
 
   function gerarId() { return window.crypto?.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); }); }
 
-  // 🔹 CORRIGIDO #4: código de rastreio de 8 chars
   function gerarCodigoRastreio() {
-    const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem I, O, 0, 1 (evita confusão)
+    const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let out = '';
     for (let i = 0; i < 8; i++) out += abc[Math.floor(Math.random() * abc.length)];
     return out;
@@ -308,7 +365,6 @@
       return mostrarErroSistema("A biblioteca do Supabase não foi encontrada.");
     }
 
-    // 🔹 SLUG: resolve slug → UUID (mantém compatibilidade com UUID direto)
     try {
       const resolvido = await resolverComercioId(comercioId);
       if (!resolvido) {
@@ -333,7 +389,6 @@
       }
 
       if (resCom.data?.nome) estabelecimento.nome = resCom.data.nome;
-      // 🔹 SLUG: guarda o slug para usar em links (se existir)
       if (resCom.data?.slug) slugAtual = resCom.data.slug;
 
       if (resDad.data) {
@@ -372,7 +427,6 @@
 
     const pId = urlParams.get('pedido');
     if (pId) {
-      // 🔹 CORRIGIDO #4: aceita tracking_code (8 chars) ou UUID completo
       const codigo = pId.trim().toUpperCase();
       document.getElementById('inputRastreio').value = codigo.length <= 8 ? codigo : codigo.slice(0, 8);
       window.abrirAcompanhamento(codigo);
@@ -382,7 +436,6 @@
   function configurarCidades() {
     const select = document.getElementById('cidadeEntrega');
     select.innerHTML = `<option value="principal">${esc(estabelecimento.cidade || 'Cidade Principal')}</option>`;
-
     if (estabelecimento.cidade_vizinha && estabelecimento.taxa_entrega_vizinha > 0) {
       select.innerHTML += `<option value="vizinha">${esc(estabelecimento.cidade_vizinha)} (+ ${fmt(estabelecimento.taxa_entrega_vizinha)})</option>`;
     }
@@ -437,30 +490,29 @@
     const el = document.getElementById('avisoLoja');
     const aviso = (estabelecimento.aviso_clientes || '').trim();
     if (!aviso) { el.innerHTML = ''; return; }
-    // 🔹 CORRIGIDO #3: esc() preserva quebras de linha via white-space: pre-line
     el.innerHTML = `<div class="aviso-loja"><div class="aviso-loja-titulo">📢 Aviso da Loja</div><div class="aviso-loja-texto">${esc(aviso)}</div></div>`;
   }
 
   function renderizarProdutos() {
     const grade = document.getElementById('gradeProdutos');
     const t = normalizar(termoBusca);
-    const lista = !t ? produtos : produtos.filter(p => normalizar(p.nome).includes(t));
+    const lista = !t ? produtos : produtos.filter(p => normalizar(p.nome).includes(t) || normalizar(p.descricao || '').includes(t));
     if (!produtos.length) return grade.innerHTML = '<p class="aviso-vazio">Nenhum produto disponível.</p>';
     if (!lista.length) return grade.innerHTML = `<p class="aviso-vazio">Nada encontrado.</p>`;
 
     grade.innerHTML = lista.map(p => {
       const noCarrinho = carrinho.find(c => String(c.id) === String(p.id));
       const qtd = noCarrinho ? noCarrinho.quantidade : 0;
-      // 🔹 CORRIGIDO #3: escapar nome e URL da foto
       return `
-        <div class="produto">
+        <div class="produto" onclick="abrirDetalheProduto('${esc(String(p.id))}')">
           ${p.foto ? `<img src="${esc(p.foto)}" class="foto" alt="">` : `<div class="foto">🍔</div>`}
           <div class="nome">${esc(p.nome)}</div>
+          ${p.descricao ? `<div class="descricao">${esc(p.descricao)}</div>` : ''}
           <div class="preco">${fmt(p.preco)}</div>
-          <div class="controle">
-            <button onclick="alterarQtd('${esc(String(p.id))}', -1)" ${qtd === 0 ? 'disabled' : ''}>−</button>
+          <div class="controle" onclick="event.stopPropagation()">
+            <button onclick="event.stopPropagation(); alterarQtd('${esc(String(p.id))}', -1)" ${qtd === 0 ? 'disabled' : ''}>−</button>
             <span class="qtd">${qtd}</span>
-            <button onclick="alterarQtd('${esc(String(p.id))}', 1)" ${qtd >= p.quantidade ? 'disabled' : ''}>+</button>
+            <button onclick="event.stopPropagation(); alterarQtd('${esc(String(p.id))}', 1)" ${qtd >= p.quantidade ? 'disabled' : ''}>+</button>
           </div>
         </div>`;
     }).join('');
@@ -487,13 +539,74 @@
   };
   window.removerItem = function (id) { carrinho = carrinho.filter(c => String(c.id) !== String(id)); calcularTotal(); renderizarProdutos(); abrirCheckout(); };
 
+  // MODAL DETALHE DO PRODUTO
+  window.abrirDetalheProduto = function (id) {
+    const p = produtos.find(x => String(x.id) === String(id));
+    if (!p) return;
+
+    document.getElementById('detalheProdutoId').value = p.id;
+    document.getElementById('detalheProdutoNome').textContent = p.nome;
+    document.getElementById('detalheProdutoPreco').textContent = fmt(p.preco);
+
+    const descEl = document.getElementById('detalheProdutoDescricao');
+    const descTexto = (p.descricao || '').trim();
+    descEl.textContent = descTexto || 'Sem descrição disponível.';
+    descEl.style.display = 'block';
+
+    const fotoEl = document.getElementById('detalheProdutoFoto');
+    if (p.foto) {
+      fotoEl.innerHTML = `<img src="${esc(p.foto)}" style="width:100%;height:100%;object-fit:cover;" alt="">`;
+    } else {
+      fotoEl.innerHTML = `🍔`;
+    }
+
+    atualizarQtdModal();
+    document.getElementById('modalDetalheProduto').classList.add('aberto');
+  };
+
+  window.fecharDetalheProduto = function () {
+    document.getElementById('modalDetalheProduto').classList.remove('aberto');
+  };
+
+  function atualizarQtdModal() {
+    const id = document.getElementById('detalheProdutoId').value;
+    if (!id) return;
+    const item = carrinho.find(c => String(c.id) === String(id));
+    const prod = produtos.find(p => String(p.id) === String(id));
+    const qtd = item ? item.quantidade : 0;
+
+    document.getElementById('detalheProdutoQtd').textContent = qtd;
+    document.getElementById('btnQtdMenosModal').disabled = (qtd === 0);
+    document.getElementById('btnQtdMaisModal').disabled = (prod && qtd >= prod.quantidade);
+  }
+
+  window.alterarQtdModal = function (delta) {
+    const id = document.getElementById('detalheProdutoId').value;
+    if (!id) return;
+    alterarQtd(id, delta);
+    atualizarQtdModal();
+  };
+
+  window.adicionarDoModal = function () {
+    const id = document.getElementById('detalheProdutoId').value;
+    if (!id) return;
+    const item = carrinho.find(c => String(c.id) === String(id));
+    if (!item) alterarQtd(id, 1);
+    atualizarQtdModal();
+    mostrarToast('Adicionado ao carrinho! 🛒');
+  };
+
+  window.verCarrinhoDoProduto = function () {
+    fecharDetalheProduto();
+    abrirCheckout();
+  };
+
   function calcularSubtotal() { return carrinho.reduce((acc, c) => acc + Number(c.preco) * c.quantidade, 0); }
 
   function calcularTaxa() {
     if (calcularSubtotal() === 0) return 0;
     const selectCidade = document.getElementById('cidadeEntrega');
     const cidadeSelecionada = selectCidade ? selectCidade.value : 'principal';
-
     if (cidadeSelecionada === 'vizinha') {
       return Number(estabelecimento.taxa_entrega_vizinha || 0);
     }
@@ -528,7 +641,6 @@
 
   function abrirCheckout() {
     const lista = document.getElementById('listaCarrinho');
-    // 🔹 CORRIGIDO #3: escapar nome do produto
     lista.innerHTML = carrinho.length ? carrinho.map(c => `
       <div class="item-carrinho">
         <div><strong>${esc(c.nome)}</strong><br><span>${fmt(c.preco * c.quantidade)}</span></div>
@@ -548,7 +660,6 @@
     if (pag !== 'pix') { bloco.style.display = 'none'; return; }
     bloco.style.display = 'block';
 
-    // 🔹 CORRIGIDO #3: escapar chave + usar dataset em vez de onclick inline
     if (estabelecimento.chave_pix) {
       const chave = String(estabelecimento.chave_pix);
       document.getElementById('pixConteudo').innerHTML = `
@@ -610,7 +721,6 @@
     const btn = document.getElementById('btnEnviar');
     btn.textContent = 'Enviando...'; btn.disabled = true;
 
-    // 🔹 CORRIGIDO #4: gera tracking_code de 8 chars
     const trackingCode = gerarCodigoRastreio();
 
     const pedido = {
@@ -630,7 +740,6 @@
       localStorage.setItem('drTroco_ultimo_pedido', pedido.id);
       salvarDados();
 
-      // 🔹 SLUG: usa slug no link (se existir); senão usa UUID
       const identificadorLoja = slugAtual || comercioId;
       const linkRastreio = window.location.origin + window.location.pathname + '?loja=' + encodeURIComponent(identificadorLoja) + '&pedido=' + encodeURIComponent(trackingCode);
       const msg = encodeURIComponent(`Olá ${pedido.cliente_nome}! Seu pedido *${trackingCode}* foi recebido.\n\nPara acompanhar o status, clique no link abaixo:\n${linkRastreio}`);
@@ -656,7 +765,6 @@
     window.abrirAcompanhamento(code);
   };
 
-  // 🔹 CORRIGIDO #1 e #2: usa RPC com filtro de comercio_id e sem LIMIT 50
   window.abrirAcompanhamento = async function(idOuCode) {
     document.getElementById('modalAcompanhar').classList.add('aberto');
     if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
@@ -685,7 +793,6 @@
       idFinal = data.id;
     } else {
       document.getElementById('infoAcompanhar').innerHTML = 'Buscando pedido...';
-
       const { data, error } = await window.supabaseClient.rpc('buscar_pedido_por_codigo', {
         p_comercio_id: comercioId,
         p_codigo: idOuCode
@@ -707,7 +814,6 @@
     if (intervalAcompanhamento) clearInterval(intervalAcompanhamento);
   };
 
-  // 🔹 CORRIGIDO #1: filtro comercio_id obrigatório
   async function atualizarStatusPedido(id) {
     try {
       const { data } = await window.supabaseClient
