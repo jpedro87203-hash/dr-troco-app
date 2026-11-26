@@ -138,7 +138,9 @@ window.EstoqueSupabase = (() => {
     return (data || []).map(p => ({
       id: p.id,
       nome: p.nome,
-      descricao: p.descricao || "", // ✅ NOVO: descrição
+      descricao: p.descricao || "", 
+      categoria: p.categoria || "", // ✅ NOVO: categoria
+      subcategoria: p.subcategoria || "", // ✅ NOVO: subcategoria
       codigo: p.codigo,
       preco: p.preco,
       precoCusto: p.preco_custo, // CUSTO REAL DO PRODUTO
@@ -170,7 +172,9 @@ window.EstoqueSupabase = (() => {
     const registro = {
       comercio_id: comercioId,
       nome: produto.nome,
-      descricao: produto.descricao || null, // ✅ NOVO: descrição
+      descricao: produto.descricao || null,
+      categoria: produto.categoria || null, // ✅ NOVO: categoria
+      subcategoria: produto.subcategoria || null, // ✅ NOVO: subcategoria
       codigo: produto.codigo || null,
       preco: Number(produto.preco) || 0,
       preco_custo: Number(produto.precoCusto) || 0,
