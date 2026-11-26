@@ -374,7 +374,7 @@
             font-weight: 600;
         }
 
-        /* 🔹 NOVO: descrição do produto (linha extra) */
+        /* Descrição do produto (linha extra) */
         .estoque-produto-descricao {
             display: block;
             margin-top: 3px;
@@ -549,7 +549,6 @@
             box-shadow: 0 0 0 3px rgba(32, 169, 93, .09);
         }
 
-        /* 🔹 NOVO: textarea de descrição */
         .estoque-form-grupo textarea {
             width: 100%;
             min-height: 80px;
@@ -801,7 +800,6 @@
         .estoque-detalhes-preco { margin-top: 6px; color: #16834d; font-size: 13px; font-weight: 900; }
         .estoque-detalhes-preco span { color: #8f9ba1; font-size: 9px; font-weight: 600; }
 
-        /* 🔹 NOVO: descrição nos detalhes */
         .estoque-detalhes-descricao {
             margin-top: 14px;
             padding: 12px;
@@ -1096,7 +1094,39 @@
                     <input id="nomeProduto" type="text" autocomplete="off" placeholder="Ex.: Arroz 5kg" required>
                 </div>
 
-                <!-- 🔹 NOVO: DESCRIÇÃO -->
+                <!-- NOVO: CATEGORIA E SUBCATEGORIA -->
+                <div class="estoque-form-linha">
+                    <div class="estoque-form-grupo">
+                        <label for="categoriaProduto">Categoria</label>
+                        <input id="categoriaProduto" list="listaCategorias" placeholder="Ex: Lanches, Bebidas" autocomplete="off">
+                        <datalist id="listaCategorias">
+                            <option value="Lanches">
+                            <option value="Bebidas">
+                            <option value="Porções">
+                            <option value="Sobremesas">
+                            <option value="Roupas">
+                            <option value="Calçados">
+                            <option value="Acessórios">
+                            <option value="Mercado">
+                        </datalist>
+                    </div>
+                    <div class="estoque-form-grupo">
+                        <label for="subcategoriaProduto">Subcategoria</label>
+                        <input id="subcategoriaProduto" list="listaSubcategorias" placeholder="Ex: Hambúrguer, Camisa" autocomplete="off">
+                        <datalist id="listaSubcategorias">
+                            <option value="Hambúrguer">
+                            <option value="Cachorro-quente">
+                            <option value="Pizza">
+                            <option value="Refrigerante">
+                            <option value="Camisa">
+                            <option value="Calça">
+                            <option value="Sapato">
+                            <option value="Tênis">
+                        </datalist>
+                    </div>
+                </div>
+
+                <!-- DESCRIÇÃO -->
                 <div class="estoque-form-grupo">
                     <label for="descricaoProduto">Descrição <span style="font-weight:400;color:#999">(opcional)</span></label>
                     <textarea id="descricaoProduto" maxlength="500" rows="3"
@@ -1338,4 +1368,4 @@
     <script src="estoque.js"></script>
     <script src="suporte.js"></script>
 </body>
-    </html>
+                </html>
