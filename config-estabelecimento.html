@@ -34,6 +34,56 @@
     .voltar { display: block; text-align: center; margin-top: 16px; color: #64748b; text-decoration: none; font-size: 13px; font-weight: bold; }
     
     .secao-titulo { font-size: 12px; font-weight: 900; color: #168b53; text-transform: uppercase; margin: 20px 0 8px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; }
+
+    /* 🔹 SLUG */
+    .preview-link {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      font-size: 12px;
+      color: #166534;
+      word-break: break-all;
+      line-height: 1.5;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .preview-link strong { font-weight: 900; }
+    .preview-link code {
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #15803d;
+    }
+    .btn-copiar-link {
+      background: #168b53;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-left: auto;
+    }
+    .btn-copiar-link:hover { background: #14744a; }
+    .slug-input-wrap { position: relative; }
+    .slug-prefix {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 700;
+      pointer-events: none;
+    }
+    .slug-input-wrap input { padding-left: 110px; }
   </style>
 </head>
 <body>
@@ -52,6 +102,23 @@
 
     <label>Nome da Loja</label>
     <input type="text" id="nome" placeholder="Ex: Asas Lanches">
+
+    <!-- 🔹 SLUG: LINK PERSONALIZADO DO CARDÁPIO -->
+    <div class="secao-titulo">🔗 Link do Cardápio Digital</div>
+
+    <label>Link personalizado <span class="ajuda">(Só letras minúsculas, números e hífen. Mín. 3 caracteres)</span></label>
+    <div class="slug-input-wrap">
+      <span class="slug-prefix">cardapio.html?loja=</span>
+      <input type="text" id="slug" placeholder="asas-lanches" 
+             maxlength="40"
+             pattern="[a-z0-9\-]+"
+             oninput="normalizarSlug(this)">
+    </div>
+    <div class="preview-link" id="previewLink">
+      <span>Seu link:</span>
+      <code id="previewLinkTexto">cardapio.html?loja=...</code>
+      <button type="button" class="btn-copiar-link" id="btnCopiarLink" onclick="copiarLinkCardapio()" style="display:none;">📋 Copiar</button>
+    </div>
 
     <div class="secao-titulo">📍 Endereço e Entregas</div>
     
@@ -108,6 +175,52 @@
   <script>
     let comercioId = null;
     let arquivoSelecionado = null;
+    let slugOriginal = ''; // guarda o slug atual (para saber se mudou)
+
+    // 🔹 SLUG: normaliza entrada do usuário
+    function normalizarSlug(input) {
+      let v = input.value.toLowerCase();
+      // Remove acentos
+      v = v.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      // Só letras, números e hífen
+      v = v.replace(/[^a-z0-9\-]/g, '-');
+      // Sem hífens duplicados ou nas pontas
+      v = v.replace(/-+/g, '-').replace(/^-|-$/g, '');
+      input.value = v;
+      atualizarPreviewSlug();
+    }
+
+    function atualizarPreviewSlug() {
+      const slug = document.getElementById('slug').value.trim();
+      const previewEl = document.getElementById('previewLinkTexto');
+      const btn = document.getElementById('btnCopiarLink');
+
+      if (!slug) {
+        previewEl.textContent = 'cardapio.html?loja=...';
+        btn.style.display = 'none';
+        return;
+      }
+
+      const base = window.location.origin + window.location.pathname.replace('config-estabelecimento.html', 'cardapio.html');
+      const link = base + '?loja=' + slug;
+      previewEl.textContent = link;
+      btn.style.display = 'inline-block';
+    }
+
+    window.copiarLinkCardapio = async function () {
+      const slug = document.getElementById('slug').value.trim();
+      if (!slug) return;
+
+      const base = window.location.origin + window.location.pathname.replace('config-estabelecimento.html', 'cardapio.html');
+      const link = base + '?loja=' + slug;
+
+      try {
+        await navigator.clipboard.writeText(link);
+        alert('Link copiado!\n\n' + link);
+      } catch (e) {
+        prompt('Copie o link abaixo:', link);
+      }
+    };
 
     function previewImagem(event) {
       const file = event.target.files[0];
@@ -159,11 +272,16 @@
         }
 
         const [resCom, resDad] = await Promise.all([
-          window.supabaseClient.from('comercios').select('nome').eq('id', comercioId).maybeSingle(),
+          window.supabaseClient.from('comercios').select('nome, slug').eq('id', comercioId).maybeSingle(),
           window.supabaseClient.from('dados_estabelecimento').select('*').eq('comercio_id', comercioId).maybeSingle()
         ]);
         
         if (resCom.data?.nome) document.getElementById('nome').value = resCom.data.nome;
+        // 🔹 SLUG: carrega slug existente
+        if (resCom.data?.slug) {
+          document.getElementById('slug').value = resCom.data.slug;
+          slugOriginal = resCom.data.slug;
+        }
         
         if (resDad.data) {
           const d = resDad.data;
@@ -178,8 +296,18 @@
             document.getElementById('previewLogo').innerHTML = `<img src="${d.logo_url}">`;
           }
         }
+
+        atualizarPreviewSlug();
       } catch(e) { console.error("Erro ao carregar:", e); }
     }
+
+    // 🔹 SLUG: lista de slugs reservados
+    const SLUGS_RESERVADOS = [
+      'cardapio', 'pedidos', 'entrega', 'config', 'config-estabelecimento',
+      'www', 'api', 'admin', 'app', 'dr-troco', 'drtroco',
+      'index', 'fluxo', 'historico', 'estoque', 'fiado', 'comandas',
+      'login', 'cadastro', 'signup', 'static', 'assets'
+    ];
 
     async function salvar() {
       const msgEl = document.getElementById('msg');
@@ -188,10 +316,31 @@
       const btn = document.getElementById('btnSalvar');
       btn.disabled = true;
       btn.textContent = 'Salvando...';
-      msgEl.style.display = 'none'; // Esconde a msg antiga
+      msgEl.style.display = 'none';
       msgEl.textContent = '';
 
       let logoUrlFinal = document.getElementById('logo_url').value;
+      const slug = document.getElementById('slug').value.trim().toLowerCase();
+
+      // 🔹 SLUG: valida antes de salvar
+      if (slug) {
+        if (slug.length < 3) {
+          msgEl.className = 'msg err';
+          msgEl.textContent = 'O link personalizado precisa ter pelo menos 3 caracteres.';
+          msgEl.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Salvar Configurações';
+          return;
+        }
+        if (SLUGS_RESERVADOS.includes(slug)) {
+          msgEl.className = 'msg err';
+          msgEl.textContent = `O link "${slug}" é reservado. Escolha outro.`;
+          msgEl.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Salvar Configurações';
+          return;
+        }
+      }
 
       try {
         // 1. Upload da Imagem (se escolheu alguma)
@@ -231,11 +380,29 @@
           atualizado_em: new Date().toISOString()
         };
 
-        if (nome) {
-          await window.supabaseClient.from('comercios').update({ nome }).eq('id', comercioId);
+        // 3. Atualiza comercios (nome + slug)
+        const updateComercio = {};
+        if (nome) updateComercio.nome = nome;
+        if (slug && slug !== slugOriginal) updateComercio.slug = slug; // só atualiza se mudou
+
+        if (Object.keys(updateComercio).length > 0) {
+          const { error: errCom } = await window.supabaseClient
+            .from('comercios')
+            .update(updateComercio)
+            .eq('id', comercioId);
+
+          if (errCom) {
+            // 🔹 SLUG: trata erro de slug duplicado
+            if (errCom.code === '23505' || /duplicate key|unique/i.test(errCom.message || '')) {
+              throw new Error('Este link já está em uso. Escolha outro.');
+            }
+            throw errCom;
+          }
+
+          if (slug) slugOriginal = slug;
         }
         
-        // UPSERT (Insere se não existir, Atualiza se existir)
+        // 4. UPSERT dados_estabelecimento
         const { error: errUpd } = await window.supabaseClient
           .from('dados_estabelecimento')
           .upsert(payload, { onConflict: 'comercio_id' });
@@ -244,12 +411,11 @@
 
         // ===== SUCESSO =====
         msgEl.className = 'msg ok';
-        msgEl.innerHTML = '✅ Configurações e Logo salvas com sucesso!';
-        msgEl.style.display = 'block'; // <--- AQUI ESTAVA O BUG, AGORA ELE FORÇA APARECER
+        msgEl.innerHTML = '✅ Configurações e Link salvos com sucesso!';
+        msgEl.style.display = 'block';
         
         arquivoSelecionado = null; 
         
-        // Esconde a mensagem depois de 4 segundos
         setTimeout(() => { 
           msgEl.style.display = 'none'; 
           msgEl.className = 'msg';
@@ -260,7 +426,7 @@
         
         // ===== ERRO =====
         msgEl.className = 'msg err';
-        msgEl.textContent = 'Erro do Supabase: ' + e.message + '\nDetalhes: ' + (e.details || 'Nenhum.');
+        msgEl.textContent = 'Erro: ' + e.message + '\nDetalhes: ' + (e.details || 'Nenhum.');
         msgEl.style.display = 'block';
         
         alert("Ocorreu um erro ao salvar. Verifique a mensagem em vermelho na tela.");
