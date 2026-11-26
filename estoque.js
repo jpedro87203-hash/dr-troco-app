@@ -471,8 +471,10 @@ function normalizarProduto(produto) {
     return {
         id: produto.id || gerarId(),
         nome: String(produto.nome ?? produto.nomeProduto ?? "").trim(),
-        // 🔹 NOVO: descrição (limite 500)
         descricao: String(produto.descricao ?? "").trim().slice(0, 500),
+        // 🔹 NOVO: Categorias
+        categoria: String(produto.categoria ?? "").trim(),
+        subcategoria: String(produto.subcategoria ?? "").trim(),
         codigo: String(codigoSalvo).trim(),
         preco: numeroSeguro(produto.preco ?? produto.precoUnitario ?? produto.precoProduto),
         precoCusto: numeroSeguro(produto.precoCusto ?? produto.preco_custo ?? 0),
@@ -535,9 +537,11 @@ function produtoPassaBusca(produto) {
     if (!busca) return true;
     const nome = String(produto.nome || "").toLowerCase();
     const codigo = String(produto.codigo || "").toLowerCase();
-    // 🔹 NOVO: busca também na descrição
     const descricao = String(produto.descricao || "").toLowerCase();
-    return nome.includes(busca) || codigo.includes(busca) || descricao.includes(busca);
+    // 🔹 NOVO: Busca também na categoria e subcategoria
+    const categoria = String(produto.categoria || "").toLowerCase();
+    const subcategoria = String(produto.subcategoria || "").toLowerCase();
+    return nome.includes(busca) || codigo.includes(busca) || descricao.includes(busca) || categoria.includes(busca) || subcategoria.includes(busca);
 }
 
 /* =========================================================
@@ -602,9 +606,16 @@ function renderizarProduto(produto) {
         ? `<img src="${escaparHTML(produto.foto)}" alt="${escaparHTML(produto.nome)}">`
         : `<div class="estoque-inicial">${escaparHTML(inicial)}</div>`;
     const codigo = produto.codigo ? `Código: ${escaparHTML(produto.codigo)}` : "Sem código";
-    const unidade = produto.tipo === "perecivel" ? "Perecível" : "Não perecível";
+    
+    // 🔹 NOVO: Mostrar categoria na listagem, se não tiver, mostra o tipo
+    let subtitulo = codigo;
+    if (produto.categoria) {
+        subtitulo += ` · ${escaparHTML(produto.categoria)}`;
+        if (produto.subcategoria) subtitulo += ` / ${escaparHTML(produto.subcategoria)}`;
+    } else {
+        subtitulo += ` · ${produto.tipo === "perecivel" ? "Perecível" : "Não perecível"}`;
+    }
 
-    // 🔹 NOVO: descrição truncada (opcional)
     const descricaoLinha = produto.descricao
         ? `<span class="estoque-produto-descricao">${escaparHTML(produto.descricao)}</span>`
         : "";
@@ -615,7 +626,7 @@ function renderizarProduto(produto) {
             <div class="estoque-produto-info">
                 <strong>${escaparHTML(produto.nome)}</strong>
                 ${descricaoLinha}
-                <small>${codigo} · ${unidade}</small>
+                <small>${subtitulo}</small>
                 <div class="estoque-preco">${formatarReal(produto.preco)} <span>/un.</span></div>
             </div>
             <div class="estoque-produto-direita">
@@ -647,7 +658,9 @@ function abrirCadastroProduto() {
     const campoCusto = document.getElementById("precoCustoProduto");
     const campoEmbalagem = document.getElementById("qtdEmbalagemProduto");
     const campoMargem = document.getElementById("margemLucroProduto");
-    const campoDescricao = document.getElementById("descricaoProduto"); // 🔹 NOVO
+    const campoDescricao = document.getElementById("descricaoProduto");
+    const campoCategoria = document.getElementById("categoriaProduto"); // 🔹 NOVO
+    const campoSubcategoria = document.getElementById("subcategoriaProduto"); // 🔹 NOVO
 
     if (produtoId) produtoId.value = "";
     if (titulo) titulo.textContent = "Cadastrar produto";
@@ -661,8 +674,10 @@ function abrirCadastroProduto() {
     if (preview) preview.style.display = "none";
     if (previewImg) previewImg.src = "";
 
-    // 🔹 NOVO: reseta descrição
     if (campoDescricao) campoDescricao.value = "";
+    // 🔹 NOVO: Reseta Categorias
+    if (campoCategoria) campoCategoria.value = "";
+    if (campoSubcategoria) campoSubcategoria.value = "";
 
     if (campoCusto) campoCusto.value = "0";
     if (campoEmbalagem) campoEmbalagem.value = "1";
@@ -695,13 +710,16 @@ function abrirEdicaoProduto(id) {
     const campoCusto = document.getElementById("precoCustoProduto");
     const campoEmbalagem = document.getElementById("qtdEmbalagemProduto");
     const campoMargem = document.getElementById("margemLucroProduto");
-    const campoDescricao = document.getElementById("descricaoProduto"); // 🔹 NOVO
+    const campoDescricao = document.getElementById("descricaoProduto");
+    const campoCategoria = document.getElementById("categoriaProduto"); // 🔹 NOVO
+    const campoSubcategoria = document.getElementById("subcategoriaProduto"); // 🔹 NOVO
 
     if (produtoId) produtoId.value = produto.id;
     if (nome) nome.value = produto.nome;
-
-    // 🔹 NOVO: carrega descrição
     if (campoDescricao) campoDescricao.value = produto.descricao || "";
+    // 🔹 NOVO: Preenche Categorias
+    if (campoCategoria) campoCategoria.value = produto.categoria || "";
+    if (campoSubcategoria) campoSubcategoria.value = produto.subcategoria || "";
 
     const valorCodigo = String(produto.codigo || "").trim();
     if (codigo) codigo.value = valorCodigo;
@@ -745,9 +763,11 @@ async function salvarProduto(event) {
 
     const id = document.getElementById("produtoId")?.value.trim();
     const nome = document.getElementById("nomeProduto")?.value.trim();
-
-    // 🔹 NOVO: lê descrição
     const descricao = String(document.getElementById("descricaoProduto")?.value || "").trim().slice(0, 500);
+    
+    // 🔹 NOVO: Lê Categorias
+    const categoria = String(document.getElementById("categoriaProduto")?.value || "").trim();
+    const subcategoria = String(document.getElementById("subcategoriaProduto")?.value || "").trim();
 
     const campoCodigo = document.getElementById("codigoProduto");
     const codigoCampo = campoCodigo ? String(campoCodigo.value || "").trim() : "";
@@ -785,7 +805,9 @@ async function salvarProduto(event) {
         produtos[indice] = {
             ...produtos[indice],
             nome,
-            descricao, // 🔹 NOVO
+            descricao,
+            categoria, // 🔹 NOVO
+            subcategoria, // 🔹 NOVO
             codigo: String(codigo),
             preco,
             precoCusto,
@@ -804,7 +826,9 @@ async function salvarProduto(event) {
         produtoSalvo = {
             id: gerarId(),
             nome,
-            descricao, // 🔹 NOVO
+            descricao,
+            categoria, // 🔹 NOVO
+            subcategoria, // 🔹 NOVO
             codigo: String(codigo),
             preco,
             precoCusto,
@@ -1157,10 +1181,20 @@ function abrirDetalhes(id) {
         : "0.0";
     const corMargem = margem >= 0 ? "#147844" : "#a33a3a";
 
-    // 🔹 NOVO: descrição nos detalhes
     const descricaoHTML = produto.descricao
         ? `<div class="estoque-detalhes-descricao">${escaparHTML(produto.descricao)}</div>`
         : "";
+
+    // 🔹 NOVO: Blocos de Categoria nos Detalhes
+    let categoriaHTML = "";
+    if (produto.categoria || produto.subcategoria) {
+        categoriaHTML = `
+            <div class="estoque-detalhe">
+                <small>Categoria / Subcategoria</small>
+                <strong>${escaparHTML(produto.categoria || "—")} ${produto.subcategoria ? '/ ' + escaparHTML(produto.subcategoria) : ''}</strong>
+            </div>
+        `;
+    }
 
     container.innerHTML = `
         <div class="estoque-detalhes-topo">
@@ -1181,6 +1215,7 @@ function abrirDetalhes(id) {
             <div class="estoque-detalhe"><small>Custo Unitário</small><strong>${formatarReal(custoUnitario)}</strong></div>
             <div class="estoque-detalhe"><small>Margem de Lucro</small><strong style="color:${corMargem}">${margem}%</strong></div>
 
+            ${categoriaHTML}
             <div class="estoque-detalhe"><small>Tipo</small><strong>${tipo}</strong></div>
             <div class="estoque-detalhe"><small>Validade</small><strong>${validade}</strong></div>
             <div class="estoque-detalhe"><small>Valor em estoque</small><strong>${formatarReal(numeroSeguro(produto.preco) * numeroSeguro(produto.quantidade))}</strong></div>
@@ -1782,9 +1817,18 @@ function exportarRelatorioEstoquePDF() {
         const quantidade = numeroSeguro(produto.quantidade);
         const preco = numeroSeguro(produto.preco);
         const tipo = produto.tipo === "perecivel" ? "Perecível" : "Não perecível";
+        
+        // 🔹 NOVO: Mostrar Categoria no PDF
+        let catTexto = "—";
+        if (produto.categoria) {
+            catTexto = produto.categoria;
+            if (produto.subcategoria) catTexto += ` / ${produto.subcategoria}`;
+        }
+
         return `
             <tr>
                 <td>${escaparHTML(produto.nome || "—")}</td>
+                <td>${escaparHTML(catTexto)}</td>
                 <td>${escaparHTML(produto.codigo || "—")}</td>
                 <td>${tipo}</td>
                 <td class="numero">${quantidade}</td>
@@ -1883,7 +1927,7 @@ function exportarRelatorioEstoquePDF() {
     <span>Qtd. total movimentada: <strong>${contagemMovimentos.totalQtd}</strong></span>
 </div>
 <h2>Produtos e posição atual</h2>
-${produtos.length ? `<table><thead><tr><th>Produto</th><th>Código</th><th>Tipo</th><th>Qtd.</th><th>Mínimo</th><th>Preço un.</th><th>Valor total</th><th>Status</th><th>Validade</th></tr></thead><tbody>${linhasProdutos}</tbody></table>` : '<div class="vazio">Nenhum produto cadastrado.</div>'}
+${produtos.length ? `<table><thead><tr><th>Produto</th><th>Categoria</th><th>Código</th><th>Tipo</th><th>Qtd.</th><th>Mínimo</th><th>Preço un.</th><th>Valor total</th><th>Status</th><th>Validade</th></tr></thead><tbody>${linhasProdutos}</tbody></table>` : '<div class="vazio">Nenhum produto cadastrado.</div>'}
 <h2>Histórico de entradas e saídas consolidadas (${escaparHTML(rotuloPeriodoFiltro)})</h2>
 ${gruposConsolidados.length ? `
 <table>
@@ -2091,4 +2135,4 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", inicializarEstoque);
 } else {
     inicializarEstoque();
-    }
+                      }
