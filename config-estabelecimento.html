@@ -37,58 +37,41 @@
 
     /* 🔹 SLUG */
     .preview-link {
-      margin-top: 8px;
-      padding: 10px 12px;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 10px;
-      font-size: 12px;
-      color: #166534;
-      word-break: break-all;
-      line-height: 1.5;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      margin-top: 8px; padding: 10px 12px; background: #f0fdf4; border: 1px solid #bbf7d0;
+      border-radius: 10px; font-size: 12px; color: #166534; word-break: break-all; line-height: 1.5;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     }
-    .preview-link strong { font-weight: 900; }
-    .preview-link code {
-      background: #fff;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 11px;
-      color: #15803d;
-    }
-    .btn-copiar-link {
-      background: #168b53;
-      color: #fff;
-      border: 0;
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      margin-left: auto;
-    }
+    .preview-link code { background: #fff; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 11px; color: #15803d; }
+    .btn-copiar-link { background: #168b53; color: #fff; border: 0; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 800; cursor: pointer; margin-left: auto; }
     .btn-copiar-link:hover { background: #14744a; }
     .slug-input-wrap { position: relative; }
-    .slug-prefix {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #94a3b8;
-      font-size: 13px;
-      font-weight: 700;
-      pointer-events: none;
-    }
+    .slug-prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px; font-weight: 700; pointer-events: none; }
     .slug-input-wrap input { padding-left: 110px; }
+
+    /* 🔹 LOJA ABERTA/FECHADA */
+    .status-loja-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .status-loja-box.aberto { border-color: #bbf7d0; background: #f0fdf4; }
+    .status-loja-box.fechado { border-color: #fecaca; background: #fef2f2; }
+    .status-loja-box label { margin: 0; font-size: 13px; color: #1e293b; }
+    .status-loja-box select { width: auto; height: 38px; font-weight: 700; cursor: pointer; }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>🏪 Meu Estabelecimento</h2>
+
+    <!-- 🔹 NOVO: CONTROLE DE STATUS MANUAL -->
+    <div class="secao-titulo">🚦 Status do Atendimento</div>
+    <div class="status-loja-box" id="boxStatusLoja">
+      <div>
+        <label for="aberto_manual">Aceitando Pedidos?</label>
+        <span class="ajuda">Se fechar, o cardápio pausa na hora.</span>
+      </div>
+      <select id="aberto_manual" onchange="atualizarCorStatus()">
+        <option value="true">✅ Aberta</option>
+        <option value="false">⏸️ Fechada</option>
+      </select>
+    </div>
     
     <label>Logo da Loja <span class="ajuda">(JPG ou PNG, máx 2MB)</span></label>
     <div class="area-logo">
@@ -103,16 +86,12 @@
     <label>Nome da Loja</label>
     <input type="text" id="nome" placeholder="Ex: Asas Lanches">
 
-    <!-- 🔹 SLUG: LINK PERSONALIZADO DO CARDÁPIO -->
     <div class="secao-titulo">🔗 Link do Cardápio Digital</div>
 
     <label>Link personalizado <span class="ajuda">(Só letras minúsculas, números e hífen. Mín. 3 caracteres)</span></label>
     <div class="slug-input-wrap">
       <span class="slug-prefix">cardapio.html?loja=</span>
-      <input type="text" id="slug" placeholder="asas-lanches" 
-             maxlength="40"
-             pattern="[a-z0-9\-]+"
-             oninput="normalizarSlug(this)">
+      <input type="text" id="slug" placeholder="asas-lanches" maxlength="40" pattern="[a-z0-9\-]+" oninput="normalizarSlug(this)">
     </div>
     <div class="preview-link" id="previewLink">
       <span>Seu link:</span>
@@ -139,7 +118,7 @@
       <div><input type="number" id="taxa_entrega_vizinha" min="0" step="0.50" value="0" placeholder="Taxa R$"></div>
     </div>
 
-    <div class="secao-titulo">⏰ Horário e Regras</div>
+    <div class="secao-titulo">⏰ Horário Padrão</div>
 
     <div class="grid2">
       <div><label>Abre às</label><input type="time" id="horario_abertura"></div>
@@ -175,16 +154,18 @@
   <script>
     let comercioId = null;
     let arquivoSelecionado = null;
-    let slugOriginal = ''; // guarda o slug atual (para saber se mudou)
+    let slugOriginal = ''; 
 
-    // 🔹 SLUG: normaliza entrada do usuário
+    function atualizarCorStatus() {
+      const box = document.getElementById('boxStatusLoja');
+      const isAberto = document.getElementById('aberto_manual').value === 'true';
+      box.className = 'status-loja-box ' + (isAberto ? 'aberto' : 'fechado');
+    }
+
     function normalizarSlug(input) {
       let v = input.value.toLowerCase();
-      // Remove acentos
       v = v.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      // Só letras, números e hífen
       v = v.replace(/[^a-z0-9\-]/g, '-');
-      // Sem hífens duplicados ou nas pontas
       v = v.replace(/-+/g, '-').replace(/^-|-$/g, '');
       input.value = v;
       atualizarPreviewSlug();
@@ -277,7 +258,6 @@
         ]);
         
         if (resCom.data?.nome) document.getElementById('nome').value = resCom.data.nome;
-        // 🔹 SLUG: carrega slug existente
         if (resCom.data?.slug) {
           document.getElementById('slug').value = resCom.data.slug;
           slugOriginal = resCom.data.slug;
@@ -290,18 +270,22 @@
             if (d[k] != null) document.getElementById(k).value = d[k];
           });
           document.getElementById('aceita_delivery').value = d.aceita_delivery === false ? 'false' : 'true';
+          // 🔹 NOVO: Carrega status manual (padrão true se não existir)
+          document.getElementById('aberto_manual').value = d.aberto_manual === false ? 'false' : 'true';
+          atualizarCorStatus();
           
           if (d.logo_url) {
             document.getElementById('logo_url').value = d.logo_url;
             document.getElementById('previewLogo').innerHTML = `<img src="${d.logo_url}">`;
           }
+        } else {
+          atualizarCorStatus(); // Define a cor inicial se não houver dados
         }
 
         atualizarPreviewSlug();
       } catch(e) { console.error("Erro ao carregar:", e); }
     }
 
-    // 🔹 SLUG: lista de slugs reservados
     const SLUGS_RESERVADOS = [
       'cardapio', 'pedidos', 'entrega', 'config', 'config-estabelecimento',
       'www', 'api', 'admin', 'app', 'dr-troco', 'drtroco',
@@ -322,7 +306,6 @@
       let logoUrlFinal = document.getElementById('logo_url').value;
       const slug = document.getElementById('slug').value.trim().toLowerCase();
 
-      // 🔹 SLUG: valida antes de salvar
       if (slug) {
         if (slug.length < 3) {
           msgEl.className = 'msg err';
@@ -343,21 +326,18 @@
       }
 
       try {
-        // 1. Upload da Imagem (se escolheu alguma)
         if (arquivoSelecionado) {
           btn.textContent = 'Enviando Imagem...';
           const extensao = arquivoSelecionado.name.split('.').pop();
           const nomeArquivo = `${comercioId}-logo-${Date.now()}.${extensao}`;
 
           const { error: uploadError } = await window.supabaseClient.storage.from('logos').upload(nomeArquivo, arquivoSelecionado, { upsert: true });
-          
           if (uploadError) throw new Error("Falha no upload da imagem: " + uploadError.message);
 
           const { data: publicUrlData } = window.supabaseClient.storage.from('logos').getPublicUrl(nomeArquivo);
           logoUrlFinal = publicUrlData.publicUrl;
         }
 
-        // 2. Salvar Dados no Banco
         btn.textContent = 'Salvando Dados...';
         const nome = document.getElementById('nome').value.trim();
         
@@ -375,41 +355,30 @@
           taxa_entrega: Number(document.getElementById('taxa_entrega').value) || 0,
           pedido_minimo: Number(document.getElementById('pedido_minimo').value) || 0,
           aceita_delivery: document.getElementById('aceita_delivery').value === 'true',
+          aberto_manual: document.getElementById('aberto_manual').value === 'true', // 🔹 NOVO
           chave_pix: document.getElementById('chave_pix').value.trim(),
           aviso_clientes: document.getElementById('aviso_clientes').value.trim(),
           atualizado_em: new Date().toISOString()
         };
 
-        // 3. Atualiza comercios (nome + slug)
         const updateComercio = {};
         if (nome) updateComercio.nome = nome;
-        if (slug && slug !== slugOriginal) updateComercio.slug = slug; // só atualiza se mudou
+        if (slug && slug !== slugOriginal) updateComercio.slug = slug;
 
         if (Object.keys(updateComercio).length > 0) {
-          const { error: errCom } = await window.supabaseClient
-            .from('comercios')
-            .update(updateComercio)
-            .eq('id', comercioId);
-
+          const { error: errCom } = await window.supabaseClient.from('comercios').update(updateComercio).eq('id', comercioId);
           if (errCom) {
-            // 🔹 SLUG: trata erro de slug duplicado
             if (errCom.code === '23505' || /duplicate key|unique/i.test(errCom.message || '')) {
               throw new Error('Este link já está em uso. Escolha outro.');
             }
             throw errCom;
           }
-
           if (slug) slugOriginal = slug;
         }
         
-        // 4. UPSERT dados_estabelecimento
-        const { error: errUpd } = await window.supabaseClient
-          .from('dados_estabelecimento')
-          .upsert(payload, { onConflict: 'comercio_id' });
-
+        const { error: errUpd } = await window.supabaseClient.from('dados_estabelecimento').upsert(payload, { onConflict: 'comercio_id' });
         if (errUpd) throw errUpd;
 
-        // ===== SUCESSO =====
         msgEl.className = 'msg ok';
         msgEl.innerHTML = '✅ Configurações e Link salvos com sucesso!';
         msgEl.style.display = 'block';
@@ -423,12 +392,9 @@
 
       } catch(e) {
         console.error("Erro no save:", e);
-        
-        // ===== ERRO =====
         msgEl.className = 'msg err';
         msgEl.textContent = 'Erro: ' + e.message + '\nDetalhes: ' + (e.details || 'Nenhum.');
         msgEl.style.display = 'block';
-        
         alert("Ocorreu um erro ao salvar. Verifique a mensagem em vermelho na tela.");
       } finally {
         btn.disabled = false;
