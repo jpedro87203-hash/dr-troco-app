@@ -24,7 +24,7 @@
 
         body.modal-aberto { overflow: hidden; }
 
-        button, input, select { font: inherit; }
+        button, input, select, textarea { font: inherit; }
         button { -webkit-tap-highlight-color: transparent; }
 
         /* =====================================================
@@ -374,6 +374,19 @@
             font-weight: 600;
         }
 
+        /* 🔹 NOVO: descrição do produto (linha extra) */
+        .estoque-produto-descricao {
+            display: block;
+            margin-top: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 600;
+            font-style: italic;
+        }
+
         .estoque-preco {
             margin-top: 5px;
             color: #16834d;
@@ -438,11 +451,11 @@
         .estoque-vazio span { margin-top: 5px; color: #9aa5ab; font-size: 11px; }
 
         /* =====================================================
-           MODAIS (CORRIGIDO Z-INDEX)
+           MODAIS
            ===================================================== */
         .estoque-modal {
             position: fixed;
-            z-index: 100005; /* Acima da barra inferior */
+            z-index: 100005;
             inset: 0;
             display: flex;
             align-items: flex-end;
@@ -534,6 +547,36 @@
         .estoque-form-grupo select:focus {
             border-color: #4fa976;
             box-shadow: 0 0 0 3px rgba(32, 169, 93, .09);
+        }
+
+        /* 🔹 NOVO: textarea de descrição */
+        .estoque-form-grupo textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px 12px;
+            border: 1px solid #dfe6ea;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #344652;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+        }
+
+        .estoque-form-grupo textarea:focus {
+            border-color: #4fa976;
+            box-shadow: 0 0 0 3px rgba(32, 169, 93, .09);
+        }
+
+        .estoque-form-ajuda {
+            display: block;
+            margin-top: 4px;
+            color: #94a3b8;
+            font-size: 10px;
+            font-weight: 500;
+            line-height: 1.35;
         }
 
         .estoque-form-linha {
@@ -757,6 +800,19 @@
         .estoque-detalhes-codigo { margin-top: 4px; color: #89949b; font-size: 11px; }
         .estoque-detalhes-preco { margin-top: 6px; color: #16834d; font-size: 13px; font-weight: 900; }
         .estoque-detalhes-preco span { color: #8f9ba1; font-size: 9px; font-weight: 600; }
+
+        /* 🔹 NOVO: descrição nos detalhes */
+        .estoque-detalhes-descricao {
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border-left: 3px solid #16834d;
+            color: #475569;
+            font-size: 12px;
+            line-height: 1.55;
+            white-space: pre-line;
+        }
 
         .estoque-status-detalhes {
             display: inline-flex;
@@ -994,23 +1050,20 @@
             <button class="estoque-filtro" type="button" data-filtro-estoque="vencer">⏳ A vencer</button>
         </div>
 
-        <!-- HISTÓRICO DE MOVIMENTAÇÕES (COLAPSÁVEL) -->
+        <!-- HISTÓRICO DE MOVIMENTAÇÕES -->
         <section style="margin-top: 6px; margin-bottom: 20px; padding: 16px; background: #fff; border-radius: 17px; box-shadow: 0 5px 17px rgba(28, 48, 62, .045); border: 1px solid rgba(39, 57, 69, .06);">
             <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="alternarHistoricoMovimentacoes()">
                 <h3 style="margin: 0; color: #2c3e4a; font-size: 15px; font-weight: 900;">📋 Histórico de Entradas e Saídas</h3>
                 <button type="button" id="btnToggleHistorico" style="background: #eaf8f0; color: #16834d; border: 0; border-radius: 8px; padding: 6px 12px; font-weight: 900; font-size: 12px; cursor: pointer;">Ver histórico ▼</button>
             </div>
-            
+
             <div id="containerHistoricoMovimentacoes" style="display: none; margin-top: 16px; flex-direction: column; gap: 10px;">
-                <!-- FILTRO DE DATA -->
                 <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                     <input type="date" id="filtroDataHistorico" style="flex: 1; min-width: 0; height: 42px; padding: 0 12px; border: 1px solid #dce6e1; border-radius: 10px; background: #f8faf9; color: #263640; font-family: inherit;">
                     <button type="button" id="btnLimparFiltroHistorico" style="background: #f0f4f2; color: #52635b; border: 1px solid #dce6e1; border-radius: 10px; padding: 0 16px; font-weight: bold; cursor: pointer;">Limpar</button>
                 </div>
 
-                <div id="listaHistoricoMovimentacoes" style="display: flex; flex-direction: column; gap: 10px;">
-                    <!-- As movimentações filtradas aparecem aqui -->
-                </div>
+                <div id="listaHistoricoMovimentacoes" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
         </section>
 
@@ -1043,6 +1096,14 @@
                     <input id="nomeProduto" type="text" autocomplete="off" placeholder="Ex.: Arroz 5kg" required>
                 </div>
 
+                <!-- 🔹 NOVO: DESCRIÇÃO -->
+                <div class="estoque-form-grupo">
+                    <label for="descricaoProduto">Descrição <span style="font-weight:400;color:#999">(opcional)</span></label>
+                    <textarea id="descricaoProduto" maxlength="500" rows="3"
+                              placeholder="Ex: Pão brioche, carne 180g, queijo cheddar, alface, tomate e molho especial da casa"></textarea>
+                    <span class="estoque-form-ajuda">Aparece no cardápio digital (até 500 caracteres)</span>
+                </div>
+
                 <!-- CÓDIGO + LEITOR + PREÇO -->
                 <div class="estoque-form-linha">
                     <div class="estoque-codigo-linha">
@@ -1058,7 +1119,7 @@
                     </div>
                 </div>
 
-                <!-- NOVO: CUSTO E MARGEM -->
+                <!-- CUSTO E MARGEM -->
                 <div class="estoque-form-linha">
                     <div class="estoque-form-grupo">
                         <label for="precoCustoProduto">Custo do fardo/caixa (R$)</label>
@@ -1260,7 +1321,6 @@
         <a href="fiado.html" class="menu-item">
             <span>🧾</span><small>Fiado</small>
         </a>
-        <!-- BOTÃO ADICIONADO AQUI -->
         <a href="comandas.html" class="menu-item">
             <span>🍽️</span><small>Comandas</small>
         </a>
@@ -1278,4 +1338,4 @@
     <script src="estoque.js"></script>
     <script src="suporte.js"></script>
 </body>
-            </html>
+    </html>
