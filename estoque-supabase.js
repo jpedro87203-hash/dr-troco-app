@@ -138,6 +138,7 @@ window.EstoqueSupabase = (() => {
     return (data || []).map(p => ({
       id: p.id,
       nome: p.nome,
+      descricao: p.descricao || "", // ✅ NOVO: descrição
       codigo: p.codigo,
       preco: p.preco,
       precoCusto: p.preco_custo, // CUSTO REAL DO PRODUTO
@@ -169,10 +170,11 @@ window.EstoqueSupabase = (() => {
     const registro = {
       comercio_id: comercioId,
       nome: produto.nome,
+      descricao: produto.descricao || null, // ✅ NOVO: descrição
       codigo: produto.codigo || null,
       preco: Number(produto.preco) || 0,
-      preco_custo: Number(produto.precoCusto) || 0, // NOVO
-      qtd_embalagem: Number(produto.qtdEmbalagem) || 1, // NOVO
+      preco_custo: Number(produto.precoCusto) || 0,
+      qtd_embalagem: Number(produto.qtdEmbalagem) || 1,
       tipo: produto.tipo || null,
       estoque_minimo: Number(produto.estoqueMinimo) || 0,
       quantidade: Number(produto.quantidade) || 0,
